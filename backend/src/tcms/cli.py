@@ -107,6 +107,9 @@ def seed(profile: str) -> None:
     if settings.is_production:
         raise click.ClickException("seeding is disabled in production")
     configure_logging(settings.log_level)
+    from tcms.main import install_modules
+
+    install_modules()
     for line in run(profile):
         click.echo(line)
 
