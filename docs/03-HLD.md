@@ -27,21 +27,21 @@ Diagrams are Mermaid so they stay editable in the repository.
 | Layer | Choice | Notes |
 | --- | --- | --- |
 | Backend language | Python 3.12 | |
-| Web framework | FastAPI 0.11x + Uvicorn (served by Gunicorn with Uvicorn workers in prod) | Sync route handlers (`def`) executed in thread pool (ADR-004) |
-| ORM / SQL | SQLAlchemy 2.0 (sync, typed `Mapped[]`), psycopg 3 | Raw SQL (via `text()`) allowed for reporting queries |
+| Web framework | FastAPI 0.16x + Uvicorn (served by Gunicorn with Uvicorn workers in prod) | Sync route handlers (`def`) executed in thread pool (ADR-004) |
+| ORM / SQL | SQLAlchemy 2.1 (sync, typed `Mapped[]`; 2.0-style API), psycopg 3 | Raw SQL (via `text()`) allowed for reporting queries |
 | Migrations | Alembic | Forward-only (ADR-014) |
 | Validation | Pydantic v2 | Request/response schemas, settings |
 | Auth crypto | argon2-cffi (Argon2id), pyotp (TOTP), cryptography (AES-GCM) | |
 | Background jobs | In-house PostgreSQL job queue (`jobs` table, `FOR UPDATE SKIP LOCKED`) | ADR-005; no Redis in MVP |
-| Object storage | boto3 against S3 API; MinIO in development | |
+| Object storage | boto3 against S3 API; MinIO in development (image `cgr.dev/chainguard/minio`: Docker Hub no longer publishes `minio/minio`) | |
 | Excel/CSV | openpyxl, Python `csv` | |
 | Markdown | Server: markdown-it-py (for exports/PDF P2); client renders | |
 | Database | PostgreSQL 16 with `pg_trgm`, `unaccent` | |
-| Frontend | React 18, TypeScript 5 (strict), Vite | |
+| Frontend | React 18, TypeScript 5 (strict), Vite 8 | |
 | Routing / data | TanStack Router, TanStack Query | |
 | Tables | TanStack Table + virtualized rows (TanStack Virtual) | |
 | Forms | react-hook-form + zod | |
-| UI kit | Tailwind CSS + shadcn/ui (Radix primitives), lucide icons | Components copied into repo, owned by us |
+| UI kit | Tailwind CSS 4 + shadcn/ui (Radix primitives), lucide icons | Components copied into repo, owned by us |
 | Charts | Recharts | |
 | Markdown editor | Plain textarea with toolbar + preview (react-markdown + rehype-sanitize) | No WYSIWYG in MVP (ADR-015) |
 | API client | openapi-typescript + openapi-fetch generated from `/openapi.json` | NFR-MNT-03 |
@@ -150,7 +150,7 @@ flowchart BT
 ### 5.2 Boundary rules (enforced by import-linter in CI)
 
 1. A module's **repositories and models are private**. Other modules call its `service` functions or read its public `queries` (read DTOs).
-2. Dependencies point downward only (graph above); no cycles. Upward needs (e.g. execution needs to know a defect is linked) use **domain events** dispatched in-process after commit or a read-only query interface.
+2. Dependencies point downward only (graph above); no cycles. Upward needs (e.g. execution needs to know a defect is linked) use **in-process domain events** (handlers run in the producing transaction for consistency rules, or enqueue jobs for side effects; §5.4) or a read-only query interface.
 3. `reporting` may execute read-only SQL over any table (it owns metric definitions, ADR-013) but never writes outside its own tables.
 4. `integrations` never writes other modules' tables directly; it calls their services as a system actor.
 5. Every write path goes through a service function that: checks permission, validates, writes, records audit, enqueues jobs/events — inside one transaction (Unit of Work).
@@ -329,7 +329,7 @@ sequenceDiagram
 ## 10. Background processing (ADR-005)
 
 - `jobs` table: `id, organization_id, type, payload jsonb, status (queued|running|succeeded|failed|dead), run_at, attempts, max_attempts, last_error, locked_by, locked_at, dedupe_key, created_at, finished_at`.
-- Worker loop: `SELECT … WHERE status='queued' AND run_at <= now() ORDER BY run_at FOR UPDATE SKIP LOCKED LIMIT 1`, mark running, execute handler in its own transaction, mark result. Stale `running` jobs (locked > 15 min) are re-queued.
+- Worker loop: `SELECT … WHERE status='queued' AND run_at <= now() ORDER BY run_at FOR UPDATE SKIP LOCKED LIMIT 1`, mark running, execute handler in its own transaction, mark result: `succeeded`; retryable error → back to `queued` with backoff; `dead` when `max_attempts` is reached; `failed` for a permanent error raised by the handler. Stale `running` jobs (locked > 15 min) are re-queued.
 - Concurrency: N worker threads per container (default 4); scale containers for more.
 - Scheduler: same process; cron table in code; inserts jobs with `dedupe_key` (e.g. `snapshot:2026-11-03`) to avoid duplicates across workers.
 
@@ -394,7 +394,7 @@ flowchart TB
 | Risk | Controls |
 | --- | --- |
 | A01 Broken access control | Server-side permission checks in services; tenant-scoped repositories; 404 for non-members; automated authorization matrix tests for every endpoint × role; cross-tenant tests |
-| A02 Cryptographic failures | TLS 1.2+, HSTS; Argon2id; AES-256-GCM for secrets with key from env (`TCMS_ENCRYPTION_KEY`, rotation supported via key ID prefix); tokens hashed |
+| A02 Cryptographic failures | TLS 1.2+, HSTS; Argon2id; AES-256-GCM for secrets with keys from env (`TCMS_ENCRYPTION_KEYS`, rotation supported via key ID prefix); tokens hashed |
 | A03 Injection | SQLAlchemy parameter binding; no string-built SQL; filter fields allow-listed; Markdown sanitized; CSV export cells starting with `= + - @` prefixed with `'` (formula injection) |
 | A04 Insecure design | Business rules in services with tests; threat model per module in reviews |
 | A05 Security misconfiguration | Secure headers (CSP `default-src 'self'`), debug off in prod, OpenAPI docs UI disabled in prod (JSON schema kept), least-privileged DB role |
@@ -431,7 +431,7 @@ Additional: upload controls (§11); rate limiting (per-IP for auth, per-user 600
 | --- | --- | --- |
 | `TCMS_ENV` | `production` | `local`, `test`, `staging`, `production` |
 | `TCMS_BASE_URL` | `https://tcms.example.com` | Links in emails, CORS/CSRF origin check |
-| `DATABASE_URL` | `postgresql+psycopg://tcms:***@db:5432/tcms` | App role connection |
+| `DATABASE_URL` | `postgresql+psycopg://tcms_app:***@db:5432/tcms` | App role connection |
 | `DATABASE_MAINTENANCE_URL` | `postgresql+psycopg://tcms_owner:***@db/tcms` | Migrations, retention |
 | `TCMS_SECRET_KEY` | 64 random bytes (base64) | Signing (CSRF, pending-login) |
 | `TCMS_ENCRYPTION_KEYS` | `k1:base64key[,k0:oldkey]` | AES-GCM keys; first is active |

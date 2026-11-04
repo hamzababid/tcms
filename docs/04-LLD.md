@@ -284,7 +284,7 @@ version.approved_by/at = user/now; approval_mode = manual
 case.approved_version_id = version.id; case.status = approved
 ```
 
-Note: `test_case_versions` is immutable except approval columns; the immutability trigger allows updates only to `approved_by`, `approved_at`, `approval_mode` when they are NULL (one-time set).
+Note: `test_case_versions` is immutable except submission and approval columns; the immutability trigger allows `submitted_by`/`submitted_at` to change and `approved_by`, `approved_at`, `approval_mode` to be set once (NULL → value).
 
 ## 5. Execution algorithms
 
