@@ -313,7 +313,8 @@ sequenceDiagram
 ```
 
 - Server-side sessions in PostgreSQL (`sessions` table; token stored as SHA-256 hash). Revocation is immediate.
-- CSRF: double-submit token (`tcms_csrf` cookie value echoed in `X-CSRF-Token`) required for non-GET requests with cookie auth.
+- CSRF: double-submit token (`tcms_csrf` cookie value echoed in `X-CSRF-Token`) required for non-GET requests with cookie auth. Unauthenticated POSTs reject a foreign `Origin` (compared with `TCMS_BASE_URL`).
+- Pending sign-in: when MFA is enrolled, login creates a 5-minute session with `mfa_verified = false` that only allows `/auth/mfa/verify`; `sessions.mfa_failed_attempts` invalidates it after 5 wrong codes; success rotates to a new session.
 - API tokens: `Authorization: Bearer tcms_…`; CSRF not required; cookies ignored when a bearer token is present.
 - Phase 2 OIDC: authorization-code + PKCE against configured IdP; on callback, find user by verified email (or `sub` link); session issued the same way; org policy "SSO required" disables password login except for a break-glass admin.
 
@@ -321,7 +322,7 @@ sequenceDiagram
 
 1. Resolve **principal** (user or token) and **organization**.
 2. For project-scoped resources, resolve the resource's `project_id` (from path or by loading the entity).
-3. Compute effective permissions: org admin → all; else union of permissions of the user's project role (cached per request; per-session cache invalidated by `MembershipChanged`). Token scope intersects.
+3. Compute effective permissions: org admin → all; else union of permissions of the user's project role, resolved per request (one indexed query; no cross-request cache in the MVP, so nothing can go stale). Token scope intersects.
 4. Service function declares the required permission; `require(ctx, "cycle.manage")` raises `403 permission_denied`.
 5. Resource-level rules (e.g., "only the draft executor", "dev transitions only if assignee") are checked in services.
 6. Non-members get `404` for project resources (avoid leaking existence).
@@ -404,7 +405,7 @@ flowchart TB
 | A09 Logging & monitoring failures | Audit events + structured logs; security events alertable; log retention 90 days |
 | A10 SSRF | Outbound HTTP only from integrations to configured hosts (allow-list from connection config); no user-supplied URL fetches |
 
-Additional: upload controls (§11); rate limiting (per-IP for auth, per-user 600 req/min general; implemented in-process with a PostgreSQL-backed token bucket for auth endpoints only, in-memory elsewhere); dependency on no third-party CDN at runtime.
+Additional: upload controls (§11); rate limiting (per-IP for auth, per-user 600 req/min general; auth endpoints: fixed one-minute windows per IP in the `auth_rate_limits` table; the general per-user limit is in-memory per worker process); dependency on no third-party CDN at runtime.
 
 ## 14. Scalability and performance
 

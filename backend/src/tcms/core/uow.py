@@ -111,7 +111,7 @@ class UnitOfWork:
         else:
             entity_type = entity.__audit_type__
             entity_id = entity.id
-            entity_key = getattr(entity, "key", None)
+            entity_key = getattr(entity, "key", None) or getattr(entity, "name", None)
             project_id = getattr(entity, "project_id", None) or ctx.project_id
         context: dict[str, Any] = {"request_id": ctx.request_id}
         if ctx.ip:

@@ -38,4 +38,14 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // TanStack Router redirects are thrown objects by design.
+    // Single-purpose sign-in screens focus their only field (docs/07 §5.1 keyboard-first).
+    files: ["src/features/auth/**/*.tsx"],
+    rules: { "jsx-a11y/no-autofocus": "off" },
+  },
+  {
+    files: ["src/routes/**/*.tsx"],
+    rules: { "@typescript-eslint/only-throw-error": "off" },
+  },
 );

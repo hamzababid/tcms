@@ -51,10 +51,10 @@ def test_alembic_check_is_clean(database: Database) -> None:
 
 
 def test_migrated_schema_matches_docs_baseline(database: Database) -> None:
-    """pg_dump of the Alembic-migrated DB equals a DB built directly from docs/schema/*.sql."""
+    """pg_dump of the Alembic-migrated DB equals a DB built directly from docs/schema/0[1-9]_*.sql."""
     database.psql("-q", "-c", "DROP DATABASE IF EXISTS tcms_reference")
     database.psql("-q", "-c", "CREATE DATABASE tcms_reference OWNER tcms_owner")
-    for name in ("01_baseline.sql", "02_seed_system.sql"):
+    for name in ("01_baseline.sql", "02_seed_system.sql", "03_m1_additions.sql"):
         database.psql(
             "-q", "-f", f"/schema/{name}", user="tcms_owner", db="tcms_reference", password=OWNER_PASSWORD
         )
@@ -88,7 +88,7 @@ def test_app_role_privileges(app_engine: Engine) -> None:
             .scalars()
             .all()
         )
-        assert len(tables) == 50  # every MVP table in docs/schema/01_baseline.sql
+        assert len(tables) == 51  # docs/schema/01_baseline.sql + 03_m1_additions.sql
         for table in tables:
             privs = {
                 p: conn.execute(

@@ -12,6 +12,10 @@ help: ## List commands
 
 env:
 	@test -f .env || (cp .env.example .env && echo "created .env from .env.example")
+	@grep -q '^TCMS_SECRET_KEY=.\+' .env || { \
+	  sk=$$(openssl rand -base64 48 | tr -d '\n=+/'); ek=$$(openssl rand -base64 32); \
+	  sed -i.bak -e "s|^TCMS_SECRET_KEY=.*|TCMS_SECRET_KEY=$$sk|" -e "s|^TCMS_ENCRYPTION_KEYS=.*|TCMS_ENCRYPTION_KEYS=k1:$$ek|" .env \
+	  && rm -f .env.bak && echo "generated local TCMS_SECRET_KEY and TCMS_ENCRYPTION_KEYS in .env"; }
 
 up: env ## Start the stack (db, minio, mailpit, migrate, api, worker, web)
 	$(COMPOSE) up -d --build
@@ -39,7 +43,7 @@ seed: env ## Load demo data (dev profile)
 test: test-backend test-frontend ## Backend pytest + frontend vitest
 
 test-backend:
-	cd backend && uv run pytest -n auto
+	cd backend && uv run pytest -n auto -m "not timing" && uv run pytest -m timing -q
 
 test-frontend:
 	cd frontend && pnpm test

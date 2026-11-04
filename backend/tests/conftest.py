@@ -191,3 +191,24 @@ def stack_settings(database: Database, minio: dict[str, str], bucket: str) -> ob
         s3_secret_access_key=SecretStr(minio["secret_key"]),
         s3_bucket=bucket,
     )
+
+
+@pytest.fixture(scope="session")
+def m1_settings(stack_settings: object) -> object:
+    from tests.world import make_settings
+
+    return make_settings(stack_settings)  # type: ignore[arg-type]
+
+
+@pytest.fixture(scope="session")
+def app(m1_settings: object) -> object:
+    from tcms.main import create_app
+
+    return create_app(m1_settings)  # type: ignore[arg-type]
+
+
+@pytest.fixture(scope="session")
+def world(app: object, m1_settings: object) -> object:
+    from tests.world import World
+
+    return World(app, m1_settings, app.state.tcms.session_factory)  # type: ignore[attr-defined, arg-type]

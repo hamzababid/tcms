@@ -60,7 +60,7 @@ nightly: e2e all browsers · ZAP · perf (staging) · dependency audit · restor
 | --- | --- |
 | Lint/type | ruff, mypy (strict on `rules`, `service`), ESLint, `tsc --noEmit`, import-linter contracts: zero errors |
 | Unit + integration + API | 100% pass; coverage ≥ 85% lines on `*/service.py`, `*/rules.py`, `reporting/*`; ≥ 95% branches on `*/rules.py` |
-| BR traceability | `tests/test_rule_coverage.py` asserts that every BR ID in [01 PRD §7](01-PRD.md) appears in at least one test name or marker |
+| BR traceability | `tests/test_rule_coverage.py` asserts that every BR of a completed milestone (manifest `tests/br_manifest.py`) appears in at least one test name or marker; BR-33 is Phase 2 |
 | OpenAPI drift | Generated client equals committed client |
 | Migrations | `alembic upgrade head` from empty and from previous release; `alembic check` clean |
 | E2E | 100% pass; flaky tests quarantined with ticket, max 3 quarantined |
@@ -223,7 +223,7 @@ Level: **U** unit, **I** integration, **A** API, **E** end-to-end, **P** perform
 
 | ID | Title | Lvl | Pri | Refs | Expected |
 | --- | --- | --- | --- | --- | --- |
-| TCMS-001 | Sign in with valid credentials (no MFA) | E | H | FR-AUTH-001, AC-AUTH-01 | Lands on My Work; secure cookie set |
+| TCMS-001 | Sign in with valid credentials (no MFA) | E | H | FR-AUTH-001, AC-AUTH-01 | Lands on the last project (or the project list) until My Work exists in M4; secure cookie set |
 | TCMS-002 | Unknown email and wrong password give identical responses | A | H | AC-AUTH-02 | Same status/body; timing within 50 ms average |
 | TCMS-003 | Account locks after 10 failures | A | H | FR-AUTH-007, AC-AUTH-03 | 11th attempt refused; `auth.locked` audit |
 | TCMS-004 | Org Admin forced to enrol MFA | E | H | FR-AUTH-002, AC-AUTH-04 | Only MFA enrolment accessible until done |
@@ -247,7 +247,8 @@ Level: **U** unit, **I** integration, **A** API, **E** end-to-end, **P** perform
 | TCMS-022 | Archived project is read-only | A | M | AC-WS-02 | Writes → 409 project_archived |
 | TCMS-023 | New member defaults to Viewer | A | M | BR-29 | Role viewer |
 | TCMS-024 | Release status transitions | A | M | FR-WS-006 | Invalid transitions rejected |
-| TCMS-025 | Archived environment not selectable for new cycle | A | M | AC-WS-03 | 422 |
+| TCMS-025a | Archived environment hidden from pickers, restorable | A | M | AC-WS-03 | Excluded unless `include_archived` (M1) |
+| TCMS-025b | Archived environment not selectable for new cycle | A | M | AC-WS-03 | 422 (M3) |
 
 ### 15.3 Repository and test cases
 

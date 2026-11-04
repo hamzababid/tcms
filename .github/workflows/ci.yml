@@ -46,7 +46,9 @@ jobs:
         with: { version: "${{ env.UV_VERSION }}", enable-cache: true, cache-dependency-glob: backend/uv.lock }
       - run: cd backend && uv sync --frozen
       - name: unit + integration + API + contract (testcontainers PostgreSQL 16, MinIO)
-        run: cd backend && uv run pytest -n auto --cov=tcms --cov-branch --cov-report=json --cov-report=term
+        run: cd backend && uv run pytest -n auto -m "not timing" --cov=tcms --cov-branch --cov-report=json --cov-report=term
+      - name: timing-sensitive tests (serial)
+        run: cd backend && uv run pytest -m timing -q
       - name: coverage gate (service/rules/reporting)
         run: cd backend && uv run python scripts/coverage_gate.py coverage.json
 

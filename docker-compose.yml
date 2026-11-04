@@ -7,6 +7,8 @@ x-backend-env: &backend-env
   TCMS_PRODUCT_NAME: ${TCMS_PRODUCT_NAME:-Assay}
   TCMS_BASE_URL: ${TCMS_BASE_URL:-http://localhost:5173}
   LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  TCMS_SECRET_KEY: ${TCMS_SECRET_KEY}
+  TCMS_ENCRYPTION_KEYS: ${TCMS_ENCRYPTION_KEYS}
   DATABASE_URL: postgresql+psycopg://tcms_app:${TCMS_DB_APP_PASSWORD}@db:5432/tcms
   DATABASE_MAINTENANCE_URL: postgresql+psycopg://tcms_owner:${TCMS_DB_OWNER_PASSWORD}@db:5432/tcms
   S3_ENDPOINT_URL: http://minio:9000
