@@ -7,7 +7,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 UV_LINK_MODE=copy UV_PROJECT_EN
 RUN apt-get update \
  && apt-get install -y --no-install-recommends libmagic1 \
  && rm -rf /var/lib/apt/lists/* \
- && useradd --system --uid 10001 --home /app tcms
+ && useradd --system --uid 10001 --create-home --home-dir /home/tcms tcms
 COPY --from=ghcr.io/astral-sh/uv:0.13 /uv /usr/local/bin/uv
 WORKDIR /app/backend
 
