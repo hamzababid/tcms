@@ -15,6 +15,7 @@ Specification for a self-hosted, enterprise-grade Test Case Management System, w
 | --- | --- | --- |
 | — | [CLAUDE.md](CLAUDE.md) | Working rules, read order, non-negotiable invariants, commands |
 | — | [schema/](docs/schema/) | Executable PostgreSQL 16 baseline (roles, schema, system seed) and 35 invariant checks; verified on PostgreSQL 16.15 |
+| — | [brand/](docs/brand/) | Assay logo kit: SVG/PNG logos, app icon, favicon, colours, usage rules |
 | — | [design/](docs/design/) | High-fidelity UI screens and design tokens (visual reference for docs/07) |
 | 01 | [PRD](docs/01-PRD.md) | Vision, objectives, personas, journeys, FR/NFR/BR catalog with IDs, scope, assumptions, dependencies, risks, MVP acceptance |
 | 02 | [Functional Specification](docs/02-Functional-Specification.md) | Per-module behaviour: permissions, fields, validation, workflows, state machines, roll-up, coverage and metric formulas, errors, edge cases, ACs |
