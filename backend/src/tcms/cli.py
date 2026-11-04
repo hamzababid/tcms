@@ -56,6 +56,23 @@ def worker() -> None:
     w.run()
 
 
+@main.command("storage-init")
+def storage_init() -> None:
+    """Create the attachments bucket if it does not exist (local/dev object storage)."""
+    from botocore.exceptions import ClientError
+
+    from tcms.platform import storage
+
+    settings = get_settings()
+    client = storage.make_client(settings)
+    try:
+        storage.check_bucket(client, settings.s3_bucket)
+        click.echo(f"storage: bucket {settings.s3_bucket} exists")
+    except ClientError:
+        client.create_bucket(Bucket=settings.s3_bucket)
+        click.echo(f"storage: bucket {settings.s3_bucket} created")
+
+
 @main.command()
 @click.option("--profile", type=click.Choice(["dev", "e2e", "large"]), default="dev", show_default=True)
 def seed(profile: str) -> None:
