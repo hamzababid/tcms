@@ -57,9 +57,9 @@ test("TCMS-001: a member signs in and lands on their project (review K5)", async
   await expect(page).toHaveURL(/\/(p\/SPARK\/activity|projects)$/);
   await page.goto("/p/SPARK/activity");
   await expect(page.getByRole("heading", { name: /SPARK Platform · Activity/ })).toBeVisible();
-  await expect(
-    page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Settings" }),
-  ).toHaveCount(0);
+  const nav = page.getByRole("navigation", { name: "Primary" });
+  await expect(nav.getByRole("img", { name: "Assay" })).toBeVisible(); // on-dark logo (docs/brand)
+  await expect(nav.getByRole("link", { name: "Settings" })).toHaveCount(0);
   await expectAccessible(page);
   await page.getByRole("button", { name: /Account menu/ }).click();
   await page.getByRole("menuitem", { name: "Sign out" }).click();

@@ -4,7 +4,7 @@ COMPOSE := docker compose
 -include .env
 WEB_PORT ?= $(or $(TCMS_WEB_PORT),5173)
 
-.PHONY: help env up down logs ps migrate seed test test-backend test-frontend e2e lint lint-backend \
+.PHONY: help env up down logs ps migrate seed test test-backend test-frontend e2e lint lint-backend brand brand-check \
         lint-frontend format api-client api-client-check schema-check ci
 
 help: ## List commands
@@ -51,7 +51,7 @@ test-frontend:
 e2e: ## Playwright against the running stack
 	cd frontend && E2E_BASE_URL=http://localhost:$(WEB_PORT) pnpm e2e
 
-lint: lint-backend lint-frontend ## ruff, mypy, import-linter, eslint, tsc
+lint: lint-backend lint-frontend brand-check ## ruff, mypy, import-linter, eslint, tsc, brand drift
 
 lint-backend:
 	cd backend && uv run ruff check src tests migrations && uv run ruff format --check src tests migrations \
@@ -59,6 +59,12 @@ lint-backend:
 
 lint-frontend:
 	cd frontend && pnpm lint && pnpm typecheck && pnpm format:check
+
+brand: ## Copy served brand assets from docs/brand into frontend/public
+	./scripts/sync-brand.sh
+
+brand-check: ## Fail if frontend/public brand assets differ from docs/brand
+	./scripts/sync-brand.sh check
 
 format: ## Apply formatters
 	cd backend && uv run ruff format src tests migrations && uv run ruff check --fix src tests migrations

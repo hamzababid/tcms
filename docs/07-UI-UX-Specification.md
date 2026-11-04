@@ -513,7 +513,16 @@ Commit: progress bar → report link.
 
 ### 6.1 Direction
 
-Neutral, calm, high-contrast enterprise UI. Inter (UI) and JetBrains Mono (keys, code). Base font 14 px, tables 13 px, line-height 1.45. Light and dark themes via CSS variables. 4 px spacing grid. Radius 6 px (controls), 8 px (cards). Minimal shadows (panels only).
+Neutral, calm, high-contrast enterprise UI. Inter (UI) and JetBrains Mono (keys, code). Logo, icons and favicon come from [docs/brand](brand/README.md); `docs/brand` is the only source, and `make brand` copies the served files into `frontend/public` (`make brand-check` fails CI on drift).
+
+| Place | Asset |
+| --- | --- |
+| Sign-in, MFA, reset and invitation screens (light) | `assay-logo.svg`, 40 px tall |
+| Sidebar (Night background) | `assay-logo-on-dark.svg`, 28 px; collapsed: `assay-mark-on-dark.svg` |
+| Browser tab, bookmarks, home screen | `favicon.ico`, `favicon.svg`, `png/assay-app-icon-180.png` (Apple touch), `192`/`512` PNGs in the web manifest; theme colour Assay Indigo `#4F46E5` |
+| HTML emails | `png/assay-logo-64h.png` shown at 32 px (email clients often block SVG), loaded from `TCMS_BASE_URL/brand/` |
+
+Logos are loaded as images, never inlined (the SVGs reuse mask ids), with the product name as alt text. Respect the clear-space and minimum-size rules in docs/brand/README.md. Base font 14 px, tables 13 px, line-height 1.45. Light and dark themes via CSS variables. 4 px spacing grid. Radius 6 px (controls), 8 px (cards). Minimal shadows (panels only).
 
 ### 6.2 Status tokens (single source: `StatusBadge`)
 

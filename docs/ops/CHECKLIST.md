@@ -59,3 +59,12 @@ Backend tests are in `backend/tests/api/` unless noted; E2E in `frontend/e2e/m1.
 | US-164 User administration (API) | ✅ | TCMS-011 `test_tcms_011_…`, `test_last_org_admin_is_protected`, `test_admin_resets_user_mfa` | Users screen: M8 |
 
 Also: `project.admin_accessed` audited once per session (`test_org_admin_sees_every_project_and_access_is_audited_once_per_session`); CSRF (TCMS-014) and Origin checks; auth rate limit (`test_auth_rate_limit`); BR-16 key allocation (`test_br_16_…`); BR-25 (`test_br_25_stale_row_version`). Migration 0002 (`docs/schema/03_m1_additions.sql`) passes the schema diff and `99_verify.sql`. Seed `dev`/`e2e` profiles. Deferred items: see known-limitations L8–L12.
+
+## Brand assets (branch `feat/brand-assets`)
+
+| Item | Status | Verified by |
+| --- | --- | --- |
+| Favicon (.ico/.svg), Apple touch icon, web manifest (192/512), theme colour | ✅ | E2E `smoke.spec.ts` "brand assets … are served" |
+| Logo on sign-in screens (light) and sidebar (on-dark; mark when collapsed) | ✅ | E2E smoke + TCMS-001 (logo image with alt "Assay"), screenshots |
+| Logo header in HTML emails (PNG) | ✅ | `unit/test_email_render.py`; reset email checked in Mailpit |
+| Single source `docs/brand`, copies in `frontend/public` kept identical | ✅ | `make brand-check` (part of `make lint` and CI) |

@@ -33,10 +33,11 @@ SUBJECTS = {
 }
 
 
-def render(template: str, context: dict[str, Any], product: str) -> tuple[str, str, str]:
+def render(template: str, context: dict[str, Any], product: str, base_url: str = "") -> tuple[str, str, str]:
     if template not in SUBJECTS:
         raise PermanentJobError(f"unknown email template {template!r}")
-    ctx = {**context, "product": product}
+    # PNG logo (docs/brand/png/assay-logo-64h.png, served by the web app): email clients often block SVG.
+    ctx = {**context, "product": product, "logo_url": f"{base_url.rstrip('/')}/brand/assay-logo-64h.png"}
     subject = SUBJECTS[template].format(product=product)
     text = _env_text.get_template(f"{template}.txt").render(ctx)
     html = _env_html.get_template(f"{template}.html").render(ctx)
@@ -50,7 +51,10 @@ def send_email(job: JobInfo, uow: UnitOfWork) -> None:
     if not isinstance(to, str) or "@" not in to:
         raise PermanentJobError("email job without a valid recipient")
     subject, text, html = render(
-        str(job.payload.get("template")), dict(job.payload.get("context") or {}), settings.tcms_product_name
+        str(job.payload.get("template")),
+        dict(job.payload.get("context") or {}),
+        settings.tcms_product_name,
+        settings.tcms_base_url,
     )
     msg = EmailMessage()
     msg["From"] = settings.smtp_from
