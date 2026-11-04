@@ -731,3 +731,30 @@ def test_comments_mentions_edit_window(space: Space) -> None:
         "/api/v1/comments", json={"entity_type": "test_case", "entity_id": case["id"], "body": "hi"}
     )
     assert r.status_code == (201 if viewer_may else 403)
+
+
+def test_us_060_automation_keys_unique_per_project(space: Space, world: World) -> None:
+    """FR-TD-014: keys are editable metadata, unique within the project (not across projects)."""
+    a, b = space.post_case(title="Case A"), space.post_case(title="Case B")
+    r = space.admin.patch(
+        f"/api/v1/test-cases/{a['id']}",
+        json={
+            "automation_status": "automated",
+            "automation_keys": ["auth.login_ok"],
+            "row_version": a["row_version"],
+        },
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["automation_keys"] == ["auth.login_ok"]
+    r = space.admin.patch(
+        f"/api/v1/test-cases/{b['id']}",
+        json={"automation_keys": ["auth.login_ok"], "row_version": b["row_version"]},
+    )
+    assert (r.status_code, r.json()["code"]) == (409, "automation_key_taken"), r.text
+    other = Space(world, "OTHER")
+    c = other.post_case()
+    r = other.admin.patch(
+        f"/api/v1/test-cases/{c['id']}",
+        json={"automation_keys": ["auth.login_ok"], "row_version": c["row_version"]},
+    )
+    assert r.status_code == 200, r.text
