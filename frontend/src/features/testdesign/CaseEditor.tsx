@@ -1,7 +1,16 @@
 import { useMutation } from "@tanstack/react-query";
 import { useBlocker } from "@tanstack/react-router";
 import { Info } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ClipboardEvent,
+} from "react";
 
 import { api, ApiError } from "@/api/client";
 import type { Me, Project, ProjectMember } from "@/api/queries";
@@ -12,8 +21,18 @@ import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input, Select } from "@/components/ui/field";
 import { formatDateTime } from "@/lib/format";
 
-import { emptyToNull, useInvalidateCase, type CaseRead, type ContentIn, type Folder, type Tag } from "./api";
+import {
+  emptyToNull,
+  uploadAttachment,
+  useInvalidateCase,
+  useReviewers,
+  type CaseRead,
+  type ContentIn,
+  type Folder,
+  type Tag,
+} from "./api";
 import { AUTOMATION, CASE_TYPES, PRIORITY_LABELS, TECHNIQUES } from "./labels";
+import { AttachmentList } from "./AttachmentList";
 import { newStep, StepGrid, type StepDraft } from "./StepGrid";
 
 interface Draft {
@@ -241,6 +260,7 @@ export function CaseEditor({
   const [touched, setTouched] = useState(false);
   const [lastLocal, setLastLocal] = useState<string | null>(null);
   const [tagInput, setTagInput] = useState("");
+  const reviewers = useReviewers(members);
   const errors = validate(draft);
   const strip = (d: Draft) => ({
     ...d,
@@ -386,6 +406,13 @@ export function CaseEditor({
     setTagInput("");
   };
   const fieldErrors = serverError instanceof ApiError ? serverError.errors : [];
+  const pasteUpload = existing
+    ? async (file: File) => {
+        const a = await uploadAttachment("test_case", existing.id, file);
+        invalidate(project.id, existing.id);
+        return `![${a.file_name.replace(/[[\]]/g, "")}](${a.url})`;
+      }
+    : null;
 
   return (
     <div className="mx-auto flex max-w-[1280px] flex-col gap-4">
@@ -490,147 +517,152 @@ export function CaseEditor({
       ) : null}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <section
-          aria-label="Content"
-          className="flex flex-col gap-4 rounded-card border border-border bg-surface p-5"
-        >
-          <Field label="Title" required error={showErr.title}>
-            {(p) => (
-              <Input
-                {...p}
-                ref={titleRef}
-                value={draft.title}
-                maxLength={255}
-                onChange={(e) => {
-                  set("title", e.target.value);
-                }}
-              />
-            )}
-          </Field>
-          <fieldset className="flex items-center gap-4 text-sm">
-            <legend className="mb-1 text-xs font-medium text-ink-secondary">Format</legend>
-            {(["steps", "text"] as const).map((f) => (
-              <label key={f} className="flex items-center gap-1.5">
-                <input
-                  type="radio"
-                  name="format"
-                  checked={draft.format === f}
-                  onChange={() => {
-                    const hasSteps = draft.steps.some((s) => s.action.trim() || s.expected_result.trim());
-                    if (
-                      f === "text" &&
-                      hasSteps &&
-                      !window.confirm("Switching to text discards the steps. Continue?")
-                    )
-                      return;
-                    set("format", f);
-                  }}
-                />
-                {f === "steps" ? "Steps" : "Text"}
-              </label>
-            ))}
-          </fieldset>
-          <MdField
-            label="Description"
-            value={draft.description}
-            onChange={(v) => {
-              set("description", v);
-            }}
-          />
-          <MdField
-            label="Preconditions"
-            value={draft.preconditions}
-            onChange={(v) => {
-              set("preconditions", v);
-            }}
-          />
-          <MdField
-            label="Test data"
-            value={draft.test_data}
-            onChange={(v) => {
-              set("test_data", v);
-            }}
-            placeholder="Accounts, payloads, files…"
-          />
-          {draft.format === "steps" ? (
-            <div>
-              <div className="mb-2 flex flex-wrap items-baseline gap-3">
-                <span className="text-xs font-medium text-ink-secondary">Steps *</span>
-                <span className="text-xs text-ink-muted">
-                  Enter new step · Tab next cell · Alt ↑↓ reorder · Ctrl D duplicate · Ctrl ⌫ delete · paste
-                  rows from a spreadsheet
-                </span>
-                <span className="flex-1" />
-                <Checkbox
-                  label="Data column"
-                  checked={showData}
-                  onChange={(e) => {
-                    setShowData(e.target.checked);
-                  }}
-                />
-              </div>
-              <StepGrid
-                steps={draft.steps}
-                onChange={(s) => {
-                  set("steps", s);
-                }}
-                showData={showData}
-                errors={showErr.steps}
-                stepAttachments={
-                  existing
-                    ? {
-                        byStep,
-                        canUpload: true,
-                        maxMb: project.settings.attachment_max_mb,
-                        onChanged: () => {
-                          invalidate(project.id, existing.id);
-                        },
-                      }
-                    : null
-                }
-              />
-            </div>
-          ) : (
-            <MdField
-              label="Procedure"
-              required
-              value={draft.text_body}
-              onChange={(v) => {
-                set("text_body", v);
-              }}
-              error={showErr.text_body}
-              rows={8}
-            />
-          )}
-          <MdField
-            label="Overall expected result"
-            value={draft.expected_result}
-            onChange={(v) => {
-              set("expected_result", v);
-            }}
-          />
-          <MdField
-            label="Postconditions"
-            value={draft.postconditions}
-            onChange={(v) => {
-              set("postconditions", v);
-            }}
-          />
-          {existing ? (
-            <Field label="Change note" hint="Shown in the version history">
+        <PasteUpload.Provider value={pasteUpload}>
+          <section
+            aria-label="Content"
+            className="flex flex-col gap-4 rounded-card border border-border bg-surface p-5"
+          >
+            <Field label="Title" required error={showErr.title}>
               {(p) => (
                 <Input
                   {...p}
-                  maxLength={500}
-                  value={draft.change_note}
+                  ref={titleRef}
+                  value={draft.title}
+                  maxLength={255}
                   onChange={(e) => {
-                    set("change_note", e.target.value);
+                    set("title", e.target.value);
                   }}
                 />
               )}
             </Field>
-          ) : null}
-        </section>
+            <fieldset className="flex items-center gap-4 text-sm">
+              <legend className="mb-1 text-xs font-medium text-ink-secondary">Format</legend>
+              {(["steps", "text"] as const).map((f) => (
+                <label key={f} className="flex items-center gap-1.5">
+                  <input
+                    type="radio"
+                    name="format"
+                    checked={draft.format === f}
+                    onChange={() => {
+                      const hasSteps = draft.steps.some((s) => s.action.trim() || s.expected_result.trim());
+                      if (
+                        f === "text" &&
+                        hasSteps &&
+                        !window.confirm("Switching to text discards the steps. Continue?")
+                      )
+                        return;
+                      set("format", f);
+                    }}
+                  />
+                  {f === "steps" ? "Steps" : "Text"}
+                </label>
+              ))}
+            </fieldset>
+            <p className="-mt-2 text-xs text-ink-muted">
+              Text fields support Markdown{existing ? "; paste an image into any of them to attach it" : ""}.
+            </p>
+            <MdField
+              label="Description"
+              value={draft.description}
+              onChange={(v) => {
+                set("description", v);
+              }}
+            />
+            <MdField
+              label="Preconditions"
+              value={draft.preconditions}
+              onChange={(v) => {
+                set("preconditions", v);
+              }}
+            />
+            <MdField
+              label="Test data"
+              value={draft.test_data}
+              onChange={(v) => {
+                set("test_data", v);
+              }}
+              placeholder="Accounts, payloads, files…"
+            />
+            {draft.format === "steps" ? (
+              <div>
+                <div className="mb-2 flex flex-wrap items-baseline gap-3">
+                  <span className="text-xs font-medium text-ink-secondary">Steps *</span>
+                  <span className="text-xs text-ink-muted">
+                    Enter new step · Tab next cell · Alt ↑↓ reorder · Ctrl D duplicate · Ctrl ⌫ delete · paste
+                    rows from a spreadsheet
+                  </span>
+                  <span className="flex-1" />
+                  <Checkbox
+                    label="Data column"
+                    checked={showData}
+                    onChange={(e) => {
+                      setShowData(e.target.checked);
+                    }}
+                  />
+                </div>
+                <StepGrid
+                  steps={draft.steps}
+                  onChange={(s) => {
+                    set("steps", s);
+                  }}
+                  showData={showData}
+                  errors={showErr.steps}
+                  stepAttachments={
+                    existing
+                      ? {
+                          byStep,
+                          canUpload: true,
+                          maxMb: project.settings.attachment_max_mb,
+                          onChanged: () => {
+                            invalidate(project.id, existing.id);
+                          },
+                        }
+                      : null
+                  }
+                />
+              </div>
+            ) : (
+              <MdField
+                label="Procedure"
+                required
+                value={draft.text_body}
+                onChange={(v) => {
+                  set("text_body", v);
+                }}
+                error={showErr.text_body}
+                rows={8}
+              />
+            )}
+            <MdField
+              label="Overall expected result"
+              value={draft.expected_result}
+              onChange={(v) => {
+                set("expected_result", v);
+              }}
+            />
+            <MdField
+              label="Postconditions"
+              value={draft.postconditions}
+              onChange={(v) => {
+                set("postconditions", v);
+              }}
+            />
+            {existing ? (
+              <Field label="Change note" hint="Shown in the version history">
+                {(p) => (
+                  <Input
+                    {...p}
+                    maxLength={500}
+                    value={draft.change_note}
+                    onChange={(e) => {
+                      set("change_note", e.target.value);
+                    }}
+                  />
+                )}
+              </Field>
+            ) : null}
+          </section>
+        </PasteUpload.Provider>
 
         <aside
           aria-label="Properties"
@@ -696,7 +728,7 @@ export function CaseEditor({
           <EnumField
             label="Reviewer"
             value={draft.reviewer_id}
-            options={Object.fromEntries(members.map((m) => [m.user.id, m.user.display_name]))}
+            options={Object.fromEntries(reviewers.map((m) => [m.user.id, m.user.display_name]))}
             onChange={(v) => {
               set("reviewer_id", v);
             }}
@@ -795,9 +827,24 @@ export function CaseEditor({
               />
             )}
           </Field>
-          {!existing ? (
-            <p className="text-xs text-ink-muted">Attachments can be added after the case is created.</p>
-          ) : null}
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs font-medium text-ink-secondary">Attachments</span>
+            {latest ? (
+              <AttachmentList
+                attachments={latest.attachments}
+                entityType="test_case"
+                entityId={latest.id}
+                canUpload
+                canRemove={() => true}
+                maxMb={project.settings.attachment_max_mb}
+                onChanged={() => {
+                  invalidate(project.id, latest.id);
+                }}
+              />
+            ) : (
+              <p className="text-xs text-ink-muted">Attachments can be added after the case is created.</p>
+            )}
+          </div>
         </aside>
       </div>
       <ConflictDialog
@@ -813,6 +860,9 @@ export function CaseEditor({
     </div>
   );
 }
+
+/** Uploads a pasted image as a case attachment and returns the Markdown that shows it (US-055). */
+const PasteUpload = createContext<((file: File) => Promise<string>) | null>(null);
 
 function MdField({
   label,
@@ -831,6 +881,27 @@ function MdField({
   placeholder?: string;
   rows?: number;
 }) {
+  const upload = useContext(PasteUpload);
+  const toast = useToast();
+  const latest = useRef(value);
+  useEffect(() => {
+    latest.current = value;
+  }, [value]);
+  const onPaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
+    const file = [...e.clipboardData.files].find((f) => f.type.startsWith("image/"));
+    if (!upload || !file) return;
+    e.preventDefault();
+    const at = e.currentTarget.selectionStart;
+    upload(file).then(
+      (snippet) => {
+        const v = latest.current;
+        onChange(`${v.slice(0, at)}${snippet}${v.slice(at)}`);
+      },
+      (err: unknown) => {
+        toast(errorMessage(err), "error");
+      },
+    );
+  };
   return (
     <Field label={label} required={Boolean(required)} error={error}>
       {(p) => (
@@ -839,6 +910,7 @@ function MdField({
           rows={rows}
           value={value}
           {...(placeholder ? { placeholder } : {})}
+          onPaste={onPaste}
           onChange={(e) => {
             onChange(e.target.value);
           }}

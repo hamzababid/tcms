@@ -81,7 +81,7 @@ export function EmptyState({ text, action }: { text: string; action?: ReactNode 
 export function Skeleton({ rows = 3 }: { rows?: number }) {
   const items = useMemo(() => Array.from({ length: rows }, (_, i) => i), [rows]);
   return (
-    <div aria-busy="true" aria-label="Loading" className="flex flex-col gap-2">
+    <div role="status" aria-busy="true" aria-label="Loading" className="flex flex-col gap-2">
       {items.map((i) => (
         <div key={i} className="h-10 animate-pulse rounded-control bg-[var(--border)]" />
       ))}

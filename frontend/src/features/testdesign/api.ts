@@ -4,6 +4,7 @@
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/api/client";
+import { useRoles, type ProjectMember } from "@/api/queries";
 import type { components } from "@/api/schema";
 
 export type Folder = components["schemas"]["FolderRead"];
@@ -208,4 +209,13 @@ export async function uploadAttachment(
 export function emptyToNull(value: string | null | undefined): string | null {
   const v = (value ?? "").trim();
   return v === "" ? null : (value ?? null);
+}
+
+/** Members whose role may approve cases (reviewer must hold `testcase.approve`, docs/02 §5.2). */
+export function useReviewers(members: ProjectMember[]): ProjectMember[] {
+  const roles = useRoles();
+  const approving = new Set(
+    (roles.data ?? []).filter((r) => r.permissions.includes("testcase.approve")).map((r) => r.code),
+  );
+  return members.filter((m) => approving.has(m.role.code));
 }

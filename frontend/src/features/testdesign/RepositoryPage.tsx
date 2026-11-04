@@ -19,7 +19,7 @@ type FolderDialog =
   | { kind: "create"; parent: Folder | null }
   | { kind: "rename"; folder: Folder }
   | { kind: "delete"; folder: Folder }
-  | { kind: "move"; folder: Folder; parentId: string | null }
+  | { kind: "move"; folder: Folder; parentId: string | null; position?: number }
   | null;
 
 /** Test repository (docs/07 §5.4; US-040…045). */
@@ -121,7 +121,11 @@ export function RepositoryPage({
           return (
             await api.POST("/api/v1/folders/{folder_id}/move", {
               params: { path: { folder_id: d.folder.id } },
-              body: { parent_id: d.parentId, row_version: d.folder.row_version },
+              body: {
+                parent_id: d.parentId,
+                position: d.position ?? null,
+                row_version: d.folder.row_version,
+              },
             })
           ).data;
       }
@@ -186,10 +190,14 @@ export function RepositoryPage({
     onDelete: (folder) => {
       setDialog({ kind: "delete", folder });
     },
-    onMoveFolder: (folder, parentId) => {
-      // docs/07 §5.4: confirm when moving more than 100 cases
-      if (folder.total_count > 100) setDialog({ kind: "move", folder, parentId });
-      else folderMut.mutate({ kind: "move", folder, parentId });
+    onMoveFolder: (folder, parentId, position) => {
+      const target =
+        position === undefined
+          ? { kind: "move" as const, folder, parentId }
+          : { kind: "move" as const, folder, parentId, position };
+      // docs/07 §5.4: confirm when moving more than 100 cases to another folder (reordering needs no confirmation)
+      if (folder.total_count > 100 && parentId !== folder.parent_id) setDialog(target);
+      else folderMut.mutate(target);
     },
     onDropCases: (ids, folder) => {
       moveCases.mutate({ ids, folder });
@@ -219,7 +227,7 @@ export function RepositoryPage({
       <div className="flex min-h-0 flex-1 gap-4">
         <aside
           aria-label="Folders"
-          className="flex w-[280px] shrink-0 flex-col rounded-card border border-border bg-surface p-3"
+          className="flex w-[260px] shrink-0 flex-col rounded-card border border-border bg-surface p-3"
         >
           {folders.isPending ? (
             <Skeleton rows={6} />
@@ -285,7 +293,7 @@ export function RepositoryPage({
         {caseKey ? (
           <aside
             aria-label={`${caseKey} details`}
-            className="flex w-[clamp(420px,40vw,720px)] shrink-0 flex-col overflow-hidden rounded-card border border-border bg-surface"
+            className="flex w-[clamp(380px,32vw,600px)] shrink-0 flex-col overflow-hidden rounded-card border border-border bg-surface"
           >
             <PanelCase
               project={project}

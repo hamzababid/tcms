@@ -9,7 +9,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Field, Select } from "@/components/ui/field";
 import { can } from "@/lib/permissions";
 
-import { useInvalidateCase, type BulkRequest, type Folder, type Tag } from "./api";
+import { useInvalidateCase, useReviewers, type BulkRequest, type Folder, type Tag } from "./api";
 import { AUTOMATION, CASE_TYPES, PRIORITY_LABELS } from "./labels";
 
 type Action = BulkRequest["action"];
@@ -143,6 +143,7 @@ function BulkDialog({
   const invalidate = useInvalidateCase();
   const [value, setValue] = useState("");
   const [picked, setPicked] = useState<string[]>([]);
+  const reviewers = useReviewers(members);
   const run = useMutation({
     mutationFn: async () => {
       const params: Record<string, unknown> =
@@ -192,9 +193,11 @@ function BulkDialog({
           ? Object.entries(CASE_TYPES)
           : spec.input === "automation"
             ? Object.entries(AUTOMATION)
-            : spec.input === "owner" || spec.input === "reviewer"
+            : spec.input === "owner"
               ? members.map((m) => [m.user.id, m.user.display_name])
-              : [];
+              : spec.input === "reviewer"
+                ? reviewers.map((m) => [m.user.id, m.user.display_name])
+                : [];
   return (
     <Dialog
       open

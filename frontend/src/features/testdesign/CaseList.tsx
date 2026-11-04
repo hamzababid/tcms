@@ -100,6 +100,8 @@ export function CaseList({
   };
   if (!folderId) delete query.include_subfolders;
   const cases = useCases(projectId, query);
+  // With the side panel open the list keeps key, title and icon-only priority/status (docs/07 §9).
+  const compact = selectedKey !== null;
   // Selection belongs to one filter: a new filter starts with nothing selected.
   const paramsKey = JSON.stringify(params);
   const [sel, setSel] = useState<{ key: string; ids: Set<string>; all: boolean }>({
@@ -175,7 +177,12 @@ export function CaseList({
       aria-label="Test cases"
       className="flex min-h-0 min-w-0 flex-1 flex-col rounded-card border border-border bg-surface"
     >
-      <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2">
+      <div
+        className={cn(
+          "flex items-center gap-2 border-b border-border px-3 py-2",
+          compact ? "flex-nowrap overflow-x-auto" : "flex-wrap",
+        )}
+      >
         <FilterSelect
           label="Status"
           value={filters.status}
@@ -225,12 +232,11 @@ export function CaseList({
             }}
           />
         ) : null}
-        <span className="flex-1" />
         <Input
           type="search"
           aria-label="Search cases"
           placeholder="Search by key or text"
-          className="h-8 w-56"
+          className="h-8 min-w-48 flex-1"
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -305,9 +311,9 @@ export function CaseList({
                       aria-sort={active ? (desc ? "descending" : "ascending") : "none"}
                       className={cn(
                         "px-2",
-                        k === "key" && "w-36",
-                        k === "priority" && "w-24",
-                        k === "status" && "w-32",
+                        k === "key" && "w-32",
+                        k === "priority" && (compact ? "w-10" : "w-24"),
+                        k === "status" && (compact ? "w-10" : "w-32"),
                       )}
                     >
                       <button
@@ -317,18 +323,26 @@ export function CaseList({
                           set({ sort: active && !desc ? `-${k}` : k });
                         }}
                       >
-                        {SORTABLE[k]}
+                        {compact && (k === "priority" || k === "status") ? (
+                          <span className="sr-only">{SORTABLE[k]}</span>
+                        ) : (
+                          SORTABLE[k]
+                        )}
                         {active ? (desc ? " ↓" : " ↑") : ""}
                       </button>
                     </th>
                   );
                 })}
-                <th scope="col" className="w-14 px-2">
-                  Ver
-                </th>
-                <th scope="col" className="w-36 px-2">
-                  Owner
-                </th>
+                {compact ? null : (
+                  <>
+                    <th scope="col" className="w-14 px-2">
+                      Ver
+                    </th>
+                    <th scope="col" className="w-36 px-2">
+                      Owner
+                    </th>
+                  </>
+                )}
               </tr>
             </thead>
             <tbody ref={tableRef}>
@@ -375,7 +389,7 @@ export function CaseList({
                       }}
                     />
                   </td>
-                  <td className="px-2 font-mono text-xs text-ink-secondary">{c.key}</td>
+                  <td className="whitespace-nowrap px-2 font-mono text-xs text-ink-secondary">{c.key}</td>
                   <td className="max-w-0 truncate px-2 text-ink" title={c.title}>
                     {c.title}
                     {c.tags.length ? (
@@ -383,13 +397,19 @@ export function CaseList({
                     ) : null}
                   </td>
                   <td className="px-2">
-                    <PriorityIcon priority={c.priority} />
+                    <PriorityIcon priority={c.priority} compact={compact} />
                   </td>
                   <td className="px-2">
-                    <StatusBadge kind="case" status={c.status} />
+                    <StatusBadge kind="case" status={c.status} compact={compact} />
                   </td>
-                  <td className="px-2 text-xs text-ink-secondary">v{c.latest_version_no}</td>
-                  <td className="truncate px-2 text-xs text-ink-secondary">{c.owner?.display_name ?? "—"}</td>
+                  {compact ? null : (
+                    <>
+                      <td className="px-2 text-xs text-ink-secondary">v{c.latest_version_no}</td>
+                      <td className="truncate px-2 text-xs text-ink-secondary">
+                        {c.owner?.display_name ?? "—"}
+                      </td>
+                    </>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -447,7 +467,7 @@ function FilterSelect({
   return (
     <Select
       aria-label={`Filter by ${label.toLowerCase()}`}
-      className={cn("h-8 w-auto min-w-28 text-xs", value && "border-accent text-accent")}
+      className={cn("h-8 w-auto text-xs", value && "border-accent text-accent")}
       value={value}
       onChange={(e) => {
         onChange(e.target.value);

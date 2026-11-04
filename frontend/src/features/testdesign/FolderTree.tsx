@@ -52,7 +52,7 @@ export interface FolderActions {
   onRename: (folder: Folder) => void;
   onToggleArchive: (folder: Folder) => void;
   onDelete: (folder: Folder) => void;
-  onMoveFolder: (folder: Folder, parentId: string | null) => void;
+  onMoveFolder: (folder: Folder, parentId: string | null, position?: number) => void;
   onDropCases: (caseIds: string[], folder: Folder) => void;
 }
 
@@ -115,6 +115,19 @@ export function FolderTree({
     });
   };
 
+  /** Siblings in display order, for reordering (docs/07 §5.4); Alt+↑/↓ from the keyboard. */
+  const siblingsOf = (f: Folder) =>
+    folders
+      .filter((x) => x.parent_id === f.parent_id)
+      .sort((a, b) => a.position - b.position || a.name.localeCompare(b.name));
+  const reorder = (f: Folder, delta: number) => {
+    const sibs = siblingsOf(f);
+    const i = sibs.findIndex((x) => x.id === f.id);
+    const j = i + delta;
+    if (i < 0 || j < 0 || j >= sibs.length) return;
+    actions.onMoveFolder(f, f.parent_id, j + 1);
+  };
+
   const focusRow = (index: number) => {
     const items = listRef.current?.querySelectorAll<HTMLElement>("[role=treeitem]");
     items?.[Math.max(0, Math.min(index, items.length - 1))]?.focus();
@@ -123,7 +136,9 @@ export function FolderTree({
   const onKey = (e: KeyboardEvent, index: number, row: Row) => {
     const id = row.node.folder.id;
     const hasChildren = row.node.children.length > 0;
-    if (e.key === "ArrowDown") focusRow(index + 1);
+    if (canManage && e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+      reorder(row.node.folder, e.key === "ArrowUp" ? -1 : 1);
+    } else if (e.key === "ArrowDown") focusRow(index + 1);
     else if (e.key === "ArrowUp") focusRow(index - 1);
     else if (e.key === "ArrowRight" && hasChildren) toggle(id, true);
     else if (e.key === "ArrowLeft") {
@@ -290,7 +305,17 @@ export function FolderTree({
               <span className="text-xs tabular-nums text-ink-muted" aria-label={`${f.total_count} cases`}>
                 {f.total_count.toLocaleString()}
               </span>
-              {canManage ? <FolderMenu folder={f} actions={actions} /> : null}
+              {canManage ? (
+                <FolderMenu
+                  folder={f}
+                  actions={actions}
+                  canUp={siblingsOf(f)[0]?.id !== f.id}
+                  canDown={siblingsOf(f).at(-1)?.id !== f.id}
+                  onReorder={(d) => {
+                    reorder(f, d);
+                  }}
+                />
+              ) : null}
             </div>
           );
         })}
@@ -299,7 +324,19 @@ export function FolderTree({
   );
 }
 
-function FolderMenu({ folder, actions }: { folder: Folder; actions: FolderActions }) {
+function FolderMenu({
+  folder,
+  actions,
+  canUp,
+  canDown,
+  onReorder,
+}: {
+  folder: Folder;
+  actions: FolderActions;
+  canUp: boolean;
+  canDown: boolean;
+  onReorder: (delta: number) => void;
+}) {
   const item =
     "cursor-pointer rounded-control px-3 py-2 text-sm text-ink outline-none data-[highlighted]:bg-ground";
   return (
@@ -339,6 +376,26 @@ function FolderMenu({ folder, actions }: { folder: Folder; actions: FolderAction
           >
             Rename
           </Menu.Item>
+          {canUp ? (
+            <Menu.Item
+              className={item}
+              onSelect={() => {
+                onReorder(-1);
+              }}
+            >
+              Move up <span className="float-right text-xs text-ink-muted">Alt ↑</span>
+            </Menu.Item>
+          ) : null}
+          {canDown ? (
+            <Menu.Item
+              className={item}
+              onSelect={() => {
+                onReorder(1);
+              }}
+            >
+              Move down <span className="float-right text-xs text-ink-muted">Alt ↓</span>
+            </Menu.Item>
+          ) : null}
           <Menu.Item
             className={item}
             onSelect={() => {

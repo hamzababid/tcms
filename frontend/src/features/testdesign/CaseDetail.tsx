@@ -19,7 +19,15 @@ import { formatDate, formatDateTime } from "@/lib/format";
 import { can } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
-import { useCase, useCaseHistory, useExecutions, useInvalidateCase, useVersions, type CaseRead } from "./api";
+import {
+  useCase,
+  useCaseHistory,
+  useExecutions,
+  useInvalidateCase,
+  useReviewers,
+  useVersions,
+  type CaseRead,
+} from "./api";
 import { AttachmentList } from "./AttachmentList";
 import { CommentThread } from "./CommentThread";
 import { DiffView } from "./DiffView";
@@ -859,6 +867,7 @@ function CaseActions({
       onDuplicated(key);
     }
   });
+  const reviewers = useReviewers(members);
   if (!writable) return null;
   const approval = project.settings.approval_required;
   const items: [Action, string][] = [];
@@ -878,7 +887,6 @@ function CaseActions({
   if (items.length === 0) return null;
   const item =
     "cursor-pointer rounded-control px-3 py-2 text-sm text-ink outline-none data-[highlighted]:bg-ground";
-  const reviewers = members; // the server checks testcase.approve on the chosen reviewer
   return (
     <>
       <Menu.Root>

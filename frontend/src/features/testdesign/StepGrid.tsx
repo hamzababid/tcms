@@ -2,6 +2,7 @@ import { GripVertical, MoreHorizontal } from "lucide-react";
 import * as Menu from "@radix-ui/react-dropdown-menu";
 import { useEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
 
+import { MarkdownEditor } from "@/components/common/Markdown";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -218,7 +219,7 @@ export function StepGrid({
               {i + 1}
             </div>
             <div role="cell" className="py-1">
-              <textarea
+              <MarkdownEditor
                 aria-label={`Step ${i + 1} action`}
                 aria-invalid={Boolean(errors[i])}
                 data-step={s.key}
@@ -239,7 +240,7 @@ export function StepGrid({
               {errors[i] ? <p className="px-2 text-xs text-[var(--status-fail-fg)]">{errors[i]}</p> : null}
             </div>
             <div role="cell" className="py-1">
-              <textarea
+              <MarkdownEditor
                 aria-label={`Step ${i + 1} expected result`}
                 data-step={s.key}
                 data-col="expected_result"
@@ -265,13 +266,15 @@ export function StepGrid({
                     canRemove={() => stepAttachments.canUpload}
                     maxMb={stepAttachments.maxMb}
                     onChanged={stepAttachments.onChanged}
+                    compact
+                    label={`step ${i + 1}`}
                   />
                 </div>
               ) : null}
             </div>
             {showData ? (
               <div role="cell" className="py-1">
-                <textarea
+                <MarkdownEditor
                   aria-label={`Step ${i + 1} data`}
                   data-step={s.key}
                   data-col="data"

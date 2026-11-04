@@ -18,6 +18,8 @@ export function AttachmentList({
   canRemove,
   maxMb,
   onChanged,
+  compact = false,
+  label,
 }: {
   attachments: Attachment[];
   entityType: "test_case" | "test_case_step";
@@ -26,6 +28,10 @@ export function AttachmentList({
   canRemove: (a: Attachment) => boolean;
   maxMb: number;
   onChanged: () => void;
+  /** Small "Attach" button instead of the drop zone (step rows). */
+  compact?: boolean;
+  /** What the files attach to, for the button's accessible name (e.g. "step 2"). */
+  label?: string;
 }) {
   const toast = useToast();
   const input = useRef<HTMLInputElement>(null);
@@ -97,7 +103,33 @@ export function AttachmentList({
           ))}
         </ul>
       ) : null}
-      {canUpload ? (
+      {canUpload && compact ? (
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-label={`Attach a file to ${label ?? "this item"}`}
+            title={`Attach a file · max ${maxMb} MB`}
+            className="inline-flex items-center gap-1 rounded px-1 py-0.5 text-xs text-ink-muted hover:bg-ground hover:text-ink"
+            onClick={() => input.current?.click()}
+          >
+            <Paperclip aria-hidden="true" className="size-3.5" />
+            Attach
+          </button>
+          <input
+            ref={input}
+            type="file"
+            multiple
+            tabIndex={-1}
+            className="sr-only"
+            aria-hidden="true"
+            onChange={(e) => {
+              if (e.target.files?.length) upload.mutate([...e.target.files]);
+              e.target.value = "";
+            }}
+          />
+          {upload.isPending ? <span role="status">Uploading…</span> : null}
+        </div>
+      ) : canUpload ? (
         // Drop target for files; the "browse" button is the keyboard alternative.
         // eslint-disable-next-line jsx-a11y/no-static-element-interactions
         <div
