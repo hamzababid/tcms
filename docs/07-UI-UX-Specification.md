@@ -517,16 +517,18 @@ Neutral, calm, high-contrast enterprise UI. Inter (UI) and JetBrains Mono (keys,
 
 ### 6.2 Status tokens (single source: `StatusBadge`)
 
-| Status | Icon | Label | Light colour token |
+| Status | Icon | Label | Tokens (text · background · border · bar) |
 | --- | --- | --- | --- |
-| passed | ✔ check-circle | Passed | `--status-pass` green 600 |
-| failed | ✖ x-circle | Failed | `--status-fail` red 600 |
-| blocked | ⛔ octagon | Blocked | `--status-blocked` amber 600 |
-| skipped | ⤼ skip-forward | Skipped | `--status-skip` slate 500 |
-| not_applicable | ⊘ slash-circle | N/A | `--status-na` slate 400 |
-| in_progress | ◐ half-circle | In progress | `--status-progress` blue 600 |
-| not_run | ○ circle | Not run | `--status-notrun` slate 300 (outline) |
-| needs_retest | ⟳ rotate | Needs retest | `--status-retest` violet 600 |
+| passed | ✔ check-circle | Passed | `--status-pass-*` #166534 · #DCFCE7 · #BBF7D0 · #16A34A |
+| failed | ✖ x-circle | Failed | `--status-fail-*` #B91C1C · #FEE2E2 · #FECACA · #DC2626 |
+| blocked | ⛔ octagon | Blocked | `--status-blocked-*` #92400E · #FEF3C7 · #FDE68A · #D97706 |
+| skipped | ⤼ skip-forward | Skipped | `--status-skip-*` #475569 · #F1F5F9 · #E2E8F0 · #94A3B8 |
+| not_applicable | ⊘ slash-circle | N/A | `--status-na-*` #556070 · #F8FAFC · #E2E8F0 |
+| in_progress | ◐ half-circle | In progress | `--status-progress-*` #075985 · #E0F2FE · #BAE6FD · #0284C7 |
+| not_run | ○ circle | Not run | `--status-notrun-*` #475569 · #FFFFFF · #CBD5E1 (outline) |
+| needs_retest | ⟳ rotate | Needs retest | `--status-retest-*` #5B21B6 · #EDE9FE · #DDD6FE · #7C3AED |
+
+Values come from `docs/design/README.md`; icons from this table (blocked uses the octagon, never the N/A slash-circle that some design mock-ups show). Light theme only in the MVP; the theme control is not rendered until dark tokens exist.
 
 Case status: draft (pencil, slate), in_review (hourglass, blue), approved (check, green), deprecated (archive-x, amber), archived (archive, slate). Defect statuses grouped by category colour: new (open, reopened – red), triage (triaged, assigned – amber), work (in_progress, fixed – blue), verify (ready_for_retest – violet), done (verified, closed – green), parked (deferred – slate), invalid (rejected, duplicate, cannot_reproduce – slate). Priority/severity: critical ⬆⬆ red, high ▲ orange, medium ■ slate, low ▼ blue-gray.
 

@@ -1,0 +1,69 @@
+/*
+ * Design tokens (docs/design/README.md, docs/07 §6). The only place raw colour values live.
+ * Light theme only in the MVP; a dark theme redefines these variables (deferred, see review K16).
+ */
+:root {
+  --font-ui: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+
+  --ink: #0f172a;
+  --ink-secondary: #475569;
+  --ink-muted: #64748b;
+  --border: #e2e8f0;
+  --ground: #f8fafc;
+  --surface: #ffffff;
+
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-tint: #eef2ff;
+  --focus-ring: #6366f1;
+
+  --sidebar-bg: #111827;
+  --sidebar-active: #312e81;
+  --sidebar-ink: #d1d5db;
+
+  --radius-control: 6px;
+  --radius-card: 8px;
+  --row-height: 40px;
+  --header-height: 36px;
+
+  /* Status: text · background · border · bar (docs/design/README.md) */
+  --status-pass-fg: #166534;
+  --status-pass-bg: #dcfce7;
+  --status-pass-border: #bbf7d0;
+  --status-pass-bar: #16a34a;
+  --status-fail-fg: #b91c1c;
+  --status-fail-bg: #fee2e2;
+  --status-fail-border: #fecaca;
+  --status-fail-bar: #dc2626;
+  --status-blocked-fg: #92400e;
+  --status-blocked-bg: #fef3c7;
+  --status-blocked-border: #fde68a;
+  --status-blocked-bar: #d97706;
+  --status-skip-fg: #475569;
+  --status-skip-bg: #f1f5f9;
+  --status-skip-border: #e2e8f0;
+  --status-skip-bar: #94a3b8;
+  --status-progress-fg: #075985;
+  --status-progress-bg: #e0f2fe;
+  --status-progress-border: #bae6fd;
+  --status-progress-bar: #0284c7;
+  --status-notrun-fg: #475569;
+  --status-notrun-bg: #ffffff;
+  --status-notrun-border: #cbd5e1;
+  --status-notrun-bar: #e2e8f0;
+  --status-na-fg: #556070;
+  --status-na-bg: #f8fafc;
+  --status-na-border: #e2e8f0;
+  --status-na-bar: #cbd5e1;
+  --status-retest-fg: #5b21b6;
+  --status-retest-bg: #ede9fe;
+  --status-retest-border: #ddd6fe;
+  --status-retest-bar: #7c3aed;
+
+  /* Priority / severity (docs/07 §6.2) */
+  --priority-critical: #b91c1c;
+  --priority-high: #c2410c;
+  --priority-medium: #475569;
+  --priority-low: #64748b;
+}

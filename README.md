@@ -28,6 +28,7 @@ Specification for a self-hosted, enterprise-grade Test Case Management System, w
 | 10 | [Backlog](docs/10-Backlog.md) | Epics, user stories with priorities, sizes, references and acceptance; technical tasks per epic |
 | 11 | [Decision Log](docs/11-Decision-Log.md) | ADR-001…022 with rationale, trade-offs and alternatives |
 | 12 | [Glossary](docs/12-Glossary.md) | Terms |
+| — | [ops/](docs/ops/) | Step 0 review, local setup, environment variables, migrations, testing, known limitations, implementation checklist |
 
 ID conventions: `FR-<MOD>-nnn` functional requirement · `NFR-<AREA>-nn` · `BR-nn` business rule · `AC-<MOD>-nn` acceptance criterion · `US-nnn` story · `TCMS-nnn` test case · `ADR-nnn` decision.
 

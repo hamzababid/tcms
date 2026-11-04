@@ -1,0 +1,183 @@
+[project]
+name = "tcms"
+version = "0.1.0"
+description = "Assay test case management system - backend"
+authors = [
+    { name = "Hamza Bin Abid", email = "hamza.b.abid@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.20.1",
+    "boto3>=1.43.123",
+    "click>=8.5.0",
+    "fastapi>=0.162.0",
+    "gunicorn>=26.2.0",
+    "psycopg[binary]>=3.3.7",
+    "pydantic>=2.14.2",
+    "pydantic-settings>=2.16.2",
+    "python-magic>=0.4.27",
+    "sqlalchemy>=2.1,<2.2",
+    "structlog>=26.1.0",
+    "uuid-utils>=1.2.0",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[project.scripts]
+tcms = "tcms.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.13.7,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "boto3-stubs[s3]>=1.43.123",
+    "httpx>=0.28.1",
+    "hypothesis>=6.170.14",
+    "import-linter>=2.15",
+    "mypy>=2.4.1",
+    "pytest>=9.2.0",
+    "pytest-cov>=7.1.0",
+    "pytest-xdist>=3.8.0",
+    "ruff>=0.17.3",
+    "schemathesis>=4.33.0",
+    "testcontainers[minio,postgres]>=4.15.0",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF", "DTZ", "PT"]
+ignore = ["S101", "B008", "RUF001", "RUF002", "RUF003", "UP046", "UP047"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "DTZ", "E501", "PT012"]
+"migrations/**" = ["S608", "E402"]
+"src/tcms/core/enums.py" = ["S105"]
+"src/tcms/core/context.py" = ["S105"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Header"]
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+strict = true
+warn_unreachable = true
+mypy_path = "src"
+files = ["src"]
+
+[[tool.mypy.overrides]]
+module = ["magic", "testcontainers.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+  "integration: needs PostgreSQL (testcontainers)",
+  "br(id): business rule covered by the test",
+  "contract: OpenAPI conformance (Schemathesis)",
+]
+filterwarnings = ["error::DeprecationWarning:tcms.*"]
+
+[tool.coverage.run]
+source = ["tcms"]
+branch = true
+
+[tool.importlinter]
+root_package = "tcms"
+include_external_packages = false
+
+[[tool.importlinter.contracts]]
+name = "Module dependency layers (docs/03 §5.1)"
+type = "layers"
+layers = [
+  "tcms.cli",
+  "tcms.main | tcms.seed",
+  "tcms.api",
+  "tcms.integrations",
+  "tcms.reporting",
+  "tcms.defects",
+  "tcms.execution",
+  "tcms.planning",
+  "tcms.requirements",
+  "tcms.testdesign",
+  "tcms.workspace",
+  "tcms.identity",
+  "tcms.platform",
+  "tcms.core",
+]
+
+[[tool.importlinter.contracts]]
+name = "identity: models and repository are private"
+type = "forbidden"
+source_modules = ["tcms.workspace", "tcms.testdesign", "tcms.planning", "tcms.execution", "tcms.defects", "tcms.requirements", "tcms.reporting", "tcms.integrations", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
+forbidden_modules = ["tcms.identity.models", "tcms.identity.repository"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "workspace: models and repository are private"
+type = "forbidden"
+source_modules = ["tcms.identity", "tcms.testdesign", "tcms.planning", "tcms.execution", "tcms.defects", "tcms.requirements", "tcms.reporting", "tcms.integrations", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
+forbidden_modules = ["tcms.workspace.models", "tcms.workspace.repository"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "testdesign: models and repository are private"
+type = "forbidden"
+source_modules = ["tcms.identity", "tcms.workspace", "tcms.planning", "tcms.execution", "tcms.defects", "tcms.requirements", "tcms.reporting", "tcms.integrations", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
+forbidden_modules = ["tcms.testdesign.models", "tcms.testdesign.repository"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "planning: models and repository are private"
+type = "forbidden"
+source_modules = ["tcms.identity", "tcms.workspace", "tcms.testdesign", "tcms.execution", "tcms.defects", "tcms.requirements", "tcms.reporting", "tcms.integrations", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
+forbidden_modules = ["tcms.planning.models", "tcms.planning.repository"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "execution: models and repository are private"
+type = "forbidden"
+source_modules = ["tcms.identity", "tcms.workspace", "tcms.testdesign", "tcms.planning", "tcms.defects", "tcms.requirements", "tcms.reporting", "tcms.integrations", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
+forbidden_modules = ["tcms.execution.models", "tcms.execution.repository"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "defects: models and repository are private"
+type = "forbidden"
+source_modules = ["tcms.identity", "tcms.workspace", "tcms.testdesign", "tcms.planning", "tcms.execution", "tcms.requirements", "tcms.reporting", "tcms.integrations", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
+forbidden_modules = ["tcms.defects.models", "tcms.defects.repository"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "requirements: models and repository are private"
+type = "forbidden"
+source_modules = ["tcms.identity", "tcms.workspace", "tcms.testdesign", "tcms.planning", "tcms.execution", "tcms.defects", "tcms.reporting", "tcms.integrations", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
+forbidden_modules = ["tcms.requirements.models", "tcms.requirements.repository"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "reporting: models and repository are private"
+type = "forbidden"
+source_modules = ["tcms.identity", "tcms.workspace", "tcms.testdesign", "tcms.planning", "tcms.execution", "tcms.defects", "tcms.requirements", "tcms.integrations", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
+forbidden_modules = ["tcms.reporting.models", "tcms.reporting.repository"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "integrations: models and repository are private"
+type = "forbidden"
+source_modules = ["tcms.identity", "tcms.workspace", "tcms.testdesign", "tcms.planning", "tcms.execution", "tcms.defects", "tcms.requirements", "tcms.reporting", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
+forbidden_modules = ["tcms.integrations.models", "tcms.integrations.repository"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "platform: models and repository are private"
+type = "forbidden"
+source_modules = ["tcms.identity", "tcms.workspace", "tcms.testdesign", "tcms.planning", "tcms.execution", "tcms.defects", "tcms.requirements", "tcms.reporting", "tcms.integrations", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
+forbidden_modules = ["tcms.platform.models", "tcms.platform.repository"]
+allow_indirect_imports = true

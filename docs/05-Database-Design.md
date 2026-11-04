@@ -164,7 +164,7 @@ Indexes: `ux_sessions__token_hash`, `ix_sessions__user_id`, `ix_sessions__expire
 
 **password_reset_tokens**: `id`, `user_id`, `token_hash bytea unique`, `expires_at`, `used_at`, `created_at`.
 
-**invitations**: `id`, `organization_id`, `email citext`, `token_hash bytea unique`, `project_id NULL`, `role_id NULL`, `invited_by`, `expires_at`, `accepted_at`, `revoked_at`, `created_at`. Index `ix_invitations__organization_id_email`.
+**invitations**: `id`, `organization_id`, `email citext`, `token_hash bytea unique`, `is_org_admin boolean` (default false), `project_id NULL`, `role_id NULL` (`CHECK ((project_id IS NULL) = (role_id IS NULL))`), `invited_by`, `expires_at`, `accepted_at`, `revoked_at`, `created_at`. Index `ix_invitations__organization_id_email`.
 
 **login_attempts**: `id bigserial PK`, `email citext`, `ip inet`, `succeeded boolean`, `occurred_at timestamptz`. Indexes `(email, occurred_at)`, `(ip, occurred_at)`. Purged after 30 days.
 
@@ -558,7 +558,7 @@ Indexes: `ux_requirements__project_id_key_num`, `ix_requirements__project_releas
 
 Indexes: `ix_audit_events__org_occurred (organization_id, occurred_at DESC)`, `ix_audit_events__project_occurred`, `ix_audit_events__entity (entity_type, entity_id, occurred_at DESC)`, `ix_audit_events__actor (actor_id, occurred_at DESC)`, `ix_audit_events__action`.
 
-**jobs**: as in [03 HLD §10](03-HLD.md): `id`, `organization_id NULL`, `type text`, `payload jsonb`, `status job_status`, `run_at`, `attempts int`, `max_attempts int`, `last_error text`, `locked_by text`, `locked_at`, `dedupe_key text NULL`, `created_at`, `finished_at`. Indexes: `ix_jobs__queue (status, run_at) WHERE status='queued'`, `ux_jobs__dedupe_key WHERE dedupe_key IS NOT NULL AND status IN ('queued','running')`.
+**jobs**: as in [03 HLD §10](03-HLD.md): `id`, `organization_id NULL`, `type text`, `payload jsonb`, `status job_status`, `run_at`, `attempts int`, `max_attempts int`, `last_error text`, `locked_by text`, `locked_at`, `dedupe_key text NULL`, `created_at`, `finished_at`. Indexes: `ix_jobs__queue (run_at) WHERE status='queued'`, `ix_jobs__running_locked (locked_at) WHERE status='running'`, `ux_jobs__dedupe_key WHERE dedupe_key IS NOT NULL AND status IN ('queued','running')`. Status semantics: `failed` = permanent error raised by a handler (no retry); `dead` = retries exhausted; a retryable failure returns to `queued` with backoff.
 
 **data_transfers**: `id`, `organization_id`, `project_id`, `kind transfer_kind`, `entity text` (`test_case`, `requirement`, `defect`, `report:<name>`), `status transfer_status`, `format text` (`csv`, `xlsx`), `source_object_key`, `result_object_key`, `options jsonb` (mapping, mode, filters), `summary jsonb` (counts), `errors jsonb` (first 1,000 row errors), `created_by`, `created_at`, `finished_at`, `expires_at`.
 
@@ -687,10 +687,11 @@ erDiagram
 1. **Tooling:** Alembic with autogenerate as a draft only; every migration hand-reviewed. Migration file names `YYYYMMDD_HHMM_<slug>.py`.
 2. **Baseline:** first migration creates extensions, enum types, roles' grants (via owner), all MVP tables, triggers, functions, seed system roles + permissions, system tags created per project at project creation (not in migration).
 3. **Forward-only:** no downgrades in production; `downgrade()` implemented for local dev only where trivial.
+3a. **Baseline execution and grants:** migration `0001_baseline` executes `01_baseline.sql` and `02_seed_system.sql` verbatim (their outer `BEGIN`/`COMMIT` removed); both files are frozen once released and later changes add `docs/schema/NN_<slug>.sql`. The baseline grants privileges only on tables existing at that time (no default privileges), so every later migration that creates a table calls the `grant_app()` helper; a test asserts `tcms_app` privileges on every table. See [ops/migrations.md](ops/migrations.md).
 4. **Expand → migrate → contract** for breaking changes: add new nullable column/table → deploy code writing both → backfill in batches (jobs) → switch reads → drop old in a later release.
 5. **Enum changes:** `ALTER TYPE … ADD VALUE` in its own migration (cannot run inside a transaction with other statements on PG < 12 semantics; keep isolated).
 6. **Large backfills:** batched (10,000 rows), resumable, run as jobs, never in the migration transaction.
-7. **Testing:** CI runs `alembic upgrade head` on an empty DB and on a snapshot of the previous release's seeded DB, then runs the schema-diff check (`alembic check`) to confirm models match.
+7. **Testing:** CI runs `alembic upgrade head` on an empty DB (and, from the first release, on a snapshot of the previous release's seeded DB), runs `alembic check` to confirm models match, and compares `pg_dump --schema-only` of the migrated DB with a DB built from `docs/schema/*.sql` (Alembic cannot compare triggers, functions, CHECK constraints or expression indexes).
 8. **Seed data:** separate CLI (`tcms seed`), never in migrations except system roles/permissions.
 
 ## 9. Retention
