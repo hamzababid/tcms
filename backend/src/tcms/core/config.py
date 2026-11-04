@@ -9,6 +9,8 @@ from pathlib import Path
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from tcms.core.crypto import KeyRing
+
 _BACKEND_ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -61,6 +63,25 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.tcms_env is Environment.production
+
+    @property
+    def secret_key_bytes(self) -> bytes:
+        raw = self.tcms_secret_key.get_secret_value()
+        if len(raw) < 32:
+            raise RuntimeError("TCMS_SECRET_KEY must be set (at least 32 characters)")
+        return raw.encode()
+
+    @property
+    def keyring(self) -> KeyRing:
+        return KeyRing.parse(self.tcms_encryption_keys.get_secret_value())
+
+    @property
+    def origin(self) -> str:
+        """Scheme + host + port of TCMS_BASE_URL (CSRF origin check)."""
+        from urllib.parse import urlsplit
+
+        parts = urlsplit(self.tcms_base_url)
+        return f"{parts.scheme}://{parts.netloc}"
 
 
 @lru_cache

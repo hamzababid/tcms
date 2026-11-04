@@ -35,13 +35,13 @@ def migrate() -> None:
 @main.command()
 def worker() -> None:
     """Run background jobs and the scheduler."""
-    from tcms import platform
     from tcms.core.db import app_engine, session_factory
+    from tcms.main import install_modules
     from tcms.platform.jobs.worker import Worker
 
     settings = get_settings()
     configure_logging(settings.log_level)
-    platform.install()
+    install_modules()
     w = Worker(
         session_factory(app_engine(settings, worker=True)),
         concurrency=settings.worker_concurrency,
@@ -54,6 +54,30 @@ def worker() -> None:
     signal.signal(signal.SIGTERM, _stop)
     signal.signal(signal.SIGINT, _stop)
     w.run()
+
+
+@main.command()
+@click.option("--org", "org_name", required=True, help="Organization name, e.g. 'ACME Energy'")
+@click.option("--slug", required=True, help="Immutable organization slug, e.g. 'acme'")
+@click.option("--admin-email", required=True, help="Email of the first Org Admin")
+def bootstrap(org_name: str, slug: str, admin_email: str) -> None:
+    """Create the first organization and print a one-time setup link for its admin (US-020)."""
+    from tcms.core.db import app_engine, session_factory
+    from tcms.core.uow import unit_of_work
+    from tcms.identity import service as identity
+    from tcms.main import install_modules
+    from tcms.workspace import service as workspace
+
+    settings = get_settings()
+    install_modules()
+    with unit_of_work(session_factory(app_engine(settings))) as uow:
+        org = workspace.create_organization(uow, name=org_name, slug=slug)
+        created = identity.bootstrap_admin_invitation(
+            uow, settings, organization_id=org.id, email=admin_email
+        )
+    click.echo(f"organization {org.name} ({org.slug}) created")
+    click.echo(f"one-time setup link for {admin_email} (valid 7 days):")
+    click.echo(created.accept_url)
 
 
 @main.command("storage-init")

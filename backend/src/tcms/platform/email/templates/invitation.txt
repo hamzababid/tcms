@@ -1,0 +1,6 @@
+{{ inviter }} invited you to {{ product }}{% if project_name %} to work on {{ project_name }}{% endif %}.
+
+Accept the invitation and set your password:
+{{ url }}
+
+This link can be used once and expires on {{ expires_at[:10] }}.

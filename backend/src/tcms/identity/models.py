@@ -14,6 +14,7 @@ from sqlalchemy import (
     Index,
     Integer,
     LargeBinary,
+    SmallInteger,
     Text,
     func,
 )
@@ -112,6 +113,16 @@ class SessionRow(Base):
     ip: Mapped[str | None] = mapped_column(INET)
     user_agent: Mapped[str | None] = mapped_column(Text)
     revoked_at: Mapped[datetime | None] = mapped_column(TS)
+    mfa_failed_attempts: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default="0")
+
+
+class AuthRateLimit(Base):
+    __tablename__ = "auth_rate_limits"
+    __table_args__ = (Index("ix_auth_rate_limits__window_start", "window_start"),)
+
+    bucket_key: Mapped[str] = mapped_column(Text, primary_key=True)
+    window_start: Mapped[datetime] = mapped_column(TS, nullable=False)
+    count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
 
 
 class PasswordResetToken(Base):

@@ -40,6 +40,14 @@ class Problem(BaseModel):
     errors: list[ProblemFieldError] = []
 
 
+_PROBLEM_CONTENT: dict[str, Any] = {MEDIA_TYPE: {"schema": {"$ref": "#/components/schemas/Problem"}}}
+
+# Every route documents problem+json errors (docs/06 §3); Schemathesis checks responses against it.
+PROBLEM_RESPONSES: dict[int | str, dict[str, Any]] = {
+    422: {"description": "Validation or business-rule error", "model": Problem, "content": _PROBLEM_CONTENT},
+    "default": {"description": "Error (application/problem+json)", "model": Problem, "content": _PROBLEM_CONTENT},
+}
+
 _HTTP_CODES = {
     400: ("bad_request", "Bad request"),
     401: ("unauthenticated", "Authentication required"),
@@ -90,6 +98,7 @@ def _pointer(loc: tuple[Any, ...]) -> str:
 def install_problem_handlers(app: FastAPI) -> None:
     @app.exception_handler(DomainError)
     async def domain_error(request: Request, exc: DomainError) -> JSONResponse:
+        headers = {"Retry-After": str(exc.extra["retry_after"])} if "retry_after" in exc.extra else None
         return problem_response(
             request,
             status=exc.status,
@@ -98,6 +107,7 @@ def install_problem_handlers(app: FastAPI) -> None:
             detail=exc.detail,
             errors=[{"field": e.field, "code": e.code, "message": e.message} for e in exc.errors],
             extra=_jsonable(exc.extra),
+            headers=headers,
         )
 
     @app.exception_handler(RequestValidationError)
@@ -123,13 +133,11 @@ def install_problem_handlers(app: FastAPI) -> None:
     async def http_error(request: Request, exc: StarletteHTTPException) -> JSONResponse:
         code, title = _HTTP_CODES.get(exc.status_code, ("http_error", "HTTP error"))
         detail = exc.detail if isinstance(exc.detail, str) and exc.detail.lower() != title.lower() else None
+        headers = dict(exc.headers or {})
+        if exc.status_code == 405:
+            headers["Allow"] = ", ".join(_allowed_methods(app, request))
         return problem_response(
-            request,
-            status=exc.status_code,
-            code=code,
-            title=title,
-            detail=detail,
-            headers=dict(exc.headers or {}),
+            request, status=exc.status_code, code=code, title=title, detail=detail, headers=headers
         )
 
     @app.exception_handler(DBAPIError)
@@ -148,6 +156,20 @@ def install_problem_handlers(app: FastAPI) -> None:
     async def unhandled(request: Request, exc: Exception) -> JSONResponse:
         log.exception("request.unhandled_error")
         return problem_response(request, status=500, code="internal_error", title="Internal error")
+
+
+def _allowed_methods(app: FastAPI, request: Request) -> list[str]:
+    """All methods registered for the request path (FastAPI registers one route per method)."""
+    from starlette.routing import Match
+
+    methods: set[str] = set()
+    for route in app.router.routes:
+        match, _ = route.matches({**request.scope, "method": "GET"})
+        route_methods = getattr(route, "methods", None)
+        if route_methods and match is not Match.NONE:
+            # Match.PARTIAL means "path matches, method differs"; FULL means GET itself is registered.
+            methods |= set(route_methods)
+    return sorted(methods - {"HEAD"} | ({"HEAD"} if "GET" in methods else set()))
 
 
 def _jsonable(extra: dict[str, Any]) -> dict[str, Any]:
