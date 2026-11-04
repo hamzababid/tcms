@@ -59,10 +59,21 @@ def get_read_uow(request: Request) -> Iterator[UnitOfWork]:
         yield uow
 
 
+def _client_ip(request: Request) -> str | None:
+    """Only real IP addresses are stored (sessions.ip / login_attempts.ip are `inet`)."""
+    import ipaddress
+
+    host = request.client.host if request.client else None
+    try:
+        return str(ipaddress.ip_address(host)) if host else None
+    except ValueError:
+        return None
+
+
 def request_meta(request: Request) -> RequestMeta:
     return RequestMeta(
         request_id=getattr(request.state, "request_id", "req_unknown"),
-        ip=request.client.host if request.client else None,
+        ip=_client_ip(request),
         user_agent=request.headers.get("user-agent"),
     )
 

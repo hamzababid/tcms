@@ -45,7 +45,11 @@ _PROBLEM_CONTENT: dict[str, Any] = {MEDIA_TYPE: {"schema": {"$ref": "#/component
 # Every route documents problem+json errors (docs/06 §3); Schemathesis checks responses against it.
 PROBLEM_RESPONSES: dict[int | str, dict[str, Any]] = {
     422: {"description": "Validation or business-rule error", "model": Problem, "content": _PROBLEM_CONTENT},
-    "default": {"description": "Error (application/problem+json)", "model": Problem, "content": _PROBLEM_CONTENT},
+    "default": {
+        "description": "Error (application/problem+json)",
+        "model": Problem,
+        "content": _PROBLEM_CONTENT,
+    },
 }
 
 _HTTP_CODES = {

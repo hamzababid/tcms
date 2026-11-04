@@ -238,6 +238,7 @@ def invitation_for_token(uow: UnitOfWork, token: str) -> Invitation:
 @dataclass(frozen=True)
 class AcceptedInvitation:
     session: IssuedSession
+    user_id: UUID
     organization_id: UUID
     is_org_admin: bool
 
@@ -319,7 +320,7 @@ def accept_invitation(
         expires_at=rules.absolute_expiry(now, policy),
         mfa_verified=False,
     )
-    return AcceptedInvitation(issued, inv.organization_id, inv.is_org_admin)
+    return AcceptedInvitation(issued, user.id, inv.organization_id, inv.is_org_admin)
 
 
 # -- API tokens (FR-AUTH-010) ---------------------------------------------------------------------
