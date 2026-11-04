@@ -10,8 +10,6 @@ Create Date: 2026-11-04
 
 from collections.abc import Sequence
 
-from tcms_migrations import run_sql_file
-
 revision: str = "0001_baseline"
 down_revision: str | None = None
 branch_labels: str | Sequence[str] | None = None
@@ -19,6 +17,8 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
+    from tcms_migrations import run_sql_file  # imported lazily: revision files must load without env.py
+
     run_sql_file("01_baseline.sql")
     run_sql_file("02_seed_system.sql")
 

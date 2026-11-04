@@ -133,7 +133,7 @@ def parse_filters(
         if op == "isnull":
             conditions.append(col.is_(None) if _parse_bool(raw) else col.is_not(None))
         elif op == "contains":
-            conditions.append(col.ilike(f"%{raw}%"))
+            conditions.append(col.icontains(raw, autoescape=True))  # user % and _ are literal
         elif op == "gte":
             conditions.append(col >= field.parse(name, raw))
         elif op == "lte":

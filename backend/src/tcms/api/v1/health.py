@@ -47,20 +47,26 @@ def _expected_head(state: AppState) -> str | None:
 @router.get("/ready", response_model=ReadyStatus, responses={503: {"model": ReadyStatus}})
 def ready(state: AppState = Depends(app_state)) -> JSONResponse:
     checks: dict[str, CheckResult] = {}
+    current: str | None = None
     try:
         with state.session_factory() as session:
-            session.execute(text("select 1"))
             current = session.execute(text("select version_num from alembic_version")).scalar_one_or_none()
         checks["database"] = CheckResult(ok=True)
-        head = _expected_head(state)
-        checks["migrations"] = CheckResult(
-            ok=current == head,
-            detail=None if current == head else f"database at {current}, code expects {head}",
-        )
     except Exception as exc:
         log.warning("health.database_failed", error=str(exc).splitlines()[0])
         checks["database"] = CheckResult(ok=False, detail="database unreachable")
-        checks["migrations"] = CheckResult(ok=False, detail="unknown")
+    if checks["database"].ok:
+        try:
+            head = _expected_head(state)
+            checks["migrations"] = CheckResult(
+                ok=current == head,
+                detail=None if current == head else f"database at {current}, code expects {head}",
+            )
+        except Exception as exc:
+            log.error("health.migration_head_failed", error=str(exc).splitlines()[0])
+            checks["migrations"] = CheckResult(ok=False, detail="cannot read migration scripts")
+    else:
+        checks["migrations"] = CheckResult(ok=False, detail="unknown: database unreachable")
     try:
         storage.check_bucket(storage.make_client(state.settings), state.settings.s3_bucket)
         checks["storage"] = CheckResult(ok=True)

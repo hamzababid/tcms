@@ -11,7 +11,6 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 ${imports if imports else ""}
-from tcms_migrations import grant_app  # noqa: F401
 
 revision: str = ${repr(up_revision)}
 down_revision: str | None = ${repr(down_revision)}
@@ -20,6 +19,8 @@ depends_on: str | Sequence[str] | None = ${repr(depends_on)}
 
 
 def upgrade() -> None:
+    from tcms_migrations import grant_app  # noqa: F401 — imported lazily (revision files must load anywhere)
+
     ${upgrades if upgrades else "pass"}
 
 

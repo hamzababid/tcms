@@ -53,7 +53,7 @@ select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF", "DTZ", "PT"]
 ignore = ["S101", "B008", "RUF001", "RUF002", "RUF003", "UP046", "UP047"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S", "DTZ"]
+"tests/**" = ["S", "DTZ", "E501", "PT012"]
 "migrations/**" = ["S608", "E402"]
 "src/tcms/core/enums.py" = ["S105"]
 "src/tcms/core/context.py" = ["S105"]
