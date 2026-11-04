@@ -7,6 +7,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   FolderKanban,
+  FolderTree,
   Settings,
   Shield,
   UserPlus,
@@ -62,7 +63,7 @@ function ProjectSwitcher({ projects, current }: { projects: Project[]; current: 
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   useEffect(() => {
-    // `G` then `P` opens the switcher (docs/07 §10).
+    // `G` then `P` opens the switcher, `G` then `R` goes to the repository (docs/07 §10).
     let armed = false;
     let timer = 0;
     const onKey = (e: KeyboardEvent) => {
@@ -75,13 +76,16 @@ function ProjectSwitcher({ projects, current }: { projects: Project[]; current: 
       } else if (armed && e.key.toLowerCase() === "p") {
         armed = false;
         setOpen(true);
+      } else if (armed && e.key.toLowerCase() === "r" && current) {
+        armed = false;
+        void navigate({ to: "/p/$projectKey/repository", params: { projectKey: current.key } });
       }
     };
     window.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("keydown", onKey);
     };
-  }, []);
+  }, [current, navigate]);
   return (
     <Menu.Root open={open} onOpenChange={setOpen}>
       <Menu.Trigger className="flex h-8 items-center gap-1.5 rounded-control border border-border px-2.5 text-sm font-medium text-ink hover:bg-ground">
@@ -133,6 +137,11 @@ function Breadcrumbs({ project }: { project: Project | undefined }) {
   if (project) {
     crumbs.push(project.key);
     if (path.endsWith("/activity")) crumbs.push("Activity");
+    if (path.includes("/repository") || path.includes("/cases/")) crumbs.push("Repository");
+    const caseKey = /\/cases\/([^/]+)/.exec(path)?.[1];
+    if (caseKey === "new") crumbs.push("New case");
+    else if (caseKey) crumbs.push(decodeURIComponent(caseKey));
+    if (caseKey && path.endsWith("/edit")) crumbs.push("Edit");
     if (path.includes("/settings")) crumbs.push("Settings");
   } else if (path.startsWith("/projects")) crumbs.push("Projects");
   else if (path.startsWith("/profile")) crumbs.push("Profile");
@@ -247,6 +256,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const projectItems: NavItem[] = current
     ? [
+        {
+          to: "/p/$projectKey/repository",
+          params: { projectKey: current.key },
+          label: "Repository",
+          icon: FolderTree,
+        },
         {
           to: "/p/$projectKey/activity",
           params: { projectKey: current.key },

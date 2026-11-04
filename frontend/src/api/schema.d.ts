@@ -4,6 +4,83 @@
  */
 
 export interface paths {
+  "/api/v1/attachments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Upload
+     * @description Limit: the project's `attachment_max_mb` (≤ org cap); type is sniffed, not trusted (docs/02 §9.2).
+     */
+    post: operations["upload_api_v1_attachments_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/attachments/{attachment_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Attachment */
+    get: operations["get_attachment_api_v1_attachments__attachment_id__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/attachments/{attachment_id}/content": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Attachment Content
+     * @description Images and PDFs inline, everything else as a download; always sandboxed (docs/03 §9).
+     */
+    get: operations["attachment_content_api_v1_attachments__attachment_id__content_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/attachments/{attachment_id}/links/{entity_type}/{entity_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Unlink
+     * @description Uploader or holder of the record's write permission; BR-28 blocks approved step evidence.
+     */
+    delete: operations["unlink_api_v1_attachments__attachment_id__links__entity_type___entity_id__delete"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/audit-events/entity/{entity_type}/{entity_id}": {
     parameters: {
       query?: never;
@@ -252,6 +329,51 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/comments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Comments
+     * @description Oldest first; deleted comments keep their place with `body: null` (FR-COL-001).
+     */
+    get: operations["list_comments_api_v1_comments_get"];
+    put?: never;
+    /**
+     * Add Comment
+     * @description Mentions use `@[Name](user:<uuid>)`; only project members are notified.
+     */
+    post: operations["add_comment_api_v1_comments_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/comments/{comment_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete Comment */
+    delete: operations["delete_comment_api_v1_comments__comment_id__delete"];
+    options?: never;
+    head?: never;
+    /**
+     * Edit Comment
+     * @description Author only, within 15 minutes.
+     */
+    patch: operations["edit_comment_api_v1_comments__comment_id__patch"];
+    trace?: never;
+  };
   "/api/v1/environments/{environment_id}": {
     parameters: {
       query?: never;
@@ -297,6 +419,81 @@ export interface paths {
     put?: never;
     /** Restore Environment */
     post: operations["restore_environment_api_v1_environments__environment_id__restore_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/folders/{folder_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Delete Folder
+     * @description BR-15 / AC-TD-03.
+     */
+    delete: operations["delete_folder_api_v1_folders__folder_id__delete"];
+    options?: never;
+    head?: never;
+    /** Patch Folder */
+    patch: operations["patch_folder_api_v1_folders__folder_id__patch"];
+    trace?: never;
+  };
+  "/api/v1/folders/{folder_id}/archive": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Archive Folder */
+    post: operations["archive_folder_api_v1_folders__folder_id__archive_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/folders/{folder_id}/move": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Move Folder
+     * @description AC-TD-01/02.
+     */
+    post: operations["move_folder_api_v1_folders__folder_id__move_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/folders/{folder_id}/restore": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Restore Folder */
+    post: operations["restore_folder_api_v1_folders__folder_id__restore_post"];
     delete?: never;
     options?: never;
     head?: never;
@@ -727,6 +924,27 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/projects/{project_id}/folders": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Folders
+     * @description US-043: full tree with counts including descendants.
+     */
+    get: operations["list_folders_api_v1_projects__project_id__folders_get"];
+    put?: never;
+    /** Create Folder */
+    post: operations["create_folder_api_v1_projects__project_id__folders_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/projects/{project_id}/member-candidates": {
     parameters: {
       query?: never;
@@ -804,6 +1022,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/projects/{project_id}/resolve": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Resolve
+     * @description `SPARK-TC-12`, `TC-12` or `12` → the case (more entity types arrive with their milestones).
+     */
+    get: operations["resolve_api_v1_projects__project_id__resolve_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/projects/{project_id}/restore": {
     parameters: {
       query?: never;
@@ -815,6 +1053,71 @@ export interface paths {
     put?: never;
     /** Restore Project */
     post: operations["restore_project_api_v1_projects__project_id__restore_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/projects/{project_id}/tags": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Tags
+     * @description US-045: system tags always exist.
+     */
+    get: operations["list_tags_api_v1_projects__project_id__tags_get"];
+    put?: never;
+    /** Create Tag */
+    post: operations["create_tag_api_v1_projects__project_id__tags_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/projects/{project_id}/test-cases": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Cases
+     * @description US-043 / FR-SRCH-002: filters and sorts of docs/06 §4.4 (operators per §2.6).
+     */
+    get: operations["list_cases_api_v1_projects__project_id__test_cases_get"];
+    put?: never;
+    /**
+     * Create Case
+     * @description US-050/051: version 1, key allocated (TCMS-033).
+     */
+    post: operations["create_case_api_v1_projects__project_id__test_cases_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/projects/{project_id}/test-cases/bulk": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Bulk
+     * @description US-044 / FR-TD-010: ≤ 200 cases now, more as a job; each case audited with the shared bulk id.
+     */
+    post: operations["bulk_api_v1_projects__project_id__test_cases_bulk_post"];
     delete?: never;
     options?: never;
     head?: never;
@@ -840,6 +1143,349 @@ export interface paths {
      * @description US-026 / TCMS-024: status changes follow the transition table (docs/02 §4.4).
      */
     patch: operations["patch_release_api_v1_releases__release_id__patch"];
+    trace?: never;
+  };
+  "/api/v1/tags/{tag_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Delete Tag
+     * @description Only unused, non-system tags.
+     */
+    delete: operations["delete_tag_api_v1_tags__tag_id__delete"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/test-cases/{case_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Case */
+    get: operations["get_case_api_v1_test_cases__case_id__get"];
+    put?: never;
+    post?: never;
+    /**
+     * Delete Case
+     * @description US-069 / BR-14: `409 case_has_runs` once the case was in a cycle.
+     */
+    delete: operations["delete_case_api_v1_test_cases__case_id__delete"];
+    options?: never;
+    head?: never;
+    /**
+     * Patch Case
+     * @description Metadata only (BR-01, AC-TD-10): audited, no new version.
+     */
+    patch: operations["patch_case_api_v1_test_cases__case_id__patch"];
+    trace?: never;
+  };
+  "/api/v1/test-cases/{case_id}/approve": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Approve
+     * @description US-066, AC-TD-21 (self-approval).
+     */
+    post: operations["approve_api_v1_test_cases__case_id__approve_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/test-cases/{case_id}/archive": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Archive Case
+     * @description US-068 / FR-TD-007, BR-13.
+     */
+    post: operations["archive_case_api_v1_test_cases__case_id__archive_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/test-cases/{case_id}/compare": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Compare
+     * @description AC-TD-12: field diffs and steps aligned by position.
+     */
+    get: operations["compare_api_v1_test_cases__case_id__compare_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/test-cases/{case_id}/content": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Put Content
+     * @description BR-01/02, AC-TD-11/13: a new version only when content changed (docs/04 §3.2).
+     */
+    put: operations["put_content_api_v1_test_cases__case_id__content_put"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/test-cases/{case_id}/deprecate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Deprecate Case
+     * @description US-068 / FR-TD-007, BR-13.
+     */
+    post: operations["deprecate_case_api_v1_test_cases__case_id__deprecate_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/test-cases/{case_id}/duplicate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Duplicate
+     * @description US-057 / FR-TD-009 (TCMS-044).
+     */
+    post: operations["duplicate_api_v1_test_cases__case_id__duplicate_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/test-cases/{case_id}/executions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Executions
+     * @description US-058 / FR-TD-013: runs across cycles with the pinned version (cycles arrive in M3).
+     */
+    get: operations["executions_api_v1_test_cases__case_id__executions_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/test-cases/{case_id}/history": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * History
+     * @description FR-AUD-002 for a case.
+     */
+    get: operations["history_api_v1_test_cases__case_id__history_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/test-cases/{case_id}/links": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Add Link
+     * @description FR-TD-012.
+     */
+    post: operations["add_link_api_v1_test_cases__case_id__links_post"];
+    /** Remove Link */
+    delete: operations["remove_link_api_v1_test_cases__case_id__links_delete"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/test-cases/{case_id}/restore": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Restore Case
+     * @description US-068 / FR-TD-007, BR-13.
+     */
+    post: operations["restore_case_api_v1_test_cases__case_id__restore_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/test-cases/{case_id}/restore-version": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Restore Version
+     * @description US-054 / FR-TD-005.
+     */
+    post: operations["restore_version_api_v1_test_cases__case_id__restore_version_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/test-cases/{case_id}/return": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Return Case
+     * @description US-066, AC-TD-22.
+     */
+    post: operations["return_case_api_v1_test_cases__case_id__return_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/test-cases/{case_id}/submit": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Submit
+     * @description US-065.
+     */
+    post: operations["submit_api_v1_test_cases__case_id__submit_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/test-cases/{case_id}/versions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Versions
+     * @description US-053 / FR-TD-004.
+     */
+    get: operations["list_versions_api_v1_test_cases__case_id__versions_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/test-cases/{case_id}/versions/{version_no}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Version */
+    get: operations["get_version_api_v1_test_cases__case_id__versions__version_no__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
     trace?: never;
   };
 }
@@ -979,17 +1625,459 @@ export interface components {
       /** Token Prefix */
       token_prefix: string;
     };
+    /** Approval */
+    Approval: {
+      /**
+       * Approved At
+       * Format: date-time
+       */
+      approved_at: string;
+      approved_by: components["schemas"]["UserRef"] | null;
+      /**
+       * Mode
+       * @enum {string}
+       */
+      mode: "auto" | "manual";
+    };
+    /** ApproveRequest */
+    ApproveRequest: {
+      /** Comment */
+      comment?: string | null;
+      /** Row Version */
+      row_version?: number | null;
+    };
     /** ArchiveRequest */
     ArchiveRequest: {
       /** Confirm Key */
       confirm_key: string;
     };
+    /** AttachmentRead */
+    AttachmentRead: {
+      /** Content Type */
+      content_type: string;
+      /**
+       * Entity Id
+       * Format: uuid
+       */
+      entity_id: string;
+      /** Entity Type */
+      entity_type: string;
+      /** File Name */
+      file_name: string;
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Size Bytes */
+      size_bytes: number;
+      /**
+       * Uploaded At
+       * Format: date-time
+       */
+      uploaded_at: string;
+      uploaded_by: components["schemas"]["UserRef"] | null;
+      /** Url */
+      url: string;
+    };
+    /**
+     * AutomationStatus
+     * @enum {string}
+     */
+    AutomationStatus: "manual" | "automated" | "to_be_automated" | "not_automatable";
+    /** Body_upload_api_v1_attachments_post */
+    Body_upload_api_v1_attachments_post: {
+      /**
+       * Entity Id
+       * Format: uuid
+       */
+      entity_id: string;
+      /**
+       * Entity Type
+       * @enum {string}
+       */
+      entity_type: "test_case" | "test_case_step";
+      /** File */
+      file: string;
+    };
+    /** BulkRequest */
+    BulkRequest: {
+      /**
+       * Action
+       * @enum {string}
+       */
+      action:
+        | "move"
+        | "add_tags"
+        | "remove_tags"
+        | "set_priority"
+        | "set_type"
+        | "set_owner"
+        | "set_reviewer"
+        | "set_automation_status"
+        | "deprecate"
+        | "archive"
+        | "restore";
+      /** Case Ids */
+      case_ids?: string[] | null;
+      /**
+       * Filter
+       * @description List filters (docs/06 §2.6) for 'select all matching'
+       */
+      filter?: {
+        [key: string]: string;
+      } | null;
+      /** Params */
+      params?: {
+        [key: string]: unknown;
+      };
+    };
+    /** BulkResponse */
+    BulkResponse: {
+      /**
+       * Bulk Operation Id
+       * Format: uuid
+       */
+      bulk_operation_id: string;
+      /**
+       * Job Id
+       * @description Set when more than 200 cases run in the background
+       */
+      job_id?: string | null;
+      /**
+       * Skipped
+       * @default []
+       */
+      skipped: components["schemas"]["BulkSkipped"][];
+      /** Updated */
+      updated?: number | null;
+    };
+    /** BulkSkipped */
+    BulkSkipped: {
+      /** Code */
+      code: string;
+      /** Detail */
+      detail: string;
+      /** Key */
+      key: string;
+    };
+    /** CaseCounts */
+    CaseCounts: {
+      /** Attachments */
+      attachments: number;
+      /** Comments */
+      comments: number;
+      /** Versions */
+      versions: number;
+    };
+    /** CaseCreate */
+    CaseCreate: {
+      /** Automation Keys */
+      automation_keys?: string[];
+      /** @default manual */
+      automation_status: components["schemas"]["AutomationStatus"];
+      content: components["schemas"]["ContentIn"];
+      design_technique?: components["schemas"]["DesignTechnique"] | null;
+      /** Estimated Minutes */
+      estimated_minutes?: number | null;
+      /**
+       * Folder Id
+       * Format: uuid
+       */
+      folder_id: string;
+      /** Owner Id */
+      owner_id?: string | null;
+      /** @default medium */
+      priority: components["schemas"]["PriorityLevel"];
+      /** Reviewer Id */
+      reviewer_id?: string | null;
+      /** Tags */
+      tags?: string[];
+      /** @default functional */
+      type: components["schemas"]["CaseType"];
+    };
+    /**
+     * CaseFormat
+     * @enum {string}
+     */
+    CaseFormat: "steps" | "text";
+    /** CaseLinkRead */
+    CaseLinkRead: {
+      /**
+       * Case Id
+       * Format: uuid
+       */
+      case_id: string;
+      /**
+       * Direction
+       * @enum {string}
+       */
+      direction: "related" | "duplicated_from" | "duplicated_to";
+      /** Key */
+      key: string;
+      link_type: components["schemas"]["CaseLinkType"];
+      status: components["schemas"]["CaseStatus"];
+      /** Title */
+      title: string;
+    };
+    /**
+     * CaseLinkType
+     * @enum {string}
+     */
+    CaseLinkType: "related" | "duplicated_from";
+    /** CaseListItem */
+    CaseListItem: {
+      /** Approved Version No */
+      approved_version_no: number | null;
+      automation_status: components["schemas"]["AutomationStatus"];
+      /**
+       * Folder Id
+       * Format: uuid
+       */
+      folder_id: string;
+      format: components["schemas"]["CaseFormat"];
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Key */
+      key: string;
+      /** Latest Version No */
+      latest_version_no: number;
+      owner: components["schemas"]["UserRef"] | null;
+      priority: components["schemas"]["PriorityLevel"];
+      /** Row Version */
+      row_version: number;
+      status: components["schemas"]["CaseStatus"];
+      /** Tags */
+      tags: string[];
+      /** Title */
+      title: string;
+      type: components["schemas"]["CaseType"];
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
+    };
+    /**
+     * CasePatch
+     * @description Metadata only: not versioned, audited (BR-01).
+     */
+    CasePatch: {
+      /** Automation Keys */
+      automation_keys?: string[] | null;
+      automation_status?: components["schemas"]["AutomationStatus"] | null;
+      design_technique?: components["schemas"]["DesignTechnique"] | null;
+      /** Estimated Minutes */
+      estimated_minutes?: number | null;
+      /** Folder Id */
+      folder_id?: string | null;
+      /** Owner Id */
+      owner_id?: string | null;
+      priority?: components["schemas"]["PriorityLevel"] | null;
+      /** Reviewer Id */
+      reviewer_id?: string | null;
+      /** Row Version */
+      row_version?: number | null;
+      /** Tags */
+      tags?: string[] | null;
+      type?: components["schemas"]["CaseType"] | null;
+    };
+    /** CaseRead */
+    CaseRead: {
+      /** Approved Version No */
+      approved_version_no: number | null;
+      /** Attachments */
+      attachments: components["schemas"]["AttachmentRead"][];
+      /** Automation Keys */
+      automation_keys: string[];
+      automation_status: components["schemas"]["AutomationStatus"];
+      counts: components["schemas"]["CaseCounts"];
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      created_by: components["schemas"]["UserRef"] | null;
+      design_technique: components["schemas"]["DesignTechnique"] | null;
+      /** Estimated Minutes */
+      estimated_minutes: number | null;
+      folder: components["schemas"]["FolderRef"];
+      format: components["schemas"]["CaseFormat"];
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Key */
+      key: string;
+      /** Latest Version No */
+      latest_version_no: number;
+      /** Links */
+      links: components["schemas"]["CaseLinkRead"][];
+      owner: components["schemas"]["UserRef"] | null;
+      priority: components["schemas"]["PriorityLevel"];
+      /**
+       * Project Id
+       * Format: uuid
+       */
+      project_id: string;
+      reviewer: components["schemas"]["UserRef"] | null;
+      /** Row Version */
+      row_version: number;
+      status: components["schemas"]["CaseStatus"];
+      /** Tags */
+      tags: string[];
+      /** Title */
+      title: string;
+      type: components["schemas"]["CaseType"];
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
+      version: components["schemas"]["VersionRead"];
+      /**
+       * Warnings
+       * @description e.g. title_exists (same title in this folder)
+       */
+      warnings?: string[];
+    };
+    /**
+     * CaseStatus
+     * @enum {string}
+     */
+    CaseStatus: "draft" | "in_review" | "approved" | "deprecated" | "archived";
+    /**
+     * CaseType
+     * @enum {string}
+     */
+    CaseType:
+      | "functional"
+      | "integration"
+      | "end_to_end"
+      | "api"
+      | "ui"
+      | "data_validation"
+      | "performance"
+      | "security"
+      | "compatibility"
+      | "usability";
     /** CheckResult */
     CheckResult: {
       /** Detail */
       detail?: string | null;
       /** Ok */
       ok: boolean;
+    };
+    /** CommentCreate */
+    CommentCreate: {
+      /** Body */
+      body: string;
+      /**
+       * Entity Id
+       * Format: uuid
+       */
+      entity_id: string;
+      /**
+       * Entity Type
+       * @enum {string}
+       */
+      entity_type: "test_case" | "test_case_version";
+    };
+    /** CommentPatch */
+    CommentPatch: {
+      /** Body */
+      body: string;
+    };
+    /** CommentRead */
+    CommentRead: {
+      author: components["schemas"]["UserRef"] | null;
+      /** Body */
+      body: string | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Deleted */
+      deleted: boolean;
+      /**
+       * Editable Until
+       * Format: date-time
+       */
+      editable_until: string;
+      /** Edited At */
+      edited_at: string | null;
+      /**
+       * Entity Id
+       * Format: uuid
+       */
+      entity_id: string;
+      /** Entity Type */
+      entity_type: string;
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Mentions */
+      mentions: string[];
+    };
+    /** CompareRead */
+    CompareRead: {
+      /** Fields */
+      fields: components["schemas"]["FieldDiffRead"][];
+      /** From Version */
+      from_version: number;
+      /** Steps */
+      steps: components["schemas"]["StepDiffRead"][];
+      /** To Version */
+      to_version: number;
+    };
+    /** ContentIn */
+    ContentIn: {
+      /** Description */
+      description?: string | null;
+      /** Expected Result */
+      expected_result?: string | null;
+      /** @default steps */
+      format: components["schemas"]["CaseFormat"];
+      /** Postconditions */
+      postconditions?: string | null;
+      /** Preconditions */
+      preconditions?: string | null;
+      /** Steps */
+      steps?: components["schemas"]["StepIn"][];
+      /** Test Data */
+      test_data?: string | null;
+      /** Text Body */
+      text_body?: string | null;
+      /** Title */
+      title: string;
+    };
+    /** ContentUpdate */
+    ContentUpdate: {
+      /** Change Note */
+      change_note?: string | null;
+      content: components["schemas"]["ContentIn"];
+      /** Row Version */
+      row_version?: number | null;
+    };
+    /**
+     * DesignTechnique
+     * @enum {string}
+     */
+    DesignTechnique:
+      "positive" | "negative" | "boundary_value" | "equivalence_partitioning" | "error_guessing";
+    /** DuplicateRequest */
+    DuplicateRequest: {
+      /** Folder Id */
+      folder_id?: string | null;
+      /** Title */
+      title?: string | null;
     };
     /** EnvironmentCreate */
     EnvironmentCreate: {
@@ -1029,6 +2117,116 @@ export interface components {
       project_id: string;
       /** Row Version */
       row_version: number;
+    };
+    /** ExecutionRead */
+    ExecutionRead: {
+      /**
+       * Cycle Id
+       * Format: uuid
+       */
+      cycle_id: string;
+      /** Cycle Key */
+      cycle_key: string;
+      /** Cycle Name */
+      cycle_name: string;
+      /** Cycle Status */
+      cycle_status: string;
+      executed_by: components["schemas"]["UserRef"] | null;
+      /** Finished At */
+      finished_at: string | null;
+      /**
+       * Run Id
+       * Format: uuid
+       */
+      run_id: string;
+      /** Status */
+      status: string;
+      /** Superseded */
+      superseded: boolean;
+      /** Version No */
+      version_no: number;
+    };
+    /** FieldDiffRead */
+    FieldDiffRead: {
+      /** After */
+      after: string | null;
+      /** Before */
+      before: string | null;
+      /** Changed */
+      changed: boolean;
+      /** Field */
+      field: string;
+    };
+    /** FolderCreate */
+    FolderCreate: {
+      /** Description */
+      description?: string | null;
+      /** Name */
+      name: string;
+      /** Parent Id */
+      parent_id?: string | null;
+    };
+    /** FolderMove */
+    FolderMove: {
+      /** Parent Id */
+      parent_id: string | null;
+      /** Position */
+      position?: number | null;
+      /** Row Version */
+      row_version?: number | null;
+    };
+    /** FolderPatch */
+    FolderPatch: {
+      /** Description */
+      description?: string | null;
+      /** Name */
+      name?: string | null;
+      /** Row Version */
+      row_version?: number | null;
+    };
+    /** FolderRead */
+    FolderRead: {
+      /** Archived */
+      archived: boolean;
+      /**
+       * Case Count
+       * @description Non-archived cases directly in the folder
+       */
+      case_count: number;
+      /** Depth */
+      depth: number;
+      /** Description */
+      description: string | null;
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Name */
+      name: string;
+      /** Parent Id */
+      parent_id: string | null;
+      /** Position */
+      position: number;
+      /** Row Version */
+      row_version: number;
+      /**
+       * Total Count
+       * @description Non-archived cases including all subfolders
+       */
+      total_count: number;
+    };
+    /** FolderRef */
+    FolderRef: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Name */
+      name: string;
+      /** Path Names */
+      path_names: string[];
     };
     /** ForgotPasswordRequest */
     ForgotPasswordRequest: {
@@ -1125,6 +2323,21 @@ export interface components {
       project_id: string | null;
       /** Role Code */
       role_code: string | null;
+    };
+    /** LifecycleRequest */
+    LifecycleRequest: {
+      /** Reason */
+      reason?: string | null;
+    };
+    /** LinkRequest */
+    LinkRequest: {
+      /** @default related */
+      link_type: components["schemas"]["CaseLinkType"];
+      /**
+       * Target Case Id
+       * Format: uuid
+       */
+      target_case_id: string;
     };
     /** LiveStatus */
     LiveStatus: {
@@ -1323,6 +2536,17 @@ export interface components {
       /** Total */
       total: number;
     };
+    /** Page[CaseListItem] */
+    Page_CaseListItem_: {
+      /** Items */
+      items: components["schemas"]["CaseListItem"][];
+      /** Page */
+      page: number;
+      /** Page Size */
+      page_size: number;
+      /** Total */
+      total: number;
+    };
     /** PasswordChangeRequest */
     PasswordChangeRequest: {
       /** Current Password */
@@ -1345,6 +2569,11 @@ export interface components {
        */
       scope: "org" | "project";
     };
+    /**
+     * PriorityLevel
+     * @enum {string}
+     */
+    PriorityLevel: "critical" | "high" | "medium" | "low";
     /**
      * Problem
      * @description Error body for every non-2xx response.
@@ -1595,6 +2824,33 @@ export interface components {
       /** Token */
       token: string;
     };
+    /** ResolveRead */
+    ResolveRead: {
+      /**
+       * Entity Type
+       * @constant
+       */
+      entity_type: "test_case";
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Key */
+      key: string;
+    };
+    /** RestoreVersionRequest */
+    RestoreVersionRequest: {
+      /** Row Version */
+      row_version?: number | null;
+      /** Version No */
+      version_no: number;
+    };
+    /** ReturnRequest */
+    ReturnRequest: {
+      /** Comment */
+      comment: string;
+    };
     /** RevokedCount */
     RevokedCount: {
       /** Revoked */
@@ -1615,6 +2871,12 @@ export interface components {
       name: string;
       /** Permissions */
       permissions: string[];
+    };
+    /** SaveResponse */
+    SaveResponse: {
+      case: components["schemas"]["CaseRead"];
+      /** Version Created */
+      version_created: boolean;
     };
     /** SessionRead */
     SessionRead: {
@@ -1645,6 +2907,92 @@ export interface components {
       /** User Agent */
       user_agent: string | null;
     };
+    /** StepContentRead */
+    StepContentRead: {
+      /** Action */
+      action: string;
+      /** Data */
+      data: string | null;
+      /** Expected Result */
+      expected_result: string | null;
+    };
+    /** StepDiffRead */
+    StepDiffRead: {
+      after: components["schemas"]["StepContentRead"] | null;
+      before: components["schemas"]["StepContentRead"] | null;
+      /**
+       * Change
+       * @enum {string}
+       */
+      change: "unchanged" | "changed" | "added" | "removed";
+      /** Position */
+      position: number;
+    };
+    /** StepIn */
+    StepIn: {
+      /** Action */
+      action: string;
+      /** Data */
+      data?: string | null;
+      /** Expected Result */
+      expected_result?: string | null;
+    };
+    /** StepRead */
+    StepRead: {
+      /** Action */
+      action: string;
+      /**
+       * Attachments
+       * @default []
+       */
+      attachments: components["schemas"]["AttachmentRead"][];
+      /** Data */
+      data: string | null;
+      /** Expected Result */
+      expected_result: string | null;
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Position */
+      position: number;
+    };
+    /** Submission */
+    Submission: {
+      /**
+       * Submitted At
+       * Format: date-time
+       */
+      submitted_at: string;
+      submitted_by: components["schemas"]["UserRef"] | null;
+    };
+    /** SubmitRequest */
+    SubmitRequest: {
+      /** Comment */
+      comment?: string | null;
+      /** Reviewer Id */
+      reviewer_id?: string | null;
+    };
+    /** TagCreate */
+    TagCreate: {
+      /** Name */
+      name: string;
+    };
+    /** TagRead */
+    TagRead: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Is System */
+      is_system: boolean;
+      /** Name */
+      name: string;
+      /** Usage */
+      usage: number;
+    };
     /** UserRef */
     UserRef: {
       /** Display Name */
@@ -1659,6 +3007,64 @@ export interface components {
       /** Is Active */
       is_active: boolean;
     };
+    /** VersionListItem */
+    VersionListItem: {
+      approval: components["schemas"]["Approval"] | null;
+      /** Change Note */
+      change_note: string | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      created_by: components["schemas"]["UserRef"] | null;
+      /** Is Approved Version */
+      is_approved_version: boolean;
+      /** Is Latest */
+      is_latest: boolean;
+      submission: components["schemas"]["Submission"] | null;
+      /** Title */
+      title: string;
+      /** Version No */
+      version_no: number;
+    };
+    /** VersionRead */
+    VersionRead: {
+      approval: components["schemas"]["Approval"] | null;
+      /** Change Note */
+      change_note: string | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      created_by: components["schemas"]["UserRef"] | null;
+      /** Description */
+      description: string | null;
+      /** Expected Result */
+      expected_result: string | null;
+      format: components["schemas"]["CaseFormat"];
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Postconditions */
+      postconditions: string | null;
+      /** Preconditions */
+      preconditions: string | null;
+      /** Steps */
+      steps: components["schemas"]["StepRead"][];
+      submission: components["schemas"]["Submission"] | null;
+      /** Test Data */
+      test_data: string | null;
+      /** Text Body */
+      text_body: string | null;
+      /** Title */
+      title: string;
+      /** Version No */
+      version_no: number;
+    };
   };
   responses: never;
   parameters: never;
@@ -1668,6 +3074,179 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  upload_api_v1_attachments_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "multipart/form-data": components["schemas"]["Body_upload_api_v1_attachments_post"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttachmentRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  get_attachment_api_v1_attachments__attachment_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        attachment_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttachmentRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  attachment_content_api_v1_attachments__attachment_id__content_get: {
+    parameters: {
+      query?: {
+        /** @description Force `Content-Disposition: attachment` */
+        download?: boolean;
+      };
+      header?: never;
+      path: {
+        attachment_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The file */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/octet-stream": unknown;
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  unlink_api_v1_attachments__attachment_id__links__entity_type___entity_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        attachment_id: string;
+        entity_type: "test_case" | "test_case_step";
+        entity_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   record_history_api_v1_audit_events_entity__entity_type___entity_id__get: {
     parameters: {
       query?: {
@@ -2308,6 +3887,179 @@ export interface operations {
       };
     };
   };
+  list_comments_api_v1_comments_get: {
+    parameters: {
+      query: {
+        entity_type: "test_case" | "test_case_version";
+        entity_id: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CommentRead"][];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  add_comment_api_v1_comments_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CommentCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CommentRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  delete_comment_api_v1_comments__comment_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        comment_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  edit_comment_api_v1_comments__comment_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        comment_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CommentPatch"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CommentRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   patch_environment_api_v1_environments__environment_id__patch: {
     parameters: {
       query?: never;
@@ -2416,6 +4168,226 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["EnvironmentRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  delete_folder_api_v1_folders__folder_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        folder_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  patch_folder_api_v1_folders__folder_id__patch: {
+    parameters: {
+      query?: never;
+      header?: {
+        "If-Match"?: string | null;
+      };
+      path: {
+        folder_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FolderPatch"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FolderRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  archive_folder_api_v1_folders__folder_id__archive_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        folder_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FolderRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  move_folder_api_v1_folders__folder_id__move_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "If-Match"?: string | null;
+      };
+      path: {
+        folder_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FolderMove"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FolderRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  restore_folder_api_v1_folders__folder_id__restore_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        folder_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FolderRead"];
         };
       };
       /** @description Validation or business-rule error */
@@ -3674,6 +5646,96 @@ export interface operations {
       };
     };
   };
+  list_folders_api_v1_projects__project_id__folders_get: {
+    parameters: {
+      query?: {
+        include_archived?: boolean;
+      };
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FolderRead"][];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  create_folder_api_v1_projects__project_id__folders_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FolderCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FolderRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   member_candidates_api_v1_projects__project_id__member_candidates_get: {
     parameters: {
       query?: never;
@@ -3980,6 +6042,50 @@ export interface operations {
       };
     };
   };
+  resolve_api_v1_projects__project_id__resolve_get: {
+    parameters: {
+      query: {
+        key: string;
+      };
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResolveRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   restore_project_api_v1_projects__project_id__restore_post: {
     parameters: {
       query?: never;
@@ -3998,6 +6104,252 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ProjectRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  list_tags_api_v1_projects__project_id__tags_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TagRead"][];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  create_tag_api_v1_projects__project_id__tags_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["TagCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TagRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  list_cases_api_v1_projects__project_id__test_cases_get: {
+    parameters: {
+      query?: {
+        page?: number;
+        page_size?: number;
+        sort?: string | null;
+        q?: string | null;
+        folder_id?: string | null;
+        include_subfolders?: boolean;
+        include_archived?: boolean;
+        status?: string | null;
+        type?: string | null;
+        priority?: string | null;
+        owner_id?: string | null;
+        reviewer_id?: string | null;
+        tag?: string | null;
+        automation_status?: string | null;
+      };
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Page_CaseListItem_"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  create_case_api_v1_projects__project_id__test_cases_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CaseCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SaveResponse"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  bulk_api_v1_projects__project_id__test_cases_bulk_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["BulkRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BulkResponse"];
+        };
+      };
+      /** @description Queued (more than 200 cases) */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BulkResponse"];
         };
       };
       /** @description Validation or business-rule error */
@@ -4088,6 +6440,907 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ReleaseRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  delete_tag_api_v1_tags__tag_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        tag_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  get_case_api_v1_test_cases__case_id__get: {
+    parameters: {
+      query?: {
+        version?: number | null;
+      };
+      header?: never;
+      path: {
+        case_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CaseRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  delete_case_api_v1_test_cases__case_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        case_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  patch_case_api_v1_test_cases__case_id__patch: {
+    parameters: {
+      query?: never;
+      header?: {
+        "If-Match"?: string | null;
+      };
+      path: {
+        case_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CasePatch"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CaseRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  approve_api_v1_test_cases__case_id__approve_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "If-Match"?: string | null;
+      };
+      path: {
+        case_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ApproveRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CaseRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  archive_case_api_v1_test_cases__case_id__archive_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        case_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["LifecycleRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CaseRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  compare_api_v1_test_cases__case_id__compare_get: {
+    parameters: {
+      query: {
+        from: number;
+        to: number;
+      };
+      header?: never;
+      path: {
+        case_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CompareRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  put_content_api_v1_test_cases__case_id__content_put: {
+    parameters: {
+      query?: never;
+      header?: {
+        "If-Match"?: string | null;
+      };
+      path: {
+        case_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ContentUpdate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SaveResponse"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  deprecate_case_api_v1_test_cases__case_id__deprecate_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        case_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["LifecycleRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CaseRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  duplicate_api_v1_test_cases__case_id__duplicate_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        case_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["DuplicateRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SaveResponse"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  executions_api_v1_test_cases__case_id__executions_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        case_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ExecutionRead"][];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  history_api_v1_test_cases__case_id__history_get: {
+    parameters: {
+      query?: {
+        page?: number;
+        page_size?: number;
+      };
+      header?: never;
+      path: {
+        case_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Page_ActivityItem_"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  add_link_api_v1_test_cases__case_id__links_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        case_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["LinkRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CaseRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  remove_link_api_v1_test_cases__case_id__links_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        case_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["LinkRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CaseRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  restore_case_api_v1_test_cases__case_id__restore_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        case_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["LifecycleRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CaseRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  restore_version_api_v1_test_cases__case_id__restore_version_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "If-Match"?: string | null;
+      };
+      path: {
+        case_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RestoreVersionRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SaveResponse"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  return_case_api_v1_test_cases__case_id__return_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        case_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ReturnRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CaseRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  submit_api_v1_test_cases__case_id__submit_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        case_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SubmitRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CaseRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  list_versions_api_v1_test_cases__case_id__versions_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        case_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["VersionListItem"][];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  get_version_api_v1_test_cases__case_id__versions__version_no__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        case_id: string;
+        version_no: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["VersionRead"];
         };
       };
       /** @description Validation or business-rule error */
