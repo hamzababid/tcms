@@ -18,7 +18,9 @@ def test_member_signs_in_with_secure_cookies(world: World) -> None:
     assert r.status_code == 200, r.text
     assert r.json() == {"mfa_required": False, "mfa_enrollment_required": False}
     cookie = next(h for h in r.headers.get_list("set-cookie") if h.startswith("tcms_session="))
-    assert "HttpOnly" in cookie and "Secure" in cookie and "samesite=lax" in cookie.lower()
+    assert "HttpOnly" in cookie
+    assert "Secure" in cookie
+    assert "samesite=lax" in cookie.lower()
     assert c.get("/api/v1/auth/me").json()["user"]["email"] == user.email
 
 
@@ -32,7 +34,8 @@ def test_admin_signs_in_with_totp_and_creates_project(world: World) -> None:
     envs = {e["name"] for e in c.get(f"/api/v1/projects/{pid}/environments").json()}
     assert envs == {"QA", "Staging"}
     dup = c.post("/api/v1/projects", json={"key": "Spark", "name": "Other"})
-    assert dup.status_code == 409 and dup.json()["code"] == "project_key_taken"  # AC-WS-01
+    assert dup.status_code == 409
+    assert dup.json()["code"] == "project_key_taken"
 
 
 def test_unknown_email_and_wrong_password_answer_identically(world: World) -> None:

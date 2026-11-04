@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import gzip
+import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import StrEnum
@@ -25,6 +26,16 @@ INVITATION_TTL = timedelta(days=7)
 TOKEN_MAX_DAYS, TOKEN_DEFAULT_DAYS = 365, 90
 SESSION_TOUCH_INTERVAL = timedelta(minutes=1)
 RECOVERY_CODE_COUNT, RECOVERY_CODE_LENGTH = 10, 10
+
+
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s.]+$")
+
+
+def email_problem(email: str) -> FieldError | None:
+    """docs/02 §3.3: RFC 5322 simplified, max 254 characters."""
+    if len(email) > 254 or not _EMAIL_RE.match(email):
+        return FieldError("email", "invalid_email", "Enter a valid email address")
+    return None
 
 
 @lru_cache(maxsize=1)

@@ -195,9 +195,9 @@ def stack_settings(database: Database, minio: dict[str, str], bucket: str) -> ob
 
 @pytest.fixture(scope="session")
 def m1_settings(stack_settings: object) -> object:
-    from tests.world import test_settings
+    from tests.world import make_settings
 
-    return test_settings(stack_settings)  # type: ignore[arg-type]
+    return make_settings(stack_settings)  # type: ignore[arg-type]
 
 
 @pytest.fixture(scope="session")

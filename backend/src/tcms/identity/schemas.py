@@ -7,7 +7,7 @@ from typing import Literal
 from uuid import UUID
 from zoneinfo import available_timezones
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from tcms.core.enums import ProjectStatus
 
@@ -190,7 +190,19 @@ class ApiTokenCreated(ApiTokenRead):
 
 
 class InvitationCreate(_Model):
-    email: EmailStr
+    email: str = Field(max_length=254)
+
+    @field_validator("email")
+    @classmethod
+    def _email(cls, v: str) -> str:
+        from tcms.identity.rules import email_problem
+
+        v = v.strip().lower()
+        problem = email_problem(v)
+        if problem:
+            raise ValueError(problem.message)
+        return v
+
     is_org_admin: bool = False
     project_id: UUID | None = None
     role_code: RoleCodeLiteral | None = None

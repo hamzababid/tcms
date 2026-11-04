@@ -148,6 +148,8 @@ def login(
 
     if user is None or member is None:
         s.add(LoginAttempt(email=email, ip=meta.ip, succeeded=False, occurred_at=now))
+        s.flush()
+        repo.failures_since(s, email, now - rules.LOCKOUT_WINDOW)  # same work as a known user (AC-AUTH-02)
         return Outcome.fail(InvalidCredentials())  # G5: no organization to audit in
 
     ctx = _ctx(user, member.organization_id, member.is_org_admin, meta)

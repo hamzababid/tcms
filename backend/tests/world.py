@@ -28,7 +28,7 @@ from tcms.workspace import service as workspace
 PASSWORD = "Correct-Horse-Battery-9"  # test-only credential
 
 
-def test_settings(base: Settings, **overrides: Any) -> Settings:
+def make_settings(base: Settings, **overrides: Any) -> Settings:
     values = {
         **base.model_dump(),
         "tcms_secret_key": "t" * 48,
@@ -62,8 +62,11 @@ class UserHandle:
     totp_secret: str | None = None
 
     def code(self) -> str:
+        """TOTP for the app clock (follows `clock.frozen`)."""
+        from tcms.core import clock
+
         assert self.totp_secret
-        return pyotp.TOTP(self.totp_secret).now()
+        return pyotp.TOTP(self.totp_secret).at(clock.now())
 
 
 @dataclass
@@ -149,7 +152,17 @@ class World:
         r = c.post("/api/v1/auth/login", json={"email": user.email, "password": user.password})
         assert r.status_code == 200, r.text
         if r.json()["mfa_required"]:
+            from datetime import timedelta
+
+            from tcms.core import clock
+
             r = c.post("/api/v1/auth/mfa/verify", json={"code": user.code()})
+            step = 1
+            while r.status_code == 401 and r.json()["code"] == "invalid_mfa_code" and step <= 3:
+                # The code of this 30 s step was already used (replay protection): use a later step.
+                with clock.frozen(clock.now() + timedelta(seconds=30 * step)):
+                    r = c.post("/api/v1/auth/mfa/verify", json={"code": user.code()})
+                step += 1
             assert r.status_code == 204, r.text
         return c
 
