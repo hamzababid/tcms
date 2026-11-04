@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import boto3
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
@@ -20,19 +19,6 @@ def _settings(db_url: str, minio: dict[str, str], bucket: str = "tcms-attachment
         s3_secret_access_key=SecretStr(minio["secret_key"]),
         s3_bucket=bucket,
     )
-
-
-@pytest.fixture(scope="module")
-def bucket(minio: dict[str, str]) -> str:
-    s3 = boto3.client(
-        "s3",
-        endpoint_url=minio["endpoint"],
-        aws_access_key_id=minio["access_key"],
-        aws_secret_access_key=minio["secret_key"],
-        region_name="us-east-1",
-    )
-    s3.create_bucket(Bucket="tcms-attachments")
-    return "tcms-attachments"
 
 
 def test_live() -> None:

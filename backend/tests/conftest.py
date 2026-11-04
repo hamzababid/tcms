@@ -160,3 +160,34 @@ def minio() -> Iterator[dict[str, str]]:
         }
     finally:
         container.stop()
+
+
+@pytest.fixture(scope="session")
+def bucket(minio: dict[str, str]) -> str:
+    import boto3
+
+    s3 = boto3.client(
+        "s3",
+        endpoint_url=minio["endpoint"],
+        aws_access_key_id=minio["access_key"],
+        aws_secret_access_key=minio["secret_key"],
+        region_name="us-east-1",
+    )
+    s3.create_bucket(Bucket="tcms-attachments")
+    return "tcms-attachments"
+
+
+@pytest.fixture(scope="session")
+def stack_settings(database: Database, minio: dict[str, str], bucket: str) -> object:
+    """Settings pointing at the test database (as tcms_app) and MinIO."""
+    from pydantic import SecretStr
+
+    from tcms.core.config import Settings
+
+    return Settings(
+        database_url=database.app_url,
+        s3_endpoint_url=minio["endpoint"],
+        s3_access_key_id=minio["access_key"],
+        s3_secret_access_key=SecretStr(minio["secret_key"]),
+        s3_bucket=bucket,
+    )

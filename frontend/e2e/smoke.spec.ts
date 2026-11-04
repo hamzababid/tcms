@@ -22,5 +22,6 @@ test("unknown API routes return problem+json", async ({ request }) => {
   const r = await request.get("/api/v1/no-such-route");
   expect(r.status()).toBe(404);
   expect(r.headers()["content-type"]).toBe("application/problem+json");
-  expect((await r.json()).code).toBe("not_found");
+  const body = (await r.json()) as { code: string };
+  expect(body.code).toBe("not_found");
 });
