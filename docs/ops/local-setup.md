@@ -35,7 +35,7 @@ All seed users share the password **`Passw0rd!Passw0rd`**. They exist only where
 | Hira Siddiqui | hira@acme.test | PM / BA | off |
 | Faisal Ahmed | faisal@acme.test | Viewer | off |
 
-`tcms seed --profile e2e` also creates project HELIOS with the same team. Seed invitations are delivered to Mailpit.
+The `dev` profile also fills the SPARK repository: 8 folders (Web Application › Authentication › Login / Password Reset, Dashboard, Backend Services › Meter Readings API, Data Integration) and 11 test cases; SPARK-TC-1 has two versions to show Versions and Compare. `tcms seed --profile e2e` also creates project HELIOS with the same team. Seed invitations are delivered to Mailpit.
 
 ## First organization on a real deployment
 
