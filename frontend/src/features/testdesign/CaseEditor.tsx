@@ -15,7 +15,8 @@ import {
 import { api, ApiError } from "@/api/client";
 import type { Me, Project, ProjectMember } from "@/api/queries";
 import { ConflictDialog } from "@/components/common/dialogs";
-import { errorMessage, useToast } from "@/components/common/feedback";
+import { PageHeader, errorMessage, useToast } from "@/components/common/feedback";
+import { Kbd } from "@/components/common/Tag";
 import { MarkdownEditor } from "@/components/common/Markdown";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input, Select } from "@/components/ui/field";
@@ -415,448 +416,457 @@ export function CaseEditor({
     : null;
 
   return (
-    <div className="mx-auto flex max-w-[1280px] flex-col gap-4">
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="flex-1">
-          {existing ? (
-            <p className="text-xs text-ink-secondary">
-              <span className="font-mono">{existing.key}</span> · editing v{existing.latest_version_no}
-            </p>
-          ) : null}
-          <h1 className="text-2xl font-semibold text-ink">{existing ? "Edit test case" : "New test case"}</h1>
-        </div>
-        {lastLocal ? (
-          <span className="text-xs text-ink-muted" role="status">
-            Draft saved locally {formatDateTime(lastLocal)}
-          </span>
+    <div className="flex min-h-full flex-col">
+      <PageHeader
+        title={existing ? "Edit test case" : "New test case"}
+        eyebrow={
+          existing ? (
+            <>
+              <span className="font-mono font-medium">{existing.key}</span> · editing v
+              {existing.latest_version_no}
+            </>
+          ) : undefined
+        }
+        actions={
+          <>
+            {lastLocal ? (
+              <span className="mr-1 text-xs text-ink-muted" role="status">
+                Draft saved locally {formatDateTime(lastLocal)}
+              </span>
+            ) : null}
+            <Button variant="ghost" size="sm" onClick={onCancel}>
+              Cancel
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={save.isPending}
+              onClick={() => {
+                submit("new");
+              }}
+              title="Ctrl+Shift+S"
+            >
+              Save &amp; new
+            </Button>
+            <Button
+              size="sm"
+              disabled={save.isPending}
+              onClick={() => {
+                submit("detail");
+              }}
+              title="Ctrl+S"
+            >
+              {existing && contentChanged ? `Save v${nextVersion}` : "Save"}
+              <Kbd onAccent>Ctrl S</Kbd>
+            </Button>
+          </>
+        }
+      />
+      <div className="flex max-w-[1320px] flex-col gap-4 px-6 py-6">
+        {restored ? (
+          <div
+            role="status"
+            className="flex items-center gap-3 rounded-control border border-[var(--status-progress-border)] bg-[var(--status-progress-bg)] px-3 py-2.5 text-[13px] text-[var(--status-progress-fg)]"
+          >
+            <span className="flex-1">You have an unsaved draft from {formatDateTime(restored.savedAt)}.</span>
+            <Button
+              size="sm"
+              onClick={() => {
+                setDraft(restored.draft);
+                setRestored(null);
+              }}
+            >
+              Restore draft
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                writeDraft(storageKey, null);
+                setRestored(null);
+              }}
+            >
+              Discard
+            </Button>
+          </div>
         ) : null}
-        <Button variant="ghost" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button
-          variant="secondary"
-          disabled={save.isPending}
-          onClick={() => {
-            submit("new");
-          }}
-          title="Ctrl+Shift+S"
-        >
-          Save &amp; new
-        </Button>
-        <Button
-          disabled={save.isPending}
-          onClick={() => {
-            submit("detail");
-          }}
-          title="Ctrl+S"
-        >
-          {existing && contentChanged ? `Save v${nextVersion}` : "Save"}
-          <kbd className="rounded bg-[rgb(255_255_255/0.2)] px-1 text-[10px]">Ctrl S</kbd>
-        </Button>
-      </div>
 
-      {restored ? (
-        <div
-          role="status"
-          className="flex items-center gap-3 rounded-control border border-[var(--status-progress-border)] bg-[var(--status-progress-bg)] px-3 py-2 text-sm text-[var(--status-progress-fg)]"
-        >
-          <span className="flex-1">You have an unsaved draft from {formatDateTime(restored.savedAt)}.</span>
-          <Button
-            size="sm"
-            onClick={() => {
-              setDraft(restored.draft);
-              setRestored(null);
-            }}
+        {existing && approval && contentChanged ? (
+          <div
+            role="status"
+            className="flex items-center gap-2 rounded-control border border-[var(--status-progress-border)] bg-[var(--status-progress-bg)] px-3 py-2.5 text-[13px] text-[var(--status-progress-fg)]"
           >
-            Restore draft
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => {
-              writeDraft(storageKey, null);
-              setRestored(null);
-            }}
+            <Info aria-hidden="true" className="size-4" />
+            <span>
+              Saving creates <strong>v{nextVersion}</strong>.{" "}
+              {existing.approved_version_no
+                ? `Cycles keep using approved v${existing.approved_version_no} until v${nextVersion} is approved.`
+                : "It needs approval before cycles can use it."}
+            </span>
+          </div>
+        ) : null}
+
+        {serverError ? (
+          <div
+            role="alert"
+            className="rounded-control border border-danger-border bg-danger-surface px-3 py-2.5 text-[13px] text-danger-ink"
           >
-            Discard
-          </Button>
-        </div>
-      ) : null}
+            {errorMessage(serverError)}
+            {fieldErrors.length ? (
+              <ul className="mt-1 list-disc pl-5">
+                {fieldErrors.map((e) => (
+                  <li key={`${e.field}-${e.code}`}>
+                    {e.field}: {e.message}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        ) : null}
 
-      {existing && approval && contentChanged ? (
-        <div
-          role="status"
-          className="flex items-center gap-2 rounded-control border border-[var(--status-progress-border)] bg-[var(--status-progress-bg)] px-3 py-2 text-sm text-[var(--status-progress-fg)]"
-        >
-          <Info aria-hidden="true" className="size-4" />
-          <span>
-            Saving creates <strong>v{nextVersion}</strong>.{" "}
-            {existing.approved_version_no
-              ? `Cycles keep using approved v${existing.approved_version_no} until v${nextVersion} is approved.`
-              : "It needs approval before cycles can use it."}
-          </span>
-        </div>
-      ) : null}
-
-      {serverError ? (
-        <div
-          role="alert"
-          className="rounded-control border border-[var(--status-fail-border)] bg-[var(--status-fail-bg)] px-3 py-2 text-sm text-[var(--status-fail-fg)]"
-        >
-          {errorMessage(serverError)}
-          {fieldErrors.length ? (
-            <ul className="mt-1 list-disc pl-5">
-              {fieldErrors.map((e) => (
-                <li key={`${e.field}-${e.code}`}>
-                  {e.field}: {e.message}
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
-      ) : null}
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <PasteUpload.Provider value={pasteUpload}>
-          <section
-            aria-label="Content"
-            className="flex flex-col gap-4 rounded-card border border-border bg-surface p-5"
-          >
-            <Field label="Title" required error={showErr.title}>
-              {(p) => (
-                <Input
-                  {...p}
-                  ref={titleRef}
-                  value={draft.title}
-                  maxLength={255}
-                  onChange={(e) => {
-                    set("title", e.target.value);
-                  }}
-                />
-              )}
-            </Field>
-            <fieldset className="flex items-center gap-4 text-sm">
-              <legend className="mb-1 text-xs font-medium text-ink-secondary">Format</legend>
-              {(["steps", "text"] as const).map((f) => (
-                <label key={f} className="flex items-center gap-1.5">
-                  <input
-                    type="radio"
-                    name="format"
-                    checked={draft.format === f}
-                    onChange={() => {
-                      const hasSteps = draft.steps.some((s) => s.action.trim() || s.expected_result.trim());
-                      if (
-                        f === "text" &&
-                        hasSteps &&
-                        !window.confirm("Switching to text discards the steps. Continue?")
-                      )
-                        return;
-                      set("format", f);
-                    }}
-                  />
-                  {f === "steps" ? "Steps" : "Text"}
-                </label>
-              ))}
-            </fieldset>
-            <p className="-mt-2 text-xs text-ink-muted">
-              Text fields support Markdown{existing ? "; paste an image into any of them to attach it" : ""}.
-            </p>
-            <MdField
-              label="Description"
-              value={draft.description}
-              onChange={(v) => {
-                set("description", v);
-              }}
-            />
-            <MdField
-              label="Preconditions"
-              value={draft.preconditions}
-              onChange={(v) => {
-                set("preconditions", v);
-              }}
-            />
-            <MdField
-              label="Test data"
-              value={draft.test_data}
-              onChange={(v) => {
-                set("test_data", v);
-              }}
-              placeholder="Accounts, payloads, files…"
-            />
-            {draft.format === "steps" ? (
-              <div>
-                <div className="mb-2 flex flex-wrap items-baseline gap-3">
-                  <span className="text-xs font-medium text-ink-secondary">Steps *</span>
-                  <span className="text-xs text-ink-muted">
-                    Enter new step · Tab next cell · Alt ↑↓ reorder · Ctrl D duplicate · Ctrl ⌫ delete · paste
-                    rows from a spreadsheet
-                  </span>
-                  <span className="flex-1" />
-                  <Checkbox
-                    label="Data column"
-                    checked={showData}
-                    onChange={(e) => {
-                      setShowData(e.target.checked);
-                    }}
-                  />
-                </div>
-                <StepGrid
-                  steps={draft.steps}
-                  onChange={(s) => {
-                    set("steps", s);
-                  }}
-                  showData={showData}
-                  errors={showErr.steps}
-                  stepAttachments={
-                    existing
-                      ? {
-                          byStep,
-                          canUpload: true,
-                          maxMb: project.settings.attachment_max_mb,
-                          onChanged: () => {
-                            invalidate(project.id, existing.id);
-                          },
-                        }
-                      : null
-                  }
-                />
-              </div>
-            ) : (
-              <MdField
-                label="Procedure"
-                required
-                value={draft.text_body}
-                onChange={(v) => {
-                  set("text_body", v);
-                }}
-                error={showErr.text_body}
-                rows={8}
-              />
-            )}
-            <MdField
-              label="Overall expected result"
-              value={draft.expected_result}
-              onChange={(v) => {
-                set("expected_result", v);
-              }}
-            />
-            <MdField
-              label="Postconditions"
-              value={draft.postconditions}
-              onChange={(v) => {
-                set("postconditions", v);
-              }}
-            />
-            {existing ? (
-              <Field label="Change note" hint="Shown in the version history">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <PasteUpload.Provider value={pasteUpload}>
+            <section
+              aria-label="Content"
+              className="flex flex-col gap-4 rounded-card border border-border bg-surface p-5"
+            >
+              <Field label="Title" required error={showErr.title}>
                 {(p) => (
                   <Input
                     {...p}
-                    maxLength={500}
-                    value={draft.change_note}
+                    ref={titleRef}
+                    value={draft.title}
+                    maxLength={255}
                     onChange={(e) => {
-                      set("change_note", e.target.value);
+                      set("title", e.target.value);
                     }}
                   />
                 )}
               </Field>
-            ) : null}
-          </section>
-        </PasteUpload.Provider>
-
-        <aside
-          aria-label="Properties"
-          className="flex flex-col gap-4 self-start rounded-card border border-border bg-surface p-5"
-        >
-          <h2 className="text-sm font-semibold text-ink">Properties</h2>
-          <Field label="Folder" required>
-            {(p) => (
-              <Select
-                {...p}
-                value={draft.folder_id}
-                onChange={(e) => {
-                  set("folder_id", e.target.value);
+              <fieldset className="flex items-center gap-4 text-[13.5px]">
+                <legend className="mb-1.5 text-[13px] font-medium text-ink">Format</legend>
+                {(["steps", "text"] as const).map((f) => (
+                  <label key={f} className="flex items-center gap-1.5">
+                    <input
+                      type="radio"
+                      name="format"
+                      checked={draft.format === f}
+                      onChange={() => {
+                        const hasSteps = draft.steps.some((s) => s.action.trim() || s.expected_result.trim());
+                        if (
+                          f === "text" &&
+                          hasSteps &&
+                          !window.confirm("Switching to text discards the steps. Continue?")
+                        )
+                          return;
+                        set("format", f);
+                      }}
+                    />
+                    {f === "steps" ? "Steps" : "Text"}
+                  </label>
+                ))}
+              </fieldset>
+              <p className="-mt-2 text-xs text-ink-muted">
+                Text fields support Markdown{existing ? "; paste an image into any of them to attach it" : ""}
+                .
+              </p>
+              <MdField
+                label="Description"
+                value={draft.description}
+                onChange={(v) => {
+                  set("description", v);
                 }}
-              >
-                {folders
-                  .filter((f) => !f.archived || f.id === draft.folder_id)
-                  .map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {"  ".repeat(f.depth - 1)}
-                      {f.name}
-                    </option>
-                  ))}
-              </Select>
-            )}
-          </Field>
-          <EnumField
-            label="Type"
-            required
-            value={draft.type}
-            options={CASE_TYPES}
-            onChange={(v) => {
-              set("type", v);
-            }}
-          />
-          <EnumField
-            label="Technique"
-            value={draft.design_technique}
-            options={TECHNIQUES}
-            onChange={(v) => {
-              set("design_technique", v);
-            }}
-            empty="None"
-          />
-          <EnumField
-            label="Priority"
-            required
-            value={draft.priority}
-            options={PRIORITY_LABELS}
-            onChange={(v) => {
-              set("priority", v);
-            }}
-          />
-          <EnumField
-            label="Owner"
-            required
-            value={draft.owner_id}
-            options={Object.fromEntries(members.map((m) => [m.user.id, m.user.display_name]))}
-            onChange={(v) => {
-              set("owner_id", v);
-            }}
-          />
-          <EnumField
-            label="Reviewer"
-            value={draft.reviewer_id}
-            options={Object.fromEntries(reviewers.map((m) => [m.user.id, m.user.display_name]))}
-            onChange={(v) => {
-              set("reviewer_id", v);
-            }}
-            empty="None"
-          />
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="tag-input" className="text-xs font-medium text-ink-secondary">
-              Tags
-            </label>
-            <div className="flex flex-wrap items-center gap-1 rounded-control border border-border px-2 py-1.5">
-              {draft.tags.map((t) => (
-                <span
-                  key={t}
-                  className="inline-flex items-center gap-1 rounded-full bg-ground px-2 py-0.5 text-xs"
-                >
-                  {t}
-                  <button
-                    type="button"
-                    aria-label={`Remove tag ${t}`}
-                    onClick={() => {
-                      set(
-                        "tags",
-                        draft.tags.filter((x) => x !== t),
-                      );
+              />
+              <MdField
+                label="Preconditions"
+                value={draft.preconditions}
+                onChange={(v) => {
+                  set("preconditions", v);
+                }}
+              />
+              <MdField
+                label="Test data"
+                value={draft.test_data}
+                onChange={(v) => {
+                  set("test_data", v);
+                }}
+                placeholder="Accounts, payloads, files…"
+              />
+              {draft.format === "steps" ? (
+                <div>
+                  <div className="mb-2 flex flex-wrap items-baseline gap-3">
+                    <span className="text-[13px] font-medium text-ink">Steps *</span>
+                    <span className="text-xs text-ink-muted">
+                      Enter new step · Tab next cell · Alt ↑↓ reorder · Ctrl D duplicate · Ctrl ⌫ delete ·
+                      paste rows from a spreadsheet
+                    </span>
+                    <span className="flex-1" />
+                    <Checkbox
+                      label="Data column"
+                      checked={showData}
+                      onChange={(e) => {
+                        setShowData(e.target.checked);
+                      }}
+                    />
+                  </div>
+                  <StepGrid
+                    steps={draft.steps}
+                    onChange={(s) => {
+                      set("steps", s);
                     }}
+                    showData={showData}
+                    errors={showErr.steps}
+                    stepAttachments={
+                      existing
+                        ? {
+                            byStep,
+                            canUpload: true,
+                            maxMb: project.settings.attachment_max_mb,
+                            onChanged: () => {
+                              invalidate(project.id, existing.id);
+                            },
+                          }
+                        : null
+                    }
+                  />
+                </div>
+              ) : (
+                <MdField
+                  label="Procedure"
+                  required
+                  value={draft.text_body}
+                  onChange={(v) => {
+                    set("text_body", v);
+                  }}
+                  error={showErr.text_body}
+                  rows={8}
+                />
+              )}
+              <MdField
+                label="Overall expected result"
+                value={draft.expected_result}
+                onChange={(v) => {
+                  set("expected_result", v);
+                }}
+              />
+              <MdField
+                label="Postconditions"
+                value={draft.postconditions}
+                onChange={(v) => {
+                  set("postconditions", v);
+                }}
+              />
+              {existing ? (
+                <Field label="Change note" hint="Shown in the version history">
+                  {(p) => (
+                    <Input
+                      {...p}
+                      maxLength={500}
+                      value={draft.change_note}
+                      onChange={(e) => {
+                        set("change_note", e.target.value);
+                      }}
+                    />
+                  )}
+                </Field>
+              ) : null}
+            </section>
+          </PasteUpload.Provider>
+
+          <aside
+            aria-label="Properties"
+            className="flex flex-col gap-4 self-start rounded-card border border-border bg-surface p-5"
+          >
+            <h2 className="text-[15px] font-semibold text-ink">Properties</h2>
+            <Field label="Folder" required>
+              {(p) => (
+                <Select
+                  {...p}
+                  value={draft.folder_id}
+                  onChange={(e) => {
+                    set("folder_id", e.target.value);
+                  }}
+                >
+                  {folders
+                    .filter((f) => !f.archived || f.id === draft.folder_id)
+                    .map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {"  ".repeat(f.depth - 1)}
+                        {f.name}
+                      </option>
+                    ))}
+                </Select>
+              )}
+            </Field>
+            <EnumField
+              label="Type"
+              required
+              value={draft.type}
+              options={CASE_TYPES}
+              onChange={(v) => {
+                set("type", v);
+              }}
+            />
+            <EnumField
+              label="Technique"
+              value={draft.design_technique}
+              options={TECHNIQUES}
+              onChange={(v) => {
+                set("design_technique", v);
+              }}
+              empty="None"
+            />
+            <EnumField
+              label="Priority"
+              required
+              value={draft.priority}
+              options={PRIORITY_LABELS}
+              onChange={(v) => {
+                set("priority", v);
+              }}
+            />
+            <EnumField
+              label="Owner"
+              required
+              value={draft.owner_id}
+              options={Object.fromEntries(members.map((m) => [m.user.id, m.user.display_name]))}
+              onChange={(v) => {
+                set("owner_id", v);
+              }}
+            />
+            <EnumField
+              label="Reviewer"
+              value={draft.reviewer_id}
+              options={Object.fromEntries(reviewers.map((m) => [m.user.id, m.user.display_name]))}
+              onChange={(v) => {
+                set("reviewer_id", v);
+              }}
+              empty="None"
+            />
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="tag-input" className="text-[13px] font-medium text-ink">
+                Tags
+              </label>
+              <div className="flex min-h-9 flex-wrap items-center gap-1 rounded-control border border-border-control bg-surface px-1.5 py-1 focus-within:border-accent focus-within:ring-[3px] focus-within:ring-accent-tint">
+                {draft.tags.map((t) => (
+                  <span
+                    key={t}
+                    className="inline-flex h-[22px] items-center gap-1 rounded-full bg-accent-tint pl-2 pr-1.5 text-xs text-accent-ink"
                   >
-                    ×
-                  </button>
-                </span>
-              ))}
-              <input
-                id="tag-input"
-                list="tag-suggestions"
-                value={tagInput}
-                placeholder={draft.tags.length >= 20 ? "Max 20 tags" : "Add tag"}
-                disabled={draft.tags.length >= 20}
-                className="min-w-20 flex-1 bg-transparent text-sm outline-none"
-                onChange={(e) => {
-                  setTagInput(e.target.value);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === ",") {
-                    e.preventDefault();
-                    addTag(tagInput);
-                  } else if (e.key === "Backspace" && !tagInput && draft.tags.length) {
-                    set("tags", draft.tags.slice(0, -1));
-                  }
-                }}
-                onBlur={() => {
-                  if (tagInput) addTag(tagInput);
-                }}
-              />
-              <datalist id="tag-suggestions">
-                {tags
-                  .filter((t) => !draft.tags.includes(t.name))
-                  .map((t) => (
-                    <option key={t.id} value={t.name} />
-                  ))}
-              </datalist>
+                    {t}
+                    <button
+                      type="button"
+                      aria-label={`Remove tag ${t}`}
+                      onClick={() => {
+                        set(
+                          "tags",
+                          draft.tags.filter((x) => x !== t),
+                        );
+                      }}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+                <input
+                  id="tag-input"
+                  list="tag-suggestions"
+                  value={tagInput}
+                  placeholder={draft.tags.length >= 20 ? "Max 20 tags" : "Add tag"}
+                  disabled={draft.tags.length >= 20}
+                  className="min-w-20 flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-ink-muted"
+                  onChange={(e) => {
+                    setTagInput(e.target.value);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === ",") {
+                      e.preventDefault();
+                      addTag(tagInput);
+                    } else if (e.key === "Backspace" && !tagInput && draft.tags.length) {
+                      set("tags", draft.tags.slice(0, -1));
+                    }
+                  }}
+                  onBlur={() => {
+                    if (tagInput) addTag(tagInput);
+                  }}
+                />
+                <datalist id="tag-suggestions">
+                  {tags
+                    .filter((t) => !draft.tags.includes(t.name))
+                    .map((t) => (
+                      <option key={t.id} value={t.name} />
+                    ))}
+                </datalist>
+              </div>
+              <p className="text-xs text-ink-muted">
+                Lowercase letters, digits and - _ . · new tags are created on save
+              </p>
             </div>
-            <p className="text-xs text-ink-muted">
-              Lowercase letters, digits and - _ . · new tags are created on save
-            </p>
-          </div>
-          <EnumField
-            label="Automation"
-            required
-            value={draft.automation_status}
-            options={AUTOMATION}
-            onChange={(v) => {
-              set("automation_status", v);
-            }}
-          />
-          <Field label="Automation keys" hint="One per line, unique in the project">
-            {(p) => (
-              <textarea
-                {...p}
-                rows={2}
-                value={draft.automation_keys}
-                onChange={(e) => {
-                  set("automation_keys", e.target.value);
-                }}
-                className="w-full rounded-control border border-border bg-surface px-3 py-2 font-mono text-xs"
-              />
-            )}
-          </Field>
-          <Field label="Estimated minutes" error={showErr.estimate}>
-            {(p) => (
-              <Input
-                {...p}
-                inputMode="numeric"
-                value={draft.estimated_minutes}
-                onChange={(e) => {
-                  set("estimated_minutes", e.target.value);
-                }}
-              />
-            )}
-          </Field>
-          <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-ink-secondary">Attachments</span>
-            {latest ? (
-              <AttachmentList
-                attachments={latest.attachments}
-                entityType="test_case"
-                entityId={latest.id}
-                canUpload
-                canRemove={() => true}
-                maxMb={project.settings.attachment_max_mb}
-                onChanged={() => {
-                  invalidate(project.id, latest.id);
-                }}
-              />
-            ) : (
-              <p className="text-xs text-ink-muted">Attachments can be added after the case is created.</p>
-            )}
-          </div>
-        </aside>
+            <EnumField
+              label="Automation"
+              required
+              value={draft.automation_status}
+              options={AUTOMATION}
+              onChange={(v) => {
+                set("automation_status", v);
+              }}
+            />
+            <Field label="Automation keys" hint="One per line, unique in the project">
+              {(p) => (
+                <textarea
+                  {...p}
+                  rows={2}
+                  value={draft.automation_keys}
+                  onChange={(e) => {
+                    set("automation_keys", e.target.value);
+                  }}
+                  className="w-full rounded-control border border-border-control bg-surface px-2.5 py-2 font-mono text-xs focus-visible:border-accent focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-accent-tint"
+                />
+              )}
+            </Field>
+            <Field label="Estimated minutes" error={showErr.estimate}>
+              {(p) => (
+                <Input
+                  {...p}
+                  inputMode="numeric"
+                  value={draft.estimated_minutes}
+                  onChange={(e) => {
+                    set("estimated_minutes", e.target.value);
+                  }}
+                />
+              )}
+            </Field>
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[13px] font-medium text-ink">Attachments</span>
+              {latest ? (
+                <AttachmentList
+                  attachments={latest.attachments}
+                  entityType="test_case"
+                  entityId={latest.id}
+                  canUpload
+                  canRemove={() => true}
+                  maxMb={project.settings.attachment_max_mb}
+                  onChanged={() => {
+                    invalidate(project.id, latest.id);
+                  }}
+                />
+              ) : (
+                <p className="text-xs text-ink-muted">Attachments can be added after the case is created.</p>
+              )}
+            </div>
+          </aside>
+        </div>
+        <ConflictDialog
+          error={save.error}
+          onClose={() => {
+            save.reset();
+          }}
+          onReload={() => {
+            save.reset();
+            onReload();
+          }}
+        />
       </div>
-      <ConflictDialog
-        error={save.error}
-        onClose={() => {
-          save.reset();
-        }}
-        onReload={() => {
-          save.reset();
-          onReload();
-        }}
-      />
     </div>
   );
 }

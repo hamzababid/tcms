@@ -13,14 +13,7 @@ import {
   type Project,
   type Release,
 } from "@/api/queries";
-import {
-  EmptyState,
-  ErrorState,
-  errorMessage,
-  PageHeader,
-  Skeleton,
-  useToast,
-} from "@/components/common/feedback";
+import { EmptyState, ErrorState, errorMessage, Page, Skeleton, useToast } from "@/components/common/feedback";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Checkbox, Field, Input, Select } from "@/components/ui/field";
@@ -31,8 +24,8 @@ import { can, projectPermissions, ROLE_LABELS } from "@/lib/permissions";
 const ROLE_CODES = ["qa_manager", "qa_lead", "qa_engineer", "developer", "pm_ba", "viewer"] as const;
 type RoleCode = (typeof ROLE_CODES)[number];
 
-const th = "px-4 text-left text-xs font-medium text-ink-secondary";
-const td = "px-4 text-[13px]";
+const th = "";
+const td = "";
 
 function useInvalidateProject(projectId: string) {
   const qc = useQueryClient();
@@ -326,9 +319,9 @@ function Members({ project, manage }: { project: Project; manage: boolean }) {
           </Button>
         </form>
       ) : null}
-      <table className="w-full rounded-card border border-border bg-surface">
-        <thead className="bg-ground">
-          <tr className="h-9">
+      <table className="data-table">
+        <thead>
+          <tr>
             <th scope="col" className={th}>
               Name
             </th>
@@ -347,7 +340,7 @@ function Members({ project, manage }: { project: Project; manage: boolean }) {
         </thead>
         <tbody>
           {members.data.map((m) => (
-            <tr key={m.user.id} className="h-10 border-t border-border">
+            <tr key={m.user.id}>
               <td className={td}>
                 {m.user.display_name}
                 {!m.user.is_active ? <span className="ml-2 text-xs text-ink-muted">deactivated</span> : null}
@@ -481,7 +474,7 @@ function Environments({ project, editable }: { project: Project; editable: boole
           </Button>
         </form>
       ) : null}
-      <ul className="divide-y divide-border rounded-card border border-border bg-surface">
+      <ul className="data-list">
         {envs.data.map((e) => (
           <li key={e.id} className="flex h-10 items-center justify-between px-4 text-sm">
             <span className={e.archived ? "text-ink-muted" : "text-ink"}>
@@ -522,7 +515,7 @@ function ReleaseRow({
 }) {
   const [error, setError] = useState<string | null>(null);
   return (
-    <tr className="h-10 border-t border-border">
+    <tr>
       <td className={td}>{release.name}</td>
       <td className={`${td} text-ink-secondary`}>
         {release.start_date ?? "—"} → {release.target_date ?? "—"}
@@ -559,7 +552,7 @@ function ReleaseRow({
           RELEASE_LABEL[release.status]
         )}
         {error ? (
-          <span role="alert" className="ml-2 text-xs text-[var(--status-fail-fg)]">
+          <span role="alert" className="ml-2 text-xs text-danger">
             {error}
           </span>
         ) : null}
@@ -657,9 +650,9 @@ function Releases({ project, editable }: { project: Project; editable: boolean }
       {releases.data.length === 0 ? (
         <EmptyState text="No releases yet." />
       ) : (
-        <table className="w-full rounded-card border border-border bg-surface">
-          <thead className="bg-ground">
-            <tr className="h-9">
+        <table className="data-table">
+          <thead>
+            <tr>
               <th scope="col" className={th}>
                 Release
               </th>
@@ -837,17 +830,17 @@ export function SettingsPage({
       : []),
   ];
   return (
-    <div className="mx-auto max-w-5xl">
-      <PageHeader
-        title={`${project.name} · Settings`}
-        subtitle={writable ? undefined : "This project is archived and read-only."}
-      />
+    <Page
+      title="Settings"
+      eyebrow={project.name}
+      subtitle={writable ? undefined : "This project is archived and read-only."}
+    >
       <Tabs
         label="Project settings"
         value={items.some((i) => i.value === tab) ? tab : "general"}
         onValueChange={onTab}
         items={items}
       />
-    </div>
+    </Page>
   );
 }

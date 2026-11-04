@@ -1,3 +1,4 @@
+import { Plus } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -7,7 +8,7 @@ import { z } from "zod";
 
 import { api, ApiError } from "@/api/client";
 import { keys, useMe, useProjects } from "@/api/queries";
-import { EmptyState, ErrorState, PageHeader, Skeleton } from "@/components/common/feedback";
+import { EmptyState, ErrorState, Page, Skeleton } from "@/components/common/feedback";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/field";
@@ -97,21 +98,22 @@ export function ProjectsPage() {
   const [open, setOpen] = useState(false);
   const canCreate = Boolean(me?.org_permissions.includes("project.create"));
   return (
-    <div className="mx-auto max-w-5xl">
-      <PageHeader
-        title="Projects"
-        actions={
-          canCreate ? (
-            <Button
-              onClick={() => {
-                setOpen(true);
-              }}
-            >
-              New project
-            </Button>
-          ) : null
-        }
-      />
+    <Page
+      title="Projects"
+      actions={
+        canCreate ? (
+          <Button
+            size="sm"
+            onClick={() => {
+              setOpen(true);
+            }}
+          >
+            <Plus aria-hidden="true" className="size-4" />
+            New project
+          </Button>
+        ) : null
+      }
+    >
       {projects.isPending ? (
         <Skeleton />
       ) : projects.isError ? (
@@ -136,9 +138,9 @@ export function ProjectsPage() {
           }
         />
       ) : (
-        <table className="w-full overflow-hidden rounded-card border border-border bg-surface text-[13px]">
-          <thead className="bg-ground text-left text-xs font-medium text-ink-secondary">
-            <tr className="h-9">
+        <table className="data-table">
+          <thead>
+            <tr>
               <th scope="col" className="px-4">
                 Key
               </th>
@@ -152,12 +154,12 @@ export function ProjectsPage() {
           </thead>
           <tbody>
             {projects.data.map((p) => (
-              <tr key={p.id} className="h-10 border-t border-border hover:bg-ground">
-                <td className="px-4 font-mono text-xs">
+              <tr key={p.id}>
+                <td className="px-4 font-mono text-[13px] font-medium">
                   <Link
                     to="/p/$projectKey/activity"
                     params={{ projectKey: p.key }}
-                    className="text-accent hover:underline"
+                    className="text-link hover:underline"
                   >
                     {p.key}
                   </Link>
@@ -172,6 +174,6 @@ export function ProjectsPage() {
         </table>
       )}
       <CreateProjectDialog open={open} onOpenChange={setOpen} />
-    </div>
+    </Page>
   );
 }

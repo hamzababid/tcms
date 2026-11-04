@@ -8,7 +8,12 @@ import { lastProject } from "@/lib/permissions";
 export const Route = createFileRoute("/_app/")({
   component: function Home() {
     const projects = useProjects();
-    if (projects.isPending) return <Skeleton />;
+    if (projects.isPending)
+      return (
+        <div className="p-6">
+          <Skeleton />
+        </div>
+      );
     const remembered = lastProject();
     const target =
       projects.data?.find((p) => p.key === remembered) ??

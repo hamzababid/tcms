@@ -11,12 +11,12 @@ import { cn } from "@/lib/utils";
 export function MarkdownView({ text, className }: { text: string | null | undefined; className?: string }) {
   if (!text) return null;
   return (
-    <div className={cn("md text-sm leading-6 text-ink", className)}>
+    <div className={cn("md text-[13.5px] leading-[1.6] text-ink", className)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
           a: ({ children, href }) => (
-            <a href={href} target="_blank" rel="noreferrer noopener" className="text-accent hover:underline">
+            <a href={href} target="_blank" rel="noreferrer noopener" className="text-link hover:underline">
               {children}
             </a>
           ),

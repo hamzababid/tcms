@@ -1,3 +1,4 @@
+import { FolderPlus, Plus } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -5,7 +6,8 @@ import { useEffect, useState } from "react";
 import { api } from "@/api/client";
 import { useMembers, type Me, type Project } from "@/api/queries";
 import { ConfirmDialog, PromptDialog } from "@/components/common/dialogs";
-import { ErrorState, Skeleton, errorMessage, useToast } from "@/components/common/feedback";
+import { ErrorState, PageHeader, Skeleton, errorMessage, useToast } from "@/components/common/feedback";
+import { Kbd } from "@/components/common/Tag";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/field";
 import { can } from "@/lib/permissions";
@@ -205,36 +207,43 @@ export function RepositoryPage({
   };
 
   return (
-    <div className="flex h-[calc(100vh-112px)] min-h-[480px] flex-col">
-      <div className="mb-4 flex items-center gap-2">
-        <h1 className="flex-1 text-2xl font-semibold text-ink">Repository</h1>
-        {canFolders ? (
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setDialog({ kind: "create", parent: selected });
-            }}
-          >
-            + Folder
-          </Button>
-        ) : null}
-        {canCreate && firstUsable ? (
-          <Button onClick={newCase}>
-            + New case <kbd className="rounded bg-[rgb(255_255_255/0.2)] px-1 text-[10px]">C</kbd>
-          </Button>
-        ) : null}
-      </div>
-      <div className="flex min-h-0 flex-1 gap-4">
+    <div className="flex h-full min-h-[520px] flex-col">
+      <PageHeader
+        title="Repository"
+        actions={
+          <>
+            {canFolders ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setDialog({ kind: "create", parent: selected });
+                }}
+              >
+                <FolderPlus aria-hidden="true" className="size-4" />
+                Folder
+              </Button>
+            ) : null}
+            {canCreate && firstUsable ? (
+              <Button size="sm" onClick={newCase}>
+                <Plus aria-hidden="true" className="size-4" />
+                New case <Kbd onAccent>C</Kbd>
+              </Button>
+            ) : null}
+          </>
+        }
+      />
+      <div className="flex min-h-0 flex-1">
         <aside
           aria-label="Folders"
-          className="flex w-[260px] shrink-0 flex-col rounded-card border border-border bg-surface p-3"
+          className="flex w-[264px] shrink-0 flex-col border-r border-border bg-surface p-3"
         >
           {folders.isPending ? (
             <Skeleton rows={6} />
           ) : folders.isError ? (
             <ErrorState error={folders.error} onRetry={() => void folders.refetch()} />
           ) : folderList.length === 0 ? (
-            <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center text-sm text-ink-secondary">
+            <div className="flex flex-1 flex-col items-center justify-center gap-3 px-2 text-center text-[13px] text-ink-secondary">
               <p>No folders yet. Folders organise cases by module or feature.</p>
               {canFolders ? (
                 <Button
@@ -260,7 +269,7 @@ export function RepositoryPage({
               actions={actions}
             />
           )}
-          <div className="mt-2 border-t border-border pt-2">
+          <div className="mt-2 border-t border-rule pt-2.5">
             <Checkbox
               label="Show archived"
               checked={showArchived}
@@ -293,7 +302,7 @@ export function RepositoryPage({
         {caseKey ? (
           <aside
             aria-label={`${caseKey} details`}
-            className="flex w-[clamp(380px,32vw,600px)] shrink-0 flex-col overflow-hidden rounded-card border border-border bg-surface"
+            className="flex w-[clamp(380px,32vw,560px)] shrink-0 flex-col overflow-hidden border-l border-border bg-surface"
           >
             <PanelCase
               project={project}

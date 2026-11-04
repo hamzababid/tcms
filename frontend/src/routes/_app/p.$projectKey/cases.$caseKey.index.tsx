@@ -16,28 +16,40 @@ export const Route = createFileRoute("/_app/p/$projectKey/cases/$caseKey/")({
     const me = useMe();
     const members = useMembers(project.id);
     const resolved = useResolvedCase(project.id, caseKey);
-    if (!me.data || resolved.isPending) return <Skeleton rows={8} />;
-    if (resolved.isError) return <ErrorState error={resolved.error} />;
+    if (!me.data || resolved.isPending)
+      return (
+        <div className="p-6">
+          <Skeleton rows={8} />
+        </div>
+      );
+    if (resolved.isError)
+      return (
+        <div className="p-6">
+          <ErrorState error={resolved.error} />
+        </div>
+      );
     return (
-      <div className="mx-auto max-w-5xl rounded-card border border-border bg-surface p-6">
-        <CaseDetail
-          key={resolved.data.id}
-          project={project}
-          caseId={resolved.data.id}
-          me={me.data}
-          perms={projectPermissions(me.data, project.id)}
-          members={members.data ?? []}
-          variant="page"
-          onDeleted={() =>
-            void navigate({ to: "/p/$projectKey/repository", params: { projectKey: project.key } })
-          }
-          onDuplicated={(key) =>
-            void navigate({
-              to: "/p/$projectKey/cases/$caseKey",
-              params: { projectKey: project.key, caseKey: key },
-            })
-          }
-        />
+      <div className="px-6 py-6">
+        <div className="max-w-5xl rounded-card border border-border bg-surface p-6">
+          <CaseDetail
+            key={resolved.data.id}
+            project={project}
+            caseId={resolved.data.id}
+            me={me.data}
+            perms={projectPermissions(me.data, project.id)}
+            members={members.data ?? []}
+            variant="page"
+            onDeleted={() =>
+              void navigate({ to: "/p/$projectKey/repository", params: { projectKey: project.key } })
+            }
+            onDuplicated={(key) =>
+              void navigate({
+                to: "/p/$projectKey/cases/$caseKey",
+                params: { projectKey: project.key, caseKey: key },
+              })
+            }
+          />
+        </div>
       </div>
     );
   },

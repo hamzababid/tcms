@@ -22,16 +22,44 @@ export const Route = createFileRoute("/_app/p/$projectKey/cases/$caseKey/edit")(
     const tags = useTags(project.id);
     const [generation, setGeneration] = useState(0);
     if (!me.data || resolved.isPending || existing.isPending || folders.isPending || members.isPending) {
-      return <Skeleton rows={8} />;
+      return (
+        <div className="p-6">
+          <Skeleton rows={8} />
+        </div>
+      );
     }
-    if (resolved.isError) return <ErrorState error={resolved.error} />;
-    if (existing.isError) return <ErrorState error={existing.error} />;
-    if (folders.isError) return <ErrorState error={folders.error} />;
+    if (resolved.isError)
+      return (
+        <div className="p-6">
+          <ErrorState error={resolved.error} />
+        </div>
+      );
+    if (existing.isError)
+      return (
+        <div className="p-6">
+          <ErrorState error={existing.error} />
+        </div>
+      );
+    if (folders.isError)
+      return (
+        <div className="p-6">
+          <ErrorState error={folders.error} />
+        </div>
+      );
     const c = existing.data;
     if (!can(projectPermissions(me.data, project.id), "testcase.edit") || project.status === "archived") {
-      return <EmptyState text="You can't edit test cases in this project." />;
+      return (
+        <div className="p-6">
+          <EmptyState text="You can't edit test cases in this project." />
+        </div>
+      );
     }
-    if (c.status === "archived") return <EmptyState text={`${c.key} is archived. Restore it to edit.`} />;
+    if (c.status === "archived")
+      return (
+        <div className="p-6">
+          <EmptyState text={`${c.key} is archived. Restore it to edit.`} />
+        </div>
+      );
     const toDetail = () =>
       void navigate({
         to: "/p/$projectKey/repository",

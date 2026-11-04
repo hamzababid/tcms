@@ -3,14 +3,7 @@ import { useState, type FormEvent } from "react";
 
 import { api } from "@/api/client";
 import { keys, useMe, useSessions, useTokens } from "@/api/queries";
-import {
-  EmptyState,
-  ErrorState,
-  errorMessage,
-  PageHeader,
-  Skeleton,
-  useToast,
-} from "@/components/common/feedback";
+import { EmptyState, ErrorState, errorMessage, Page, Skeleton, useToast } from "@/components/common/feedback";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Input, Select } from "@/components/ui/field";
@@ -65,7 +58,7 @@ function ProfileTab() {
   return (
     <div className="grid max-w-3xl gap-10 md:grid-cols-2">
       <form className="flex flex-col gap-4" onSubmit={(e) => void saveProfile(e)}>
-        <h2 className="text-base font-semibold">Profile</h2>
+        <h2 className="text-base font-semibold text-ink">Profile</h2>
         <FormError message={error} />
         <Field label="Name">
           {(p) => (
@@ -104,7 +97,7 @@ function ProfileTab() {
         </div>
       </form>
       <form className="flex flex-col gap-4" onSubmit={(e) => void changePassword(e)}>
-        <h2 className="text-base font-semibold">Password</h2>
+        <h2 className="text-base font-semibold text-ink">Password</h2>
         <FormError message={pwError} />
         <Field label="Current password">
           {(p) => (
@@ -149,13 +142,15 @@ function SessionsTab() {
   if (sessions.isPending) return <Skeleton />;
   if (sessions.isError) return <ErrorState error={sessions.error} />;
   return (
-    <ul className="max-w-3xl divide-y divide-border rounded-card border border-border bg-surface">
+    <ul className="data-list max-w-3xl">
       {sessions.data.map((s) => (
         <li key={s.id} className="flex items-center justify-between gap-4 px-4 py-3 text-sm">
           <div>
             <p className="text-ink">
               {s.user_agent ?? "Unknown device"}{" "}
-              {s.current ? <span className="ml-1 text-xs font-medium text-accent">this session</span> : null}
+              {s.current ? (
+                <span className="ml-1 text-xs font-medium text-accent-ink">this session</span>
+              ) : null}
             </p>
             <p className="text-xs text-ink-muted">
               {s.ip ?? "—"} · signed in {fmt(s.created_at)} · last active {fmt(s.last_seen_at)}
@@ -321,7 +316,7 @@ function TokensTab() {
       ) : tokens.data.length === 0 ? (
         <EmptyState text="No API tokens." />
       ) : (
-        <ul className="divide-y divide-border rounded-card border border-border bg-surface">
+        <ul className="data-list">
           {tokens.data.map((t) => (
             <li key={t.id} className="flex items-center justify-between gap-4 px-4 py-3 text-sm">
               <div>
@@ -482,8 +477,7 @@ function SecurityTab() {
 
 export function ProfilePage({ tab, onTab }: { tab: string; onTab: (t: string) => void }) {
   return (
-    <div className="mx-auto max-w-5xl">
-      <PageHeader title="Your account" />
+    <Page title="Your account">
       <Tabs
         label="Account"
         value={tab}
@@ -495,6 +489,6 @@ export function ProfilePage({ tab, onTab }: { tab: string; onTab: (t: string) =>
           { value: "security", label: "Two-step verification", content: <SecurityTab /> },
         ]}
       />
-    </div>
+    </Page>
   );
 }

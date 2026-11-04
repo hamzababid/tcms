@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent } 
 import { MarkdownEditor } from "@/components/common/Markdown";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { MenuContent, MenuItem, MenuShortcut } from "@/components/ui/menu";
 
 import type { Attachment } from "./api";
 import { AttachmentList } from "./AttachmentList";
@@ -145,7 +146,7 @@ export function StepGrid({
   };
 
   const cell =
-    "min-h-9 w-full resize-y rounded border border-transparent bg-transparent px-2 py-1.5 text-sm text-ink focus:border-accent focus:bg-surface focus:outline-none focus:ring-2 focus:ring-accent-tint aria-[invalid=true]:border-[var(--status-fail-bar)]";
+    "min-h-9 w-full resize-y rounded border border-transparent bg-transparent px-2 py-1.5 text-[13.5px] leading-6 text-ink hover:border-border focus:border-[var(--focus-ring)] focus:bg-surface focus:outline-none focus:ring-2 focus:ring-avatar aria-[invalid=true]:border-danger";
   const cols = showData
     ? "grid-cols-[44px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.7fr)_36px]"
     : "grid-cols-[44px_minmax(0,1fr)_minmax(0,1fr)_36px]";
@@ -156,11 +157,14 @@ export function StepGrid({
         ref={grid}
         role="table"
         aria-label="Steps"
-        className="rounded-card border border-border bg-surface"
+        className="overflow-hidden rounded-card border border-border bg-surface"
       >
         <div
           role="row"
-          className={cn("grid border-b border-border bg-ground text-xs font-medium text-ink-secondary", cols)}
+          className={cn(
+            "grid border-b border-border bg-ground text-[12.5px] font-medium text-ink-secondary",
+            cols,
+          )}
         >
           <div role="columnheader" className="px-2 py-2">
             #
@@ -187,7 +191,7 @@ export function StepGrid({
             key={s.key}
             role="row"
             className={cn(
-              "grid border-t border-border first-of-type:border-t-0",
+              "grid border-t border-rule first-of-type:border-t-0 focus-within:bg-[#f8faff]",
               cols,
               dragKey === s.key && "opacity-50",
             )}
@@ -237,7 +241,7 @@ export function StepGrid({
                   onPaste(e, i);
                 }}
               />
-              {errors[i] ? <p className="px-2 text-xs text-[var(--status-fail-fg)]">{errors[i]}</p> : null}
+              {errors[i] ? <p className="px-2 text-xs text-danger">{errors[i]}</p> : null}
             </div>
             <div role="cell" className="py-1">
               <MarkdownEditor
@@ -362,32 +366,25 @@ function StepMenu({
   onDuplicate: () => void;
   onDelete: () => void;
 }) {
-  const item =
-    "cursor-pointer rounded-control px-3 py-2 text-sm text-ink outline-none data-[highlighted]:bg-ground data-[disabled]:opacity-50";
   return (
     <Menu.Root>
       <Menu.Trigger aria-label={`Step ${n} actions`} className="rounded p-1 text-ink-muted hover:bg-ground">
         <MoreHorizontal className="size-4" />
       </Menu.Trigger>
-      <Menu.Portal>
-        <Menu.Content
-          align="end"
-          className="z-50 min-w-48 rounded-card border border-border bg-surface p-1 shadow-md"
-        >
-          <Menu.Item className={item} disabled={first} onSelect={onUp}>
-            Move up <span className="float-right text-xs text-ink-muted">Alt ↑</span>
-          </Menu.Item>
-          <Menu.Item className={item} disabled={last} onSelect={onDown}>
-            Move down <span className="float-right text-xs text-ink-muted">Alt ↓</span>
-          </Menu.Item>
-          <Menu.Item className={item} onSelect={onDuplicate}>
-            Duplicate <span className="float-right text-xs text-ink-muted">Ctrl D</span>
-          </Menu.Item>
-          <Menu.Item className={cn(item, "text-[var(--status-fail-fg)]")} onSelect={onDelete}>
-            Delete <span className="float-right text-xs text-ink-muted">Ctrl ⌫</span>
-          </Menu.Item>
-        </Menu.Content>
-      </Menu.Portal>
+      <MenuContent align="end">
+        <MenuItem disabled={first} onSelect={onUp}>
+          Move up <MenuShortcut>Alt ↑</MenuShortcut>
+        </MenuItem>
+        <MenuItem disabled={last} onSelect={onDown}>
+          Move down <MenuShortcut>Alt ↓</MenuShortcut>
+        </MenuItem>
+        <MenuItem onSelect={onDuplicate}>
+          Duplicate <MenuShortcut>Ctrl D</MenuShortcut>
+        </MenuItem>
+        <MenuItem danger onSelect={onDelete}>
+          Delete <MenuShortcut>Ctrl ⌫</MenuShortcut>
+        </MenuItem>
+      </MenuContent>
     </Menu.Root>
   );
 }

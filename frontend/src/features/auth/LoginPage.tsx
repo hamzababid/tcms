@@ -41,20 +41,35 @@ export function LoginPage({ returnTo }: { returnTo: string | undefined }) {
 
   return (
     <AuthCard title="Sign in">
-      <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-4" noValidate>
+      <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-[18px]" noValidate>
         <FormError message={error} />
         <Field label="Email" error={form.formState.errors.email?.message}>
-          {(p) => <Input {...p} type="email" autoComplete="username" autoFocus {...form.register("email")} />}
+          {(p) => (
+            <Input
+              {...p}
+              className="h-10 px-3"
+              type="email"
+              autoComplete="username"
+              autoFocus
+              {...form.register("email")}
+            />
+          )}
         </Field>
         <Field label="Password" error={form.formState.errors.password?.message}>
           {(p) => (
-            <Input {...p} type="password" autoComplete="current-password" {...form.register("password")} />
+            <Input
+              {...p}
+              className="h-10 px-3"
+              type="password"
+              autoComplete="current-password"
+              {...form.register("password")}
+            />
           )}
         </Field>
-        <Button type="submit" disabled={form.formState.isSubmitting}>
+        <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
           Sign in
         </Button>
-        <Link to="/forgot" className="text-center text-sm text-accent hover:underline">
+        <Link to="/forgot" className="text-center text-[13px] text-link hover:underline">
           Forgot password?
         </Link>
       </form>

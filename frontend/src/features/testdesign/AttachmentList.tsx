@@ -70,7 +70,7 @@ export function AttachmentList({
       {attachments.length ? (
         <ul className="flex flex-col gap-1">
           {attachments.map((a) => (
-            <li key={a.id} className="flex items-center gap-2 text-sm">
+            <li key={a.id} className="flex items-center gap-2 text-[13px]">
               {a.content_type.startsWith("image/") ? (
                 <img src={a.url} alt="" className="size-8 rounded border border-border object-cover" />
               ) : (
@@ -80,7 +80,7 @@ export function AttachmentList({
                 href={a.url}
                 target="_blank"
                 rel="noreferrer"
-                className="min-w-0 flex-1 truncate text-accent hover:underline"
+                className="min-w-0 flex-1 truncate text-link hover:underline"
               >
                 {a.file_name}
               </a>
@@ -153,7 +153,7 @@ export function AttachmentList({
             Drop files or{" "}
             <button
               type="button"
-              className="text-accent hover:underline"
+              className="text-link hover:underline"
               onClick={() => input.current?.click()}
             >
               browse

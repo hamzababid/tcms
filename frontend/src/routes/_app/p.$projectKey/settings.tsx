@@ -14,8 +14,18 @@ export const Route = createFileRoute("/_app/p/$projectKey/settings")({
     const project = useProject(summary.id); // includes row_version for edits
     const { tab } = Route.useSearch();
     const navigate = Route.useNavigate();
-    if (project.isPending) return <Skeleton />;
-    if (project.isError) return <ErrorState error={project.error} />;
+    if (project.isPending)
+      return (
+        <div className="p-6">
+          <Skeleton />
+        </div>
+      );
+    if (project.isError)
+      return (
+        <div className="p-6">
+          <ErrorState error={project.error} />
+        </div>
+      );
     return (
       <SettingsPage
         project={project.data}

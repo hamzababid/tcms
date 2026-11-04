@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { useActivity, type Project } from "@/api/queries";
-import { EmptyState, ErrorState, PageHeader, Skeleton } from "@/components/common/feedback";
+import { EmptyState, ErrorState, Page, Skeleton } from "@/components/common/feedback";
 import { Button } from "@/components/ui/button";
 import { Field, Select } from "@/components/ui/field";
 
@@ -22,11 +22,12 @@ export function ActivityPage({ project }: { project: Project }) {
   const activity = useActivity(project.id, page, entityType || null);
   const pages = activity.data ? Math.max(1, Math.ceil(activity.data.total / activity.data.page_size)) : 1;
   return (
-    <div className="mx-auto max-w-4xl">
-      <PageHeader
-        title={`${project.name} · Activity`}
-        subtitle={project.status === "archived" ? "This project is archived and read-only." : undefined}
-      />
+    <Page
+      title="Activity"
+      eyebrow={project.name}
+      subtitle={project.status === "archived" ? "This project is archived and read-only." : undefined}
+      width="4xl"
+    >
       <div className="mb-4 w-56">
         <Field label="Show">
           {(p) => (
@@ -55,7 +56,7 @@ export function ActivityPage({ project }: { project: Project }) {
         <EmptyState text="No activity yet." />
       ) : (
         <>
-          <ol className="divide-y divide-border rounded-card border border-border bg-surface">
+          <ol className="data-list">
             {activity.data.items.map((e) => (
               <li key={e.id} className="flex items-baseline justify-between gap-4 px-4 py-3 text-sm">
                 <span className="text-ink">{e.summary ?? e.action}</span>
@@ -94,6 +95,6 @@ export function ActivityPage({ project }: { project: Project }) {
           ) : null}
         </>
       )}
-    </div>
+    </Page>
   );
 }

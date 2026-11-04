@@ -11,6 +11,7 @@ import { EmptyState, ErrorState, Skeleton, errorMessage, useToast } from "@/comp
 import { MarkdownView } from "@/components/common/Markdown";
 import { PriorityIcon } from "@/components/common/PriorityIcon";
 import { StatusBadge } from "@/components/common/StatusBadge";
+import { Tag } from "@/components/common/Tag";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Input, Select } from "@/components/ui/field";
@@ -18,6 +19,7 @@ import { Tabs } from "@/components/ui/tabs";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { can } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
+import { MenuContent, MenuItem } from "@/components/ui/menu";
 
 import {
   useCase,
@@ -73,12 +75,17 @@ export function CaseDetail({
   const editable = writable && can(perms, "testcase.edit") && c.status !== "archived";
 
   return (
-    <div className="flex min-h-0 flex-col">
-      <header className={cn("border-b border-border pb-3", variant === "panel" && "px-4 pt-4")}>
+    <div className="flex h-full min-h-0 flex-col">
+      <header
+        className={cn(
+          "flex flex-col gap-2 border-b border-border",
+          variant === "panel" ? "px-5 py-4" : "pb-4",
+        )}
+      >
         <div className="flex items-center gap-2">
-          <span className="font-mono text-xs text-ink-secondary">{c.key}</span>
+          <span className="font-mono text-[13px] font-medium text-ink-secondary">{c.key}</span>
           <StatusBadge kind="case" status={c.status} />
-          <span className="text-xs text-ink-secondary">v{c.latest_version_no}</span>
+          <Tag tone="neutral">v{c.latest_version_no}</Tag>
           <span className="flex-1" />
           {editable ? (
             <Button asChild size="sm">
@@ -114,18 +121,18 @@ export function CaseDetail({
             </>
           ) : null}
         </div>
-        <h2 className={cn("mt-2 font-semibold text-ink", variant === "page" ? "text-2xl" : "text-lg")}>
+        <h2
+          className={cn(
+            "font-semibold leading-snug text-ink",
+            variant === "page" ? "text-2xl" : "text-[17px]",
+          )}
+        >
           {c.title}
         </h2>
         {c.tags.length ? (
-          <div className="mt-2 flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1.5">
             {c.tags.map((t) => (
-              <span
-                key={t}
-                className="rounded-full border border-border bg-ground px-2 py-0.5 text-xs text-ink-secondary"
-              >
-                {t}
-              </span>
+              <Tag key={t}>{t}</Tag>
             ))}
           </div>
         ) : null}
@@ -134,7 +141,7 @@ export function CaseDetail({
       {c.status === "archived" ? (
         <p
           role="status"
-          className="mx-4 mt-3 rounded-control border border-border bg-ground px-3 py-2 text-sm text-ink-secondary"
+          className="mx-5 mt-3 rounded-control border border-border bg-ground px-3 py-2 text-[13px] text-ink-secondary"
         >
           This case is archived. Restore it to edit or use it in plans and cycles.
         </p>
@@ -142,7 +149,7 @@ export function CaseDetail({
       {viewVersion && viewVersion !== c.latest_version_no ? (
         <p
           role="status"
-          className="mx-4 mt-3 flex items-center justify-between rounded-control border border-[var(--status-progress-border)] bg-[var(--status-progress-bg)] px-3 py-2 text-sm text-[var(--status-progress-fg)]"
+          className="mx-5 mt-3 flex items-center justify-between rounded-control border border-[var(--status-progress-border)] bg-[var(--status-progress-bg)] px-3 py-2 text-[13px] text-[var(--status-progress-fg)]"
         >
           Viewing v{viewVersion}. The latest version is v{c.latest_version_no}.
           <Button
@@ -156,11 +163,14 @@ export function CaseDetail({
           </Button>
         </p>
       ) : null}
-      <div className={cn("min-h-0 flex-1 overflow-y-auto pt-4", variant === "panel" && "px-4")}>
+      <div className="flex min-h-0 flex-1 flex-col">
         <Tabs
           label="Case sections"
           value={tab}
           onValueChange={setTab}
+          className="flex min-h-0 flex-1 flex-col"
+          listClassName={variant === "panel" ? "px-3" : ""}
+          contentClassName={cn("min-h-0 flex-1 overflow-y-auto", variant === "panel" ? "px-5 py-4" : "py-5")}
           items={[
             {
               value: "details",
@@ -177,7 +187,8 @@ export function CaseDetail({
             },
             {
               value: "versions",
-              label: `Versions (${c.latest_version_no})`,
+              label: "Versions",
+              count: c.latest_version_no,
               content: (
                 <Versions
                   c={c}
@@ -194,7 +205,8 @@ export function CaseDetail({
             { value: "history", label: "History", content: <History caseId={c.id} /> },
             {
               value: "comments",
-              label: `Comments (${c.counts.comments})`,
+              label: "Comments",
+              count: c.counts.comments,
               content: (
                 <CommentThread
                   entityType="test_case"
@@ -216,8 +228,8 @@ export function CaseDetail({
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="mb-5">
-      <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-muted">{title}</h3>
+    <section className="mb-5 text-[13px]">
+      <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-[0.04em] text-ink-secondary">{title}</h3>
       {children}
     </section>
   );
@@ -239,35 +251,35 @@ function Details({
   const v = c.version;
   const maxMb = project.settings.attachment_max_mb;
   return (
-    <div>
-      <dl className="mb-5 grid grid-cols-[120px_1fr] gap-x-4 gap-y-2 text-sm">
-        <dt className="text-ink-muted">Folder</dt>
+    <div className="[&_.md]:text-[13px]">
+      <dl className="mb-5 grid grid-cols-[110px_minmax(0,1fr)] gap-x-3 gap-y-2 text-[13px]">
+        <dt className="text-ink-secondary">Folder</dt>
         <dd className="text-ink">{c.folder.path_names.join(" › ")}</dd>
-        <dt className="text-ink-muted">Type</dt>
+        <dt className="text-ink-secondary">Type</dt>
         <dd className="text-ink">
           {label(CASE_TYPES, c.type)}
           {c.design_technique ? ` · ${label(TECHNIQUES, c.design_technique)}` : ""}
         </dd>
-        <dt className="text-ink-muted">Priority</dt>
+        <dt className="text-ink-secondary">Priority</dt>
         <dd>
           <PriorityIcon priority={c.priority} />
         </dd>
-        <dt className="text-ink-muted">Owner</dt>
+        <dt className="text-ink-secondary">Owner</dt>
         <dd className="text-ink">{c.owner?.display_name ?? "—"}</dd>
-        <dt className="text-ink-muted">Reviewer</dt>
+        <dt className="text-ink-secondary">Reviewer</dt>
         <dd className="text-ink">{c.reviewer?.display_name ?? "—"}</dd>
-        <dt className="text-ink-muted">Automation</dt>
+        <dt className="text-ink-secondary">Automation</dt>
         <dd className="text-ink">
           {label(AUTOMATION, c.automation_status)}
           {c.automation_keys.length ? (
             <span className="ml-2 font-mono text-xs text-ink-secondary">{c.automation_keys.join(", ")}</span>
           ) : null}
         </dd>
-        <dt className="text-ink-muted">Estimate</dt>
+        <dt className="text-ink-secondary">Estimate</dt>
         <dd className="text-ink">{c.estimated_minutes !== null ? `${c.estimated_minutes} min` : "—"}</dd>
-        <dt className="text-ink-muted">Approved</dt>
+        <dt className="text-ink-secondary">Approved</dt>
         <dd className="text-ink">{c.approved_version_no ? `v${c.approved_version_no}` : "Not yet"}</dd>
-        <dt className="text-ink-muted">Version</dt>
+        <dt className="text-ink-secondary">Version</dt>
         <dd className="text-ink">
           v{v.version_no} · {v.created_by?.display_name ?? "—"} · {formatDateTime(v.created_at)}
           {v.change_note ? <span className="block text-xs text-ink-secondary">{v.change_note}</span> : null}
@@ -290,13 +302,13 @@ function Details({
       ) : null}
       {v.format === "steps" ? (
         <Section title={`Steps (${v.steps.length})`}>
-          <ol className="flex flex-col gap-2">
+          <ol className="overflow-hidden rounded-control border border-border">
             {v.steps.map((s) => (
               <li
                 key={s.id}
-                className="grid grid-cols-[28px_1fr_1fr] gap-3 rounded-control border border-border px-3 py-2 text-sm"
+                className="grid grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)] gap-2.5 border-t border-rule px-3 py-2.5 first:border-t-0"
               >
-                <span className="font-mono text-xs text-ink-muted">{s.position}</span>
+                <span className="tabular font-semibold text-ink-muted">{s.position}</span>
                 <div>
                   <MarkdownView text={s.action} />
                   {s.data ? <MarkdownView text={s.data} className="mt-1 text-xs text-ink-secondary" /> : null}
@@ -348,7 +360,7 @@ function Details({
             onChanged={onChanged}
           />
         ) : (
-          <p className="text-sm text-ink-muted">None</p>
+          <p className="text-[13px] text-ink-muted">None</p>
         )}
       </Section>
       <RelatedCases
@@ -401,14 +413,14 @@ function RelatedCases({
   return (
     <Section title={`Related cases (${c.links.length})`}>
       {c.links.length ? (
-        <ul className="mb-2 flex flex-col gap-1 text-sm">
+        <ul className="mb-2 flex flex-col gap-1 text-[13px]">
           {c.links.map((lk) => (
             <li key={`${lk.case_id}-${lk.direction}`} className="flex items-center gap-2">
               <span className="text-xs text-ink-muted">{dirLabel[lk.direction]}</span>
               <Link
                 to="/p/$projectKey/cases/$caseKey"
                 params={{ projectKey: project.key, caseKey: lk.key }}
-                className="font-mono text-xs text-accent hover:underline"
+                className="font-mono text-xs text-link hover:underline"
               >
                 {lk.key}
               </Link>
@@ -451,7 +463,7 @@ function RelatedCases({
             Link case
           </Button>
           {add.error ? (
-            <span role="alert" className="self-center text-xs text-[var(--status-fail-fg)]">
+            <span role="alert" className="self-center text-xs text-danger">
               {add.error instanceof ApiError && add.error.status === 404
                 ? "No case with that key"
                 : errorMessage(add.error)}
@@ -459,7 +471,7 @@ function RelatedCases({
           ) : null}
         </form>
       ) : c.links.length === 0 ? (
-        <p className="text-sm text-ink-muted">None</p>
+        <p className="text-[13px] text-ink-muted">None</p>
       ) : null}
     </Section>
   );
@@ -499,7 +511,7 @@ function Versions({
   const sorted = [...pick].sort((a, b) => a - b);
   return (
     <div className="flex flex-col gap-4">
-      <table className="w-full text-sm">
+      <table className="w-full text-[13px]">
         <thead>
           <tr className="text-left text-xs text-ink-secondary">
             <th scope="col" className="w-8 py-1">
@@ -616,7 +628,7 @@ function Executions({ caseId }: { caseId: string }) {
   if (runs.isError) return <ErrorState error={runs.error} />;
   if (runs.data.length === 0) return <EmptyState text="This case has not been in a cycle yet." />;
   return (
-    <table className="w-full text-sm">
+    <table className="w-full text-[13px]">
       <thead>
         <tr className="text-left text-xs text-ink-secondary">
           <th scope="col">Cycle</th>
@@ -655,7 +667,7 @@ function History({ caseId }: { caseId: string }) {
     <div>
       <ol className="divide-y divide-border rounded-card border border-border">
         {history.data.items.map((e) => (
-          <li key={e.id} className="flex items-baseline justify-between gap-4 px-3 py-2 text-sm">
+          <li key={e.id} className="flex items-baseline justify-between gap-4 px-3 py-2 text-[13px]">
             <span className="text-ink">{e.summary ?? e.action}</span>
             <time dateTime={e.occurred_at} className="shrink-0 text-xs text-ink-muted">
               {formatDateTime(e.occurred_at)}
@@ -664,7 +676,7 @@ function History({ caseId }: { caseId: string }) {
         ))}
       </ol>
       {pages > 1 ? (
-        <div className="mt-2 flex justify-end gap-2 text-sm">
+        <div className="mt-2 flex justify-end gap-2 text-[13px]">
           <Button
             variant="ghost"
             size="sm"
@@ -766,7 +778,7 @@ function ReviewBar({
   const blocked = selfApprovalBlocked(project, c, me);
   return (
     <div className="border-b border-border bg-[var(--status-progress-bg)] px-4 py-2">
-      <div className="flex items-center gap-2 text-sm text-[var(--status-progress-fg)]">
+      <div className="flex items-center gap-2 text-[13px] text-[var(--status-progress-fg)]">
         <span className="flex-1">
           v{c.latest_version_no} is waiting for review
           {c.version.submission?.submitted_by
@@ -885,8 +897,6 @@ function CaseActions({
   }
   if (can(perms, "testcase.delete")) items.push(["delete", "Delete…"]);
   if (items.length === 0) return null;
-  const item =
-    "cursor-pointer rounded-control px-3 py-2 text-sm text-ink outline-none data-[highlighted]:bg-ground";
   return (
     <>
       <Menu.Root>
@@ -895,26 +905,21 @@ function CaseActions({
             <MoreHorizontal className="size-4" />
           </Button>
         </Menu.Trigger>
-        <Menu.Portal>
-          <Menu.Content
-            align="end"
-            className="z-50 min-w-48 rounded-card border border-border bg-surface p-1 shadow-md"
-          >
-            {items.map(([a, l]) => (
-              <Menu.Item
-                key={a}
-                className={cn(item, a === "delete" && "text-[var(--status-fail-fg)]")}
-                onSelect={() => {
-                  if (a === "approve" || a === "duplicate" || a === "deprecate" || a === "restore")
-                    act.mutate({ action: a });
-                  else setDialog(a);
-                }}
-              >
-                {l}
-              </Menu.Item>
-            ))}
-          </Menu.Content>
-        </Menu.Portal>
+        <MenuContent align="end">
+          {items.map(([a, l]) => (
+            <MenuItem
+              key={a}
+              danger={a === "delete"}
+              onSelect={() => {
+                if (a === "approve" || a === "duplicate" || a === "deprecate" || a === "restore")
+                  act.mutate({ action: a });
+                else setDialog(a);
+              }}
+            >
+              {l}
+            </MenuItem>
+          ))}
+        </MenuContent>
       </Menu.Root>
       <Dialog
         open={dialog === "submit"}
@@ -974,7 +979,7 @@ function CaseActions({
                 onChange={(e) => {
                   setNote(e.target.value);
                 }}
-                className="w-full rounded-control border border-border bg-surface px-3 py-2 text-sm"
+                className="w-full rounded-control border border-border bg-surface px-3 py-2 text-[13px]"
               />
             )}
           </Field>

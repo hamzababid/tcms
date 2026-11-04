@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight, Folder as FolderIcon, MoreHorizontal, Search
 import { useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
 
 import { cn } from "@/lib/utils";
+import { MenuContent, MenuItem, MenuShortcut } from "@/components/ui/menu";
 
 import type { Folder } from "./api";
 
@@ -173,7 +174,7 @@ export function FolderTree({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <label className="mb-2 flex h-8 items-center gap-2 rounded-control border border-border bg-surface px-2 text-sm">
+      <label className="mb-2 flex h-8 items-center gap-1.5 rounded-control border border-border bg-surface px-2 text-[13px] focus-within:border-accent focus-within:ring-[3px] focus-within:ring-accent-tint">
         <Search aria-hidden="true" className="size-3.5 text-ink-muted" />
         <input
           type="text"
@@ -228,8 +229,8 @@ export function FolderTree({
             onDrop(e, null);
           }}
           className={cn(
-            "flex h-8 cursor-pointer items-center gap-2 rounded-control px-2 text-sm text-ink-secondary hover:bg-ground",
-            selectedId === null && "bg-accent-tint font-medium text-accent",
+            "flex h-[30px] cursor-pointer items-center gap-2 rounded-control px-2 text-[13px] text-ink-strong hover:bg-ground",
+            selectedId === null && "bg-accent-tint font-semibold text-accent-ink hover:bg-accent-tint",
             dropTarget === "root" && "ring-2 ring-accent",
           )}
         >
@@ -274,12 +275,12 @@ export function FolderTree({
               }}
               data-folder={f.name}
               className={cn(
-                "group flex h-8 cursor-pointer items-center gap-1.5 rounded-control pr-1 text-sm text-ink hover:bg-ground",
-                selected && "bg-accent-tint font-medium text-accent",
+                "group flex h-[30px] cursor-pointer items-center gap-1.5 rounded-control pr-1 text-[13px] text-ink-strong hover:bg-ground",
+                selected && "bg-accent-tint font-semibold text-accent-ink hover:bg-accent-tint",
                 f.archived && "text-ink-muted",
                 dropTarget === f.id && "ring-2 ring-accent",
               )}
-              style={{ paddingLeft: 8 + row.depth * 16 }}
+              style={{ paddingLeft: 4 + row.depth * 14 }}
             >
               {row.node.children.length ? (
                 <button
@@ -290,19 +291,22 @@ export function FolderTree({
                     e.stopPropagation();
                     toggle(f.id);
                   }}
-                  className="rounded p-0.5 text-ink-muted hover:bg-border"
+                  className="rounded p-0.5 text-ink-faint hover:bg-surface-muted hover:text-ink-secondary"
                 >
                   {open ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
                 </button>
               ) : (
-                <span className="w-[18px]" aria-hidden="true" />
+                <span className="w-[18px] shrink-0" aria-hidden="true" />
               )}
-              <FolderIcon aria-hidden="true" className="size-3.5 shrink-0 text-ink-muted" />
+              <FolderIcon
+                aria-hidden="true"
+                className={cn("size-[15px] shrink-0", selected ? "text-accent" : "text-ink-muted")}
+              />
               <span className="min-w-0 flex-1 truncate">
                 {f.name}
                 {f.archived ? <span className="ml-1 text-xs">(archived)</span> : null}
               </span>
-              <span className="text-xs tabular-nums text-ink-muted" aria-label={`${f.total_count} cases`}>
+              <span className="tabular text-[11.5px] text-ink-muted" aria-label={`${f.total_count} cases`}>
                 {f.total_count.toLocaleString()}
               </span>
               {canManage ? (
@@ -337,8 +341,6 @@ function FolderMenu({
   canDown: boolean;
   onReorder: (delta: number) => void;
 }) {
-  const item =
-    "cursor-pointer rounded-control px-3 py-2 text-sm text-ink outline-none data-[highlighted]:bg-ground";
   return (
     <Menu.Root>
       <Menu.Trigger
@@ -346,74 +348,67 @@ function FolderMenu({
         onClick={(e) => {
           e.stopPropagation();
         }}
-        className="rounded p-0.5 text-ink-muted opacity-0 hover:bg-border focus:opacity-100 group-hover:opacity-100 group-focus:opacity-100 data-[state=open]:opacity-100"
+        className="rounded p-0.5 text-ink-muted opacity-0 hover:bg-surface-muted hover:text-ink focus:opacity-100 group-hover:opacity-100 group-focus:opacity-100 data-[state=open]:opacity-100"
       >
         <MoreHorizontal className="size-4" />
       </Menu.Trigger>
-      <Menu.Portal>
-        <Menu.Content
-          align="end"
-          className="z-50 min-w-44 rounded-card border border-border bg-surface p-1 shadow-md"
-          onClick={(e) => {
-            e.stopPropagation();
+      <MenuContent
+        align="end"
+
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
+      >
+        {!folder.archived ? (
+          <MenuItem
+            onSelect={() => {
+              actions.onNewSubfolder(folder);
+            }}
+          >
+            New subfolder
+          </MenuItem>
+        ) : null}
+        <MenuItem
+          onSelect={() => {
+            actions.onRename(folder);
           }}
         >
-          {!folder.archived ? (
-            <Menu.Item
-              className={item}
-              onSelect={() => {
-                actions.onNewSubfolder(folder);
-              }}
-            >
-              New subfolder
-            </Menu.Item>
-          ) : null}
-          <Menu.Item
-            className={item}
+          Rename
+        </MenuItem>
+        {canUp ? (
+          <MenuItem
             onSelect={() => {
-              actions.onRename(folder);
+              onReorder(-1);
             }}
           >
-            Rename
-          </Menu.Item>
-          {canUp ? (
-            <Menu.Item
-              className={item}
-              onSelect={() => {
-                onReorder(-1);
-              }}
-            >
-              Move up <span className="float-right text-xs text-ink-muted">Alt ↑</span>
-            </Menu.Item>
-          ) : null}
-          {canDown ? (
-            <Menu.Item
-              className={item}
-              onSelect={() => {
-                onReorder(1);
-              }}
-            >
-              Move down <span className="float-right text-xs text-ink-muted">Alt ↓</span>
-            </Menu.Item>
-          ) : null}
-          <Menu.Item
-            className={item}
+            Move up <MenuShortcut>Alt ↑</MenuShortcut>
+          </MenuItem>
+        ) : null}
+        {canDown ? (
+          <MenuItem
             onSelect={() => {
-              actions.onToggleArchive(folder);
+              onReorder(1);
             }}
           >
-            {folder.archived ? "Restore" : "Archive"}
-          </Menu.Item>
-          <Menu.Item
-            className={cn(item, "text-[var(--status-fail-fg)]")}
-            onSelect={() => {
-              actions.onDelete(folder);
-            }}
-          >
-            Delete
-          </Menu.Item>
-        </Menu.Content>
-      </Menu.Portal>
+            Move down <MenuShortcut>Alt ↓</MenuShortcut>
+          </MenuItem>
+        ) : null}
+        <MenuItem
+          onSelect={() => {
+            actions.onToggleArchive(folder);
+          }}
+        >
+          {folder.archived ? "Restore" : "Archive"}
+        </MenuItem>
+        <MenuItem
+          danger
+          onSelect={() => {
+            actions.onDelete(folder);
+          }}
+        >
+          Delete
+        </MenuItem>
+      </MenuContent>
     </Menu.Root>
   );
 }

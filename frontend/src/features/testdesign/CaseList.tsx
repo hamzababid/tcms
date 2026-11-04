@@ -173,13 +173,10 @@ export function CaseList({
   };
 
   return (
-    <section
-      aria-label="Test cases"
-      className="flex min-h-0 min-w-0 flex-1 flex-col rounded-card border border-border bg-surface"
-    >
+    <section aria-label="Test cases" className="flex min-h-0 min-w-0 flex-1 flex-col bg-surface">
       <div
         className={cn(
-          "flex items-center gap-2 border-b border-border px-3 py-2",
+          "flex items-center gap-2 border-b border-border px-4 py-3",
           compact ? "flex-nowrap overflow-x-auto" : "flex-wrap",
         )}
       >
@@ -236,7 +233,7 @@ export function CaseList({
           type="search"
           aria-label="Search cases"
           placeholder="Search by key or text"
-          className="h-8 min-w-48 flex-1"
+          className="ml-auto h-7 min-w-48 max-w-72 flex-1 rounded-control text-[13px]"
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -281,10 +278,10 @@ export function CaseList({
             />
           </div>
         ) : (
-          <table className="w-full border-collapse text-sm">
-            <thead className="sticky top-0 z-10 bg-ground">
-              <tr className="h-9 text-left text-xs font-medium text-ink-secondary">
-                <th scope="col" className="w-10 px-3">
+          <table className="w-full border-collapse text-[13px]">
+            <thead className="sticky top-0 z-10 bg-ground shadow-[inset_0_-1px_0_var(--border)]">
+              <tr className="h-9 text-left font-medium text-ink-secondary">
+                <th scope="col" className="w-10 px-3 font-medium">
                   <input
                     type="checkbox"
                     aria-label="Select page"
@@ -310,8 +307,8 @@ export function CaseList({
                       scope="col"
                       aria-sort={active ? (desc ? "descending" : "ascending") : "none"}
                       className={cn(
-                        "px-2",
-                        k === "key" && "w-32",
+                        "px-3 font-medium",
+                        k === "key" && "w-36",
                         k === "priority" && (compact ? "w-10" : "w-24"),
                         k === "status" && (compact ? "w-10" : "w-32"),
                       )}
@@ -335,10 +332,10 @@ export function CaseList({
                 })}
                 {compact ? null : (
                   <>
-                    <th scope="col" className="w-14 px-2">
+                    <th scope="col" className="w-14 px-3 font-medium">
                       Ver
                     </th>
-                    <th scope="col" className="w-36 px-2">
+                    <th scope="col" className="w-36 px-3 font-medium">
                       Owner
                     </th>
                   </>
@@ -370,8 +367,9 @@ export function CaseList({
                     setFocus(i);
                   }}
                   className={cn(
-                    "h-10 cursor-pointer border-t border-border hover:bg-ground focus:bg-accent-tint focus:outline-none",
-                    c.key === selectedKey && "bg-accent-tint",
+                    "h-10 cursor-pointer border-t border-rule first:border-t-0 hover:bg-ground focus-visible:bg-accent-tint focus-visible:outline-none",
+                    c.key === selectedKey &&
+                      "bg-accent-tint shadow-[inset_3px_0_0_var(--accent)] hover:bg-accent-tint",
                   )}
                 >
                   <td
@@ -389,23 +387,25 @@ export function CaseList({
                       }}
                     />
                   </td>
-                  <td className="whitespace-nowrap px-2 font-mono text-xs text-ink-secondary">{c.key}</td>
-                  <td className="max-w-0 truncate px-2 text-ink" title={c.title}>
+                  <td className="whitespace-nowrap px-3 font-mono text-[12.5px] font-medium text-ink">
+                    {c.key}
+                  </td>
+                  <td className="max-w-0 truncate px-3 text-ink" title={c.title}>
                     {c.title}
                     {c.tags.length ? (
                       <span className="ml-2 text-xs text-ink-muted">{c.tags.join(" · ")}</span>
                     ) : null}
                   </td>
-                  <td className="px-2">
+                  <td className="px-3">
                     <PriorityIcon priority={c.priority} compact={compact} />
                   </td>
-                  <td className="px-2">
+                  <td className="px-3">
                     <StatusBadge kind="case" status={c.status} compact={compact} />
                   </td>
                   {compact ? null : (
                     <>
-                      <td className="px-2 text-xs text-ink-secondary">v{c.latest_version_no}</td>
-                      <td className="truncate px-2 text-xs text-ink-secondary">
+                      <td className="px-3 text-ink-secondary">v{c.latest_version_no}</td>
+                      <td className="truncate whitespace-nowrap px-3 text-ink">
                         {c.owner?.display_name ?? "—"}
                       </td>
                     </>
@@ -416,7 +416,7 @@ export function CaseList({
           </table>
         )}
       </div>
-      <div className="flex items-center justify-between border-t border-border px-3 py-2 text-xs text-ink-secondary">
+      <div className="tabular flex h-10 items-center justify-between border-t border-border px-4 text-[12.5px] text-ink-secondary">
         <span>
           {total.toLocaleString()} {total === 1 ? "case" : "cases"}
           {folderName ? ` in ${folderName}${filters.include_subfolders ? " (incl. subfolders)" : ""}` : ""}
@@ -424,8 +424,8 @@ export function CaseList({
         {pages > 1 ? (
           <span className="flex items-center gap-2">
             <Button
-              variant="ghost"
-              size="sm"
+              variant="secondary"
+              size="xs"
               disabled={filters.page <= 1}
               onClick={() => {
                 set({ page: filters.page - 1 });
@@ -435,8 +435,8 @@ export function CaseList({
             </Button>
             Page {filters.page} of {pages}
             <Button
-              variant="ghost"
-              size="sm"
+              variant="secondary"
+              size="xs"
               disabled={filters.page >= pages}
               onClick={() => {
                 set({ page: filters.page + 1 });
@@ -467,7 +467,10 @@ function FilterSelect({
   return (
     <Select
       aria-label={`Filter by ${label.toLowerCase()}`}
-      className={cn("h-8 w-auto text-xs", value && "border-accent text-accent")}
+      className={cn(
+        "h-7 w-auto rounded-full bg-[right_8px_center] pl-3 pr-7 text-[12.5px] font-medium text-ink-secondary",
+        value ? "border-accent-border bg-accent-tint text-accent-ink" : "border-dashed",
+      )}
       value={value}
       onChange={(e) => {
         onChange(e.target.value);

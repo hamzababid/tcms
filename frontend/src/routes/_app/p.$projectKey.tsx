@@ -13,8 +13,18 @@ export const Route = createFileRoute("/_app/p/$projectKey")({
     useEffect(() => {
       if (project) rememberProject(project.key);
     }, [project]);
-    if (projects.isPending) return <Skeleton />;
-    if (!project) return <EmptyState text={`Project ${projectKey} was not found or you are not a member.`} />;
+    if (projects.isPending)
+      return (
+        <div className="p-6">
+          <Skeleton />
+        </div>
+      );
+    if (!project)
+      return (
+        <div className="p-6">
+          <EmptyState text={`Project ${projectKey} was not found or you are not a member.`} />
+        </div>
+      );
     return <Outlet />;
   },
 });

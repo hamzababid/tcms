@@ -3,14 +3,7 @@ import { useState, type FormEvent } from "react";
 
 import { api, ApiError } from "@/api/client";
 import { keys, useInvitations, useOrganization, useProjects, type Organization } from "@/api/queries";
-import {
-  EmptyState,
-  ErrorState,
-  errorMessage,
-  PageHeader,
-  Skeleton,
-  useToast,
-} from "@/components/common/feedback";
+import { EmptyState, ErrorState, errorMessage, Page, Skeleton, useToast } from "@/components/common/feedback";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Checkbox, Field, Input, Select } from "@/components/ui/field";
@@ -54,8 +47,7 @@ export function InvitationsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <PageHeader title="Invitations" subtitle="Invitations expire after 7 days and can be used once." />
+    <Page title="Invitations" subtitle="Invitations expire after 7 days and can be used once.">
       <form className="mb-8 flex flex-wrap items-end gap-3" onSubmit={(e) => void invite(e)}>
         <div className="w-full">
           <FormError message={error} />
@@ -153,7 +145,7 @@ export function InvitationsPage() {
           Copy link
         </Button>
       </Dialog>
-      <h2 className="mb-3 text-base font-semibold">Pending</h2>
+      <h2 className="mb-3 text-base font-semibold text-ink">Pending</h2>
       {invitations.isPending ? (
         <Skeleton />
       ) : invitations.isError ? (
@@ -161,13 +153,15 @@ export function InvitationsPage() {
       ) : invitations.data.length === 0 ? (
         <EmptyState text="No pending invitations." />
       ) : (
-        <ul className="divide-y divide-border rounded-card border border-border bg-surface">
+        <ul className="data-list">
           {invitations.data.map((i) => (
             <li key={i.id} className="flex items-center justify-between gap-4 px-4 py-3 text-sm">
               <div>
                 <p className="text-ink">
                   {i.email}
-                  {i.is_org_admin ? <span className="ml-2 text-xs text-accent">org admin</span> : null}
+                  {i.is_org_admin ? (
+                    <span className="ml-2 text-xs font-medium text-accent-ink">org admin</span>
+                  ) : null}
                 </p>
                 <p className="text-xs text-ink-muted">
                   {i.role_code ? `${ROLE_LABELS[i.role_code] ?? i.role_code} · ` : ""}
@@ -195,7 +189,7 @@ export function InvitationsPage() {
           ))}
         </ul>
       )}
-    </div>
+    </Page>
   );
 }
 
@@ -261,8 +255,7 @@ function SecurityForm({
     </Field>
   );
   return (
-    <div className="mx-auto max-w-3xl">
-      <PageHeader title="Security policy" subtitle={org.name} />
+    <Page title="Security policy" subtitle={org.name} width="3xl">
       <form className="flex flex-col gap-5" onSubmit={(e) => void save(e)}>
         <FormError message={error} />
         <Checkbox
@@ -289,6 +282,6 @@ function SecurityForm({
           <Button type="submit">Save policy</Button>
         </div>
       </form>
-    </div>
+    </Page>
   );
 }

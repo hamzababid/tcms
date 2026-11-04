@@ -70,7 +70,7 @@ export function MfaEnrollment({ onDone }: { onDone: () => void }) {
 
   if (codes) {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-[18px]">
         <p className="text-sm text-ink-secondary">
           Save these recovery codes. Each works once if you lose access to your authenticator. They are shown
           only now.
@@ -101,7 +101,7 @@ export function MfaEnrollment({ onDone }: { onDone: () => void }) {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-[18px]">
       <FormError message={error} />
       {setup ? (
         <>
@@ -118,7 +118,7 @@ export function MfaEnrollment({ onDone }: { onDone: () => void }) {
             {setup.secret}
           </p>
           <form
-            className="flex flex-col gap-4"
+            className="flex flex-col gap-[18px]"
             onSubmit={(e) => {
               e.preventDefault();
               void enable();
@@ -131,7 +131,7 @@ export function MfaEnrollment({ onDone }: { onDone: () => void }) {
                   inputMode="numeric"
                   autoComplete="one-time-code"
                   maxLength={6}
-                  className="font-mono tracking-widest"
+                  className="h-10 px-3 font-mono text-base tracking-[0.3em]"
                   value={code}
                   onChange={(e) => {
                     setCode(e.target.value.replace(/\D/g, ""));
@@ -139,7 +139,7 @@ export function MfaEnrollment({ onDone }: { onDone: () => void }) {
                 />
               )}
             </Field>
-            <Button type="submit" disabled={code.length !== 6}>
+            <Button type="submit" size="lg" disabled={code.length !== 6}>
               Verify and enable
             </Button>
           </form>
