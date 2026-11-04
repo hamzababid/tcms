@@ -29,7 +29,9 @@ def fx(world: World) -> Fixture:
     admin = world.login(org.admin)
     env_id = admin.get(f"/api/v1/projects/{pid}/environments").json()[0]["id"]
     rel = admin.post(f"/api/v1/projects/{pid}/releases", json={"name": "R1"}).json()
-    return Fixture(world, org, pid, team, env_id, rel["id"], rel["row_version"])
+    folder_id = world.folder(org, pid, "Probe root")
+    case_id, case_key = world.case(org, pid, folder_id)
+    return Fixture(world, org, pid, team, env_id, rel["id"], rel["row_version"], folder_id, case_id, case_key)
 
 
 @pytest.fixture(scope="module")

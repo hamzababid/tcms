@@ -8,7 +8,7 @@ from tcms import platform
 from tcms.api.deps import AppState
 from tcms.api.middleware import RequestContextMiddleware
 from tcms.api.problems import PROBLEM_RESPONSES, install_problem_handlers
-from tcms.api.v1 import auth, health, meta, organization, projects
+from tcms.api.v1 import auth, health, meta, organization, projects, records, test_cases
 from tcms.core.config import Settings, get_settings
 from tcms.core.db import app_engine, session_factory
 from tcms.core.logging import configure_logging
@@ -20,7 +20,9 @@ def install_modules() -> None:
     """Register writers, job handlers and in-transaction event handlers of every module."""
     platform.install()
     import tcms.identity.jobs
+    import tcms.platform.attachments
     import tcms.platform.email
+    import tcms.testdesign.jobs
     import tcms.testdesign.service  # noqa: F401
 
 
@@ -35,9 +37,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         docs_url=None if settings.is_production else "/api/v1/docs",
         redoc_url=None,
     )
-    app.state.tcms = AppState(settings=settings, session_factory=session_factory(app_engine(settings)))
+    from tcms.platform import attachments, storage
+
+    store = attachments.Storage(storage.make_client(settings), settings.s3_bucket)
+    app.state.tcms = AppState(
+        settings=settings, session_factory=session_factory(app_engine(settings)), store=store
+    )
     app.add_middleware(RequestContextMiddleware)
     install_problem_handlers(app)
-    for module in (health, auth, organization, projects, meta):
+    for module in (health, auth, organization, projects, meta, test_cases, records):
         app.include_router(module.router, responses=PROBLEM_RESPONSES)
     return app

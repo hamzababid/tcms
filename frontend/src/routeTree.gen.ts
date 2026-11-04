@@ -24,7 +24,11 @@ import { Route as AppAdminSecurityRouteImport } from './routes/_app/admin/securi
 import { Route as AppPProjectKeyRouteImport } from './routes/_app/p.$projectKey'
 import { Route as AppPProjectKeyIndexRouteImport } from './routes/_app/p.$projectKey/index'
 import { Route as AppPProjectKeyActivityRouteImport } from './routes/_app/p.$projectKey/activity'
+import { Route as AppPProjectKeyRepositoryRouteImport } from './routes/_app/p.$projectKey/repository'
 import { Route as AppPProjectKeySettingsRouteImport } from './routes/_app/p.$projectKey/settings'
+import { Route as AppPProjectKeyCasesNewRouteImport } from './routes/_app/p.$projectKey/cases.new'
+import { Route as AppPProjectKeyCasesCaseKeyIndexRouteImport } from './routes/_app/p.$projectKey/cases.$caseKey.index'
+import { Route as AppPProjectKeyCasesCaseKeyEditRouteImport } from './routes/_app/p.$projectKey/cases.$caseKey.edit'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -100,11 +104,34 @@ const AppPProjectKeyActivityRoute = AppPProjectKeyActivityRouteImport.update({
   path: '/activity',
   getParentRoute: () => AppPProjectKeyRoute,
 } as any)
+const AppPProjectKeyRepositoryRoute =
+  AppPProjectKeyRepositoryRouteImport.update({
+    id: '/repository',
+    path: '/repository',
+    getParentRoute: () => AppPProjectKeyRoute,
+  } as any)
 const AppPProjectKeySettingsRoute = AppPProjectKeySettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
   getParentRoute: () => AppPProjectKeyRoute,
 } as any)
+const AppPProjectKeyCasesNewRoute = AppPProjectKeyCasesNewRouteImport.update({
+  id: '/cases/new',
+  path: '/cases/new',
+  getParentRoute: () => AppPProjectKeyRoute,
+} as any)
+const AppPProjectKeyCasesCaseKeyIndexRoute =
+  AppPProjectKeyCasesCaseKeyIndexRouteImport.update({
+    id: '/cases/$caseKey/',
+    path: '/cases/$caseKey/',
+    getParentRoute: () => AppPProjectKeyRoute,
+  } as any)
+const AppPProjectKeyCasesCaseKeyEditRoute =
+  AppPProjectKeyCasesCaseKeyEditRouteImport.update({
+    id: '/cases/$caseKey/edit',
+    path: '/cases/$caseKey/edit',
+    getParentRoute: () => AppPProjectKeyRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -120,8 +147,12 @@ export interface FileRoutesByFullPath {
   '/admin/security': typeof AppAdminSecurityRoute
   '/p/$projectKey': typeof AppPProjectKeyRouteWithChildren
   '/p/$projectKey/activity': typeof AppPProjectKeyActivityRoute
+  '/p/$projectKey/repository': typeof AppPProjectKeyRepositoryRoute
   '/p/$projectKey/settings': typeof AppPProjectKeySettingsRoute
   '/p/$projectKey/': typeof AppPProjectKeyIndexRoute
+  '/p/$projectKey/cases/new': typeof AppPProjectKeyCasesNewRoute
+  '/p/$projectKey/cases/$caseKey/edit': typeof AppPProjectKeyCasesCaseKeyEditRoute
+  '/p/$projectKey/cases/$caseKey/': typeof AppPProjectKeyCasesCaseKeyIndexRoute
 }
 export interface FileRoutesByTo {
   '/forgot': typeof ForgotRoute
@@ -136,8 +167,12 @@ export interface FileRoutesByTo {
   '/admin/invitations': typeof AppAdminInvitationsRoute
   '/admin/security': typeof AppAdminSecurityRoute
   '/p/$projectKey/activity': typeof AppPProjectKeyActivityRoute
+  '/p/$projectKey/repository': typeof AppPProjectKeyRepositoryRoute
   '/p/$projectKey/settings': typeof AppPProjectKeySettingsRoute
   '/p/$projectKey': typeof AppPProjectKeyIndexRoute
+  '/p/$projectKey/cases/new': typeof AppPProjectKeyCasesNewRoute
+  '/p/$projectKey/cases/$caseKey/edit': typeof AppPProjectKeyCasesCaseKeyEditRoute
+  '/p/$projectKey/cases/$caseKey': typeof AppPProjectKeyCasesCaseKeyIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -155,8 +190,12 @@ export interface FileRoutesById {
   '/_app/admin/security': typeof AppAdminSecurityRoute
   '/_app/p/$projectKey': typeof AppPProjectKeyRouteWithChildren
   '/_app/p/$projectKey/activity': typeof AppPProjectKeyActivityRoute
+  '/_app/p/$projectKey/repository': typeof AppPProjectKeyRepositoryRoute
   '/_app/p/$projectKey/settings': typeof AppPProjectKeySettingsRoute
   '/_app/p/$projectKey/': typeof AppPProjectKeyIndexRoute
+  '/_app/p/$projectKey/cases/new': typeof AppPProjectKeyCasesNewRoute
+  '/_app/p/$projectKey/cases/$caseKey/edit': typeof AppPProjectKeyCasesCaseKeyEditRoute
+  '/_app/p/$projectKey/cases/$caseKey/': typeof AppPProjectKeyCasesCaseKeyIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -174,8 +213,12 @@ export interface FileRouteTypes {
     | '/admin/security'
     | '/p/$projectKey'
     | '/p/$projectKey/activity'
+    | '/p/$projectKey/repository'
     | '/p/$projectKey/settings'
     | '/p/$projectKey/'
+    | '/p/$projectKey/cases/new'
+    | '/p/$projectKey/cases/$caseKey/edit'
+    | '/p/$projectKey/cases/$caseKey/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forgot'
@@ -190,8 +233,12 @@ export interface FileRouteTypes {
     | '/admin/invitations'
     | '/admin/security'
     | '/p/$projectKey/activity'
+    | '/p/$projectKey/repository'
     | '/p/$projectKey/settings'
     | '/p/$projectKey'
+    | '/p/$projectKey/cases/new'
+    | '/p/$projectKey/cases/$caseKey/edit'
+    | '/p/$projectKey/cases/$caseKey'
   id:
     | '__root__'
     | '/_app'
@@ -208,8 +255,12 @@ export interface FileRouteTypes {
     | '/_app/admin/security'
     | '/_app/p/$projectKey'
     | '/_app/p/$projectKey/activity'
+    | '/_app/p/$projectKey/repository'
     | '/_app/p/$projectKey/settings'
     | '/_app/p/$projectKey/'
+    | '/_app/p/$projectKey/cases/new'
+    | '/_app/p/$projectKey/cases/$caseKey/edit'
+    | '/_app/p/$projectKey/cases/$caseKey/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -329,6 +380,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPProjectKeyActivityRouteImport
       parentRoute: typeof AppPProjectKeyRoute
     }
+    '/_app/p/$projectKey/repository': {
+      id: '/_app/p/$projectKey/repository'
+      path: '/repository'
+      fullPath: '/p/$projectKey/repository'
+      preLoaderRoute: typeof AppPProjectKeyRepositoryRouteImport
+      parentRoute: typeof AppPProjectKeyRoute
+    }
     '/_app/p/$projectKey/settings': {
       id: '/_app/p/$projectKey/settings'
       path: '/settings'
@@ -336,19 +394,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPProjectKeySettingsRouteImport
       parentRoute: typeof AppPProjectKeyRoute
     }
+    '/_app/p/$projectKey/cases/new': {
+      id: '/_app/p/$projectKey/cases/new'
+      path: '/cases/new'
+      fullPath: '/p/$projectKey/cases/new'
+      preLoaderRoute: typeof AppPProjectKeyCasesNewRouteImport
+      parentRoute: typeof AppPProjectKeyRoute
+    }
+    '/_app/p/$projectKey/cases/$caseKey/': {
+      id: '/_app/p/$projectKey/cases/$caseKey/'
+      path: '/cases/$caseKey'
+      fullPath: '/p/$projectKey/cases/$caseKey/'
+      preLoaderRoute: typeof AppPProjectKeyCasesCaseKeyIndexRouteImport
+      parentRoute: typeof AppPProjectKeyRoute
+    }
+    '/_app/p/$projectKey/cases/$caseKey/edit': {
+      id: '/_app/p/$projectKey/cases/$caseKey/edit'
+      path: '/cases/$caseKey/edit'
+      fullPath: '/p/$projectKey/cases/$caseKey/edit'
+      preLoaderRoute: typeof AppPProjectKeyCasesCaseKeyEditRouteImport
+      parentRoute: typeof AppPProjectKeyRoute
+    }
   }
 }
 
 interface AppPProjectKeyRouteChildren {
   AppPProjectKeyActivityRoute: typeof AppPProjectKeyActivityRoute
+  AppPProjectKeyRepositoryRoute: typeof AppPProjectKeyRepositoryRoute
   AppPProjectKeySettingsRoute: typeof AppPProjectKeySettingsRoute
   AppPProjectKeyIndexRoute: typeof AppPProjectKeyIndexRoute
+  AppPProjectKeyCasesNewRoute: typeof AppPProjectKeyCasesNewRoute
+  AppPProjectKeyCasesCaseKeyEditRoute: typeof AppPProjectKeyCasesCaseKeyEditRoute
+  AppPProjectKeyCasesCaseKeyIndexRoute: typeof AppPProjectKeyCasesCaseKeyIndexRoute
 }
 
 const AppPProjectKeyRouteChildren: AppPProjectKeyRouteChildren = {
   AppPProjectKeyActivityRoute: AppPProjectKeyActivityRoute,
+  AppPProjectKeyRepositoryRoute: AppPProjectKeyRepositoryRoute,
   AppPProjectKeySettingsRoute: AppPProjectKeySettingsRoute,
   AppPProjectKeyIndexRoute: AppPProjectKeyIndexRoute,
+  AppPProjectKeyCasesNewRoute: AppPProjectKeyCasesNewRoute,
+  AppPProjectKeyCasesCaseKeyEditRoute: AppPProjectKeyCasesCaseKeyEditRoute,
+  AppPProjectKeyCasesCaseKeyIndexRoute: AppPProjectKeyCasesCaseKeyIndexRoute,
 }
 
 const AppPProjectKeyRouteWithChildren = AppPProjectKeyRoute._addFileChildren(

@@ -23,7 +23,9 @@ from tcms.identity import queries as identity_queries
 from tcms.identity import rules as identity_rules
 from tcms.identity import service as identity
 from tcms.identity.errors import CsrfFailed, MfaEnrollmentRequired, MfaRequired, TokenScopeInsufficient
+from tcms.platform import attachments, comments
 from tcms.platform.audit import queries as audit_queries
+from tcms.testdesign import queries as testdesign_queries
 from tcms.workspace import queries as workspace_queries
 from tcms.workspace.errors import ProjectArchived
 
@@ -36,6 +38,7 @@ UNSAFE = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 class AppState:
     settings: Settings
     session_factory: sessionmaker[Session]
+    store: attachments.Storage | None = None
 
 
 def app_state(request: Request) -> AppState:
@@ -215,7 +218,28 @@ def project_context_allow_archived(
 ENTITY_PROJECT: dict[str, Callable[[Session, UUID], tuple[UUID, UUID] | None]] = {
     "environment": lambda s, i: workspace_queries.owning_project(s, "environment", i),
     "release": lambda s, i: workspace_queries.owning_project(s, "release", i),
+    "test_case": testdesign_queries.owning_project_of_case,
+    "folder": testdesign_queries.owning_project_of_folder,
+    "tag": testdesign_queries.owning_project_of_tag,
+    "test_case_version": testdesign_queries.owning_project_of_version,
+    "test_case_step": testdesign_queries.owning_project_of_step,
+    "comment": comments.owner_of,
+    "attachment": attachments.owner_of,
 }
+
+
+def project_context_for(
+    request: Request, auth: identity.Authenticated, entity_type: str, entity_id: UUID
+) -> AccessContext:
+    """Same as `project_context_from`, for entities named in the body or query (comments, attachments)."""
+    resolver = ENTITY_PROJECT.get(entity_type)
+    if resolver is None:
+        raise NotFound()
+    with app_state(request).session_factory() as s:
+        owner = resolver(s, entity_id)
+    if owner is None or owner[0] != auth.organization_id:
+        raise NotFound()
+    return _project_context(request, auth, owner[1], allow_archived=False)
 
 
 def project_context_from(entity_type: str, param: str) -> Callable[..., AccessContext]:

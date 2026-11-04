@@ -34,6 +34,8 @@ Strategy and gates: docs/08. This page describes how the suites are wired.
 
 - Vitest + Testing Library: `src/**/*.test.tsx` (`make test-frontend`).
 - Playwright + axe: `frontend/e2e` against the running stack (`make e2e`; `E2E_BASE_URL` overrides the web URL). CI fails on serious/critical axe violations.
+- E2E sessions: the `setup` project (`e2e/auth.setup.ts`) signs Bilal and Sana in once and saves their sessions to `e2e/.auth/` (git-ignored); M2+ journeys reuse them so the suite stays under the public auth limit (`RATE_LIMIT_AUTH_PER_MIN`, 20/min per IP). Running the suite several times within a minute on one machine can still hit the limit (`429` / "Too many requests"): wait a minute.
+- M2 journeys (`e2e/m2.spec.ts`) create their own folders, cases and (for TCMS-038) a project with approval on, named with a per-run suffix, so they don't depend on or change the seeded SPARK repository.
 
 ## CI (`.github/workflows/ci.yml`)
 
