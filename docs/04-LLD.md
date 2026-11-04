@@ -80,7 +80,7 @@ tcms/
 | --- | --- |
 | `make up` | `docker compose up -d` (db, minio, mailpit, api, worker, web) |
 | `make migrate` | `tcms migrate` (alembic upgrade head) |
-| `make seed` | Load SPARK demo org/project, users per role (password `Passw0rd!Passw0rd`, MFA off), ~500 cases, 2 releases, cycles with results |
+| `make seed` | Load SPARK demo org/project, users per role (password `Passw0rd!Passw0rd`, MFA off except the Org Admin, who is pre-enrolled with the documented dev-only TOTP secret in docs/ops/local-setup.md; refused in production), 2 releases; later milestones add cases, cycles and results |
 | `make test` | Backend pytest + frontend vitest |
 | `make e2e` | Playwright against compose stack |
 | `make lint` | ruff, mypy, import-linter, eslint, tsc |
@@ -164,6 +164,11 @@ def unit_of_work(session_factory) -> Iterator[UnitOfWork]:
 ```
 
 FastAPI dependency `get_uow` yields a `UnitOfWork` per request; GET routes use a read-only session (`SET TRANSACTION READ ONLY`).
+
+Two patterns complement it (docs/ops/00-review.md G1, G2):
+
+- **Authentication runs in its own short write transaction** before the route's UoW (session `last_seen_at` touch, API token `last_used_at`, `project.admin_accessed` audit), so GET routes stay read-only.
+- **Failures that must leave a trace** (failed sign-in, lockout, wrong MFA code) return `tcms.core.outcome.Outcome.fail(error)` instead of raising; the router lets the UoW commit and then calls `unwrap()`, which raises.
 
 ### 3.2 Service function template
 

@@ -26,7 +26,7 @@
 | Browser session | Cookie `tcms_session` (HttpOnly, Secure, SameSite=Lax) | Required on POST/PUT/PATCH/DELETE: header `X-CSRF-Token` = value of cookie `tcms_csrf` |
 | API token | `Authorization: Bearer tcms_<40 chars>` | Not required; cookies ignored |
 
-Unauthenticated → `401 unauthenticated`. Expired session → `401 session_expired`. MFA enrolment pending → `403 mfa_enrollment_required` (except `/auth/*`).
+Unauthenticated → `401 unauthenticated`. Expired session → `401 session_expired`. Second factor pending (enrolled, not yet verified) → `401 mfa_required`. MFA enrolment pending → `403 mfa_enrollment_required` except `GET /auth/me`, `POST /auth/logout`, `POST /auth/mfa/setup`, `POST /auth/mfa/enable`. Cookie-authenticated writes without a matching `X-CSRF-Token` → `403 csrf_failed`. Unauthenticated POSTs (login, MFA verify, forgot/reset, invitation accept) reject a foreign `Origin` header (`403 csrf_failed`). API tokens with scope `read` get `403 token_scope_insufficient` on any write.
 
 ### 2.2 Authorization
 
@@ -107,12 +107,13 @@ Auth endpoints: 20/min/IP. General: 600/min/user. Responses include `RateLimit-L
 | --- | --- | --- |
 | 400 | `bad_request`, `invalid_filter`, `invalid_sort`, `invalid_include` | Malformed request |
 | 401 | `unauthenticated`, `session_expired`, `invalid_credentials`, `mfa_required`, `invalid_mfa_code` | Authentication |
+| 403 | `csrf_failed` | Missing/invalid CSRF token or foreign Origin |
 | 403 | `permission_denied`, `mfa_enrollment_required`, `self_approval_not_allowed`, `transition_not_permitted`, `not_assignee`, `token_scope_insufficient` | Authorization |
 | 404 | `not_found` | Missing or not visible |
-| 409 | `conflict`, `stale_row_version`, `project_key_taken`, `name_taken`, `project_archived`, `cycle_closed`, `draft_exists`, `run_has_results`, `run_superseded`, `already_latest`, `invalid_status`, `folder_not_empty`, `immutable_record`, `case_has_runs` | State conflict |
+| 409 | `conflict`, `stale_row_version`, `project_key_taken`, `name_taken`, `project_archived`, `cycle_closed`, `draft_exists`, `run_has_results`, `run_superseded`, `already_latest`, `invalid_status`, `folder_not_empty`, `immutable_record`, `case_has_runs`, `last_org_admin`, `last_qa_manager`, `already_member`, `user_exists`, `mfa_already_enabled`, `mfa_required_by_policy`, `cannot_deactivate_self` | State conflict |
 | 413 | `file_too_large` | Upload limit |
 | 415 | `unsupported_file_type` | Upload type |
-| 422 | `validation_error`, `rule_violation`, `incomplete_attempt`, `outcome_required`, `outcome_conflicts_with_steps`, `actual_result_required`, `reason_required`, `defect_required`, `folder_cycle`, `folder_too_deep`, `field_required`, `invalid_transition`, `idempotency_key_reused`, `no_eligible_version` | Business rule |
+| 422 | `validation_error`, `rule_violation`, `incomplete_attempt`, `outcome_required`, `outcome_conflicts_with_steps`, `actual_result_required`, `reason_required`, `defect_required`, `folder_cycle`, `folder_too_deep`, `field_required`, `invalid_transition`, `idempotency_key_reused`, `no_eligible_version`, `token_invalid` (reset/invitation link unknown, used or expired), `password_policy`, `confirmation_mismatch` | Business rule |
 | 423 | `account_locked` | Lockout (returned only after valid password, see [02 §3.3](02-Functional-Specification.md)) |
 | 428 | `row_version_required` | Concurrency |
 | 429 | `rate_limited` | Rate limit |
@@ -129,20 +130,20 @@ Legend: **Perm** = required permission (project scope unless prefixed `org.`); `
 
 | Method | Path | Perm | Description | FR |
 | --- | --- | --- | --- | --- |
-| POST | `/auth/login` | public | `{email, password}` → `200 {mfa_required: bool}`; sets session (or pending-MFA cookie) | AUTH-001 |
-| POST | `/auth/mfa/verify` | pending | `{code}` or `{recovery_code}` → session | AUTH-002/003 |
+| POST | `/auth/login` | public | `{email, password}` → `200 {mfa_required, mfa_enrollment_required}`; sets the session cookie (a 5-minute pending session when MFA is enrolled) | AUTH-001 |
+| POST | `/auth/mfa/verify` | pending | `{code}` or `{recovery_code}` → `204`, new session cookie (rotated); 5 failures invalidate the pending sign-in | AUTH-002/003 |
 | POST | `/auth/logout` | auth | Revoke current session | AUTH-006 |
 | GET | `/auth/me` | auth | User, organization, org admin flag, memberships `[{project, role, permissions[]}]`, MFA status, preferences | |
 | PATCH | `/auth/me` | auth | display_name, time_zone, preferences | |
 | POST | `/auth/password/change` | auth | `{current_password, new_password}` | |
 | POST | `/auth/password/forgot` | public | `{email}` → always `202` | AUTH-004 |
-| POST | `/auth/password/reset` | public | `{token, new_password}` | AUTH-004 |
-| POST | `/auth/mfa/setup` | auth | → `{secret, otpauth_uri}` (not yet active) | AUTH-002 |
-| POST | `/auth/mfa/enable` | auth | `{code}` → `{recovery_codes[10]}` | AUTH-002/003 |
+| POST | `/auth/password/reset` | public | `{token, new_password, revoke_api_tokens?: false}` | AUTH-004 |
+| POST | `/auth/mfa/setup` | auth | → `{secret, otpauth_uri, setup_token}` (not yet active; `setup_token` carries the encrypted secret for 15 min) | AUTH-002 |
+| POST | `/auth/mfa/enable` | auth | `{setup_token, code}` → `{recovery_codes[10]}` | AUTH-002/003 |
 | POST | `/auth/mfa/disable` | auth | `{password, code}`; refused if MFA required by policy/admin | |
 | POST | `/auth/mfa/recovery-codes` | auth | `{password}` → new codes | AUTH-003 |
 | GET | `/auth/invitations/{token}` | public | Invitation details (org, inviter, email) | AUTH-005 |
-| POST | `/auth/invitations/{token}/accept` | public | `{display_name, password}` → session | AUTH-005 |
+| POST | `/auth/invitations/{token}/accept` | public | `{display_name, password, time_zone?}` → session + `{mfa_required, mfa_enrollment_required}` | AUTH-005 |
 | GET | `/me/api-tokens` | auth | List own tokens (no secrets) | AUTH-010 |
 | POST | `/me/api-tokens` | auth | `{name, scope, expires_in_days, project_id?}` → `{token}` shown once | AUTH-010 |
 | DELETE | `/me/api-tokens/{id}` | auth | Revoke | |
@@ -159,7 +160,7 @@ Legend: **Perm** = required permission (project scope unless prefixed `org.`); `
 | GET | `/organization` | auth | Organization summary |
 | PATCH | `/organization` | org.manage | Name, settings (security policy, limits) |
 | GET | `/organization/members` | org.users.manage | Users with status, MFA, last login, project roles |
-| POST | `/organization/invitations` | org.users.manage | `{email, is_org_admin?, project_id?, role_code?}` |
+| POST | `/organization/invitations` | org.users.manage | `{email, is_org_admin?, project_id?, role_code?}` → invitation + `accept_url` (returned only here, for the copy-link fallback) |
 | GET | `/organization/invitations` | org.users.manage | Pending invitations |
 | DELETE | `/organization/invitations/{id}` | org.users.manage | Revoke |
 | POST | `/organization/members/{user_id}/deactivate` | org.users.manage | Revokes sessions/tokens |
@@ -185,10 +186,11 @@ Legend: **Perm** = required permission (project scope unless prefixed `org.`); `
 | PATCH | `/projects/{project_id}` | project.configure | name, description, settings | WS-004 |
 | POST | `/projects/{project_id}/archive` | project.configure | `{confirm_key}` | |
 | POST | `/projects/{project_id}/restore` | project.configure | | |
-| GET | `/projects/{project_id}/resolve` | project.view | `?key=SPARK-TC-12` → `{entity_type, id}` | |
+| GET | `/projects/{project_id}/resolve` | project.view | `?key=SPARK-TC-12` → `{entity_type, id}` (arrives in M2 with the first keyed entity) | |
 | GET | `/projects/{project_id}/activity` | project.view | Activity feed (rendered audit summaries) | WS-007 |
 | GET | `/projects/{project_id}/members` | project.view | | WS-003 |
-| POST | `/projects/{project_id}/members` | project.members.manage | `{user_id, role_code}` | |
+| GET | `/projects/{project_id}/member-candidates` | project.members.manage | Active organization users who are not members (add-member picker) | WS-003 |
+| POST | `/projects/{project_id}/members` | project.members.manage | `{user_id, role_code?}` (default Viewer, BR-29) | |
 | PATCH | `/projects/{project_id}/members/{user_id}` | project.members.manage | `{role_code}` | |
 | DELETE | `/projects/{project_id}/members/{user_id}` | project.members.manage | Cannot remove last QA Manager | |
 | GET/POST | `/projects/{project_id}/environments` | view / project.configure | | WS-005 |

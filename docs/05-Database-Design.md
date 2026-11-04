@@ -6,7 +6,7 @@
 | DBMS | PostgreSQL 16 (extensions: `pg_trgm`, `unaccent`, `citext`) |
 | Depends on | [02 Functional Spec](02-Functional-Specification.md), [03 HLD §6](03-HLD.md) |
 
-This is the authoritative storage model. Its **executable form** is in [`schema/`](schema/): `00_roles.sql` (cluster roles), `01_baseline.sql` (every MVP table, enum, index, trigger and grant), `02_seed_system.sql` (system roles and permissions) and `99_verify.sql` (35 executable checks of the invariants in §4, run as `tcms_app`). The baseline was applied to PostgreSQL 16.15 and all checks pass. Where this prose and the SQL differ, **the SQL wins**; fix the prose. The first Alembic migration must produce exactly the baseline schema (it may execute `01_baseline.sql` verbatim). Phase 2/3 tables are listed in §7 and are **not** created in MVP migrations.
+This is the authoritative storage model. Its **executable form** is in [`schema/`](schema/): `00_roles.sql` (cluster roles), `01_baseline.sql` (every MVP table, enum, index, trigger and grant), `02_seed_system.sql` (system roles and permissions), `03_m1_additions.sql` (M1: sessions MFA counter, auth rate limits) and `99_verify.sql` (35 executable checks of the invariants in §4, run as `tcms_app`). The baseline was applied to PostgreSQL 16.15 and all checks pass. Where this prose and the SQL differ, **the SQL wins**; fix the prose. The first Alembic migration must produce exactly the baseline schema (it may execute `01_baseline.sql` verbatim). Phase 2/3 tables are listed in §7 and are **not** created in MVP migrations.
 
 ---
 
@@ -157,6 +157,7 @@ Indexes: `ix_project_members__user_id`.
 | ip | inet | |
 | user_agent | text | ≤ 500 |
 | revoked_at | timestamptz | null |
+| mfa_failed_attempts | smallint | default 0; pending sign-in invalidated at 5 (migration 0002) |
 
 Indexes: `ux_sessions__token_hash`, `ix_sessions__user_id`, `ix_sessions__expires_at`.
 
@@ -165,6 +166,8 @@ Indexes: `ux_sessions__token_hash`, `ix_sessions__user_id`, `ix_sessions__expire
 **password_reset_tokens**: `id`, `user_id`, `token_hash bytea unique`, `expires_at`, `used_at`, `created_at`.
 
 **invitations**: `id`, `organization_id`, `email citext`, `token_hash bytea unique`, `is_org_admin boolean` (default false), `project_id NULL`, `role_id NULL` (`CHECK ((project_id IS NULL) = (role_id IS NULL))`), `invited_by`, `expires_at`, `accepted_at`, `revoked_at`, `created_at`. Index `ix_invitations__organization_id_email`.
+
+**auth_rate_limits** (migration 0002): `bucket_key text PK` (e.g. `auth:<ip>`), `window_start timestamptz`, `count int`; index on `window_start`; rows older than 1 h purged by `sessions.cleanup`.
 
 **login_attempts**: `id bigserial PK`, `email citext`, `ip inet`, `succeeded boolean`, `occurred_at timestamptz`. Indexes `(email, occurred_at)`, `(ip, occurred_at)`. Purged after 30 days.
 

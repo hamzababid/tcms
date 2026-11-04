@@ -44,6 +44,7 @@ def _login(c: ApiClient, email: str, password: str = PASSWORD) -> Any:
 # -- TCMS-002 / AC-AUTH-02 ------------------------------------------------------------------------
 
 
+@pytest.mark.timing
 def test_tcms_002_unknown_email_and_wrong_password_take_similar_time(world: World) -> None:
     """Timing within 50 ms on average: both paths run one Argon2 verification and similar queries."""
     import statistics

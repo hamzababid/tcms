@@ -1,9 +1,10 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-test("app shell loads with the product name and no serious accessibility violations", async ({ page }) => {
+test("signed-out visitors get the sign-in page with the product name, accessibly", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("navigation", { name: "Primary" })).toContainText("Assay");
+  await expect(page).toHaveURL(/\/login/);
+  await expect(page.getByText("Assay", { exact: true })).toBeVisible();
   await expect(page).toHaveTitle("Assay");
   const results = await new AxeBuilder({ page }).analyze();
   const serious = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");

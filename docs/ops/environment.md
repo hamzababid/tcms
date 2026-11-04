@@ -9,8 +9,8 @@ The backend reads its configuration from the environment (`tcms.core.config.Sett
 | `TCMS_ENV` | `local` | `local`, `test`, `staging`, `production`. Production disables `/api/v1/docs` and seeding |
 | `TCMS_PRODUCT_NAME` | `Assay` | Product name used by the API title and (from M1) emails |
 | `TCMS_BASE_URL` | `http://localhost:5173` | Public origin: links in emails, CSRF origin check (M1) |
-| `TCMS_SECRET_KEY` | — | Signing key (M1: CSRF, pending login). Required outside local |
-| `TCMS_ENCRYPTION_KEYS` | — | `k1:base64key[,k0:oldkey]` AES-GCM keys for TOTP secrets (M1); first is active |
+| `TCMS_SECRET_KEY` | — | ≥ 32 characters. Keys the recovery-code HMAC. `make env` generates a local value |
+| `TCMS_ENCRYPTION_KEYS` | — | `k1:base64(32 bytes)[,k0:oldkey]` AES-256-GCM key ring for TOTP secrets and MFA setup tokens; the first key encrypts, all decrypt (rotation). `make env` generates a local value |
 | `DATABASE_URL` | — | App connection as `tcms_app` |
 | `DATABASE_MAINTENANCE_URL` | — | Migrations and maintenance as `tcms_owner` |
 | `DB_POOL_SIZE` / `DB_MAX_OVERFLOW` | `10` / `10` | SQLAlchemy pool per process |
@@ -24,7 +24,7 @@ The backend reads its configuration from the environment (`tcms.core.config.Sett
 | `WORKER_POLL_INTERVAL_SECONDS` | `1.0` | Idle poll interval |
 | `LOG_LEVEL` | `INFO` | JSON logs to stdout |
 | `SESSION_COOKIE_SECURE` | `true` | `false` only for local http |
-| `RATE_LIMIT_AUTH_PER_MIN` | `20` | Auth endpoints per IP (M1) |
+| `RATE_LIMIT_AUTH_PER_MIN` | `20` | Public auth endpoints per client IP per minute (`auth_rate_limits` table) |
 | `FEATURE_FLAGS` | empty | Phase 2 gates |
 | `MIGRATIONS_PATH` | `backend/migrations` | Where Alembic scripts live (the image keeps the repository layout) |
 | `ALEMBIC_DATABASE_URL` | — | Overrides `DATABASE_MAINTENANCE_URL` for a single Alembic run (used by tests) |

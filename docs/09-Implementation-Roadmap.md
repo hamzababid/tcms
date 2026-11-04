@@ -49,9 +49,9 @@ M6 can start in parallel with M4/M5 once M2 is done (separate module, different 
 
 | | |
 | --- | --- |
-| Scope | E02, E03, E15 (audit write + record history only): login, MFA (TOTP, recovery), lockout, rate limiting, password reset, invitations, sessions, CSRF, API tokens, roles/permissions seeding and resolution, org settings, projects, members, environments, releases, project activity feed; frontend: auth screens, shell with project switcher, project settings pages, profile/tokens |
+| Scope | E02, E03, E15 (audit write + record history; user administration API of US-164, UI in M8), minimal Administration › Invitations and Security policy screens: login, MFA (TOTP, recovery), lockout, rate limiting, password reset, invitations, sessions, CSRF, API tokens, roles/permissions seeding and resolution, org settings, projects, members, environments, releases, project activity feed; frontend: auth screens, shell with project switcher, project settings pages, profile/tokens |
 | Deliverables | Users can be invited, sign in with MFA, create SPARK, add members |
-| Acceptance | TCMS-001…014, 020…025 pass; authz matrix framework in place and enforced for all M1 routes |
+| Acceptance | TCMS-001…014, 020…025a pass; authz matrix framework in place and enforced for all M1 routes |
 | Dependencies | M0 |
 
 ### M2 — Repository and test cases (3 weeks)
@@ -69,7 +69,7 @@ M6 can start in parallel with M4/M5 once M2 is done (separate module, different 
 | --- | --- |
 | Scope | E07, E08: plans (all fields, case selection, requirements link placeholder until M6, clone), cycles (create from plan/repository, version pinning, background creation, add/remove runs, assignment, claim, reorder, close/reopen/clone/archive, sync from plan, update-versions, replace run), cycle detail screen with progress |
 | Deliverables | Leads can plan and assign a regression cycle |
-| Acceptance | TCMS-050…060 pass; BR-03/04/05/11/12/31 tests |
+| Acceptance | TCMS-025b, 050…060 pass; BR-03/04/05/11/12/31 tests |
 | Dependencies | M2 |
 
 ### M4 — Execution runner (3 weeks)

@@ -190,6 +190,18 @@ def list_members(
     ]
 
 
+@router.get("/projects/{project_id}/member-candidates", response_model=list[ids.UserRef])
+def member_candidates(
+    ctx: AccessContext = Depends(project_context), uow: UnitOfWork = Depends(get_read_uow)
+) -> list[ids.UserRef]:
+    """Active organization users who can be added (needs project.members.manage, not org.users.manage)."""
+    ctx.require("project.members.manage")
+    return [
+        ids.UserRef(**vars(u))
+        for u in identity_queries.member_candidates(uow.session, ctx.principal.organization_id, ctx.pid)
+    ]
+
+
 def _member_read(uow: UnitOfWork, ctx: AccessContext, user_id: UUID) -> ids.ProjectMemberRead:
     for m in identity_queries.project_members(uow.session, ctx.principal.organization_id, ctx.pid):
         if m.user.id == user_id:

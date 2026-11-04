@@ -160,6 +160,10 @@ MATRIX: dict[tuple[str, str], Entry] = {
     ("GET", P + "/members"): Entry(
         "project:project.view", lambda f: ("GET", P.format(project_id=f.project_id) + "/members", None)
     ),
+    ("GET", P + "/member-candidates"): Entry(
+        "project:project.members.manage",
+        lambda f: ("GET", P.format(project_id=f.project_id) + "/member-candidates", None),
+    ),
     ("POST", P + "/members"): Entry(
         "project:project.members.manage",
         lambda f: (

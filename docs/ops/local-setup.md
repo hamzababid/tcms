@@ -16,8 +16,34 @@
 ```bash
 make up        # creates .env from .env.example, builds images, starts db, minio, mailpit, migrate, api, worker, web
 make migrate   # alembic upgrade head as tcms_owner (also run automatically by `make up`)
-make seed      # demo data; M0 registers no seed steps yet, M1 adds org, users and SPARK
+make seed      # demo data: ACME Energy, one user per role, project SPARK (idempotent)
 ```
+
+`make env` (run by `make up`) creates `.env` from `.env.example` and generates random local `TCMS_SECRET_KEY` and `TCMS_ENCRYPTION_KEYS`.
+
+## Seed accounts (local and CI stacks only)
+
+All seed users share the password **`Passw0rd!Passw0rd`**. They exist only where `make seed` ran: never seed a shared environment.
+
+| User | Email | Role in SPARK | MFA |
+| --- | --- | --- | --- |
+| Zain Ali | zain@acme.test | Org Admin (+ QA Manager, as project creator) | **Required.** Pre-enrolled with the dev-only TOTP secret `ASSAYLOCALDEVTOTPSECRETONLY23456` (add it to any authenticator app). Refused when `TCMS_ENV=production` |
+| Ayesha Raza | ayesha@acme.test | QA Manager | off |
+| Bilal Khan | bilal@acme.test | QA Lead | off |
+| Sana Malik | sana@acme.test | QA Engineer | off |
+| Omar Farooq | omar@acme.test | Developer | off |
+| Hira Siddiqui | hira@acme.test | PM / BA | off |
+| Faisal Ahmed | faisal@acme.test | Viewer | off |
+
+`tcms seed --profile e2e` also creates project HELIOS with the same team. Seed invitations are delivered to Mailpit.
+
+## First organization on a real deployment
+
+```bash
+docker compose run --rm api tcms bootstrap --org "ACME Energy" --slug acme --admin-email admin@example.com
+```
+
+This prints a one-time setup link (7 days). The admin sets a password, then must enrol two-step verification before anything else.
 
 | Service | URL (defaults) |
 | --- | --- |

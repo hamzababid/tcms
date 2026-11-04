@@ -43,7 +43,7 @@ seed: env ## Load demo data (dev profile)
 test: test-backend test-frontend ## Backend pytest + frontend vitest
 
 test-backend:
-	cd backend && uv run pytest -n auto
+	cd backend && uv run pytest -n auto -m "not timing" && uv run pytest -m timing -q
 
 test-frontend:
 	cd frontend && pnpm test

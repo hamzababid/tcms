@@ -122,7 +122,7 @@ Permissions are code-defined constants (seeded; not user-creatable). Roles bundl
 
 ### 3.2 Default roles (MVP, read-only)
 
-✓ = granted. Org Admin has every permission at org scope and is treated as holding every project permission in every project of the organization (each project access audited as `admin_access`).
+✓ = granted. Org Admin has every permission at org scope and is treated as holding every project permission in every project of the organization (the first access per session to a project they are not a member of is audited as `project.admin_accessed`).
 
 | Permission | QA Manager | QA Lead | QA Engineer | Developer | PM/BA | Viewer |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -176,6 +176,7 @@ Organization-level membership role: every user is an org **Member**; some are **
 | TOTP | RFC 6238, SHA-1, 30 s, 6 digits, ±1 step tolerance, replay of the same code rejected |
 | Recovery codes | 10 codes, 10 chars, single use, stored hashed |
 | Reset link | Single use, 60 min expiry, invalidates other reset links and all sessions on use |
+| Password change | Requires the current password; signs out the user's other sessions and emails a notice |
 | Invitation | Single use, 7 days, carries org and optional project + role |
 
 **AC**
@@ -183,10 +184,10 @@ Organization-level membership role: every user is an org **Member**; some are **
 - AC-AUTH-01: Given a valid user without MFA and no MFA policy, when they sign in with correct credentials, then a session is created and the response sets an HttpOnly Secure cookie.
 - AC-AUTH-02: Given an unknown email, when sign-in is attempted, then the response is identical (status, body, timing within 50 ms average) to a wrong password.
 - AC-AUTH-03: Given 10 failed attempts within 15 minutes, when the 11th attempt uses the correct password, then sign-in is refused and an audit event `auth.locked` exists.
-- AC-AUTH-04: Given an Org Admin without MFA, when they sign in, then every API call except MFA enrolment returns `403 mfa_enrollment_required`.
+- AC-AUTH-04: Given an Org Admin without MFA, when they sign in, then every API call returns `403 mfa_enrollment_required` except `GET /auth/me`, `POST /auth/logout`, `POST /auth/mfa/setup` and `POST /auth/mfa/enable`.
 - AC-AUTH-05: Given a used recovery code, when it is used again, then it is rejected.
 - AC-AUTH-06: Given an idle session older than the idle timeout, when any request is made, then `401 session_expired`.
-- AC-AUTH-07: Given a password reset, when completed, then all of the user's sessions and API tokens' "last session" are revoked (API tokens remain valid unless the user chooses "revoke tokens").
+- AC-AUTH-07: Given a password reset, when completed, then all of the user's sessions and other reset links are revoked; API tokens stay valid unless the user also chooses "revoke API tokens" (`revoke_api_tokens: true`).
 
 ### 3.4 API tokens
 
@@ -224,7 +225,7 @@ Fields: `name` (1–100), `slug` (immutable), security policy (`mfa_required_for
 | settings.allow_self_approval | bool, default false | BR-18 |
 | settings.only_assignee_executes | bool, default false | BR-32 |
 | settings.report_module_depth | int 1–5, default 1 | Folder depth used as "module" in reports |
-| settings.attachment_max_mb | int ≤ org default | |
+| settings.attachment_max_mb | int 1…org `default_attachment_max_mb` | The org value is both the default for new projects and the cap; platform cap 100 MB |
 | settings.require_defect_for_failure | bool, default false | If true, finalizing a Failed attempt requires a linked defect |
 
 Creating a project: creator becomes QA Manager; default environments `QA` and `Staging` created; root folder is implicit (folders with `parent_id = null` are top-level).
@@ -641,7 +642,7 @@ Filters: status (set or open/resolved/deferred groups), severity, priority, assi
 ### 9.2 Attachments
 
 - Allowed types (by content sniffing): images (png, jpeg, gif, webp), pdf, txt, log, csv, json, xml, har, zip, xlsx, docx, mp4/webm (≤ limit).
-- Max size: project setting (default 25 MB, org cap 100 MB). Max 50 attachments per record.
+- Max size: project setting (default and cap = organization `default_attachment_max_mb`, default 25 MB; platform cap 100 MB). Max 50 attachments per record.
 - Filename sanitized; stored under random object key; original name kept for download.
 - Previews for images and PDF; others download.
 - Deletion: uploader or `cycle.manage`/`testcase.edit`/`defect.edit` on the owning record, unless BR-28 forbids.
@@ -841,9 +842,9 @@ Every audit event: `id`, `occurred_at`, `organization_id`, `project_id` (nullabl
 
 | Area | Actions (minimum) |
 | --- | --- |
-| Auth | `auth.login_succeeded`, `auth.login_failed`, `auth.locked`, `auth.logout`, `auth.mfa_enrolled`, `auth.mfa_reset`, `auth.password_changed`, `auth.password_reset`, `api_token.created`, `api_token.revoked`, `session.revoked` |
-| Users & roles | `user.invited`, `user.activated`, `user.deactivated`, `membership.granted`, `membership.changed`, `membership.revoked`, `org_admin.granted/revoked`, `admin_access` |
-| Config | `organization.updated`, `project.created/updated/archived`, `project.settings_changed`, `environment.*`, `release.*`, `release.decision_recorded` |
+| Auth | `auth.login_succeeded`, `auth.login_failed`, `auth.locked`, `auth.logout`, `auth.mfa_enrolled`, `auth.mfa_disabled`, `auth.mfa_reset`, `auth.recovery_codes_regenerated`, `auth.password_changed`, `auth.password_reset_requested`, `auth.password_reset`, `api_token.created`, `api_token.revoked`, `session.revoked`. A failed sign-in for an email with no account writes only a `login_attempts` row (there is no organization to audit in) |
+| Users & roles | `user.invited`, `user.activated`, `user.deactivated`, `membership.granted`, `membership.changed`, `membership.revoked`, `org_admin.granted/revoked`, `project.admin_accessed`, `user.reactivated`, `user.updated`, `user.invitation_revoked` |
+| Config | `organization.updated`, `project.created/updated/archived/restored`, `release.status_changed`, `project.settings_changed`, `environment.*`, `release.*`, `release.decision_recorded` |
 | Test design | `folder.*`, `test_case.created`, `test_case.version_created`, `test_case.updated` (metadata), `test_case.submitted/approved/returned/deprecated/archived/restored/deleted`, `test_case.moved`, link changes |
 | Planning/execution | `plan.*`, `cycle.created/updated/started/closed/reopened`, `run.added/removed/assigned/version_updated/replaced`, `result.started/discarded/finalized/corrected`, `result.draft_taken_over` |
 | Defects | `defect.created/updated/transitioned/linked/unlinked` |
@@ -869,7 +870,7 @@ Step-result edits during a draft are **not** individual audit events (too noisy)
 1. Deployment bootstrap command creates the first organization and Org Admin (CLI `tcms bootstrap --org "ACME" --admin-email ...`), which prints a one-time setup link.
 2. Admin sets password and enrols MFA (mandatory for admins).
 3. Admin sets organization security policy, invites users.
-4. QA Manager creates project SPARK (key `SPARK`), adjusts environments (Dev, QA, Staging, UAT), creates release "SPARK v2.5", adds members with roles.
+4. The Org Admin creates project SPARK (key `SPARK`, becoming its QA Manager) and invites Ayesha as QA Manager of SPARK; she adjusts environments (Dev, QA, Staging, UAT), creates release "SPARK v2.5" and adds members with roles.
 
 ### W2 — Import repository (UJ-2)
 See §15.

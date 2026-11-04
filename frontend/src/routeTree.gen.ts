@@ -9,50 +9,380 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as ForgotRouteImport } from './routes/forgot'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as SetupMfaRouteImport } from './routes/setup-mfa'
+import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppProfileRouteImport } from './routes/_app/profile'
+import { Route as AppProjectsRouteImport } from './routes/_app/projects'
+import { Route as InviteTokenRouteImport } from './routes/invite.$token'
+import { Route as LoginMfaRouteImport } from './routes/login_.mfa'
+import { Route as ResetTokenRouteImport } from './routes/reset.$token'
+import { Route as AppAdminInvitationsRouteImport } from './routes/_app/admin/invitations'
+import { Route as AppAdminSecurityRouteImport } from './routes/_app/admin/security'
+import { Route as AppPProjectKeyRouteImport } from './routes/_app/p.$projectKey'
+import { Route as AppPProjectKeyIndexRouteImport } from './routes/_app/p.$projectKey/index'
+import { Route as AppPProjectKeyActivityRouteImport } from './routes/_app/p.$projectKey/activity'
+import { Route as AppPProjectKeySettingsRouteImport } from './routes/_app/p.$projectKey/settings'
 
-const IndexRoute = IndexRouteImport.update({
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotRoute = ForgotRouteImport.update({
+  id: '/forgot',
+  path: '/forgot',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SetupMfaRoute = SetupMfaRouteImport.update({
+  id: '/setup-mfa',
+  path: '/setup-mfa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProfileRoute = AppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProjectsRoute = AppProjectsRouteImport.update({
+  id: '/projects',
+  path: '/projects',
+  getParentRoute: () => AppRoute,
+} as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const LoginMfaRoute = LoginMfaRouteImport.update({
+  id: '/login_/mfa',
+  path: '/login/mfa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetTokenRoute = ResetTokenRouteImport.update({
+  id: '/reset/$token',
+  path: '/reset/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppAdminInvitationsRoute = AppAdminInvitationsRouteImport.update({
+  id: '/admin/invitations',
+  path: '/admin/invitations',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminSecurityRoute = AppAdminSecurityRouteImport.update({
+  id: '/admin/security',
+  path: '/admin/security',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPProjectKeyRoute = AppPProjectKeyRouteImport.update({
+  id: '/p/$projectKey',
+  path: '/p/$projectKey',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPProjectKeyIndexRoute = AppPProjectKeyIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppPProjectKeyRoute,
+} as any)
+const AppPProjectKeyActivityRoute = AppPProjectKeyActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => AppPProjectKeyRoute,
+} as any)
+const AppPProjectKeySettingsRoute = AppPProjectKeySettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppPProjectKeyRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof AppIndexRoute
+  '/forgot': typeof ForgotRoute
+  '/login': typeof LoginRoute
+  '/setup-mfa': typeof SetupMfaRoute
+  '/profile': typeof AppProfileRoute
+  '/projects': typeof AppProjectsRoute
+  '/invite/$token': typeof InviteTokenRoute
+  '/login/mfa': typeof LoginMfaRoute
+  '/reset/$token': typeof ResetTokenRoute
+  '/admin/invitations': typeof AppAdminInvitationsRoute
+  '/admin/security': typeof AppAdminSecurityRoute
+  '/p/$projectKey': typeof AppPProjectKeyRouteWithChildren
+  '/p/$projectKey/activity': typeof AppPProjectKeyActivityRoute
+  '/p/$projectKey/settings': typeof AppPProjectKeySettingsRoute
+  '/p/$projectKey/': typeof AppPProjectKeyIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
+  '/forgot': typeof ForgotRoute
+  '/login': typeof LoginRoute
+  '/setup-mfa': typeof SetupMfaRoute
+  '/profile': typeof AppProfileRoute
+  '/projects': typeof AppProjectsRoute
+  '/invite/$token': typeof InviteTokenRoute
+  '/login/mfa': typeof LoginMfaRoute
+  '/reset/$token': typeof ResetTokenRoute
+  '/': typeof AppIndexRoute
+  '/admin/invitations': typeof AppAdminInvitationsRoute
+  '/admin/security': typeof AppAdminSecurityRoute
+  '/p/$projectKey/activity': typeof AppPProjectKeyActivityRoute
+  '/p/$projectKey/settings': typeof AppPProjectKeySettingsRoute
+  '/p/$projectKey': typeof AppPProjectKeyIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
+  '/forgot': typeof ForgotRoute
+  '/login': typeof LoginRoute
+  '/setup-mfa': typeof SetupMfaRoute
+  '/_app/profile': typeof AppProfileRoute
+  '/_app/projects': typeof AppProjectsRoute
+  '/invite/$token': typeof InviteTokenRoute
+  '/login_/mfa': typeof LoginMfaRoute
+  '/reset/$token': typeof ResetTokenRoute
+  '/_app/': typeof AppIndexRoute
+  '/_app/admin/invitations': typeof AppAdminInvitationsRoute
+  '/_app/admin/security': typeof AppAdminSecurityRoute
+  '/_app/p/$projectKey': typeof AppPProjectKeyRouteWithChildren
+  '/_app/p/$projectKey/activity': typeof AppPProjectKeyActivityRoute
+  '/_app/p/$projectKey/settings': typeof AppPProjectKeySettingsRoute
+  '/_app/p/$projectKey/': typeof AppPProjectKeyIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/forgot'
+    | '/login'
+    | '/setup-mfa'
+    | '/profile'
+    | '/projects'
+    | '/invite/$token'
+    | '/login/mfa'
+    | '/reset/$token'
+    | '/admin/invitations'
+    | '/admin/security'
+    | '/p/$projectKey'
+    | '/p/$projectKey/activity'
+    | '/p/$projectKey/settings'
+    | '/p/$projectKey/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/forgot'
+    | '/login'
+    | '/setup-mfa'
+    | '/profile'
+    | '/projects'
+    | '/invite/$token'
+    | '/login/mfa'
+    | '/reset/$token'
+    | '/'
+    | '/admin/invitations'
+    | '/admin/security'
+    | '/p/$projectKey/activity'
+    | '/p/$projectKey/settings'
+    | '/p/$projectKey'
+  id:
+    | '__root__'
+    | '/_app'
+    | '/forgot'
+    | '/login'
+    | '/setup-mfa'
+    | '/_app/profile'
+    | '/_app/projects'
+    | '/invite/$token'
+    | '/login_/mfa'
+    | '/reset/$token'
+    | '/_app/'
+    | '/_app/admin/invitations'
+    | '/_app/admin/security'
+    | '/_app/p/$projectKey'
+    | '/_app/p/$projectKey/activity'
+    | '/_app/p/$projectKey/settings'
+    | '/_app/p/$projectKey/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
+  ForgotRoute: typeof ForgotRoute
+  LoginRoute: typeof LoginRoute
+  SetupMfaRoute: typeof SetupMfaRoute
+  InviteTokenRoute: typeof InviteTokenRoute
+  LoginMfaRoute: typeof LoginMfaRoute
+  ResetTokenRoute: typeof ResetTokenRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot': {
+      id: '/forgot'
+      path: '/forgot'
+      fullPath: '/forgot'
+      preLoaderRoute: typeof ForgotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/setup-mfa': {
+      id: '/setup-mfa'
+      path: '/setup-mfa'
+      fullPath: '/setup-mfa'
+      preLoaderRoute: typeof SetupMfaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/': {
+      id: '/_app/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/profile': {
+      id: '/_app/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/projects': {
+      id: '/_app/projects'
+      path: '/projects'
+      fullPath: '/projects'
+      preLoaderRoute: typeof AppProjectsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/login_/mfa': {
+      id: '/login_/mfa'
+      path: '/login/mfa'
+      fullPath: '/login/mfa'
+      preLoaderRoute: typeof LoginMfaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset/$token': {
+      id: '/reset/$token'
+      path: '/reset/$token'
+      fullPath: '/reset/$token'
+      preLoaderRoute: typeof ResetTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/admin/invitations': {
+      id: '/_app/admin/invitations'
+      path: '/admin/invitations'
+      fullPath: '/admin/invitations'
+      preLoaderRoute: typeof AppAdminInvitationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/security': {
+      id: '/_app/admin/security'
+      path: '/admin/security'
+      fullPath: '/admin/security'
+      preLoaderRoute: typeof AppAdminSecurityRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/p/$projectKey': {
+      id: '/_app/p/$projectKey'
+      path: '/p/$projectKey'
+      fullPath: '/p/$projectKey'
+      preLoaderRoute: typeof AppPProjectKeyRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/p/$projectKey/': {
+      id: '/_app/p/$projectKey/'
+      path: '/'
+      fullPath: '/p/$projectKey/'
+      preLoaderRoute: typeof AppPProjectKeyIndexRouteImport
+      parentRoute: typeof AppPProjectKeyRoute
+    }
+    '/_app/p/$projectKey/activity': {
+      id: '/_app/p/$projectKey/activity'
+      path: '/activity'
+      fullPath: '/p/$projectKey/activity'
+      preLoaderRoute: typeof AppPProjectKeyActivityRouteImport
+      parentRoute: typeof AppPProjectKeyRoute
+    }
+    '/_app/p/$projectKey/settings': {
+      id: '/_app/p/$projectKey/settings'
+      path: '/settings'
+      fullPath: '/p/$projectKey/settings'
+      preLoaderRoute: typeof AppPProjectKeySettingsRouteImport
+      parentRoute: typeof AppPProjectKeyRoute
     }
   }
 }
 
+interface AppPProjectKeyRouteChildren {
+  AppPProjectKeyActivityRoute: typeof AppPProjectKeyActivityRoute
+  AppPProjectKeySettingsRoute: typeof AppPProjectKeySettingsRoute
+  AppPProjectKeyIndexRoute: typeof AppPProjectKeyIndexRoute
+}
+
+const AppPProjectKeyRouteChildren: AppPProjectKeyRouteChildren = {
+  AppPProjectKeyActivityRoute: AppPProjectKeyActivityRoute,
+  AppPProjectKeySettingsRoute: AppPProjectKeySettingsRoute,
+  AppPProjectKeyIndexRoute: AppPProjectKeyIndexRoute,
+}
+
+const AppPProjectKeyRouteWithChildren = AppPProjectKeyRoute._addFileChildren(
+  AppPProjectKeyRouteChildren,
+)
+
+interface AppRouteChildren {
+  AppProfileRoute: typeof AppProfileRoute
+  AppProjectsRoute: typeof AppProjectsRoute
+  AppIndexRoute: typeof AppIndexRoute
+  AppAdminInvitationsRoute: typeof AppAdminInvitationsRoute
+  AppAdminSecurityRoute: typeof AppAdminSecurityRoute
+  AppPProjectKeyRoute: typeof AppPProjectKeyRouteWithChildren
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppProfileRoute: AppProfileRoute,
+  AppProjectsRoute: AppProjectsRoute,
+  AppIndexRoute: AppIndexRoute,
+  AppAdminInvitationsRoute: AppAdminInvitationsRoute,
+  AppAdminSecurityRoute: AppAdminSecurityRoute,
+  AppPProjectKeyRoute: AppPProjectKeyRouteWithChildren,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
+  ForgotRoute: ForgotRoute,
+  LoginRoute: LoginRoute,
+  SetupMfaRoute: SetupMfaRoute,
+  InviteTokenRoute: InviteTokenRoute,
+  LoginMfaRoute: LoginMfaRoute,
+  ResetTokenRoute: ResetTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

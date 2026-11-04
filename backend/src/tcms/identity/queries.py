@@ -233,3 +233,13 @@ def invitation_row(inv: Invitation) -> InvitationRow:
 
 def pending_invitations(s: Session, org_id: UUID) -> list[InvitationRow]:
     return [invitation_row(i) for i in repo.pending_invitations(s, org_id, clock.now())]
+
+
+def member_candidates(s: Session, org_id: UUID, project_id: UUID) -> list[UserRef]:
+    """Active organization users who are not members of the project (add-member picker)."""
+    members = {m.user_id for m, _, _ in repo.project_memberships(s, org_id, project_id)}
+    return [
+        UserRef(u.id, u.display_name, u.email, u.is_active)
+        for _, u in repo.org_members(s, org_id)
+        if u.is_active and u.id not in members
+    ]

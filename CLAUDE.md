@@ -29,7 +29,7 @@ You are building **TCMS**, a self-hosted Test Case Management System. The full s
 7. **Optimistic concurrency** on mutable aggregates with `row_version` (409 on mismatch).
 8. **Do not add scope.** Phase 2/3 features (Jira, SSO, automation ingestion, shared steps, parameters, custom roles…) are not built in the MVP; keep their reserved interfaces only. New ideas go to the summary as suggestions.
 9. **No new infrastructure** (Redis, search engines, brokers, extra services) without a new ADR approved by the maintainers.
-10. **Secrets never in code, logs or fixtures** beyond the documented seed passwords.
+10. **Secrets never in code, logs or fixtures** beyond the documented seed passwords and the documented dev-only seed TOTP secret (local seed only; refused when `TCMS_ENV=production`).
 
 ## 3. Stack and commands
 
