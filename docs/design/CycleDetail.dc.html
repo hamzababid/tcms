@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cycle detail</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#4338CA}a:hover{color:#3730A3}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 1000px; display: flex; flex-wrap: wrap; background: #F8FAFC; font-family: Inter, system-ui, sans-serif; color: #0F172A">
+  <div style="flex: 0 0 240px; min-height: 1000px">
+    <dc-import name="Sidebar" active="cycles" hint-size="240px,1000px"></dc-import>
+  </div>
+  <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+    <dc-import name="Topbar" crumbs="SPARK › Cycles › SPARK-CY-12" hint-size="100%,60px"></dc-import>
+    <main style="padding: 20px 28px 40px; display: flex; flex-direction: column; gap: 16px; box-sizing: border-box; width: 100%; max-width: 1280px">
+
+      <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px">
+        <div style="display: flex; flex-direction: column; gap: 6px; flex: 1 1 360px">
+          <div style="display: flex; align-items: center; gap: 10px">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #475569">SPARK-CY-12</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border-radius: 999px; font-size: 12px; font-weight: 500; color: #075985; background: #E0F2FE; border: 1px solid #BAE6FD">● Active</span>
+          </div>
+          <h1 style="margin: 0; font-size: 24px; font-weight: 600">Regression Cycle 01</h1>
+          <div style="font-size: 13px; color: #475569">SPARK v2.5 · QA · build <span style="font-family: 'JetBrains Mono', monospace">2.5.0-rc1</span> · Nov 3 → Nov 10 · from plan <a href="#" style="text-decoration: none; font-family: 'JetBrains Mono', monospace">SPARK-PL-3</a></div>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px">
+          <button type="button" style="height: 36px; padding: 0 14px; border: 1px solid #CBD5E1; border-radius: 6px; background: #FFFFFF; font: 500 14px Inter, sans-serif; color: #0F172A">+ Add cases</button>
+          <button type="button" style="height: 36px; padding: 0 14px; border: 1px solid #CBD5E1; border-radius: 6px; background: #FFFFFF; font: 500 14px Inter, sans-serif; color: #0F172A">Assign ▾</button>
+          <button type="button" aria-label="More cycle actions" style="height: 36px; width: 36px; border: 1px solid #CBD5E1; border-radius: 6px; background: #FFFFFF; font: 500 14px Inter, sans-serif; color: #0F172A">⋯</button>
+          <a href="Runner.dc.html" style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: 6px; background: #4F46E5; color: #FFFFFF; font: 500 14px Inter, sans-serif; text-decoration: none">▶ Start testing</a>
+        </div>
+      </div>
+
+      <section style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+        <div role="img" aria-label="Passed 180, failed 20, blocked 5, skipped 4, in progress 6, not run 30, not applicable 5" style="display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: #E2E8F0">
+          <div style="width: 72%; background: #16A34A"></div><div style="width: 8%; background: #DC2626"></div><div style="width: 2%; background: #D97706"></div><div style="width: 1.6%; background: #94A3B8"></div><div style="width: 2.4%; background: #0284C7"></div>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: baseline">
+          <div style="font-size: 14px"><strong style="font-weight: 600">Executed 205 of 245</strong> <span style="color: #475569">(84%)</span></div>
+          <div style="font-size: 14px"><strong style="font-weight: 600">Passed 180 of 205</strong> <span style="color: #475569">(88%)</span></div>
+          <span style="flex: 1"></span>
+          <sc-for list="{{legend}}" as="l" hint-placeholder-count="7">
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: #334155"><span style="{{l.dot}}"></span>{{l.label}} {{l.n}}</span>
+          </sc-for>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #5B21B6">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"></path></svg>
+          3 runs need retest: linked defects are Ready for retest
+        </div>
+      </section>
+
+      <section style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden">
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px 16px; border-bottom: 1px solid #E2E8F0">
+          <div role="tablist" aria-label="Group by" style="display: inline-flex; border: 1px solid #CBD5E1; border-radius: 6px; overflow: hidden">
+            <button type="button" role="tab" aria-selected="true" style="height: 28px; padding: 0 10px; border: none; background: #EEF2FF; color: #3730A3; font: 600 12.5px Inter, sans-serif">All runs</button>
+            <button type="button" role="tab" aria-selected="false" style="height: 28px; padding: 0 10px; border: none; border-left: 1px solid #CBD5E1; background: #FFFFFF; color: #334155; font: 500 12.5px Inter, sans-serif">By assignee</button>
+            <button type="button" role="tab" aria-selected="false" style="height: 28px; padding: 0 10px; border: none; border-left: 1px solid #CBD5E1; background: #FFFFFF; color: #334155; font: 500 12.5px Inter, sans-serif">By folder</button>
+          </div>
+          <button type="button" style="height: 28px; padding: 0 10px; border: 1px dashed #CBD5E1; border-radius: 999px; background: #FFFFFF; color: #475569; font: 500 12.5px Inter, sans-serif">Status ▾</button>
+          <button type="button" style="height: 28px; padding: 0 10px; border: 1px dashed #CBD5E1; border-radius: 999px; background: #FFFFFF; color: #475569; font: 500 12.5px Inter, sans-serif">Assignee ▾</button>
+          <button type="button" style="height: 28px; padding: 0 10px; border: 1px dashed #CBD5E1; border-radius: 999px; background: #FFFFFF; color: #475569; font: 500 12.5px Inter, sans-serif">Folder ▾</button>
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #475569"><input type="checkbox"> Needs retest</label>
+        </div>
+        <div style="overflow-x: auto">
+          <table style="width: 100%; min-width: 820px; border-collapse: collapse; font-size: 13px">
+            <thead>
+              <tr style="background: #F8FAFC; color: #475569; text-align: left">
+                <th scope="col" style="height: 36px; padding: 0 12px; width: 28px; font-weight: 500"><input type="checkbox" aria-label="Select page"></th>
+                <th scope="col" style="padding: 0 12px; font-weight: 500">#</th>
+                <th scope="col" style="padding: 0 12px; font-weight: 500">Case</th>
+                <th scope="col" style="padding: 0 12px; font-weight: 500">Title</th>
+                <th scope="col" style="padding: 0 12px; font-weight: 500">Folder</th>
+                <th scope="col" style="padding: 0 12px; font-weight: 500">Ver</th>
+                <th scope="col" style="padding: 0 12px; font-weight: 500">Assignee</th>
+                <th scope="col" style="padding: 0 12px; font-weight: 500">Status</th>
+                <th scope="col" style="padding: 0 12px; font-weight: 500">Defects</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{runs}}" as="r" hint-placeholder-count="10">
+                <tr style="height: 40px; border-top: 1px solid #F1F5F9">
+                  <td style="padding: 0 12px"><input type="checkbox" aria-label="Select run {{r.key}}"></td>
+                  <td style="padding: 0 12px; color: #64748B">{{r.pos}}</td>
+                  <td style="padding: 0 12px; font-family: 'JetBrains Mono', monospace; font-weight: 500; white-space: nowrap">{{r.key}}</td>
+                  <td style="padding: 0 12px">{{r.title}}</td>
+                  <td style="padding: 0 12px; color: #475569; white-space: nowrap">{{r.folder}}</td>
+                  <td style="padding: 0 12px; white-space: nowrap; color: {{r.verColor}}" title="{{r.verTip}}">{{r.ver}}</td>
+                  <td style="padding: 0 12px; white-space: nowrap; color: {{r.whoColor}}">{{r.who}}</td>
+                  <td style="padding: 0 12px"><span style="{{r.badge}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="{{r.icon}}"></path></svg>{{r.status}}</span></td>
+                  <td style="padding: 0 12px; white-space: nowrap; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: {{r.defColor}}">{{r.defect}}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 10px 16px; font-size: 12.5px; color: #475569; border-top: 1px solid #E2E8F0">
+          <span>250 runs · 5 superseded hidden</span><span>« 1 2 3 4 5 »</span>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const S = {
+      passed: ['Passed', '#166534', '#DCFCE7', '#BBF7D0', 'M20 6 9 17l-5-5', '#16A34A'],
+      failed: ['Failed', '#B91C1C', '#FEE2E2', '#FECACA', 'M18 6 6 18M6 6l12 12', '#DC2626'],
+      blocked: ['Blocked', '#92400E', '#FEF3C7', '#FDE68A', 'M4.9 4.9l14.2 14.2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18', '#D97706'],
+      skipped: ['Skipped', '#475569', '#F1F5F9', '#E2E8F0', 'M5 4l10 8-10 8V4zM19 5v14', '#94A3B8'],
+      in_progress: ['In progress', '#075985', '#E0F2FE', '#BAE6FD', 'M12 3a9 9 0 1 0 0 18V3z', '#0284C7'],
+      not_run: ['Not run', '#475569', '#FFFFFF', '#CBD5E1', 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18', '#E2E8F0'],
+      not_applicable: ['N/A', '#556070', '#F8FAFC', '#E2E8F0', 'M4.9 19.1 19.1 4.9M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18', '#CBD5E1']
+    };
+    const badge = (k) => 'display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:999px;font-size:12px;font-weight:500;white-space:nowrap;color:' + S[k][1] + ';background:' + S[k][2] + ';border:1px solid ' + S[k][3];
+    const dot = (k) => 'width:10px;height:10px;border-radius:2px;background:' + S[k][5] + (k === 'not_run' ? ';border:1px solid #CBD5E1' : '');
+    const counts = { passed: 180, failed: 20, blocked: 5, skipped: 4, in_progress: 6, not_run: 30, not_applicable: 5 };
+    const legend = Object.keys(counts).map((k) => ({ label: S[k][0], n: counts[k], dot: dot(k) }));
+    const run = (pos, key, title, folder, ver, newer, who, st, defect, retest) => ({
+      pos, key, title, folder,
+      ver: newer ? ver + ' ↑' : ver, verColor: newer ? '#4338CA' : '#475569', verTip: newer ? 'Newer version available' : '',
+      who: who || '— pool —', whoColor: who ? '#0F172A' : '#64748B',
+      status: S[st][0], badge: badge(st), icon: S[st][4],
+      defect: defect ? defect + (retest ? ' ⟳' : '') : '', defColor: retest ? '#5B21B6' : '#B91C1C'
+    });
+    return {
+      legend,
+      runs: [
+        run(1, 'SPARK-TC-12', 'Login with valid credentials', 'Login', 'v3', true, 'Sana Malik', 'failed', 'D-87', true),
+        run(2, 'SPARK-TC-13', 'Login with locked account', 'Login', 'v2', false, 'Sana Malik', 'passed'),
+        run(3, 'SPARK-TC-17', 'MFA code prompt after valid password', 'Login', 'v2', false, 'Sana Malik', 'in_progress'),
+        run(4, 'SPARK-TC-40', 'Session timeout after inactivity', 'Logout', 'v1', false, '', 'not_run'),
+        run(5, 'SPARK-TC-52', 'Password reset link expires after 60 min', 'Password Reset', 'v2', false, 'Bilal Khan', 'blocked'),
+        run(6, 'SPARK-TC-210', 'Energy dashboard totals match telemetry', 'Energy Dashboard', 'v5', false, 'Ayesha Raza', 'failed', 'D-91'),
+        run(7, 'SPARK-TC-214', 'Battery state-of-charge widget refresh', 'Battery Dashboard', 'v1', false, 'Ayesha Raza', 'passed'),
+        run(8, 'SPARK-TC-331', 'Export energy report to XLSX', 'Energy Reports', 'v3', false, 'Bilal Khan', 'skipped'),
+        run(9, 'SPARK-TC-402', 'Legacy SOAP endpoint rejects TLS 1.0', 'Site APIs', 'v1', false, 'Bilal Khan', 'not_applicable'),
+        run(10, 'SPARK-TC-415', 'Site API paginates 10,000 sites', 'Site APIs', 'v2', false, 'Bilal Khan', 'passed')
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

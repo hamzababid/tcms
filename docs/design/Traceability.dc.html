@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Traceability matrix</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#4338CA}a:hover{color:#3730A3}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 980px; display: flex; flex-wrap: wrap; background: #F8FAFC; font-family: Inter, system-ui, sans-serif; color: #0F172A">
+  <div style="flex: 0 0 240px; min-height: 980px">
+    <dc-import name="Sidebar" active="traceability" hint-size="240px,980px"></dc-import>
+  </div>
+  <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+    <dc-import name="Topbar" crumbs="SPARK › Traceability" hint-size="100%,60px"></dc-import>
+    <main style="padding: 20px 28px 40px; display: flex; flex-direction: column; gap: 16px; box-sizing: border-box; width: 100%; max-width: 1280px">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
+        <h1 style="margin: 0; font-size: 22px; font-weight: 600">Traceability</h1>
+        <span style="flex: 1"></span>
+        <button type="button" style="height: 32px; padding: 0 10px; border: 1px solid #CBD5E1; border-radius: 6px; background: #FFFFFF; font: 500 13px Inter, sans-serif; color: #0F172A">Release: SPARK v2.5 ▾</button>
+        <button type="button" style="height: 32px; padding: 0 10px; border: 1px solid #CBD5E1; border-radius: 6px; background: #FFFFFF; font: 500 13px Inter, sans-serif; color: #0F172A">Status ▾</button>
+        <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #334155"><input type="checkbox"> Uncovered only</label>
+        <button type="button" style="height: 32px; padding: 0 10px; border: 1px solid #CBD5E1; border-radius: 6px; background: #FFFFFF; font: 500 13px Inter, sans-serif; color: #0F172A">Export ▾</button>
+      </div>
+
+      <section style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px">
+        <sc-for list="{{summary}}" as="m" hint-placeholder-count="6">
+          <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 4px">
+            <div style="font-size: 12px; font-weight: 500; color: #475569">{{m.label}}</div>
+            <div style="font-size: 20px; font-weight: 600; color: {{m.color}}">{{m.value}}</div>
+            <div style="font-size: 12px; color: #475569">{{m.sub}}</div>
+          </div>
+        </sc-for>
+      </section>
+
+      <section style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden">
+        <div style="overflow-x: auto">
+          <table style="width: 100%; min-width: 900px; border-collapse: collapse; font-size: 13px">
+            <thead>
+              <tr style="background: #F8FAFC; color: #475569; text-align: left">
+                <th scope="col" style="height: 36px; padding: 0 14px; font-weight: 500">Requirement</th>
+                <th scope="col" style="padding: 0 14px; font-weight: 500; width: 70px">Cases</th>
+                <th scope="col" style="padding: 0 14px; font-weight: 500; width: 140px">Status in release</th>
+                <th scope="col" style="padding: 0 14px; font-weight: 500">Latest results</th>
+                <th scope="col" style="padding: 0 14px; font-weight: 500; width: 110px">Open defects</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{rows}}" as="r" hint-placeholder-count="9">
+                <tr style="{{r.rowStyle}}">
+                  <td style="{{r.reqCell}}">
+                    <span style="color: #94A3B8; font-size: 10px; width: 10px; display: inline-block">{{r.caret}}</span>
+                    <span style="font-family: 'JetBrains Mono', monospace; font-weight: 500">{{r.key}}</span>
+                    <span>{{r.title}}</span>
+                    <span style="font-size: 11.5px; color: #64748B">{{r.type}}</span>
+                  </td>
+                  <td style="padding: 0 14px; color: {{r.casesColor}}; font-weight: 600">{{r.cases}}</td>
+                  <td style="padding: 0 14px"><span style="{{r.badge}}">{{r.status}}</span></td>
+                  <td style="padding: 0 14px">
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center">
+                      <sc-for list="{{r.results}}" as="x" hint-placeholder-count="3">
+                        <span style="{{x.style}}" title="{{x.tip}}">{{x.key}} {{x.mark}}</span>
+                      </sc-for>
+                      <sc-if value="{{r.uncovered}}" hint-placeholder-val="{{ false }}">
+                        <a href="#" style="font-size: 12.5px; text-decoration: none">+ Link cases</a>
+                      </sc-if>
+                    </div>
+                  </td>
+                  <td style="padding: 0 14px; font-size: 12.5px; color: {{r.defColor}}">{{r.defects}}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+        <div style="padding: 10px 14px; border-top: 1px solid #E2E8F0; font-size: 12.5px; color: #475569">Status rule: Failed if any linked case failed · then Blocked · then Not run if any case has no result in the release · Passed only when all linked cases passed.</div>
+      </section>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":980}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const S = {
+      passed: ['Passed', '#166534', '#DCFCE7', '#BBF7D0'], failed: ['Failed', '#B91C1C', '#FEE2E2', '#FECACA'],
+      blocked: ['Blocked', '#92400E', '#FEF3C7', '#FDE68A'], not_run: ['Not run', '#475569', '#FFFFFF', '#CBD5E1'],
+      not_covered: ['Not covered', '#475569', '#F1F5F9', '#CBD5E1']
+    };
+    const badge = (k) => 'display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:999px;font-size:12px;font-weight:500;white-space:nowrap;color:' + S[k][1] + ';background:' + S[k][2] + ';border:1px solid ' + S[k][3] + (k === 'not_covered' ? ';border-style:dashed' : '');
+    const M = { p: ['✓', '#166534', '#F0FDF4', '#BBF7D0', 'Passed'], f: ['✕', '#B91C1C', '#FEF2F2', '#FECACA', 'Failed'], b: ['⊘', '#92400E', '#FFFBEB', '#FDE68A', 'Blocked'], n: ['○', '#475569', '#FFFFFF', '#CBD5E1', 'No result in release'] };
+    const res = (key, m) => ({ key, mark: M[m][0], tip: key + ': ' + M[m][4],
+      style: 'display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 7px;border-radius:4px;font-family:JetBrains Mono,monospace;font-size:11.5px;color:' + M[m][1] + ';background:' + M[m][2] + ';border:1px solid ' + M[m][3] });
+    const row = (depth, caret, key, title, type, cases, st, results, defects) => ({
+      caret, key, title, type, cases, status: S[st][0], badge: badge(st), results, uncovered: st === 'not_covered',
+      casesColor: cases === 0 ? '#B91C1C' : '#0F172A', defects: defects || '—', defColor: defects ? '#B91C1C' : '#94A3B8',
+      rowStyle: 'height:44px;border-top:1px solid #F1F5F9;' + (depth === 0 ? 'background:#FCFCFD' : ''),
+      reqCell: 'padding:0 14px 0 ' + (14 + depth * 20) + 'px;display:flex;align-items:center;gap:8px;height:44px;' + (depth === 0 ? 'font-weight:600' : '')
+    });
+    return {
+      summary: [
+        { label: 'Coverage', value: '90%', sub: '54 of 60 covered', color: '#0F172A' },
+        { label: 'Verified', value: '68%', sub: '41 of 60 passed', color: '#0F172A' },
+        { label: 'Failed', value: '4', sub: 'requirements', color: '#B91C1C' },
+        { label: 'Blocked', value: '1', sub: 'requirement', color: '#92400E' },
+        { label: 'Not run', value: '8', sub: 'requirements', color: '#0F172A' },
+        { label: 'Not covered', value: '6', sub: 'no linked cases', color: '#0F172A' }
+      ],
+      rows: [
+        row(0, '▾', 'SPARK-R-3', 'Authentication', 'Epic', 9, 'failed', [], '1 high'),
+        row(1, '▾', 'SPARK-R-12', 'Users sign in with email and password', 'Story', 3, 'failed', [res('TC-12', 'f'), res('TC-13', 'p'), res('TC-17', 'n')], '1 high'),
+        row(1, '', 'SPARK-R-13', 'Password reset by email', 'Story', 4, 'blocked', [res('TC-50', 'p'), res('TC-51', 'p'), res('TC-52', 'b'), res('TC-53', 'p')]),
+        row(1, '', 'SPARK-R-14', 'MFA with TOTP and recovery codes', 'Story', 2, 'passed', [res('TC-17', 'p'), res('TC-18', 'p')]),
+        row(0, '▾', 'SPARK-R-5', 'Energy dashboards', 'Epic', 12, 'failed', [], '1 medium'),
+        row(1, '', 'SPARK-R-20', 'Dashboard KPIs match telemetry within 0.5%', 'Functional', 3, 'failed', [res('TC-210', 'f'), res('TC-211', 'p'), res('TC-212', 'p')], '1 medium'),
+        row(1, '', 'SPARK-R-21', 'Battery widget refreshes every 60 s', 'Functional', 2, 'not_run', [res('TC-214', 'p'), res('TC-215', 'n')]),
+        row(1, '', 'SPARK-R-22', 'Site dashboard supports 10,000 sites', 'Non-functional', 0, 'not_covered', []),
+        row(0, '▸', 'SPARK-R-7', 'Telemetry ingestion', 'Epic', 18, 'passed', [])
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

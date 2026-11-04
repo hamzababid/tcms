@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Foundations and components</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#4338CA}a:hover{color:#3730A3}
+</style>
+</helmet>
+<div style="width: 1440px; min-height: 1240px; box-sizing: border-box; padding: 56px 64px; background: #F8FAFC; font-family: Inter, system-ui, sans-serif; color: #0F172A; display: flex; flex-direction: column; gap: 40px">
+
+  <header style="display: flex; justify-content: space-between; align-items: flex-end; gap: 24px">
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #4338CA">{{productName}} design system</div>
+      <h1 style="margin: 0; font-size: 32px; line-height: 1.2; font-weight: 700">Foundations and components</h1>
+      <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #475569; max-width: 760px">Dense, calm and keyboard-first. One indigo accent for actions and selection; status colours carry meaning and always come with an icon and a label. Every percentage shows its counts.</p>
+    </div>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #64748B">tokens → frontend/src/styles/tokens.css</div>
+  </header>
+
+  <section style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px">
+    <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 600">Colour</h2>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px">
+        <sc-for list="{{neutrals}}" as="c" hint-placeholder-count="8">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <div style="{{c.swatch}}"></div>
+            <div style="font-size: 12px; font-weight: 600">{{c.name}}</div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #475569">{{c.hex}} · {{c.use}}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 600">Type</h2>
+      <div style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: baseline; gap: 16px"><span style="width: 120px; font-size: 12px; color: #64748B">Page title 24/600</span><span style="font-size: 24px; font-weight: 600">Regression Cycle 01</span></div>
+        <div style="display: flex; align-items: baseline; gap: 16px"><span style="width: 120px; font-size: 12px; color: #64748B">Section 16/600</span><span style="font-size: 16px; font-weight: 600">Execution summary</span></div>
+        <div style="display: flex; align-items: baseline; gap: 16px"><span style="width: 120px; font-size: 12px; color: #64748B">Body 14/400</span><span style="font-size: 14px">Open the login page and enter valid credentials.</span></div>
+        <div style="display: flex; align-items: baseline; gap: 16px"><span style="width: 120px; font-size: 12px; color: #64748B">Table 13/400</span><span style="font-size: 13px">Login with valid credentials</span></div>
+        <div style="display: flex; align-items: baseline; gap: 16px"><span style="width: 120px; font-size: 12px; color: #64748B">Label 12/500</span><span style="font-size: 12px; font-weight: 500; color: #475569">ASSIGNEE · DUE NOV 10</span></div>
+        <div style="display: flex; align-items: baseline; gap: 16px"><span style="width: 120px; font-size: 12px; color: #64748B">Key mono 13/500</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500">SPARK-TC-1042</span></div>
+      </div>
+      <div style="font-size: 12px; color: #64748B">Inter for UI, JetBrains Mono for keys, builds and code. 4 px spacing grid; radius 6 px controls, 8 px cards.</div>
+    </div>
+  </section>
+
+  <section style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 20px">
+    <h2 style="margin: 0; font-size: 16px; font-weight: 600">Status — the only mapping (StatusBadge)</h2>
+    <div style="display: flex; flex-wrap: wrap; gap: 12px">
+      <sc-for list="{{statuses}}" as="s" hint-placeholder-count="8">
+        <span style="{{s.style}}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{s.d}}"></path></svg>
+          {{s.label}}
+        </span>
+      </sc-for>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px">
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <div style="font-size: 12px; font-weight: 600; color: #475569">Priority / severity</div>
+        <div style="display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px">
+          <span style="display: inline-flex; align-items: center; gap: 6px; color: #B91C1C"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M6 13l6-6 6 6M6 19l6-6 6 6"></path></svg>Critical</span>
+          <span style="display: inline-flex; align-items: center; gap: 6px; color: #C2410C"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M6 15l6-6 6 6"></path></svg>High</span>
+          <span style="display: inline-flex; align-items: center; gap: 6px; color: #475569"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M6 12h12"></path></svg>Medium</span>
+          <span style="display: inline-flex; align-items: center; gap: 6px; color: #475569"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>Low</span>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <div style="font-size: 12px; font-weight: 600; color: #475569">Progress bar (segments: P F B S NR)</div>
+        <div role="img" aria-label="Passed 180, failed 20, blocked 5, skipped 4, not run 36" style="display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: #E2E8F0">
+          <div style="width: 73.5%; background: #16A34A"></div><div style="width: 8.2%; background: #DC2626"></div><div style="width: 2%; background: #D97706"></div><div style="width: 1.6%; background: #94A3B8"></div>
+        </div>
+        <div style="font-size: 12px; color: #475569">205 of 245 executed (84%)</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <div style="font-size: 12px; font-weight: 600; color: #475569">Metric — rate always with counts</div>
+        <div style="display: flex; gap: 24px">
+          <div><div style="font-size: 24px; font-weight: 600">88%</div><div style="font-size: 12px; color: #475569">180 of 205 passed</div></div>
+          <div><div style="font-size: 24px; font-weight: 600; color: #64748B">—</div><div style="font-size: 12px; color: #475569">0 executed yet</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px">
+    <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 600">Buttons</h2>
+      <div style="display: flex; flex-wrap: wrap; gap: 10px">
+        <button type="button" style="height: 36px; padding: 0 14px; border-radius: 6px; border: 1px solid {{accent}}; background: {{accent}}; color: #FFFFFF; font: 500 14px Inter, sans-serif">Primary</button>
+        <button type="button" style="height: 36px; padding: 0 14px; border-radius: 6px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; font: 500 14px Inter, sans-serif">Secondary</button>
+        <button type="button" style="height: 36px; padding: 0 14px; border-radius: 6px; border: 1px solid transparent; background: transparent; color: #334155; font: 500 14px Inter, sans-serif">Ghost</button>
+        <button type="button" style="height: 36px; padding: 0 14px; border-radius: 6px; border: 1px solid #B91C1C; background: #FFFFFF; color: #B91C1C; font: 500 14px Inter, sans-serif">Destructive</button>
+        <button type="button" disabled style="height: 36px; padding: 0 14px; border-radius: 6px; border: 1px solid #E2E8F0; background: #F1F5F9; color: #64748B; font: 500 14px Inter, sans-serif">Disabled</button>
+      </div>
+      <div style="font-size: 12px; color: #64748B">Height 36 (32 in dense toolbars, 44 on touch). Focus: 2 px indigo ring, 2 px offset.</div>
+    </div>
+
+    <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 600">Fields</h2>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 500">Title *
+        <input type="text" value="Login with valid credentials" style="height: 36px; padding: 0 10px; border: 1px solid #CBD5E1; border-radius: 6px; font: 400 14px Inter, sans-serif; color: #0F172A">
+      </label>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 500">Actual result *
+        <input type="text" value="" placeholder="Describe what happened" style="height: 36px; padding: 0 10px; border: 1px solid #B91C1C; border-radius: 6px; font: 400 14px Inter, sans-serif">
+        <span style="font-size: 12px; font-weight: 400; color: #B91C1C">Required when a step fails</span>
+      </label>
+    </div>
+
+    <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 600">Keys, tags, shortcuts</h2>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+        <a href="#" style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500; text-decoration: none">SPARK-TC-12</a>
+        <span style="font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #EEF2FF; color: #3730A3">regression</span>
+        <span style="font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #EEF2FF; color: #3730A3">smoke</span>
+        <span style="font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #F1F5F9; color: #334155">v4</span>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: #475569">
+        <kbd style="font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 2px 6px; border: 1px solid #CBD5E1; border-bottom-width: 2px; border-radius: 4px; background: #FFFFFF; color: #0F172A">P</kbd> pass
+        <kbd style="font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 2px 6px; border: 1px solid #CBD5E1; border-bottom-width: 2px; border-radius: 4px; background: #FFFFFF; color: #0F172A">F</kbd> fail
+        <kbd style="font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 2px 6px; border: 1px solid #CBD5E1; border-bottom-width: 2px; border-radius: 4px; background: #FFFFFF; color: #0F172A">B</kbd> blocked
+        <kbd style="font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 2px 6px; border: 1px solid #CBD5E1; border-bottom-width: 2px; border-radius: 4px; background: #FFFFFF; color: #0F172A">/</kbd> search
+        <kbd style="font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 2px 6px; border: 1px solid #CBD5E1; border-bottom-width: 2px; border-radius: 4px; background: #FFFFFF; color: #0F172A">Ctrl ⏎</kbd> finish
+      </div>
+    </div>
+  </section>
+
+  <section style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden">
+    <div style="padding: 16px 20px; border-bottom: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 600">Data table row anatomy</h2>
+      <span style="font-size: 12px; color: #64748B">Row 40 px · header 36 px · zebra off · hover #F8FAFC · selected #EEF2FF</span>
+    </div>
+    <div style="overflow-x: auto">
+      <table style="width: 100%; border-collapse: collapse; font-size: 13px">
+        <thead>
+          <tr style="background: #F8FAFC; color: #475569; text-align: left">
+            <th scope="col" style="height: 36px; padding: 0 16px; font-weight: 500; width: 32px"><input type="checkbox" aria-label="Select all"></th>
+            <th scope="col" style="padding: 0 16px; font-weight: 500">Key</th>
+            <th scope="col" style="padding: 0 16px; font-weight: 500">Title</th>
+            <th scope="col" style="padding: 0 16px; font-weight: 500">Priority</th>
+            <th scope="col" style="padding: 0 16px; font-weight: 500">Status</th>
+            <th scope="col" style="padding: 0 16px; font-weight: 500">Assignee</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="height: 40px; border-top: 1px solid #F1F5F9">
+            <td style="padding: 0 16px"><input type="checkbox" aria-label="Select SPARK-TC-12"></td>
+            <td style="padding: 0 16px; font-family: 'JetBrains Mono', monospace; font-weight: 500">SPARK-TC-12</td>
+            <td style="padding: 0 16px">Login with valid credentials</td>
+            <td style="padding: 0 16px; color: #C2410C">High</td>
+            <td style="padding: 0 16px"><span style="{{failedBadge}}">Failed</span></td>
+            <td style="padding: 0 16px">Sana Malik</td>
+          </tr>
+          <tr style="height: 40px; border-top: 1px solid #F1F5F9; background: #EEF2FF">
+            <td style="padding: 0 16px"><input type="checkbox" checked aria-label="Select SPARK-TC-13"></td>
+            <td style="padding: 0 16px; font-family: 'JetBrains Mono', monospace; font-weight: 500">SPARK-TC-13</td>
+            <td style="padding: 0 16px">Login with locked account</td>
+            <td style="padding: 0 16px; color: #475569">Medium</td>
+            <td style="padding: 0 16px"><span style="{{passedBadge}}">Passed</span></td>
+            <td style="padding: 0 16px">Bilal Khan</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"productName":{"editor":"text","default":"TCMS"},"accent":{"editor":"color","default":"#4F46E5","options":["#4F46E5","#0F766E","#1D4ED8","#7C3AED"]},"$preview":{"width":1440,"height":1240}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#4F46E5';
+    const S = {
+      passed: ['Passed', '#166534', '#DCFCE7', '#BBF7D0', 'M20 6 9 17l-5-5'],
+      failed: ['Failed', '#B91C1C', '#FEE2E2', '#FECACA', 'M18 6 6 18M6 6l12 12'],
+      blocked: ['Blocked', '#92400E', '#FEF3C7', '#FDE68A', 'M4.9 4.9l14.2 14.2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18'],
+      skipped: ['Skipped', '#475569', '#F1F5F9', '#E2E8F0', 'M5 4l10 8-10 8V4zM19 5v14'],
+      not_applicable: ['N/A', '#556070', '#F8FAFC', '#E2E8F0', 'M4.9 19.1 19.1 4.9M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18'],
+      in_progress: ['In progress', '#075985', '#E0F2FE', '#BAE6FD', 'M12 3a9 9 0 1 0 0 18V3z'],
+      not_run: ['Not run', '#475569', '#FFFFFF', '#CBD5E1', 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18'],
+      retest: ['Needs retest', '#5B21B6', '#EDE9FE', '#DDD6FE', 'M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5']
+    };
+    const badge = (k) => 'display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;font-size:12.5px;font-weight:500;color:' + S[k][1] + ';background:' + S[k][2] + ';border:1px solid ' + S[k][3];
+    const statuses = Object.keys(S).map((k) => ({ label: S[k][0], d: S[k][4], style: badge(k) }));
+    const sw = (hex, border) => 'height:56px;border-radius:6px;background:' + hex + ';border:1px solid ' + (border || hex);
+    const neutrals = [
+      { name: 'Ink', hex: '#0F172A', use: 'text', swatch: sw('#0F172A') },
+      { name: 'Secondary', hex: '#475569', use: 'labels', swatch: sw('#475569') },
+      { name: 'Border', hex: '#E2E8F0', use: 'lines', swatch: sw('#E2E8F0') },
+      { name: 'Ground', hex: '#F8FAFC', use: 'page', swatch: sw('#F8FAFC', '#E2E8F0') },
+      { name: 'Accent', hex: accent.toUpperCase(), use: 'actions', swatch: sw(accent) },
+      { name: 'Accent tint', hex: '#EEF2FF', use: 'selected', swatch: sw('#EEF2FF', '#C7D2FE') },
+      { name: 'Sidebar', hex: '#111827', use: 'navigation', swatch: sw('#111827') },
+      { name: 'Surface', hex: '#FFFFFF', use: 'cards', swatch: sw('#FFFFFF', '#E2E8F0') }
+    ];
+    return {
+      productName: this.props.productName ?? 'TCMS',
+      accent, statuses, neutrals,
+      failedBadge: badge('failed'), passedBadge: badge('passed')
+    };
+  }
+}
+</script>
+</body>
+</html>

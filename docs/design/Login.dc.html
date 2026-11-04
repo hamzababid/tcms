@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sign in</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#4338CA}a:hover{color:#3730A3}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 860px; box-sizing: border-box; background: #F8FAFC; font-family: Inter, system-ui, sans-serif; color: #0F172A; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 48px; padding: 48px 24px">
+
+  <form aria-labelledby="signin-title" style="width: 380px; max-width: 100%; box-sizing: border-box; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 10px; padding: 32px; display: flex; flex-direction: column; gap: 18px">
+    <div style="display: flex; align-items: center; gap: 10px">
+      <div style="width: 32px; height: 32px; border-radius: 7px; background: #4F46E5; display: flex; align-items: center; justify-content: center">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3 8-8"></path><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"></path></svg>
+      </div>
+      <span style="font-size: 18px; font-weight: 700">{{productName}}</span>
+    </div>
+    <h1 id="signin-title" style="margin: 0; font-size: 20px; font-weight: 600">Sign in</h1>
+    <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 500">Email
+      <input type="email" autocomplete="username" value="sana@acme.test" style="height: 40px; padding: 0 12px; border: 1px solid #CBD5E1; border-radius: 6px; font: 400 14px Inter, sans-serif">
+    </label>
+    <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 500">Password
+      <input type="password" autocomplete="current-password" value="••••••••••••" style="height: 40px; padding: 0 12px; border: 1px solid #CBD5E1; border-radius: 6px; font: 400 14px Inter, sans-serif">
+    </label>
+    <div role="alert" style="padding: 10px 12px; border-radius: 6px; background: #FEF2F2; border: 1px solid #FECACA; font-size: 13px; color: #991B1B">Email or password is incorrect.</div>
+    <button type="submit" style="height: 42px; border: 1px solid #4F46E5; border-radius: 6px; background: #4F46E5; color: #FFFFFF; font: 600 14px Inter, sans-serif">Sign in</button>
+    <a href="#" style="font-size: 13px; text-decoration: none; text-align: center">Forgot password?</a>
+  </form>
+
+  <svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="#94A3B8" stroke-width="2" aria-hidden="true"><path d="M2 12h34M28 4l8 8-8 8"></path></svg>
+
+  <form aria-labelledby="mfa-title" style="width: 380px; max-width: 100%; box-sizing: border-box; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 10px; padding: 32px; display: flex; flex-direction: column; gap: 18px">
+    <div style="width: 40px; height: 40px; border-radius: 50%; background: #EEF2FF; display: flex; align-items: center; justify-content: center">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4338CA" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+    </div>
+    <h1 id="mfa-title" style="margin: 0; font-size: 20px; font-weight: 600">Two-step verification</h1>
+    <p style="margin: 0; font-size: 13.5px; color: #475569">Enter the 6-digit code from your authenticator app.</p>
+    <fieldset style="border: none; margin: 0; padding: 0; display: flex; gap: 8px">
+      <legend style="position: absolute; width: 1px; height: 1px; overflow: hidden">Verification code</legend>
+      <sc-for list="{{digits}}" as="d" hint-placeholder-count="6">
+        <input type="text" inputmode="numeric" maxlength="1" aria-label="{{d.label}}" value="{{d.v}}" style="{{d.style}}">
+      </sc-for>
+    </fieldset>
+    <button type="submit" style="height: 42px; border: 1px solid #4F46E5; border-radius: 6px; background: #4F46E5; color: #FFFFFF; font: 600 14px Inter, sans-serif">Verify</button>
+    <a href="#" style="font-size: 13px; text-decoration: none; text-align: center">Use a recovery code</a>
+    <p style="margin: 0; font-size: 12px; color: #64748B; text-align: center">MFA is required for organization administrators.</p>
+  </form>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"productName":{"editor":"text","default":"TCMS"},"$preview":{"width":1440,"height":860}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const vals = ['4', '8', '2', '', '', ''];
+    const digits = vals.map((v, i) => ({
+      v, label: 'Digit ' + (i + 1),
+      style: 'width:44px;height:52px;text-align:center;border-radius:6px;font:600 20px JetBrains Mono,monospace;color:#0F172A;' + (i === 3 ? 'border:2px solid #4F46E5;box-shadow:0 0 0 3px #E0E7FF' : 'border:1px solid #CBD5E1')
+    }));
+    return { productName: this.props.productName ?? 'TCMS', digits };
+  }
+}
+</script>
+</body>
+</html>

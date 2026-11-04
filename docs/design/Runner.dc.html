@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Test runner</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#4338CA}a:hover{color:#3730A3}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 1000px; display: flex; flex-direction: column; background: #F8FAFC; font-family: Inter, system-ui, sans-serif; color: #0F172A">
+
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 10px 20px; background: #111827; color: #E5E7EB">
+    <a href="CycleDetail.dc.html" style="display: inline-flex; align-items: center; gap: 6px; color: #E5E7EB; text-decoration: none; font-size: 13.5px; font-weight: 500">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>
+      <span style="font-family: 'JetBrains Mono', monospace">SPARK-CY-12</span> Regression Cycle 01
+    </a>
+    <span style="font-size: 13px; color: #9CA3AF">Run 7 of 48 · my queue</span>
+    <span style="flex: 1"></span>
+    <span style="display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #D1D5DB">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2 2M9 2h6"></path></svg>04:12
+    </span>
+    <button type="button" style="height: 32px; padding: 0 12px; border: 1px solid #374151; border-radius: 6px; background: #1F2937; color: #E5E7EB; font: 500 13px Inter, sans-serif">◀ Prev</button>
+    <button type="button" style="height: 32px; padding: 0 12px; border: 1px solid #374151; border-radius: 6px; background: #1F2937; color: #E5E7EB; font: 500 13px Inter, sans-serif">Next ▶ <span style="color: #9CA3AF; font-size: 11.5px">Shift N</span></button>
+  </header>
+
+  <div style="display: flex; flex-wrap: wrap; flex: 1 1 auto">
+    <aside aria-label="Queue" style="flex: 0 0 272px; box-sizing: border-box; background: #FFFFFF; border-right: 1px solid #E2E8F0; padding: 12px; display: flex; flex-direction: column; gap: 8px">
+      <div style="display: flex; gap: 6px">
+        <button type="button" style="flex: 1; height: 30px; border: 1px solid #CBD5E1; border-radius: 6px; background: #FFFFFF; font: 500 12.5px Inter, sans-serif; color: #0F172A">Mine ▾</button>
+        <button type="button" style="flex: 1; height: 30px; border: 1px solid #CBD5E1; border-radius: 6px; background: #FFFFFF; font: 500 12.5px Inter, sans-serif; color: #0F172A">Not done ▾</button>
+      </div>
+      <ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px">
+        <sc-for list="{{queue}}" as="q" hint-placeholder-count="9">
+          <li style="{{q.style}}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{q.color}}" stroke-width="2.5" stroke-linecap="round" aria-label="{{q.statusLabel}}" role="img" style="flex: none"><path d="{{q.icon}}"></path></svg>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #475569; flex: none">{{q.key}}</span>
+            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{q.title}}</span>
+          </li>
+        </sc-for>
+      </ol>
+    </aside>
+
+    <main style="flex: 999 1 600px; min-width: 0; padding: 20px 28px 32px; display: flex; flex-direction: column; gap: 16px; box-sizing: border-box">
+      <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px">
+        <div style="flex: 1 1 400px; display: flex; flex-direction: column; gap: 6px">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #475569">
+            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 500">SPARK-TC-12</span> · Web Application / Authentication / Login · <span style="color: #C2410C">▲ High</span>
+          </div>
+          <h1 style="margin: 0; font-size: 22px; font-weight: 600">Login with valid credentials</h1>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid #C7D2FE; background: #EEF2FF; border-radius: 6px; font-size: 12.5px; color: #3730A3">
+          Pinned to v3 · v4 available <a href="#" style="font-weight: 600; text-decoration: none">View changes</a>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+        <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 14px; font-size: 13px"><div style="font-size: 11.5px; font-weight: 600; color: #475569; margin-bottom: 4px">PRECONDITIONS</div>User <code style="font-family: 'JetBrains Mono', monospace; font-size: 12px; background: #F1F5F9; padding: 1px 4px; border-radius: 3px">qa.user@acme.test</code> exists and is active.</div>
+        <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 14px; font-size: 13px"><div style="font-size: 11.5px; font-weight: 600; color: #475569; margin-bottom: 4px">TEST DATA</div>Password from vault entry <code style="font-family: 'JetBrains Mono', monospace; font-size: 12px; background: #F1F5F9; padding: 1px 4px; border-radius: 3px">qa/spark/qa.user</code></div>
+      </div>
+
+      <section aria-label="Steps" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden">
+        <div style="display: grid; grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1fr) 236px; gap: 12px; padding: 10px 16px; background: #F8FAFC; font-size: 12px; font-weight: 600; color: #475569">
+          <span>#</span><span>Action</span><span>Expected</span><span>Result</span>
+        </div>
+        <sc-for list="{{steps}}" as="s" hint-placeholder-count="4">
+          <div style="{{s.rowStyle}}">
+            <div style="display: grid; grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1fr) 236px; gap: 12px; align-items: start; font-size: 13.5px">
+              <span style="font-weight: 600; color: #64748B; padding-top: 6px">{{s.n}}</span>
+              <span style="padding-top: 6px; line-height: 1.45">{{s.action}}</span>
+              <span style="padding-top: 6px; line-height: 1.45; color: #334155">{{s.expected}}</span>
+              <div role="group" aria-label="Step {{s.n}} result" style="display: flex; gap: 4px">
+                <button type="button" onClick="{{s.setP}}" aria-pressed="{{s.pOn}}" style="{{s.pStyle}}">✓ P</button>
+                <button type="button" onClick="{{s.setF}}" aria-pressed="{{s.fOn}}" style="{{s.fStyle}}">✕ F</button>
+                <button type="button" onClick="{{s.setB}}" aria-pressed="{{s.bOn}}" style="{{s.bStyle}}">⊘ B</button>
+                <button type="button" onClick="{{s.setS}}" aria-pressed="{{s.sOn}}" style="{{s.sStyle}}">⤼ S</button>
+              </div>
+            </div>
+            <sc-if value="{{s.failed}}" hint-placeholder-val="{{ false }}">
+              <div style="margin: 10px 0 0 52px; display: flex; flex-direction: column; gap: 8px">
+                <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; font-weight: 500; color: #B91C1C">Actual result *
+                  <textarea rows="2" style="padding: 8px 10px; border: 1px solid #FCA5A5; border-radius: 6px; font: 400 13.5px Inter, sans-serif; color: #0F172A; resize: vertical">Dashboard took 9 s to load; spinner shown the whole time.</textarea>
+                </label>
+                <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12.5px">
+                  <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid #E2E8F0; border-radius: 6px; color: #334155">▣ screenshot-1.png · 240 KB</span>
+                  <button type="button" style="height: 28px; padding: 0 10px; border: 1px dashed #CBD5E1; border-radius: 6px; background: #FFFFFF; font: 500 12.5px Inter, sans-serif; color: #334155">+ Attach or paste (A)</button>
+                  <span style="flex: 1"></span>
+                  <a href="Defect.dc.html" style="display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border: 1px solid #B91C1C; border-radius: 6px; background: #FFFFFF; font: 500 12.5px Inter, sans-serif; color: #B91C1C; text-decoration: none">Raise defect (D)</a>
+                  <button type="button" style="height: 28px; padding: 0 10px; border: 1px solid #CBD5E1; border-radius: 6px; background: #FFFFFF; font: 500 12.5px Inter, sans-serif; color: #334155">Link existing</button>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </section>
+
+      <section style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; flex-wrap: wrap; gap: 12px">
+          <label style="flex: 1 1 360px; display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; font-weight: 500">Comment
+            <textarea rows="2" placeholder="Optional notes for this run" style="padding: 8px 10px; border: 1px solid #CBD5E1; border-radius: 6px; font: 400 13.5px Inter, sans-serif; resize: vertical"></textarea>
+          </label>
+          <label style="flex: 0 1 200px; display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; font-weight: 500">Build
+            <input type="text" value="2.5.0-rc1" style="height: 36px; padding: 0 10px; border: 1px solid #CBD5E1; border-radius: 6px; font: 400 13px 'JetBrains Mono', monospace">
+          </label>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+          <button type="button" onClick="{{passAll}}" style="height: 36px; padding: 0 12px; border: 1px solid #CBD5E1; border-radius: 6px; background: #FFFFFF; font: 500 13.5px Inter, sans-serif; color: #0F172A">Pass all remaining</button>
+          <button type="button" style="height: 36px; padding: 0 12px; border: 1px solid #CBD5E1; border-radius: 6px; background: #FFFFFF; font: 500 13.5px Inter, sans-serif; color: #0F172A">Block run…</button>
+          <button type="button" style="height: 36px; padding: 0 12px; border: 1px solid #CBD5E1; border-radius: 6px; background: #FFFFFF; font: 500 13.5px Inter, sans-serif; color: #0F172A">Skip…</button>
+          <button type="button" style="height: 36px; padding: 0 12px; border: 1px solid #CBD5E1; border-radius: 6px; background: #FFFFFF; font: 500 13.5px Inter, sans-serif; color: #0F172A">N/A…</button>
+          <button type="button" onClick="{{reset}}" style="height: 36px; padding: 0 12px; border: 1px solid transparent; border-radius: 6px; background: transparent; font: 500 13.5px Inter, sans-serif; color: #475569">Reset demo</button>
+          <span style="flex: 1"></span>
+          <div role="status" aria-live="polite" style="display: flex; align-items: center; gap: 8px; font-size: 13px">
+            <span style="color: #475569">Result preview</span>
+            <span style="{{preview.style}}">{{preview.label}}</span>
+          </div>
+          <button type="button" disabled="{{preview.blocked}}" style="{{finishStyle}}">Finish run <span style="opacity: 0.8; font-size: 12px">Ctrl ⏎</span></button>
+        </div>
+        <div style="font-size: 12.5px; color: {{preview.hintColor}}">{{preview.hint}}</div>
+      </section>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 12.5px; color: #475569">
+        <span>History: attempt 1 <span style="color: #B91C1C; font-weight: 500">Failed</span> · Sana · Nov 3 10:04</span>
+        <span>Linked defect <a href="Defect.dc.html" style="font-family: 'JetBrains Mono', monospace; text-decoration: none">SPARK-D-87</a> · Ready for retest</span>
+        <span>Keys: P F B S · ↑↓ step · D defect · Ctrl ⏎ finish</span>
+      </div>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { st: ['passed', 'failed', 'not_run', 'not_run'] };
+  }
+  renderVals() {
+    const st = this.state.st;
+    const set = (i, v) => () => { const n = st.slice(); n[i] = n[i] === v ? 'not_run' : v; this.setState({ st: n }); };
+    const C = {
+      passed: ['#166534', '#DCFCE7', '#16A34A'], failed: ['#B91C1C', '#FEE2E2', '#DC2626'],
+      blocked: ['#92400E', '#FEF3C7', '#D97706'], skipped: ['#334155', '#F1F5F9', '#64748B']
+    };
+    const btn = (on, k) => 'flex:1;height:32px;border-radius:6px;font:600 12.5px Inter,sans-serif;' +
+      (on ? 'color:' + C[k][0] + ';background:' + C[k][1] + ';border:1.5px solid ' + C[k][2] : 'color:#475569;background:#FFFFFF;border:1px solid #CBD5E1');
+    const defs = [
+      ['Open https://spark-qa.acme.test/login', 'Sign-in form is displayed'],
+      ['Enter valid email and password, press Sign in', 'Energy Dashboard loads within 3 s'],
+      ['Check the header', 'User name is shown in the header'],
+      ['Reload the page', 'User stays signed in']
+    ];
+    const steps = defs.map((d, i) => ({
+      n: i + 1, action: d[0], expected: d[1], failed: st[i] === 'failed',
+      setP: set(i, 'passed'), setF: set(i, 'failed'), setB: set(i, 'blocked'), setS: set(i, 'skipped'),
+      pOn: st[i] === 'passed' ? 'true' : 'false', fOn: st[i] === 'failed' ? 'true' : 'false',
+      bOn: st[i] === 'blocked' ? 'true' : 'false', sOn: st[i] === 'skipped' ? 'true' : 'false',
+      pStyle: btn(st[i] === 'passed', 'passed'), fStyle: btn(st[i] === 'failed', 'failed'),
+      bStyle: btn(st[i] === 'blocked', 'blocked'), sStyle: btn(st[i] === 'skipped', 'skipped'),
+      rowStyle: 'padding:12px 16px;border-top:1px solid #F1F5F9;' + (i === 2 ? 'background:#F8FAFF;box-shadow:inset 3px 0 0 #4F46E5' : '')
+    }));
+    // Roll-up per BR-09 (docs/02 §7.3)
+    const pill = (fg, bg, bd) => 'display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:999px;font-size:13px;font-weight:600;color:' + fg + ';background:' + bg + ';border:1px solid ' + bd;
+    const notRun = st.filter((s) => s === 'not_run').length;
+    const skipped = st.filter((s) => s === 'skipped').length;
+    let preview;
+    if (st.includes('failed')) {
+      preview = { label: 'Failed', style: pill('#B91C1C', '#FEE2E2', '#FECACA'), blocked: false,
+        hint: 'A failed step makes the run Failed, whatever the other steps say. Actual result is required on failed steps.', hintColor: '#475569' };
+    } else if (st.includes('blocked')) {
+      preview = { label: 'Blocked', style: pill('#92400E', '#FEF3C7', '#FDE68A'), blocked: false,
+        hint: 'No failures and at least one blocked step: the run is Blocked.', hintColor: '#475569' };
+    } else if (notRun === 0 && st.includes('passed')) {
+      preview = { label: skipped ? 'Passed · ' + skipped + ' skipped' : 'Passed', style: pill('#166534', '#DCFCE7', '#BBF7D0'), blocked: false,
+        hint: skipped ? 'Skipped steps are allowed in a pass and are flagged on the result.' : 'All steps passed.', hintColor: '#475569' };
+    } else {
+      preview = { label: 'Incomplete', style: pill('#475569', '#FFFFFF', '#CBD5E1'), blocked: true,
+        hint: notRun ? notRun + ' step(s) not recorded. Record them, or Block / Skip / mark N/A the run with a reason.' : 'All steps skipped: choose Skip or N/A for the run with a reason.', hintColor: '#B45309' };
+    }
+    const finishStyle = 'height:36px;padding:0 16px;border-radius:6px;font:600 14px Inter,sans-serif;' +
+      (preview.blocked ? 'border:1px solid #E2E8F0;background:#F1F5F9;color:#64748B' : 'border:1px solid #4F46E5;background:#4F46E5;color:#FFFFFF');
+    const Q = {
+      passed: ['#16A34A', 'M20 6 9 17l-5-5', 'Passed'], failed: ['#DC2626', 'M18 6 6 18M6 6l12 12', 'Failed'],
+      current: ['#4F46E5', 'M8 5v14l11-7z', 'Current'], not_run: ['#94A3B8', 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18', 'Not run'],
+      blocked: ['#D97706', 'M4.9 4.9l14.2 14.2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18', 'Blocked']
+    };
+    const q = (key, title, s) => ({
+      key, title, color: Q[s][0], icon: Q[s][1], statusLabel: Q[s][2],
+      style: 'display:flex;align-items:center;gap:8px;height:34px;padding:0 8px;border-radius:6px;font-size:13px;' + (s === 'current' ? 'background:#EEF2FF;color:#3730A3;font-weight:600' : 'color:#1E293B')
+    });
+    return {
+      steps, preview, finishStyle,
+      passAll: () => this.setState({ st: st.map((s) => (s === 'not_run' ? 'passed' : s)) }),
+      reset: () => this.setState({ st: ['passed', 'failed', 'not_run', 'not_run'] }),
+      queue: [
+        q('TC-08', 'Sign-in page loads under 2 s', 'passed'), q('TC-09', 'Logout clears session', 'passed'),
+        q('TC-10', 'Logout from two tabs', 'passed'), q('TC-11', 'Password reset email sent', 'failed'),
+        q('TC-05', 'Reset link single use', 'blocked'), q('TC-06', 'Reset link expiry', 'passed'),
+        q('TC-12', 'Login with valid credentials', 'current'), q('TC-13', 'Login with locked account', 'not_run'),
+        q('TC-14', 'Wrong password generic error', 'not_run'), q('TC-17', 'MFA prompt after password', 'not_run'),
+        q('TC-18', 'Recovery code accepted once', 'not_run')
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

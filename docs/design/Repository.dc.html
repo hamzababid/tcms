@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Repository</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#4338CA}a:hover{color:#3730A3}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 1000px; display: flex; flex-wrap: wrap; background: #F8FAFC; font-family: Inter, system-ui, sans-serif; color: #0F172A">
+  <div style="flex: 0 0 240px; min-height: 1000px">
+    <dc-import name="Sidebar" active="repository" hint-size="240px,1000px"></dc-import>
+  </div>
+  <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+    <dc-import name="Topbar" crumbs="SPARK › Repository › Web Application › Authentication › Login" hint-size="100%,60px"></dc-import>
+
+    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 24px; background: #FFFFFF; border-bottom: 1px solid #E2E8F0">
+      <h1 style="margin: 0; font-size: 20px; font-weight: 600">Repository</h1>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <button type="button" style="height: 32px; padding: 0 12px; border: 1px solid #CBD5E1; border-radius: 6px; background: #FFFFFF; font: 500 13px Inter, sans-serif; color: #0F172A">Import</button>
+        <button type="button" style="height: 32px; padding: 0 12px; border: 1px solid #CBD5E1; border-radius: 6px; background: #FFFFFF; font: 500 13px Inter, sans-serif; color: #0F172A">Export</button>
+        <button type="button" style="height: 32px; padding: 0 12px; border: 1px solid #CBD5E1; border-radius: 6px; background: #FFFFFF; font: 500 13px Inter, sans-serif; color: #0F172A">+ Folder</button>
+        <a href="CaseEditor.dc.html" style="display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border-radius: 6px; background: #4F46E5; color: #FFFFFF; font: 500 13px Inter, sans-serif; text-decoration: none">+ New case <kbd style="font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 0 5px; border-radius: 3px; background: #6366F1; color: #FFFFFF">C</kbd></a>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; flex: 1 1 auto; min-height: 0">
+      <aside aria-label="Folders" style="flex: 0 0 264px; box-sizing: border-box; border-right: 1px solid #E2E8F0; background: #FFFFFF; padding: 12px; display: flex; flex-direction: column; gap: 8px">
+        <label style="display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px; border: 1px solid #E2E8F0; border-radius: 6px; font-size: 13px; color: #64748B">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+          <input type="text" placeholder="Filter folders" aria-label="Filter folders" style="border: none; outline: none; font: 400 13px Inter, sans-serif; width: 100%; background: transparent">
+        </label>
+        <div role="tree" aria-label="Repository folders" style="display: flex; flex-direction: column">
+          <sc-for list="{{tree}}" as="f" hint-placeholder-count="14">
+            <div role="treeitem" aria-selected="{{f.sel}}" style="{{f.style}}">
+              <span style="width: 12px; color: #94A3B8; font-size: 10px">{{f.caret}}</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="flex: none"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+              <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{f.label}}</span>
+              <span style="font-size: 11.5px; color: #64748B">{{f.count}}</span>
+            </div>
+          </sc-for>
+        </div>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #475569; margin-top: 8px"><input type="checkbox"> Show archived</label>
+      </aside>
+
+      <section aria-label="Test cases" style="flex: 999 1 480px; min-width: 0; display: flex; flex-direction: column">
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px 16px; border-bottom: 1px solid #E2E8F0; background: #FFFFFF">
+          <button type="button" style="height: 28px; padding: 0 10px; border: 1px solid #C7D2FE; border-radius: 999px; background: #EEF2FF; color: #3730A3; font: 500 12.5px Inter, sans-serif">Status: Approved, Draft, In review ×</button>
+          <button type="button" style="height: 28px; padding: 0 10px; border: 1px dashed #CBD5E1; border-radius: 999px; background: #FFFFFF; color: #475569; font: 500 12.5px Inter, sans-serif">+ Filter</button>
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #475569; margin-left: auto"><input type="checkbox" checked> Include subfolders</label>
+          <button type="button" style="height: 28px; padding: 0 10px; border: 1px solid #CBD5E1; border-radius: 6px; background: #FFFFFF; font: 500 12.5px Inter, sans-serif; color: #0F172A">Columns ▾</button>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 8px 16px; background: #EEF2FF; border-bottom: 1px solid #C7D2FE; font-size: 13px">
+          <span style="font-weight: 600; color: #3730A3">2 selected</span>
+          <a href="#" style="text-decoration: none">Select all 31 matching</a>
+          <span style="flex: 1"></span>
+          <button type="button" style="height: 28px; padding: 0 10px; border: 1px solid #A5B4FC; border-radius: 6px; background: #FFFFFF; font: 500 12.5px Inter, sans-serif; color: #3730A3">Move</button>
+          <button type="button" style="height: 28px; padding: 0 10px; border: 1px solid #A5B4FC; border-radius: 6px; background: #FFFFFF; font: 500 12.5px Inter, sans-serif; color: #3730A3">Tag</button>
+          <button type="button" style="height: 28px; padding: 0 10px; border: 1px solid #A5B4FC; border-radius: 6px; background: #FFFFFF; font: 500 12.5px Inter, sans-serif; color: #3730A3">Add to cycle</button>
+          <button type="button" style="height: 28px; padding: 0 10px; border: 1px solid #A5B4FC; border-radius: 6px; background: #FFFFFF; font: 500 12.5px Inter, sans-serif; color: #3730A3">More ▾</button>
+        </div>
+        <div style="overflow-x: auto; background: #FFFFFF">
+          <table style="width: 100%; min-width: 620px; border-collapse: collapse; font-size: 13px">
+            <thead>
+              <tr style="background: #F8FAFC; color: #475569; text-align: left">
+                <th scope="col" style="height: 36px; padding: 0 12px; width: 28px; font-weight: 500"><input type="checkbox" aria-label="Select page"></th>
+                <th scope="col" style="padding: 0 12px; font-weight: 500">Key ▾</th>
+                <th scope="col" style="padding: 0 12px; font-weight: 500">Title</th>
+                <th scope="col" style="padding: 0 12px; font-weight: 500">Priority</th>
+                <th scope="col" style="padding: 0 12px; font-weight: 500">Status</th>
+                <th scope="col" style="padding: 0 12px; font-weight: 500">Ver</th>
+                <th scope="col" style="padding: 0 12px; font-weight: 500">Owner</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{cases}}" as="c" hint-placeholder-count="12">
+                <tr style="{{c.row}}">
+                  <td style="padding: 0 12px"><input type="checkbox" checked="{{c.checked}}" aria-label="Select {{c.key}}"></td>
+                  <td style="padding: 0 12px; font-family: 'JetBrains Mono', monospace; font-weight: 500; white-space: nowrap">{{c.key}}</td>
+                  <td style="padding: 0 12px">{{c.title}}</td>
+                  <td style="padding: 0 12px; white-space: nowrap; color: {{c.priColor}}">{{c.pri}}</td>
+                  <td style="padding: 0 12px"><span style="{{c.badge}}">{{c.status}}</span></td>
+                  <td style="padding: 0 12px; color: #475569">{{c.ver}}</td>
+                  <td style="padding: 0 12px; white-space: nowrap">{{c.owner}}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 10px 16px; font-size: 12.5px; color: #475569; background: #FFFFFF; border-top: 1px solid #E2E8F0">
+          <span>31 cases in Login (incl. subfolders)</span><span>Page 1 of 1</span>
+        </div>
+      </section>
+
+      <aside aria-label="SPARK-TC-12 details" style="flex: 1 1 380px; max-width: 460px; box-sizing: border-box; background: #FFFFFF; border-left: 1px solid #E2E8F0; display: flex; flex-direction: column">
+        <div style="padding: 16px 20px; border-bottom: 1px solid #E2E8F0; display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500; color: #475569">SPARK-TC-12</span>
+            <span style="{{approvedBadge}}">Approved · v4</span>
+            <span style="flex: 1"></span>
+            <a href="CaseEditor.dc.html" style="font-size: 13px; text-decoration: none">Edit</a>
+            <button type="button" aria-label="Close panel" style="width: 28px; height: 28px; border: none; background: transparent; color: #475569">✕</button>
+          </div>
+          <h2 style="margin: 0; font-size: 17px; font-weight: 600">Login with valid credentials</h2>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px">
+            <span style="font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #EEF2FF; color: #3730A3">regression</span>
+            <span style="font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #EEF2FF; color: #3730A3">smoke</span>
+          </div>
+        </div>
+        <div role="tablist" style="display: flex; gap: 4px; padding: 0 12px; border-bottom: 1px solid #E2E8F0; font-size: 13px">
+          <button type="button" role="tab" aria-selected="true" style="height: 38px; padding: 0 10px; border: none; border-bottom: 2px solid #4F46E5; background: transparent; font: 600 13px Inter, sans-serif; color: #0F172A">Details</button>
+          <button type="button" role="tab" aria-selected="false" style="height: 38px; padding: 0 10px; border: none; background: transparent; font: 500 13px Inter, sans-serif; color: #475569">Versions 4</button>
+          <button type="button" role="tab" aria-selected="false" style="height: 38px; padding: 0 10px; border: none; background: transparent; font: 500 13px Inter, sans-serif; color: #475569">Executions 17</button>
+          <button type="button" role="tab" aria-selected="false" style="height: 38px; padding: 0 10px; border: none; background: transparent; font: 500 13px Inter, sans-serif; color: #475569">History</button>
+        </div>
+        <div style="padding: 16px 20px; display: flex; flex-direction: column; gap: 16px; font-size: 13px">
+          <dl style="margin: 0; display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px 12px">
+            <dt style="color: #475569">Type</dt><dd style="margin: 0">Functional · Positive</dd>
+            <dt style="color: #475569">Priority</dt><dd style="margin: 0; color: #C2410C">High</dd>
+            <dt style="color: #475569">Owner</dt><dd style="margin: 0">Sana Malik</dd>
+            <dt style="color: #475569">Automation</dt><dd style="margin: 0">Manual</dd>
+            <dt style="color: #475569">Requirements</dt><dd style="margin: 0"><a href="#" style="text-decoration: none; font-family: 'JetBrains Mono', monospace">SPARK-R-12</a> Sign in</dd>
+            <dt style="color: #475569">Last result</dt><dd style="margin: 0"><span style="{{failedBadge}}">Failed</span> SPARK-CY-12 · Nov 3</dd>
+          </dl>
+          <div>
+            <div style="font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 6px">PRECONDITIONS</div>
+            <div>User <code style="font-family: 'JetBrains Mono', monospace; font-size: 12px; background: #F1F5F9; padding: 1px 4px; border-radius: 3px">qa.user@acme.test</code> exists and is active.</div>
+          </div>
+          <ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0; border: 1px solid #E2E8F0; border-radius: 6px">
+            <sc-for list="{{steps}}" as="s" hint-placeholder-count="3">
+              <li style="display: grid; grid-template-columns: 24px minmax(0, 1fr) minmax(0, 1fr); gap: 10px; padding: 10px 12px; border-top: 1px solid #F1F5F9">
+                <span style="color: #64748B; font-weight: 600">{{s.n}}</span><span>{{s.action}}</span><span style="color: #475569">{{s.expected}}</span>
+              </li>
+            </sc-for>
+          </ol>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const S = {
+      approved: ['#166534', '#DCFCE7', '#BBF7D0'], draft: ['#475569', '#F1F5F9', '#E2E8F0'], in_review: ['#075985', '#E0F2FE', '#BAE6FD'],
+      deprecated: ['#92400E', '#FEF3C7', '#FDE68A'], failed: ['#B91C1C', '#FEE2E2', '#FECACA']
+    };
+    const badge = (k) => 'display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:999px;font-size:12px;font-weight:500;white-space:nowrap;color:' + S[k][0] + ';background:' + S[k][1] + ';border:1px solid ' + S[k][2];
+    const node = (label, depth, count, caret, sel) => ({
+      label, count, caret, sel: sel ? 'true' : 'false',
+      style: 'display:flex;align-items:center;gap:6px;height:30px;padding:0 8px 0 ' + (8 + depth * 14) + 'px;border-radius:6px;font-size:13px;' + (sel ? 'background:#EEF2FF;color:#3730A3;font-weight:600' : 'color:#1E293B')
+    });
+    const tree = [
+      node('Web Application', 0, '1,204', '▾'), node('Authentication', 1, '86', '▾'), node('Login', 2, '31', '▸', true),
+      node('Logout', 2, '9', ''), node('Password Reset', 2, '46', '▸'), node('Dashboard', 1, '410', '▸'), node('Reporting', 1, '708', '▸'),
+      node('Backend Services', 0, '980', '▸'), node('Data Integration', 0, '640', '▾'), node('Telemetry Ingestion', 1, '212', '▸'),
+      node('Data Validation', 1, '188', '▸'), node('Data Aggregation', 1, '240', '▸'), node('AI/ML Features', 0, '220', '▸')
+    ];
+    const pc = { High: '#C2410C', Medium: '#475569', Critical: '#B91C1C', Low: '#475569' };
+    const row = (key, title, pri, st, label, ver, owner, sel, checked) => ({
+      key, title, pri, priColor: pc[pri], status: label, badge: badge(st), ver, owner, checked: !!checked,
+      row: 'height:40px;border-top:1px solid #F1F5F9;' + (sel ? 'background:#EEF2FF;box-shadow:inset 3px 0 0 #4F46E5' : '')
+    });
+    return {
+      tree,
+      cases: [
+        row('SPARK-TC-12', 'Login with valid credentials', 'High', 'approved', 'Approved', 'v4', 'Sana Malik', true, true),
+        row('SPARK-TC-13', 'Login with locked account', 'Medium', 'draft', 'Draft', 'v2', 'Bilal Khan', false, true),
+        row('SPARK-TC-14', 'Login with wrong password shows generic error', 'Medium', 'in_review', 'In review', 'v1', 'Sana Malik'),
+        row('SPARK-TC-15', 'Login rate limit after 20 attempts per minute', 'High', 'approved', 'Approved', 'v3', 'Ayesha Raza'),
+        row('SPARK-TC-16', 'Remember-me keeps session for 12 h', 'Low', 'approved', 'Approved', 'v1', 'Bilal Khan'),
+        row('SPARK-TC-17', 'MFA code prompt after valid password', 'Critical', 'approved', 'Approved', 'v2', 'Sana Malik'),
+        row('SPARK-TC-18', 'Recovery code accepted once', 'High', 'approved', 'Approved', 'v1', 'Sana Malik'),
+        row('SPARK-TC-19', 'Login form keyboard navigation', 'Medium', 'approved', 'Approved', 'v1', 'Ayesha Raza'),
+        row('SPARK-TC-20', 'Legacy SSO button hidden', 'Low', 'deprecated', 'Deprecated', 'v2', 'Bilal Khan')
+      ],
+      steps: [
+        { n: 1, action: 'Open the login page', expected: 'Sign-in form is displayed' },
+        { n: 2, action: 'Enter valid email and password, press Sign in', expected: 'Energy Dashboard loads within 3 s' },
+        { n: 3, action: 'Check the header', expected: 'User name is shown' }
+      ],
+      approvedBadge: badge('approved'), failedBadge: badge('failed')
+    };
+  }
+}
+</script>
+</body>
+</html>

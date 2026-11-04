@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Test case editor</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#4338CA}a:hover{color:#3730A3}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 1060px; display: flex; flex-wrap: wrap; background: #F8FAFC; font-family: Inter, system-ui, sans-serif; color: #0F172A">
+  <div style="flex: 0 0 240px; min-height: 1060px">
+    <dc-import name="Sidebar" active="repository" hint-size="240px,1060px"></dc-import>
+  </div>
+  <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+    <dc-import name="Topbar" crumbs="SPARK › Repository › Login › SPARK-TC-12 › Edit" hint-size="100%,60px"></dc-import>
+
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px 24px; background: #FFFFFF; border-bottom: 1px solid #E2E8F0">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <div style="font-size: 12px; color: #475569"><span style="font-family: 'JetBrains Mono', monospace">SPARK-TC-12</span> · editing v4</div>
+        <h1 style="margin: 0; font-size: 20px; font-weight: 600">Edit test case</h1>
+      </div>
+      <span style="flex: 1"></span>
+      <span style="font-size: 12.5px; color: #475569">Draft saved locally 10 s ago</span>
+      <a href="Repository.dc.html" style="display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border: 1px solid #CBD5E1; border-radius: 6px; background: #FFFFFF; color: #0F172A; font: 500 14px Inter, sans-serif; text-decoration: none">Cancel</a>
+      <button type="button" style="height: 36px; padding: 0 14px; border: 1px solid #CBD5E1; border-radius: 6px; background: #FFFFFF; color: #0F172A; font: 500 14px Inter, sans-serif">Save &amp; new</button>
+      <button type="button" style="height: 36px; padding: 0 14px; border: 1px solid #4F46E5; border-radius: 6px; background: #4F46E5; color: #FFFFFF; font: 500 14px Inter, sans-serif">Save v5 <span style="opacity: 0.8; font-size: 12px">Ctrl S</span></button>
+    </div>
+
+    <div role="status" style="display: flex; align-items: center; gap: 10px; margin: 16px 24px 0; padding: 10px 14px; border: 1px solid #BAE6FD; background: #F0F9FF; border-radius: 6px; font-size: 13px; color: #075985">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8h.01M11 12h1v5h1"></path></svg>
+      Saving creates <strong style="font-weight: 600">v5</strong>. Approval is required in this project: cycles keep using approved v4 until v5 is approved.
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; padding: 16px 24px 40px; align-items: flex-start">
+      <section aria-label="Content" style="flex: 999 1 560px; min-width: 0; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 18px">
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 500">Title *
+          <input type="text" value="Login with valid credentials" style="height: 38px; padding: 0 10px; border: 1px solid #CBD5E1; border-radius: 6px; font: 500 15px Inter, sans-serif; color: #0F172A">
+        </label>
+        <fieldset style="border: none; margin: 0; padding: 0; display: flex; gap: 16px; align-items: center; font-size: 13px">
+          <legend style="font-weight: 500; float: left; margin-right: 12px">Format</legend>
+          <label style="display: flex; align-items: center; gap: 6px"><input type="radio" name="fmt" checked> Steps</label>
+          <label style="display: flex; align-items: center; gap: 6px"><input type="radio" name="fmt"> Text</label>
+        </fieldset>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 500">Preconditions
+          <textarea rows="2" style="padding: 8px 10px; border: 1px solid #CBD5E1; border-radius: 6px; font: 400 13.5px Inter, sans-serif; resize: vertical">User `qa.user@acme.test` exists and is active.</textarea>
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 500">Test data
+          <textarea rows="2" style="padding: 8px 10px; border: 1px solid #CBD5E1; border-radius: 6px; font: 400 13.5px Inter, sans-serif; resize: vertical" placeholder="Accounts, payloads, files…"></textarea>
+        </label>
+
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; align-items: center; justify-content: space-between">
+            <span style="font-size: 13px; font-weight: 600">Steps</span>
+            <span style="font-size: 12px; color: #475569">Enter new step · Tab next cell · Alt ↑↓ reorder · Ctrl D duplicate · paste rows from Excel</span>
+          </div>
+          <div style="border: 1px solid #E2E8F0; border-radius: 6px; overflow: hidden">
+            <div style="display: grid; grid-template-columns: 36px minmax(0, 1fr) minmax(0, 1fr) 36px; background: #F8FAFC; font-size: 12px; font-weight: 600; color: #475569">
+              <div style="padding: 8px 10px">#</div><div style="padding: 8px 10px">Action *</div><div style="padding: 8px 10px">Expected result</div><div></div>
+            </div>
+            <sc-for list="{{steps}}" as="s" hint-placeholder-count="4">
+              <div style="{{s.row}}">
+                <div style="padding: 10px; font-size: 13px; font-weight: 600; color: #64748B; display: flex; gap: 4px; align-items: flex-start"><span aria-hidden="true" style="color: #CBD5E1">⋮⋮</span>{{s.n}}</div>
+                <textarea aria-label="Step {{s.n}} action" rows="2" style="{{s.cell}}">{{s.action}}</textarea>
+                <textarea aria-label="Step {{s.n}} expected result" rows="2" style="{{s.cell}}">{{s.expected}}</textarea>
+                <button type="button" aria-label="Step {{s.n}} actions" style="border: none; background: transparent; color: #64748B; font-size: 16px">⋯</button>
+              </div>
+            </sc-for>
+            <button type="button" style="width: 100%; height: 38px; border: none; border-top: 1px dashed #CBD5E1; background: #FFFFFF; color: #4338CA; font: 500 13px Inter, sans-serif; text-align: left; padding: 0 46px">+ Add step</button>
+          </div>
+        </div>
+
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 500">Overall expected result
+          <textarea rows="2" style="padding: 8px 10px; border: 1px solid #CBD5E1; border-radius: 6px; font: 400 13.5px Inter, sans-serif; resize: vertical">User lands on the Energy Dashboard, signed in.</textarea>
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 500">Change note
+          <input type="text" value="Clarified dashboard load timing" style="height: 36px; padding: 0 10px; border: 1px solid #CBD5E1; border-radius: 6px; font: 400 13.5px Inter, sans-serif">
+        </label>
+      </section>
+
+      <aside aria-label="Properties" style="flex: 1 1 300px; max-width: 360px; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+        <h2 style="margin: 0; font-size: 14px; font-weight: 600">Properties</h2>
+        <sc-for list="{{props}}" as="p" hint-placeholder-count="8">
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; font-weight: 500; color: #334155">{{p.label}}
+            <select style="height: 34px; padding: 0 8px; border: 1px solid #CBD5E1; border-radius: 6px; font: 400 13.5px Inter, sans-serif; color: #0F172A; background: #FFFFFF"><option>{{p.value}}</option></select>
+          </label>
+        </sc-for>
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; font-weight: 500; color: #334155">Tags
+          <div style="display: flex; flex-wrap: wrap; gap: 6px; padding: 6px; border: 1px solid #CBD5E1; border-radius: 6px">
+            <span style="font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #EEF2FF; color: #3730A3">regression ×</span>
+            <span style="font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #EEF2FF; color: #3730A3">smoke ×</span>
+            <input type="text" aria-label="Add tag" placeholder="Add tag" style="border: none; outline: none; font: 400 12.5px Inter, sans-serif; width: 80px">
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; font-weight: 500; color: #334155">Requirements
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; border: 1px solid #E2E8F0; border-radius: 6px; font-weight: 400; font-size: 13px">
+            <span><span style="font-family: 'JetBrains Mono', monospace">SPARK-R-12</span> Sign in</span><button type="button" aria-label="Unlink SPARK-R-12" style="border: none; background: transparent; color: #64748B">×</button>
+          </div>
+          <button type="button" style="height: 32px; border: 1px dashed #CBD5E1; border-radius: 6px; background: #FFFFFF; color: #4338CA; font: 500 12.5px Inter, sans-serif">+ Link requirement</button>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; font-weight: 500; color: #334155">Attachments
+          <div style="padding: 16px; border: 1px dashed #CBD5E1; border-radius: 6px; text-align: center; font-weight: 400; font-size: 12.5px; color: #475569">Drop files or paste an image · max 25 MB</div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const cell = 'margin:6px 0;padding:6px 8px;border:1px solid transparent;border-radius:4px;font:400 13.5px Inter,sans-serif;color:#0F172A;resize:none;background:transparent';
+    const focusCell = 'margin:6px 0;padding:6px 8px;border:1px solid #6366F1;box-shadow:0 0 0 2px #E0E7FF;border-radius:4px;font:400 13.5px Inter,sans-serif;color:#0F172A;resize:none;background:#FFFFFF';
+    const mk = (n, action, expected, focus) => ({
+      n, action, expected,
+      cell: focus ? focusCell : cell,
+      row: 'display:grid;grid-template-columns:36px minmax(0,1fr) minmax(0,1fr) 36px;border-top:1px solid #F1F5F9;' + (focus ? 'background:#F8FAFF' : '')
+    });
+    return {
+      steps: [
+        mk(1, 'Open https://spark-qa.acme.test/login', 'Sign-in form is displayed'),
+        mk(2, 'Enter valid email and password, press **Sign in**', 'Energy Dashboard loads within 3 s', true),
+        mk(3, 'Check the header', 'User name is shown in the header'),
+        mk(4, 'Reload the page', 'User stays signed in')
+      ],
+      props: [
+        { label: 'Folder *', value: 'Web Application / Authentication / Login' },
+        { label: 'Type *', value: 'Functional' },
+        { label: 'Design technique', value: 'Positive' },
+        { label: 'Priority *', value: 'High' },
+        { label: 'Owner *', value: 'Sana Malik' },
+        { label: 'Reviewer', value: 'Bilal Khan' },
+        { label: 'Automation status', value: 'Manual' },
+        { label: 'Estimated minutes', value: '5' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

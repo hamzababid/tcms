@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Defect detail</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#4338CA}a:hover{color:#3730A3}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 1000px; display: flex; flex-wrap: wrap; background: #F8FAFC; font-family: Inter, system-ui, sans-serif; color: #0F172A">
+  <div style="flex: 0 0 240px; min-height: 1000px">
+    <dc-import name="Sidebar" active="defects" hint-size="240px,1000px"></dc-import>
+  </div>
+  <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+    <dc-import name="Topbar" crumbs="SPARK › Defects › SPARK-D-87" hint-size="100%,60px"></dc-import>
+    <main style="padding: 20px 28px 40px; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; box-sizing: border-box; width: 100%; max-width: 1280px">
+
+      <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #475569">SPARK-D-87</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12.5px; font-weight: 500; color: #5B21B6; background: #EDE9FE; border: 1px solid #DDD6FE">⟳ Ready for retest</span>
+            <span style="font-size: 12.5px; color: #C2410C; font-weight: 500">▲ High severity</span>
+            <span style="font-size: 12.5px; color: #C2410C; font-weight: 500">▲ High priority</span>
+          </div>
+          <h1 style="margin: 0; font-size: 22px; font-weight: 600">Dashboard load exceeds 3 s after login</h1>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px">
+            <button type="button" style="height: 34px; padding: 0 12px; border: 1px solid #4F46E5; border-radius: 6px; background: #4F46E5; color: #FFFFFF; font: 500 13.5px Inter, sans-serif">Verify</button>
+            <button type="button" style="height: 34px; padding: 0 12px; border: 1px solid #CBD5E1; border-radius: 6px; background: #FFFFFF; color: #0F172A; font: 500 13.5px Inter, sans-serif">Reopen…</button>
+            <button type="button" style="height: 34px; padding: 0 12px; border: 1px solid #CBD5E1; border-radius: 6px; background: #FFFFFF; color: #0F172A; font: 500 13.5px Inter, sans-serif">Edit</button>
+            <button type="button" aria-label="More defect actions" style="height: 34px; width: 34px; border: 1px solid #CBD5E1; border-radius: 6px; background: #FFFFFF; color: #0F172A">⋯</button>
+          </div>
+        </div>
+
+        <div role="tablist" style="display: flex; gap: 4px; border-bottom: 1px solid #E2E8F0">
+          <button type="button" role="tab" aria-selected="true" style="height: 38px; padding: 0 12px; border: none; border-bottom: 2px solid #4F46E5; background: transparent; font: 600 13px Inter, sans-serif; color: #0F172A">Details</button>
+          <button type="button" role="tab" aria-selected="false" style="height: 38px; padding: 0 12px; border: none; background: transparent; font: 500 13px Inter, sans-serif; color: #475569">Links 2</button>
+          <button type="button" role="tab" aria-selected="false" style="height: 38px; padding: 0 12px; border: none; background: transparent; font: 500 13px Inter, sans-serif; color: #475569">Activity</button>
+          <button type="button" role="tab" aria-selected="false" style="height: 38px; padding: 0 12px; border: none; background: transparent; font: 500 13px Inter, sans-serif; color: #475569">Comments 4</button>
+        </div>
+
+        <section style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 18px; font-size: 13.5px; line-height: 1.5">
+          <div>
+            <h2 style="margin: 0 0 8px; font-size: 13px; font-weight: 600; color: #475569">STEPS TO REPRODUCE</h2>
+            <div style="font-size: 12.5px; color: #64748B; margin-bottom: 6px">Prefilled from SPARK-TC-12 v3, steps 1–2 · SPARK-CY-12</div>
+            <ol style="margin: 0; padding-left: 20px">
+              <li>Precondition: user <code style="font-family: 'JetBrains Mono', monospace; font-size: 12px; background: #F1F5F9; padding: 1px 4px; border-radius: 3px">qa.user@acme.test</code> exists and is active.</li>
+              <li>Open https://spark-qa.acme.test/login</li>
+              <li>Enter valid email and password, press Sign in</li>
+            </ol>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+            <div style="padding: 12px; border-radius: 6px; background: #F0FDF4; border: 1px solid #BBF7D0"><h2 style="margin: 0 0 4px; font-size: 12.5px; font-weight: 600; color: #166534">EXPECTED</h2>Energy Dashboard loads within 3 s.</div>
+            <div style="padding: 12px; border-radius: 6px; background: #FEF2F2; border: 1px solid #FECACA"><h2 style="margin: 0 0 4px; font-size: 12.5px; font-weight: 600; color: #B91C1C">ACTUAL</h2>Dashboard took 9 s to load; spinner shown the whole time.</div>
+          </div>
+          <div>
+            <h2 style="margin: 0 0 8px; font-size: 13px; font-weight: 600; color: #475569">EVIDENCE</h2>
+            <div style="display: flex; gap: 10px">
+              <div style="width: 180px; height: 110px; border-radius: 6px; border: 1px solid #E2E8F0; background: #F1F5F9; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #475569">[screenshot-1.png]</div>
+              <div style="width: 180px; height: 110px; border-radius: 6px; border: 1px solid #E2E8F0; background: #F1F5F9; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #475569">[network.har]</div>
+            </div>
+          </div>
+          <div>
+            <h2 style="margin: 0 0 6px; font-size: 13px; font-weight: 600; color: #475569">RESOLUTION</h2>
+            Fixed · cached the dashboard aggregate query · fix version <span style="font-family: 'JetBrains Mono', monospace">2.5.1</span>
+          </div>
+        </section>
+
+        <section style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 18px 20px; display: flex; flex-direction: column; gap: 4px">
+          <h2 style="margin: 0 0 8px; font-size: 14px; font-weight: 600">Status history</h2>
+          <sc-for list="{{history}}" as="h" hint-placeholder-count="5">
+            <div style="display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 6px 0; font-size: 13px">
+              <span style="{{h.dot}}"></span>
+              <span><strong style="font-weight: 600">{{h.to}}</strong> · {{h.who}}<span style="color: #475569">{{h.note}}</span></span>
+              <span style="color: #64748B; white-space: nowrap">{{h.when}}</span>
+            </div>
+          </sc-for>
+        </section>
+      </div>
+
+      <aside aria-label="Defect fields" style="flex: 1 1 280px; max-width: 340px; display: flex; flex-direction: column; gap: 16px">
+        <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 18px">
+          <dl style="margin: 0; display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 10px 12px; font-size: 13px">
+            <dt style="color: #475569">Assignee</dt><dd style="margin: 0">Omar Farooq</dd>
+            <dt style="color: #475569">Reporter</dt><dd style="margin: 0">Sana Malik</dd>
+            <dt style="color: #475569">Module</dt><dd style="margin: 0">Authentication</dd>
+            <dt style="color: #475569">Found in</dt><dd style="margin: 0">SPARK v2.5</dd>
+            <dt style="color: #475569">Environment</dt><dd style="margin: 0">QA</dd>
+            <dt style="color: #475569">Build</dt><dd style="margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px">2.5.0-rc1</dd>
+            <dt style="color: #475569">Browser</dt><dd style="margin: 0">Chrome 131 / Windows 11</dd>
+            <dt style="color: #475569">Retest</dt><dd style="margin: 0; color: #5B21B6">Pending · 1 of 1 linked runs</dd>
+            <dt style="color: #475569">Watchers</dt><dd style="margin: 0">Bilal, Ayesha</dd>
+          </dl>
+        </div>
+        <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+          <h2 style="margin: 0; font-size: 14px; font-weight: 600">Linked</h2>
+          <a href="Runner.dc.html" style="display: flex; flex-direction: column; gap: 2px; padding: 10px; border: 1px solid #E2E8F0; border-radius: 6px; text-decoration: none; color: #0F172A; font-size: 13px">
+            <span><span style="font-family: 'JetBrains Mono', monospace">SPARK-CY-12 / TC-12</span> · step 2</span>
+            <span style="color: #475569; font-size: 12.5px">Attempt 1 Failed · Sana · Nov 3</span>
+          </a>
+          <a href="#" style="display: flex; flex-direction: column; gap: 2px; padding: 10px; border: 1px solid #E2E8F0; border-radius: 6px; text-decoration: none; color: #0F172A; font-size: 13px">
+            <span><span style="font-family: 'JetBrains Mono', monospace">SPARK-R-12</span> Sign in</span>
+            <span style="color: #475569; font-size: 12.5px">Requirement</span>
+          </a>
+          <button type="button" style="height: 32px; border: 1px dashed #CBD5E1; border-radius: 6px; background: #FFFFFF; color: #4338CA; font: 500 12.5px Inter, sans-serif">+ Link result, case or requirement</button>
+        </div>
+      </aside>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const dot = (c) => 'width:10px;height:10px;margin-top:5px;border-radius:50%;background:' + c;
+    return {
+      history: [
+        { to: 'Ready for retest', who: 'Bilal Khan', note: '', when: 'Nov 4 09:12', dot: dot('#7C3AED') },
+        { to: 'Fixed', who: 'Omar Farooq', note: ' · fix version 2.5.1', when: 'Nov 3 17:40', dot: dot('#0284C7') },
+        { to: 'In progress', who: 'Omar Farooq', note: '', when: 'Nov 3 14:05', dot: dot('#0284C7') },
+        { to: 'Assigned', who: 'Bilal Khan', note: ' · to Omar Farooq', when: 'Nov 3 11:20', dot: dot('#D97706') },
+        { to: 'Open', who: 'Sana Malik', note: ' · raised from SPARK-CY-12 / TC-12 step 2', when: 'Nov 3 10:04', dot: dot('#DC2626') }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
