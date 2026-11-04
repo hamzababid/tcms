@@ -19,7 +19,7 @@ import { useMe, useProjects, type Me, type Project } from "@/api/queries";
 import { can, projectPermissions } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
-import { PRODUCT_NAME } from "./config";
+import { Logo } from "./Logo";
 
 const COLLAPSED_KEY = "assay.sidebarCollapsed";
 
@@ -281,9 +281,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           collapsed ? "w-16" : "w-60",
         )}
       >
-        <div className={cn("px-2 text-base font-semibold text-white", collapsed && "text-center")}>
-          {collapsed ? PRODUCT_NAME.slice(0, 1) : PRODUCT_NAME}
-        </div>
+        <Link to="/" className={cn("flex h-8 items-center px-2", collapsed && "justify-center px-0")}>
+          {collapsed ? (
+            <Logo variant="mark-dark" className="size-7" />
+          ) : (
+            <Logo variant="dark" className="h-7 w-auto" />
+          )}
+        </Link>
         <div className="flex flex-col gap-1">
           <NavLink item={{ to: "/projects", label: "Projects", icon: FolderKanban }} collapsed={collapsed} />
         </div>

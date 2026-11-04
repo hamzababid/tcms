@@ -121,6 +121,7 @@ services:
     volumes:
       - ./frontend/src:/app/frontend/src
       - ./frontend/index.html:/app/frontend/index.html:ro
+      - ./frontend/public:/app/frontend/public:ro
     depends_on:
       api:
         condition: service_healthy

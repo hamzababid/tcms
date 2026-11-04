@@ -33,3 +33,5 @@ Each `*.dc.html` file is one screen written as HTML with inline styles (a design
 Status (text · background · border · bar): passed #166534 · #DCFCE7 · #BBF7D0 · #16A34A — failed #B91C1C · #FEE2E2 · #FECACA · #DC2626 — blocked #92400E · #FEF3C7 · #FDE68A · #D97706 — skipped #475569 · #F1F5F9 · #E2E8F0 · #94A3B8 — in progress #075985 · #E0F2FE · #BAE6FD · #0284C7 — not run #475569 · #FFFFFF · #CBD5E1 — N/A #556070 · #F8FAFC · #E2E8F0 — needs retest #5B21B6 · #EDE9FE · #DDD6FE · #7C3AED.
 
 Sample data in the screens (names, counts, keys) is illustrative.
+
+Logo, app icon and favicon: [docs/brand](../brand/README.md). Where each is used in the product: docs/07 §6.1.
