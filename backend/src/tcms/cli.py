@@ -42,6 +42,9 @@ def worker() -> None:
     settings = get_settings()
     configure_logging(settings.log_level)
     install_modules()
+    from tcms.platform import attachments, storage
+
+    attachments.configure_gc(attachments.Storage(storage.make_client(settings), settings.s3_bucket))
     w = Worker(
         session_factory(app_engine(settings, worker=True)),
         concurrency=settings.worker_concurrency,

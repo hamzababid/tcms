@@ -1,19 +1,441 @@
-"""Public read functions of the testdesign module."""
+"""Public read functions of the testdesign module (routers and other modules)."""
 
 from __future__ import annotations
 
+import re
+from collections.abc import Mapping
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import ColumnElement, Select, func, or_, select
 from sqlalchemy.orm import Session
 
-from tcms.testdesign.models import Tag
+from tcms.core.context import AccessContext
+from tcms.core.enums import AutomationStatus, CaseStatus, CaseType, PriorityLevel
+from tcms.core.errors import NotFound
+from tcms.core.pagination import FilterField, PageParams, paginate, parse_filters, parse_sort
+from tcms.testdesign import repository as repo
+from tcms.testdesign import rules
+from tcms.testdesign.models import Folder, Tag, TestCase, TestCaseTag, TestCaseVersion
+
+# -- folders --------------------------------------------------------------------------------------
 
 
-def tag_names(s: Session, org_id: UUID, project_id: UUID) -> list[tuple[str, bool]]:
-    rows = s.execute(
-        select(Tag.name, Tag.is_system)
-        .where(Tag.organization_id == org_id, Tag.project_id == project_id)
-        .order_by(Tag.name)
-    ).all()
-    return [(n, bool(sys)) for n, sys in rows]
+@dataclass(frozen=True)
+class FolderNode:
+    id: UUID
+    parent_id: UUID | None
+    name: str
+    description: str | None
+    position: int
+    depth: int
+    case_count: int
+    total_count: int
+    archived: bool
+    row_version: int
+
+
+def folder_tree(s: Session, ctx: AccessContext, *, include_archived: bool) -> list[FolderNode]:
+    """Counts include descendants (docs/02 §5.1); archived folders hide their subtree unless requested."""
+    folders = repo.folders(s, ctx)
+    totals: dict[UUID, int] = {f.id: 0 for f in folders}
+    by_id = {f.id: f for f in folders}
+    for f in folders:
+        for segment in f.path.strip("/").split("/"):
+            ancestor = UUID(segment)
+            if ancestor in totals:
+                totals[ancestor] += f.case_count
+    archived_ids = {f.id for f in folders if f.archived_at is not None}
+
+    def hidden(f: Folder) -> bool:
+        return any(UUID(seg) in archived_ids for seg in f.path.strip("/").split("/"))
+
+    return (
+        [
+            FolderNode(
+                f.id,
+                f.parent_id,
+                f.name,
+                f.description,
+                f.position,
+                f.depth,
+                f.case_count,
+                totals[f.id],
+                f.archived_at is not None,
+                f.row_version,
+            )
+            for f in folders
+            if include_archived or not hidden(f)
+        ]
+        if by_id
+        else []
+    )
+
+
+def folder_path_names(s: Session, ctx: AccessContext, folder_id: UUID) -> list[str]:
+    f = repo.folder(s, ctx, folder_id)
+    if f is None:
+        return []
+    ids = [UUID(x) for x in f.path.strip("/").split("/")]
+    names = {x.id: x.name for x in s.execute(select(Folder).where(Folder.id.in_(ids))).scalars()}
+    return [names[i] for i in ids if i in names]
+
+
+# -- case list ------------------------------------------------------------------------------------
+
+CASE_FILTERS: Mapping[str, FilterField] = {
+    "status": FilterField(TestCase.status, kind="enum", choices=frozenset(s.value for s in CaseStatus)),
+    "type": FilterField(TestCase.type, kind="enum", choices=frozenset(t.value for t in CaseType)),
+    "priority": FilterField(
+        TestCase.priority, kind="enum", choices=frozenset(p.value for p in PriorityLevel)
+    ),
+    "owner_id": FilterField(TestCase.owner_id, kind="uuid"),
+    "reviewer_id": FilterField(TestCase.reviewer_id, kind="uuid"),
+    "automation_status": FilterField(
+        TestCase.automation_status, kind="enum", choices=frozenset(a.value for a in AutomationStatus)
+    ),
+    "updated_at": FilterField(TestCase.updated_at, kind="datetime", operators=frozenset({"gte", "lte"})),
+    "created_at": FilterField(TestCase.created_at, kind="datetime", operators=frozenset({"gte", "lte"})),
+}
+CASE_SORTS: Mapping[str, ColumnElement[Any]] = {
+    "key": TestCase.key_num,  # type: ignore[dict-item]
+    "title": func.lower(TestCase.title),
+    "priority": TestCase.priority,  # type: ignore[dict-item]
+    "status": TestCase.status,  # type: ignore[dict-item]
+    "updated_at": TestCase.updated_at,  # type: ignore[dict-item]
+    "created_at": TestCase.created_at,  # type: ignore[dict-item]
+}
+SPECIAL_PARAMS = ("folder_id", "include_subfolders", "tag", "include_archived")
+KEY_RE = re.compile(r"^(?:([A-Z][A-Z0-9]{1,9})-)?(?:TC-)?(\d+)$", re.I)
+
+
+def case_list_query(s: Session, ctx: AccessContext, params: Mapping[str, str]) -> Select[Any]:
+    """Filters of docs/06 §4.4 (operators per §2.6). Archived cases are hidden unless asked for."""
+    stmt = repo.case_list_stmt(ctx)
+    conditions = parse_filters(params, CASE_FILTERS, extra_allowed=SPECIAL_PARAMS)
+    if conditions:
+        stmt = stmt.where(*conditions)
+    if "status" not in params and params.get("include_archived") != "true":
+        stmt = stmt.where(TestCase.status != CaseStatus.archived)
+    folder_id = params.get("folder_id")
+    if folder_id:
+        try:
+            fid = UUID(folder_id)
+        except ValueError as exc:
+            from tcms.core.errors import InvalidFilter
+
+            raise InvalidFilter("Invalid folder_id") from exc
+        ids = (
+            repo.folder_ids_under(s, ctx, fid)
+            if params.get("include_subfolders", "true") != "false"
+            else [fid]
+        )
+        stmt = stmt.where(TestCase.folder_id.in_(ids or [fid]))
+    tag = params.get("tag")
+    if tag:
+        names = [t.strip().lower() for t in tag.split(",") if t.strip()]
+        stmt = stmt.where(
+            TestCase.id.in_(
+                select(TestCaseTag.test_case_id)
+                .join(Tag, Tag.id == TestCaseTag.tag_id)
+                .where(Tag.project_id == ctx.pid, Tag.name.in_(names))
+            )
+        )
+    q = (params.get("q") or "").strip()
+    if q:
+        m = KEY_RE.match(q)
+        if m and (m.group(1) is None or m.group(1).upper() == _project_key(s, ctx)):
+            stmt = stmt.where(TestCase.key_num == int(m.group(2)))
+        else:
+            ts = func.plainto_tsquery("simple", q)
+            stmt = stmt.where(
+                or_(TestCase.search_vector.op("@@")(ts), TestCase.title.icontains(q, autoescape=True))
+            )
+    return stmt
+
+
+def _project_key(s: Session, ctx: AccessContext) -> str:
+    from tcms.workspace import queries as wq
+
+    p = wq.project_ref(s, ctx.principal.organization_id, ctx.pid)
+    return p.key if p else ""
+
+
+@dataclass(frozen=True)
+class CaseSummary:
+    id: UUID
+    key: str
+    title: str
+    folder_id: UUID
+    type: str
+    priority: str
+    status: str
+    format: str
+    owner_id: UUID
+    reviewer_id: UUID | None
+    automation_status: str
+    latest_version_no: int
+    approved_version_no: int | None
+    tags: list[str]
+    updated_at: datetime
+    row_version: int
+
+
+def _approved_numbers(s: Session, version_ids: list[UUID]) -> dict[UUID, int]:
+    if not version_ids:
+        return {}
+    return dict(
+        s.execute(
+            select(TestCaseVersion.id, TestCaseVersion.version_no).where(TestCaseVersion.id.in_(version_ids))
+        ).all()
+    )
+
+
+def summaries(s: Session, cases: list[TestCase]) -> list[CaseSummary]:
+    tags = repo.tag_names_of(s, [c.id for c in cases])
+    approved = _approved_numbers(s, [c.approved_version_id for c in cases if c.approved_version_id])
+    return [
+        CaseSummary(
+            c.id,
+            c.key,
+            c.title,
+            c.folder_id,
+            c.type.value,
+            c.priority.value,
+            c.status.value,
+            c.format.value,
+            c.owner_id,
+            c.reviewer_id,
+            c.automation_status.value,
+            c.latest_version_no,
+            approved.get(c.approved_version_id) if c.approved_version_id else None,
+            tags[c.id],
+            c.updated_at,
+            c.row_version,
+        )
+        for c in cases
+    ]
+
+
+def list_cases(
+    s: Session, ctx: AccessContext, params: Mapping[str, str], page: PageParams
+) -> tuple[list[CaseSummary], int]:
+    stmt = case_list_query(s, ctx, params).order_by(
+        *parse_sort(params.get("sort"), CASE_SORTS, default="key")
+    )
+    rows, total = paginate(s, stmt, page)
+    return summaries(s, [r[0] for r in rows]), total
+
+
+def matching_case_ids(s: Session, ctx: AccessContext, params: Mapping[str, str], limit: int) -> list[UUID]:
+    stmt = (
+        case_list_query(s, ctx, params)
+        .with_only_columns(TestCase.id)
+        .order_by(TestCase.key_num)
+        .limit(limit + 1)
+    )
+    return list(s.execute(stmt).scalars())
+
+
+# -- case detail ----------------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class StepView:
+    id: UUID
+    position: int
+    action: str
+    expected_result: str | None
+    data: str | None
+
+
+@dataclass(frozen=True)
+class VersionView:
+    id: UUID
+    version_no: int
+    format: str
+    title: str
+    description: str | None
+    preconditions: str | None
+    test_data: str | None
+    expected_result: str | None
+    postconditions: str | None
+    text_body: str | None
+    change_note: str | None
+    created_by: UUID
+    created_at: datetime
+    submitted_by: UUID | None
+    submitted_at: datetime | None
+    approval_mode: str | None
+    approved_by: UUID | None
+    approved_at: datetime | None
+    steps: list[StepView]
+
+
+def version_view(s: Session, v: TestCaseVersion) -> VersionView:
+    steps = repo.steps_of(s, [v.id])[v.id]
+    return VersionView(
+        v.id,
+        v.version_no,
+        v.format.value,
+        v.title,
+        v.description,
+        v.preconditions,
+        v.test_data,
+        v.expected_result,
+        v.postconditions,
+        v.text_body,
+        v.change_note,
+        v.created_by,
+        v.created_at,
+        v.submitted_by,
+        v.submitted_at,
+        v.approval_mode.value if v.approval_mode else None,
+        v.approved_by,
+        v.approved_at,
+        [StepView(st.id, st.position, st.action, st.expected_result, st.data) for st in steps],
+    )
+
+
+@dataclass(frozen=True)
+class LinkView:
+    case_id: UUID
+    key: str
+    title: str
+    status: str
+    link_type: str
+    direction: str  # "related" | "duplicated_from" (this case is a copy) | "duplicated_to"
+
+
+@dataclass(frozen=True)
+class CaseDetail:
+    case: TestCase
+    summary: CaseSummary
+    folder_path: list[str]
+    automation_keys: list[str]
+    version: VersionView
+    links: list[LinkView]
+    title_exists_in_folder: bool
+
+
+def case_detail(
+    s: Session, ctx: AccessContext, case_id: UUID, *, version_no: int | None = None
+) -> CaseDetail:
+    case = repo.case_(s, ctx, case_id)
+    if case is None:
+        raise NotFound()
+    if version_no is None:
+        v = repo.version(s, ctx, case.latest_version_id) if case.latest_version_id else None
+    else:
+        v = repo.version_by_no(s, ctx, case.id, version_no)
+    if v is None:
+        raise NotFound(f"Version {version_no} not found")
+    links = []
+    for row in repo.links_of(s, ctx, case.id):
+        other_id = row.target_case_id if row.source_case_id == case.id else row.source_case_id
+        other = repo.case_(s, ctx, other_id)
+        if other is None:
+            continue
+        direction = (
+            "related"
+            if row.link_type.value == "related"
+            else ("duplicated_from" if row.source_case_id == case.id else "duplicated_to")
+        )
+        links.append(
+            LinkView(other.id, other.key, other.title, other.status.value, row.link_type.value, direction)
+        )
+    return CaseDetail(
+        case=case,
+        summary=summaries(s, [case])[0],
+        folder_path=folder_path_names(s, ctx, case.folder_id),
+        automation_keys=repo.automation_keys_of(s, [case.id])[case.id],
+        version=version_view(s, v),
+        links=links,
+        title_exists_in_folder=repo.title_exists_in_folder(
+            s, ctx, case.folder_id, case.title, exclude=case.id
+        ),
+    )
+
+
+def case_by_key(s: Session, ctx: AccessContext, key: str) -> TestCase | None:
+    """`SPARK-TC-12`, `TC-12` or `12` within the project (docs/02 §12)."""
+    m = KEY_RE.match(key.strip())
+    if not m or (m.group(1) and m.group(1).upper() != _project_key(s, ctx)):
+        return None
+    return repo.case_by_number(s, ctx, int(m.group(2)))
+
+
+def versions(s: Session, ctx: AccessContext, case_id: UUID) -> list[TestCaseVersion]:
+    return repo.versions(s, ctx, case_id)
+
+
+@dataclass(frozen=True)
+class Comparison:
+    from_version: int
+    to_version: int
+    fields: list[rules.FieldDiff]
+    steps: list[rules.StepDiff]
+
+
+def compare(s: Session, ctx: AccessContext, case_id: UUID, a: int, b: int) -> Comparison:
+    va, vb = repo.version_by_no(s, ctx, case_id, a), repo.version_by_no(s, ctx, case_id, b)
+    if va is None or vb is None:
+        raise NotFound("Version not found")
+    fields, steps = rules.compare(_content(s, va), _content(s, vb))
+    return Comparison(a, b, fields, steps)
+
+
+def _content(s: Session, v: TestCaseVersion) -> rules.Content:
+    steps = repo.steps_of(s, [v.id])[v.id]
+    return rules.Content(
+        format=v.format,
+        title=v.title,
+        description=v.description,
+        preconditions=v.preconditions,
+        test_data=v.test_data,
+        expected_result=v.expected_result,
+        postconditions=v.postconditions,
+        text_body=v.text_body,
+        steps=tuple(rules.StepContent(st.action, st.expected_result, st.data) for st in steps),
+    )
+
+
+def tags(s: Session, ctx: AccessContext) -> list[tuple[Tag, int]]:
+    return repo.tags(s, ctx)
+
+
+def owning_project_of_case(s: Session, case_id: UUID) -> tuple[UUID, UUID] | None:
+    row = s.execute(
+        select(TestCase.organization_id, TestCase.project_id).where(TestCase.id == case_id)
+    ).first()
+    return (row[0], row[1]) if row else None
+
+
+def owning_project_of_folder(s: Session, folder_id: UUID) -> tuple[UUID, UUID] | None:
+    row = s.execute(select(Folder.organization_id, Folder.project_id).where(Folder.id == folder_id)).first()
+    return (row[0], row[1]) if row else None
+
+
+def owning_project_of_tag(s: Session, tag_id: UUID) -> tuple[UUID, UUID] | None:
+    row = s.execute(select(Tag.organization_id, Tag.project_id).where(Tag.id == tag_id)).first()
+    return (row[0], row[1]) if row else None
+
+
+def owning_project_of_version(s: Session, version_id: UUID) -> tuple[UUID, UUID] | None:
+    row = s.execute(
+        select(TestCaseVersion.organization_id, TestCaseVersion.project_id).where(
+            TestCaseVersion.id == version_id
+        )
+    ).first()
+    return (row[0], row[1]) if row else None
+
+
+def owning_project_of_step(s: Session, step_id: UUID) -> tuple[UUID, UUID] | None:
+    from tcms.testdesign.models import TestCaseStep
+
+    row = s.execute(
+        select(TestCaseStep.organization_id, TestCaseStep.project_id).where(TestCaseStep.id == step_id)
+    ).first()
+    return (row[0], row[1]) if row else None

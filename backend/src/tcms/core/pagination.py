@@ -10,7 +10,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 from sqlalchemy import ColumnElement, Select, and_, func, or_, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import QueryableAttribute, Session
 
 from tcms.core.errors import FieldError, InvalidFilter, InvalidSort
 
@@ -92,7 +92,7 @@ _PARSERS: dict[str, Callable[[str], Any]] = {
 
 @dataclass(frozen=True)
 class FilterField:
-    column: ColumnElement[Any]
+    column: ColumnElement[Any] | QueryableAttribute[Any]
     kind: str = "str"  # str | uuid | int | bool | date | datetime | enum
     choices: frozenset[str] | None = None  # for kind == "enum"
     operators: frozenset[str] = frozenset(OPERATORS)
