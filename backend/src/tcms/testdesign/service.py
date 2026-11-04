@@ -655,9 +655,8 @@ def _latest(uow: UnitOfWork, ctx: AccessContext, case: TestCase) -> TestCaseVers
     return v
 
 
-def _record_comment(
-    uow: UnitOfWork, ctx: AccessContext, case: TestCase, v: TestCaseVersion, body: str | None
-) -> None:
+def _record_comment(uow: UnitOfWork, ctx: AccessContext, case: TestCase, body: str | None) -> None:
+    """AC-TD-22: review comments are shown on the case (the audit event names the version)."""
     if body and body.strip():
         from tcms.platform import comments
 
@@ -665,7 +664,7 @@ def _record_comment(
             m.user.id
             for m in identity_queries.project_members(uow.session, ctx.principal.organization_id, ctx.pid)
         }
-        comments.add_comment(uow, ctx, version_record(case, v), body, members=members, require=False)
+        comments.add_comment(uow, ctx, case_record(case), body, members=members, require=False)
 
 
 def submit_for_review(
@@ -685,7 +684,7 @@ def submit_for_review(
     v.submitted_at = clock.now()
     case.status = CaseStatus.in_review
     _touch(case, ctx)
-    _record_comment(uow, ctx, case, v, comment)
+    _record_comment(uow, ctx, case, comment)
     uow.audit(
         ctx,
         "test_case.submitted",
@@ -741,7 +740,7 @@ def approve(
     _approve_version(v, case, by=ctx.principal.user_id, mode=ApprovalMode.manual)
     case.status = CaseStatus.approved
     _touch(case, ctx)
-    _record_comment(uow, ctx, case, v, comment)
+    _record_comment(uow, ctx, case, comment)
     uow.audit(
         ctx,
         "test_case.approved",
@@ -776,7 +775,7 @@ def return_case(uow: UnitOfWork, ctx: AccessContext, case_id: UUID, *, comment: 
     v = _latest(uow, ctx, case)
     case.status = CaseStatus.draft
     _touch(case, ctx)
-    _record_comment(uow, ctx, case, v, comment)
+    _record_comment(uow, ctx, case, comment)
     uow.audit(
         ctx,
         "test_case.returned",

@@ -108,7 +108,7 @@ CASE_SORTS: Mapping[str, ColumnElement[Any]] = {
     "created_at": TestCase.created_at,  # type: ignore[dict-item]
 }
 SPECIAL_PARAMS = ("folder_id", "include_subfolders", "tag", "include_archived")
-KEY_RE = re.compile(r"^(?:([A-Z][A-Z0-9]{1,9})-)?(?:TC-)?(\d+)$", re.I)
+KEY_RE = re.compile(r"^(?:([A-Z][A-Z0-9]{1,9})-TC-|TC-)?(\d+)$", re.I)
 
 
 def case_list_query(s: Session, ctx: AccessContext, params: Mapping[str, str]) -> Select[Any]:
