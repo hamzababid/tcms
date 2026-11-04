@@ -16,6 +16,7 @@ from tcms.core.db import app_engine, session_factory
 from tcms.core.enums import ReleaseStatus
 from tcms.core.permissions import RoleCode
 from tcms.core.uow import unit_of_work
+from tcms.identity import queries as identity_queries
 from tcms.identity import service as identity
 from tcms.seed import step
 from tcms.workspace import queries as workspace_queries
@@ -145,3 +146,213 @@ def _seed(profile: str) -> str:
 @step("organization, users and projects", profiles=("dev", "e2e"))
 def seed_workspace(profile: str) -> str:
     return _seed(profile)
+
+
+# -- repository (M2) ------------------------------------------------------------------------------
+
+Steps = tuple[tuple[str, str], ...]
+
+# folder path → cases (title, priority, tags, steps). Realistic SPARK content for local demos.
+REPOSITORY: dict[tuple[str, ...], tuple[tuple[str, str, tuple[str, ...], Steps], ...]] = {
+    ("Web Application",): (),
+    ("Web Application", "Authentication"): (),
+    ("Web Application", "Authentication", "Login"): (
+        (
+            "Login with valid credentials",
+            "high",
+            ("smoke", "regression"),
+            (
+                ("Open the sign-in page", "The sign-in form is displayed"),
+                (
+                    "Enter a valid email and password and select **Sign in**",
+                    "The Energy Dashboard loads within 3 s",
+                ),
+            ),
+        ),
+        (
+            "Login with wrong password shows a generic error",
+            "high",
+            ("regression",),
+            (
+                ("Enter a valid email and a wrong password", "“Email or password is incorrect” is shown"),
+                ("Check the email field", "The email is kept; the password is cleared"),
+            ),
+        ),
+        (
+            "Account locks after five failed attempts",
+            "critical",
+            ("regression", "security"),
+            (
+                ("Fail sign-in five times within 15 minutes", "The fifth attempt shows the lockout message"),
+                ("Try the correct password", "Sign-in is refused until the lockout ends"),
+            ),
+        ),
+        (
+            "Session expires after inactivity",
+            "medium",
+            ("regression",),
+            (
+                ("Sign in and stay idle for the configured timeout", "The next action returns to sign-in"),
+                ("Sign in again", "The user returns to the page they were on"),
+            ),
+        ),
+    ),
+    ("Web Application", "Authentication", "Password Reset"): (
+        (
+            "Request a password reset link",
+            "high",
+            ("smoke",),
+            (
+                (
+                    "Select **Forgot password** and enter a registered email",
+                    "A confirmation message is shown",
+                ),
+                ("Open the email", "It contains a single-use link valid for 60 minutes"),
+            ),
+        ),
+        (
+            "Reset link cannot be reused",
+            "medium",
+            ("security",),
+            (
+                ("Reset the password with the link", "The new password works"),
+                ("Open the same link again", "“This link is no longer valid” is shown"),
+            ),
+        ),
+    ),
+    ("Web Application", "Dashboard"): (
+        (
+            "Consumption chart shows the last 30 days",
+            "high",
+            ("smoke", "regression"),
+            (
+                ("Open the Energy Dashboard for a site with readings", "The chart shows 30 daily bars"),
+                ("Hover a bar", "The tooltip shows date, kWh and cost"),
+            ),
+        ),
+        (
+            "Dashboard handles a site without readings",
+            "low",
+            (),
+            (("Open the dashboard for a new site", "An empty state explains that no readings exist yet"),),
+        ),
+    ),
+    ("Backend Services",): (),
+    ("Backend Services", "Meter Readings API"): (
+        (
+            "POST /readings stores a valid batch",
+            "critical",
+            ("api", "smoke"),
+            (
+                ("Send a batch of 100 readings with a valid token", "201 with the stored count"),
+                ("GET the readings for the meter", "All 100 readings are returned in order"),
+            ),
+        ),
+        (
+            "POST /readings rejects duplicate timestamps",
+            "high",
+            ("api", "regression"),
+            (("Send two readings with the same meter and timestamp", "422 with a duplicate_reading error"),),
+        ),
+    ),
+    ("Data Integration",): (
+        (
+            "Nightly import reconciles meter totals",
+            "medium",
+            ("regression",),
+            (
+                ("Run the nightly import for a test tenant", "The job finishes without errors"),
+                ("Compare daily totals with the source export", "Totals match to 0.01 kWh"),
+            ),
+        ),
+    ),
+}
+
+
+@step("SPARK repository: folders and test cases", profiles=("dev",))
+def seed_repository(profile: str) -> str:
+    from tcms.core.enums import CaseFormat, PriorityLevel
+    from tcms.core.permissions import PROJECT_PERMISSIONS
+    from tcms.testdesign import queries as td_queries
+    from tcms.testdesign import rules as td_rules
+    from tcms.testdesign import service as testdesign
+
+    del profile
+    factory = session_factory(app_engine(get_settings()))
+    with factory() as s:
+        org = workspace_queries.organization_by_slug(s, ORG_SLUG)
+        if org is None:
+            return "no organization — run the workspace step first"
+        spark = next(
+            (p for p in workspace_queries.projects(s, org.id, ids=None, status=None) if p.key == "SPARK"),
+            None,
+        )
+        if spark is None:
+            return "no SPARK project"
+        author = next(
+            (
+                m.user.id
+                for m in identity_queries.project_members(s, org.id, spark.id)
+                if m.user.email == "sana@acme.test"
+            ),
+            None,
+        )
+        if author is None:
+            return "Sana is not a SPARK member"
+    ctx = AccessContext.for_principal(
+        Principal(author, org.id, False, display_name="Sana Malik"),
+        META,
+        project_id=spark.id,
+        permissions=PROJECT_PERMISSIONS,
+    )
+    ctx.project_status = "active"
+    with factory() as s:
+        if td_queries.folder_tree(s, ctx, include_archived=True):
+            return "SPARK already has folders — nothing to do"
+    folder_ids: dict[tuple[str, ...], UUID] = {}
+    n_cases = 0
+    for path, cases in REPOSITORY.items():
+        with unit_of_work(factory) as uow:
+            f = testdesign.create_folder(
+                uow, ctx, name=path[-1], parent_id=folder_ids.get(path[:-1]), description=None
+            )
+            folder_ids[path] = f.id
+            for title, priority, tags, steps in cases:
+                testdesign.create_case(
+                    uow,
+                    ctx,
+                    content=td_rules.Content(
+                        format=CaseFormat.steps,
+                        title=title,
+                        steps=tuple(td_rules.StepContent(a, e, None) for a, e in steps),
+                    ),
+                    meta=testdesign.CaseMetadata(
+                        folder_id=f.id, priority=PriorityLevel(priority), tags=list(tags)
+                    ),
+                )
+                n_cases += 1
+    # One case with history: v2 clarifies the expected result (shows Versions/Compare in the demo).
+    with unit_of_work(factory) as uow:
+        first = td_queries.case_by_key(uow.session, ctx, "SPARK-TC-1")
+        if first is not None:
+            testdesign.update_content(
+                uow,
+                ctx,
+                first.id,
+                content=td_rules.Content(
+                    format=CaseFormat.steps,
+                    title="Login with valid credentials",
+                    preconditions="User `qa.user@acme.test` exists and is active.",
+                    steps=(
+                        td_rules.StepContent("Open the sign-in page", "The sign-in form is displayed", None),
+                        td_rules.StepContent(
+                            "Enter a valid email and password and select **Sign in**",
+                            "The Energy Dashboard loads within 3 s and shows the user's name",
+                            None,
+                        ),
+                    ),
+                ),
+                change_note="Clarified the dashboard check",
+                row_version=first.row_version,
+            )
+    return f"{len(folder_ids)} folders and {n_cases} cases in SPARK"

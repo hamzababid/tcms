@@ -243,3 +243,23 @@ def member_candidates(s: Session, org_id: UUID, project_id: UUID) -> list[UserRe
         for _, u in repo.org_members(s, org_id)
         if u.is_active and u.id not in members
     ]
+
+
+def member_permissions(s: Session, org_id: UUID, project_id: UUID, user_id: UUID) -> frozenset[str] | None:
+    """Permissions of a given user in a project (owner/reviewer/assignee checks), None if no access.
+
+    Org Admins hold every project permission (docs/02 §3.2) but are only *assignable* when they are members.
+    """
+    member = repo.membership(s, org_id, project_id, user_id)
+    if member is None:
+        return None
+    return repo.role_permission_map(s).get(member.role_id, frozenset())
+
+
+def members_with_permission(s: Session, org_id: UUID, project_id: UUID, permission: str) -> list[UserRef]:
+    perms = repo.role_permission_map(s)
+    return [
+        UserRef(u.id, u.display_name, u.email, u.is_active)
+        for m, u, _ in repo.project_memberships(s, org_id, project_id)
+        if u.is_active and permission in perms.get(m.role_id, frozenset())
+    ]

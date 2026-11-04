@@ -26,3 +26,20 @@ export function formatRate(rate: Rate): string {
   if (rate.value === null) return "—";
   return `${formatCount(rate.numerator)} of ${formatCount(rate.denominator)} (${formatPercent(rate.value)})`;
 }
+
+const dateTime = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
+const dateOnly = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
+
+export function formatDateTime(iso: string | null | undefined): string {
+  return iso ? dateTime.format(new Date(iso)) : "—";
+}
+
+export function formatDate(iso: string | null | undefined): string {
+  return iso ? dateOnly.format(new Date(iso)) : "—";
+}
+
+export function formatBytes(n: number): string {
+  if (n < 1024) return `${formatCount(n)} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
+}

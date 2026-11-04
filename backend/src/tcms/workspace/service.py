@@ -24,6 +24,16 @@ from tcms.workspace.models import Environment, KeySequence, Organization, Projec
 
 
 @dataclass(frozen=True)
+class ApprovalSettingChanged(DomainEvent):
+    """US-067: testdesign grandfathers (on) or auto-approves draft/in-review cases (off), same transaction."""
+
+    organization_id: UUID
+    project_id: UUID
+    now_required: bool
+    actor_id: UUID | None
+
+
+@dataclass(frozen=True)
 class ProjectCreated(DomainEvent):
     organization_id: UUID
     project_id: UUID
@@ -236,6 +246,15 @@ def update_project(
         uow.audit(ctx, "project.updated", project, changes=changes)
     if setting_changes:
         uow.audit(ctx, "project.settings_changed", project, changes=setting_changes)
+    if "approval_required" in setting_changes:
+        uow.emit(
+            ApprovalSettingChanged(
+                project.organization_id,
+                project.id,
+                bool(setting_changes["approval_required"][1]),
+                ctx.principal.user_id,
+            )
+        )
     return project
 
 

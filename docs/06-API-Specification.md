@@ -108,9 +108,9 @@ Auth endpoints: 20/min/IP. General: 600/min/user. Responses include `RateLimit-L
 | 400 | `bad_request`, `invalid_filter`, `invalid_sort`, `invalid_include` | Malformed request |
 | 401 | `unauthenticated`, `session_expired`, `invalid_credentials`, `mfa_required`, `invalid_mfa_code` | Authentication |
 | 403 | `csrf_failed` | Missing/invalid CSRF token or foreign Origin |
-| 403 | `permission_denied`, `mfa_enrollment_required`, `self_approval_not_allowed`, `transition_not_permitted`, `not_assignee`, `token_scope_insufficient` | Authorization |
+| 403 | `permission_denied`, `mfa_enrollment_required`, `self_approval_not_allowed`, `transition_not_permitted`, `not_assignee`, `token_scope_insufficient`, `not_author`, `edit_window_closed` (comments) | Authorization |
 | 404 | `not_found` | Missing or not visible |
-| 409 | `conflict`, `stale_row_version`, `project_key_taken`, `name_taken`, `project_archived`, `cycle_closed`, `draft_exists`, `run_has_results`, `run_superseded`, `already_latest`, `invalid_status`, `folder_not_empty`, `immutable_record`, `case_has_runs`, `last_org_admin`, `last_qa_manager`, `already_member`, `user_exists`, `mfa_already_enabled`, `mfa_required_by_policy`, `cannot_deactivate_self` | State conflict |
+| 409 | `conflict`, `stale_row_version`, `project_key_taken`, `name_taken`, `project_archived`, `cycle_closed`, `draft_exists`, `run_has_results`, `run_superseded`, `already_latest`, `invalid_status`, `folder_not_empty`, `immutable_record`, `case_has_runs`, `case_archived`, `automation_key_taken`, `folder_archived`, `link_limit`, `attachment_limit`, `system_tag`, `tag_in_use`, `last_org_admin`, `last_qa_manager`, `already_member`, `user_exists`, `mfa_already_enabled`, `mfa_required_by_policy`, `cannot_deactivate_self` | State conflict |
 | 413 | `file_too_large` | Upload limit |
 | 415 | `unsupported_file_type` | Upload type |
 | 422 | `validation_error`, `rule_violation`, `incomplete_attempt`, `outcome_required`, `outcome_conflicts_with_steps`, `actual_result_required`, `reason_required`, `defect_required`, `folder_cycle`, `folder_too_deep`, `field_required`, `invalid_transition`, `idempotency_key_reused`, `no_eligible_version`, `token_invalid` (reset/invitation link unknown, used or expired), `password_policy`, `confirmation_mismatch` | Business rule |
@@ -236,6 +236,10 @@ Legend: **Perm** = required permission (project scope unless prefixed `org.`); `
 
 Bulk `action` values: `move` `{folder_id}`, `add_tags` `{tags[]}`, `remove_tags`, `set_priority`, `set_type`, `set_owner`, `set_reviewer`, `set_automation_status`, `deprecate`, `archive`, `restore`.
 
+Bulk response: `200 {bulk_operation_id, updated, skipped: [{key, code, detail}]}` for ≤ 200 cases (cases where the action is not possible are skipped, not failed); `202 {bulk_operation_id, job_id}` above 200. `filter` takes the list filters above as strings. The parameter of the `set_*` actions is `{value}`.
+
+`GET /test-cases/{id}` always includes attachments, links and tags (requirements are added in M6), and `warnings[]` (`title_exists` when another case in the folder has the same title). `GET /projects/{project_id}/resolve` returns `{entity_type, id, key}` and accepts `SPARK-TC-12`, `TC-12` or `12`.
+
 ### 4.5 Test plans
 
 | Method | Path | Perm | Description | FR |
@@ -351,6 +355,13 @@ Bulk `action` values: `move` `{folder_id}`, `add_tags` `{tags[]}`, `remove_tags`
 | DELETE | `/attachments/{id}/links/{entity_type}/{entity_id}` | per [02 §9.2](02-Functional-Specification.md) | Unlink (object GC when unlinked everywhere) |
 | GET | `/projects/{project_id}/audit-events` | project.audit.view | Filters as org audit; `?format=csv` |
 | GET | `/audit-events/entity/{entity_type}/{entity_id}` | project.view | Record history |
+
+Comment and attachment notes (M2):
+
+- **Mentions** are written in the body as `@[Display Name](user:<user uuid>)`. The server stores the mentioned user IDs (`mentions[]`), keeps only current project members, and notifies them (`comment.mentioned`). Clients render the token as the name.
+- `entity_type` for comments: `test_case`, `test_case_version` (more types arrive with their milestones). Deleted comments stay in the list with `body: null, deleted: true`. `editable_until` = `created_at` + 15 min.
+- Review comments from submit/approve/return are recorded on the **case** (AC-TD-22); the audit event names the version.
+- `entity_type` for attachments: `test_case`, `test_case_step` (results and defects arrive in M4/M5). The size limit is the project's `attachment_max_mb` (≤ the org cap); the content type is sniffed from the bytes. `/content` serves images and PDFs `inline` and everything else as `attachment` (`?download=true` forces a download), always with `Content-Security-Policy: sandbox` and `X-Content-Type-Options: nosniff`. Removing a step attachment of an approved version returns `409 immutable_record` (BR-28).
 
 ### 4.13 Import / export
 

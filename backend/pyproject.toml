@@ -21,6 +21,7 @@ dependencies = [
     "pydantic-settings>=2.16.2",
     "pyotp>=2.10.0",
     "python-magic>=0.4.27",
+    "python-multipart>=0.0.33",
     "sqlalchemy>=2.1,<2.2",
     "structlog>=26.1.0",
     "uuid-utils>=1.2.0",

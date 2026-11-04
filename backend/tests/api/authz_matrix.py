@@ -29,6 +29,9 @@ class Fixture:
     env_id: UUID
     release_id: UUID
     release_row_version: int
+    folder_id: UUID
+    case_id: UUID
+    case_key: str
 
 
 Request = tuple[str, str, dict[str, Any] | None]
@@ -63,7 +66,56 @@ def _invitation(f: Fixture) -> UUID:
     return inv.invitation.id
 
 
+def _folder(f: Fixture) -> UUID:
+    return f.world.folder(f.org, f.project_id)
+
+
+def _case(f: Fixture) -> UUID:
+    return f.world.case(f.org, f.project_id, f.folder_id)[0]
+
+
+def _linked_pair(f: Fixture) -> tuple[UUID, UUID]:
+    from tcms.core.enums import CaseLinkType
+    from tcms.core.permissions import PROJECT_PERMISSIONS
+    from tcms.core.uow import unit_of_work
+    from tcms.testdesign import service as testdesign
+
+    a, b = _case(f), _case(f)
+    with unit_of_work(f.world.factory) as uow:
+        ctx = f.world.ctx(
+            f.org.id, f.org.admin.id, is_admin=True, project_id=f.project_id, perms=PROJECT_PERMISSIONS
+        )
+        testdesign.add_link(uow, ctx, a, target_case_id=b, link_type=CaseLinkType.related)
+    return a, b
+
+
+def _tag(f: Fixture) -> UUID:
+    from tcms.core.permissions import PROJECT_PERMISSIONS
+    from tcms.core.uow import unit_of_work
+    from tcms.testdesign import service as testdesign
+
+    with unit_of_work(f.world.factory) as uow:
+        ctx = f.world.ctx(
+            f.org.id, f.org.admin.id, is_admin=True, project_id=f.project_id, perms=PROJECT_PERMISSIONS
+        )
+        return testdesign.create_tag(uow, ctx, f"t{UUID(int=id(ctx)).hex[-10:]}").id
+
+
 P = "/api/v1/projects/{project_id}"
+TC = "/api/v1/test-cases/{case_id}"
+
+
+def _p(f: Fixture, suffix: str) -> str:
+    return P.format(project_id=f.project_id) + suffix
+
+
+def _tc(f: Fixture, suffix: str = "", case_id: UUID | None = None) -> str:
+    return TC.format(case_id=case_id or f.case_id) + suffix
+
+
+def _content(title: str = "Probe case") -> dict[str, Any]:
+    return {"format": "steps", "title": title, "steps": [{"action": "a", "expected_result": "b"}]}
+
 
 MATRIX: dict[tuple[str, str], Entry] = {
     # health and meta
@@ -217,5 +269,128 @@ MATRIX: dict[tuple[str, str], Entry] = {
     ),
     ("GET", "/api/v1/audit-events/entity/{entity_type}/{entity_id}"): Entry(
         "project:project.view", lambda f: ("GET", f"/api/v1/audit-events/entity/release/{f.release_id}", None)
+    ),
+    # folders (M2)
+    ("GET", P + "/folders"): Entry("project:project.view", lambda f: ("GET", _p(f, "/folders"), None)),
+    ("POST", P + "/folders"): Entry(
+        "project:folder.manage", lambda f: ("POST", _p(f, "/folders"), {"name": "Probe folder"})
+    ),
+    ("PATCH", "/api/v1/folders/{folder_id}"): Entry(
+        "project:folder.manage",
+        lambda f: ("PATCH", f"/api/v1/folders/{f.folder_id}", {"name": "x", "row_version": 0}),
+    ),
+    ("POST", "/api/v1/folders/{folder_id}/move"): Entry(
+        "project:folder.manage",
+        lambda f: ("POST", f"/api/v1/folders/{f.folder_id}/move", {"parent_id": None, "row_version": 0}),
+    ),
+    ("POST", "/api/v1/folders/{folder_id}/archive"): Entry(
+        "project:folder.manage", lambda f: ("POST", f"/api/v1/folders/{_folder(f)}/archive", None)
+    ),
+    ("POST", "/api/v1/folders/{folder_id}/restore"): Entry(
+        "project:folder.manage", lambda f: ("POST", f"/api/v1/folders/{_folder(f)}/restore", None)
+    ),
+    ("DELETE", "/api/v1/folders/{folder_id}"): Entry(
+        "project:folder.manage", lambda f: ("DELETE", f"/api/v1/folders/{_folder(f)}", None)
+    ),
+    # test cases (M2)
+    ("GET", P + "/test-cases"): Entry("project:project.view", lambda f: ("GET", _p(f, "/test-cases"), None)),
+    ("POST", P + "/test-cases"): Entry(
+        "project:testcase.create",
+        lambda f: ("POST", _p(f, "/test-cases"), {"folder_id": str(f.folder_id), "content": _content()}),
+    ),
+    ("POST", P + "/test-cases/bulk"): Entry(
+        "project:testcase.edit",
+        lambda f: (
+            "POST",
+            _p(f, "/test-cases/bulk"),
+            {"action": "set_priority", "case_ids": [], "params": {}},
+        ),
+    ),
+    ("GET", P + "/resolve"): Entry(
+        "project:project.view", lambda f: ("GET", _p(f, f"/resolve?key={f.case_key}"), None)
+    ),
+    ("GET", TC): Entry("project:project.view", lambda f: ("GET", _tc(f), None)),
+    ("PATCH", TC): Entry(
+        "project:testcase.edit", lambda f: ("PATCH", _tc(f), {"priority": "high", "row_version": 0})
+    ),
+    ("DELETE", TC): Entry("project:testcase.delete", lambda f: ("DELETE", _tc(f, case_id=_case(f)), None)),
+    ("PUT", TC + "/content"): Entry(
+        "project:testcase.edit",
+        lambda f: ("PUT", _tc(f, "/content"), {"content": _content(), "row_version": 0}),
+    ),
+    ("GET", TC + "/versions"): Entry("project:project.view", lambda f: ("GET", _tc(f, "/versions"), None)),
+    ("GET", TC + "/versions/{version_no}"): Entry(
+        "project:project.view", lambda f: ("GET", _tc(f, "/versions/1"), None)
+    ),
+    ("GET", TC + "/compare"): Entry(
+        "project:project.view", lambda f: ("GET", _tc(f, "/compare?from=1&to=1"), None)
+    ),
+    ("POST", TC + "/restore-version"): Entry(
+        "project:testcase.edit",
+        lambda f: ("POST", _tc(f, "/restore-version"), {"version_no": 1, "row_version": 0}),
+    ),
+    ("POST", TC + "/submit"): Entry(
+        "project:testcase.edit", lambda f: ("POST", _tc(f, "/submit", _case(f)), {})
+    ),
+    ("POST", TC + "/approve"): Entry(
+        "project:testcase.approve", lambda f: ("POST", _tc(f, "/approve"), {"row_version": 0})
+    ),
+    ("POST", TC + "/return"): Entry(
+        "project:testcase.approve", lambda f: ("POST", _tc(f, "/return"), {"comment": "probe"})
+    ),
+    ("POST", TC + "/deprecate"): Entry(
+        "project:testcase.archive", lambda f: ("POST", _tc(f, "/deprecate", _case(f)), {})
+    ),
+    ("POST", TC + "/archive"): Entry(
+        "project:testcase.archive", lambda f: ("POST", _tc(f, "/archive", _case(f)), {})
+    ),
+    ("POST", TC + "/restore"): Entry(
+        "project:testcase.archive", lambda f: ("POST", _tc(f, "/restore", _case(f)), {})
+    ),
+    ("POST", TC + "/duplicate"): Entry(
+        "project:testcase.create", lambda f: ("POST", _tc(f, "/duplicate"), {})
+    ),
+    ("GET", TC + "/executions"): Entry(
+        "project:project.view", lambda f: ("GET", _tc(f, "/executions"), None)
+    ),
+    ("GET", TC + "/history"): Entry("project:project.view", lambda f: ("GET", _tc(f, "/history"), None)),
+    ("POST", TC + "/links"): Entry(
+        "project:testcase.edit",
+        lambda f: ("POST", _tc(f, "/links", _case(f)), {"target_case_id": str(f.case_id)}),
+    ),
+    ("DELETE", TC + "/links"): Entry(
+        "project:testcase.edit",
+        lambda f: (lambda a, b: ("DELETE", _tc(f, "/links", a), {"target_case_id": str(b)}))(
+            *_linked_pair(f)
+        ),
+    ),
+    # tags (M2)
+    ("GET", P + "/tags"): Entry("project:project.view", lambda f: ("GET", _p(f, "/tags"), None)),
+    ("POST", P + "/tags"): Entry(
+        "project:testcase.edit", lambda f: ("POST", _p(f, "/tags"), {"name": "probe"})
+    ),
+    ("DELETE", "/api/v1/tags/{tag_id}"): Entry(
+        "project:testcase.edit", lambda f: ("DELETE", f"/api/v1/tags/{_tag(f)}", None)
+    ),
+    # comments and attachments (M2): author-only edits and multipart uploads have dedicated tests
+    ("GET", "/api/v1/comments"): Entry(
+        "project:project.view",
+        lambda f: ("GET", f"/api/v1/comments?entity_type=test_case&entity_id={f.case_id}", None),
+    ),
+    ("POST", "/api/v1/comments"): Entry(
+        "project:comment.create",
+        lambda f: (
+            "POST",
+            "/api/v1/comments",
+            {"entity_type": "test_case", "entity_id": str(f.case_id), "body": "probe"},
+        ),
+    ),
+    ("PATCH", "/api/v1/comments/{comment_id}"): Entry("project:comment.create"),
+    ("DELETE", "/api/v1/comments/{comment_id}"): Entry("project:comment.create"),
+    ("POST", "/api/v1/attachments"): Entry("project:testcase.edit"),
+    ("GET", "/api/v1/attachments/{attachment_id}"): Entry("project:project.view"),
+    ("GET", "/api/v1/attachments/{attachment_id}/content"): Entry("project:project.view"),
+    ("DELETE", "/api/v1/attachments/{attachment_id}/links/{entity_type}/{entity_id}"): Entry(
+        "project:testcase.edit"
     ),
 }

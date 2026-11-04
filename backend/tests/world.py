@@ -19,9 +19,12 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from tcms.core.config import Settings
 from tcms.core.context import AccessContext, Principal, RequestMeta
-from tcms.core.permissions import ROLE_PERMISSIONS, RoleCode
+from tcms.core.enums import CaseFormat
+from tcms.core.permissions import PROJECT_PERMISSIONS, ROLE_PERMISSIONS, RoleCode
 from tcms.core.uow import unit_of_work
 from tcms.identity import service as identity
+from tcms.testdesign import rules
+from tcms.testdesign import service as testdesign
 from tcms.workspace import queries as workspace_queries
 from tcms.workspace import service as workspace
 
@@ -142,6 +145,41 @@ class World:
             self.member(org, project_id, u, role)
             out[role.value] = u
         return out
+
+    # -- test design ------------------------------------------------------------------------------
+    def _project_admin(self, org: OrgHandle, project_id: UUID) -> AccessContext:
+        return self.ctx(org.id, org.admin.id, is_admin=True, project_id=project_id, perms=PROJECT_PERMISSIONS)
+
+    def folder(
+        self, org: OrgHandle, project_id: UUID, name: str | None = None, parent_id: UUID | None = None
+    ) -> UUID:
+        with unit_of_work(self.factory) as uow:
+            f = testdesign.create_folder(
+                uow,
+                self._project_admin(org, project_id),
+                name=name or f"F-{uuid.uuid4().hex[:8]}",
+                parent_id=parent_id,
+                description=None,
+            )
+            return f.id
+
+    def case(
+        self, org: OrgHandle, project_id: UUID, folder_id: UUID, title: str | None = None, *, steps: int = 1
+    ) -> tuple[UUID, str]:
+        """A test case created by the Org Admin through the service; returns (id, key)."""
+        with unit_of_work(self.factory) as uow:
+            content = rules.Content(
+                format=CaseFormat.steps,
+                title=title or f"Case {uuid.uuid4().hex[:8]}",
+                steps=tuple(rules.StepContent(f"Do {i}", f"See {i}", None) for i in range(1, steps + 1)),
+            )
+            result = testdesign.create_case(
+                uow,
+                self._project_admin(org, project_id),
+                content=content,
+                meta=testdesign.CaseMetadata(folder_id=folder_id),
+            )
+            return result.case.id, result.case.key
 
     # -- clients ----------------------------------------------------------------------------------
     def client(self) -> ApiClient:
