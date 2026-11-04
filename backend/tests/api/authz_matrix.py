@@ -12,6 +12,7 @@ chosen so that, after the permission check, the request fails a harmless busines
 
 from __future__ import annotations
 
+import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
@@ -98,7 +99,8 @@ def _tag(f: Fixture) -> UUID:
         ctx = f.world.ctx(
             f.org.id, f.org.admin.id, is_admin=True, project_id=f.project_id, perms=PROJECT_PERMISSIONS
         )
-        return testdesign.create_tag(uow, ctx, f"t{UUID(int=id(ctx)).hex[-10:]}").id
+        # A fresh name per probe call (id() of a short-lived object can repeat).
+        return testdesign.create_tag(uow, ctx, f"t{uuid.uuid4().hex[:12]}").id
 
 
 P = "/api/v1/projects/{project_id}"
