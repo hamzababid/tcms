@@ -110,3 +110,30 @@ Also: `GET /projects/{id}/resolve` and `Idempotency-Key` on creates (`test_resol
 | Logo on sign-in screens (light) and sidebar (on-dark; mark when collapsed) | ✅ | E2E smoke + TCMS-001 (logo image with alt "Assay"), screenshots |
 | Logo header in HTML emails (PNG) | ✅ | `unit/test_email_render.py`; reset email checked in Mailpit |
 | Single source `docs/brand`, copies in `frontend/public` kept identical | ✅ | `make brand-check` (part of `make lint` and CI) |
+
+## Status after Kiro handoff (2026-11-05)
+
+Verified by running the stack and the full gate set (see `docs/ops/HANDOFF-kiro.md` §2):
+`make up/migrate/seed` ✅, schema verify **35/35** as `tcms_app`, backend **320 passed** + 98 subtests +
+1 timing, frontend **26 passed**, E2E **15 passed**, lint (ruff/format/mypy/import-linter 11 contracts/
+eslint/tsc/prettier) ✅, brand + API-client drift ✅.
+
+**Branch note:** the full M0–M2 + design-system + brand code lives on `feat/design-system`. `main`
+(`5b58cd8`) still contains only M0 + M1 + the 2026-11-04 spec update; M2/brand/design were not
+fast-forwarded onto it. Settle this (HANDOFF §5 D1) before branching M3.
+
+### M3–M9 — not started
+
+Confirmed from code: `planning`, `execution`, `defects`, `requirements`, `reporting` contain only
+`models.py` (M0 baseline ORM); no service/rules/router/screens. Frontend has only auth, profile,
+projects, admin and testdesign features.
+
+| Milestone | Epics | Status | Notes |
+| --- | --- | --- | --- |
+| M3 Plans & cycles | E07, E08 | ⬜ not started | Next milestone. US-070…074, US-080…087; TCMS-025b, 050…060; BR-03/04/05/11/12/31 |
+| M4 Execution runner | E09 | ⬜ not started | US-090…100; roll-up (BR-06…10/30/32); confirm K2 before starting |
+| M5 Defects | E10 | ⬜ not started | US-110…117; BR-19…22; AC-DEF-01 ordering (K17j) |
+| M6 Requirements, RTM, search | E11, E12 | ⬜ not started | US-120…123, US-130…133; BR-23 |
+| M7 Reporting & readiness | E13, E16 | ⬜ not started | US-140…146, US-170…171; BR-24; `reporting/metrics.py` not yet created |
+| M8 Import/export, admin UI, hardening | E14, E15 (UI), E17 | ⬜ not started | US-150…154, US-162…166, US-180…184 |
+| M9 Pilot & go-live | — | ⬜ not started | US-185 |
