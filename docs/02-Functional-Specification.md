@@ -496,7 +496,8 @@ Step result fields: `status` (`not_run`, `passed`, `failed`, `blocked`, `skipped
    - Else any `blocked` → `blocked`.
    - Else all steps ∈ {passed, skipped} and ≥ 1 passed → `passed` (`skipped_steps` count stored and shown as "Passed · N skipped").
    - Else (some steps `not_run`, or all skipped): request rejected with `422 incomplete_attempt` unless the request sets an explicit run-level outcome `blocked`, `skipped` or `not_applicable` with `reason`. An explicit `blocked` is also allowed when steps are partly passed (e.g., environment went down mid-run).
-   - Explicit outcome cannot contradict steps: explicit `passed` is never accepted; explicit outcome when a step failed → `failed` wins and the request is rejected with `422 outcome_conflicts_with_steps`.
+   - Explicit outcome cannot contradict steps: explicit `passed` or `failed` is never accepted for a `steps` attempt (the steps decide), and any explicit outcome when a step failed is rejected with `422 outcome_conflicts_with_steps` (review K17h/i).
+   - Every final `blocked`, `skipped` or `not_applicable` attempt needs a `reason`, including a `blocked` derived from steps; without one the request is rejected with `422 reason_required` and the runner asks for it (review K2, enforced by the `test_results` CHECK).
    - `text` format: tester chooses status; `failed` requires comment.
    - If `require_defect_for_failure` and status `failed` and no defect linked to the attempt → `422 defect_required`.
 4. On finalize: attempt becomes immutable; run `status` and `latest_result_id` updated; `needs_retest` cleared; audit event `result.finalized`.
@@ -512,8 +513,9 @@ Step result fields: `status` (`not_run`, `passed`, `failed`, `blocked`, `skipped
 | --- | --- | --- |
 | All passed | none | passed |
 | Passed + skipped (≥ 1 passed) | none | passed (skipped flagged) |
-| Any failed | none / any | failed (explicit non-failed → 422) |
-| No failed, any blocked | none | blocked |
+| Any failed | none | failed |
+| Any failed | any | 422 outcome_conflicts_with_steps |
+| No failed, any blocked | none or blocked, + reason | blocked (no reason → 422 reason_required) |
 | All skipped | none | 422 incomplete_attempt |
 | All skipped | skipped / not_applicable + reason | skipped / not_applicable |
 | Some not_run, no failed/blocked | none | 422 incomplete_attempt |

@@ -295,7 +295,7 @@ These rules are normative. The functional specification expands each one; the da
 | BR-07 | A run has at most one draft attempt at a time. |
 | BR-08 | Run status = status of the latest finalized attempt; `in_progress` if a draft attempt exists; `not_run` if no attempt exists. |
 | BR-09 | Finalized status of a Steps attempt: Failed if any step Failed; else Blocked if any step Blocked; else Passed if every step is Passed or Skipped and at least one Passed; otherwise the tester must choose Blocked, Skipped or Not Applicable with a reason. A Text attempt's status is chosen by the tester. |
-| BR-10 | Blocked, Skipped and Not Applicable as run-level outcomes require a reason. A Failed step requires an actual result. |
+| BR-10 | Blocked, Skipped and Not Applicable as run-level outcomes require a reason, including a Blocked derived from blocked steps. A Failed step requires an actual result. |
 | BR-11 | In a Closed cycle no attempts can be started or finalized and assignments cannot change. Reopening requires `cycle.reopen` and a reason. |
 | BR-12 | A case appears at most once among the non-superseded runs of a cycle. |
 | BR-13 | Archived cases cannot be added to plans or cycles. Deprecated cases cannot be added to new cycles; existing references stay and show a warning. |

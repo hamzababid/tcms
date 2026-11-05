@@ -343,12 +343,12 @@ audit result.started
 ```python
 def compute_final_status(fmt: str, steps: list[StepStatus], explicit: Outcome | None) -> FinalStatus:
     if fmt == "text":
-        if explicit is None or explicit == "in_progress": raise RuleViolation("outcome_required")
+        if explicit is None: raise RuleViolation("outcome_required")
         return explicit
+    if explicit in ("passed", "failed"): raise RuleViolation("outcome_conflicts_with_steps")   # steps decide (K17i)
     if "failed" in steps:
-        if explicit not in (None, "failed"): raise RuleViolation("outcome_conflicts_with_steps")
+        if explicit is not None: raise RuleViolation("outcome_conflicts_with_steps")           # K17h
         return "failed"
-    if explicit == "passed": raise RuleViolation("outcome_conflicts_with_steps")
     if "blocked" in steps and explicit in (None, "blocked"): return "blocked"
     if explicit in ("blocked", "skipped", "not_applicable"): return explicit
     if all(s in ("passed", "skipped") for s in steps) and "passed" in steps: return "passed"
@@ -360,7 +360,8 @@ Finalize service:
 ```
 lock result + run
 validate: state draft; executor or cycle.manage; failed steps have actual_result (422 actual_result_required, lists step positions);
-          reason present for blocked/skipped/not_applicable explicit; require_defect_for_failure check
+          reason present for every final blocked/skipped/not_applicable, derived or explicit (K2, 422 reason_required);
+          require_defect_for_failure check (M5, with defects)
 status = compute_final_status(...)
 result.state = final; result.status = status; result.finished_at = now; result.duration_seconds = body or computed;
 result.skipped_steps = count(skipped)

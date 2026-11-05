@@ -223,7 +223,7 @@ Level: **U** unit, **I** integration, **A** API, **E** end-to-end, **P** perform
 
 | ID | Title | Lvl | Pri | Refs | Expected |
 | --- | --- | --- | --- | --- | --- |
-| TCMS-001 | Sign in with valid credentials (no MFA) | E | H | FR-AUTH-001, AC-AUTH-01 | Lands on the last project (or the project list) until My Work exists in M4; secure cookie set |
+| TCMS-001 | Sign in with valid credentials (no MFA) | E | H | FR-AUTH-001, AC-AUTH-01 | Lands on My Work (from M4; review K5); secure cookie set |
 | TCMS-002 | Unknown email and wrong password give identical responses | A | H | AC-AUTH-02 | Same status/body; timing within 50 ms average |
 | TCMS-003 | Account locks after 10 failures | A | H | FR-AUTH-007, AC-AUTH-03 | 11th attempt refused; `auth.locked` audit |
 | TCMS-004 | Org Admin forced to enrol MFA | E | H | FR-AUTH-002, AC-AUTH-04 | Only MFA enrolment accessible until done |
