@@ -35,7 +35,7 @@ All seed users share the password **`Passw0rd!Passw0rd`**. They exist only where
 | Hira Siddiqui | hira@acme.test | PM / BA | off |
 | Faisal Ahmed | faisal@acme.test | Viewer | off |
 
-The `dev` profile also fills the SPARK repository: 8 folders (Web Application › Authentication › Login / Password Reset, Dashboard, Backend Services › Meter Readings API, Data Integration) and 11 test cases; SPARK-TC-1 has two versions to show Versions and Compare. It also creates plan **SPARK-PL-1** (draft, every SPARK case, with exit rules) and cycle **SPARK-CY-1** (active, built from that plan, every run assigned to Sana) so Plans and Cycles have something to open. `tcms seed --profile e2e` also creates project HELIOS with the same team. Seed invitations are delivered to Mailpit.
+The `dev` profile also fills the SPARK repository: 8 folders (Web Application › Authentication › Login / Password Reset, Dashboard, Backend Services › Meter Readings API, Data Integration) and 11 test cases; SPARK-TC-1 has two versions to show Versions and Compare. It also creates plan **SPARK-PL-1** (draft, every SPARK case, with exit rules) and cycle **SPARK-CY-1** (active, built from that plan, every run assigned to Sana) so Plans and Cycles have something to open. Sana has already executed part of SPARK-CY-1: 7 finished results (passed, failed, blocked, not applicable) and 1 draft, so the cycle progress, run history and My Work show real data. Sign in as Sana to continue the draft in the runner. `tcms seed --profile e2e` also creates project HELIOS with the same team. Seed invitations are delivered to Mailpit.
 
 ## First organization on a real deployment
 
