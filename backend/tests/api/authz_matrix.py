@@ -45,6 +45,10 @@ class Entry:
     probe: Probe | None = None  # None: covered by dedicated tests (public/auth flows)
 
 
+def _as_uuid(value: Any) -> UUID:
+    return value if isinstance(value, UUID) else UUID(str(value))
+
+
 def _throwaway_member(f: Fixture) -> UUID:
     u = f.world.user(f.org, "Throwaway")
     f.world.member(f.org, f.project_id, u, "viewer")
@@ -103,8 +107,87 @@ def _tag(f: Fixture) -> UUID:
         return testdesign.create_tag(uow, ctx, f"t{uuid.uuid4().hex[:12]}").id
 
 
+def _plan(f: Fixture) -> UUID:
+    from tcms.core.enums import PlanType
+    from tcms.core.permissions import PROJECT_PERMISSIONS
+    from tcms.core.uow import unit_of_work
+    from tcms.planning import service as planning
+
+    with unit_of_work(f.world.factory) as uow:
+        ctx = f.world.ctx(
+            f.org.id, f.org.admin.id, is_admin=True, project_id=f.project_id, perms=PROJECT_PERMISSIONS
+        )
+        plan = planning.create_plan(
+            uow, ctx, planning.PlanData(name=f"Plan {uuid.uuid4().hex[:8]}", type=PlanType.regression)
+        )
+        return plan.id
+
+
+def _cycle(f: Fixture) -> UUID:
+    from tcms.core.permissions import PROJECT_PERMISSIONS
+    from tcms.core.uow import unit_of_work
+    from tcms.execution import service as execution
+
+    with unit_of_work(f.world.factory) as uow:
+        ctx = f.world.ctx(
+            f.org.id, f.org.admin.id, is_admin=True, project_id=f.project_id, perms=PROJECT_PERMISSIONS
+        )
+        result = execution.create_cycle(
+            uow,
+            ctx,
+            execution.CycleData(name=f"Cycle {uuid.uuid4().hex[:8]}", environment_id=_as_uuid(f.env_id)),
+        )
+        return result.cycle.id
+
+
+def _run(f: Fixture) -> UUID:
+    """A cycle with one run; returns the run id."""
+    from tcms.core.permissions import PROJECT_PERMISSIONS
+    from tcms.core.uow import unit_of_work
+    from tcms.execution import repository as execution_repo
+    from tcms.execution import service as execution
+
+    case_id = _case(f)
+    with unit_of_work(f.world.factory) as uow:
+        ctx = f.world.ctx(
+            f.org.id, f.org.admin.id, is_admin=True, project_id=f.project_id, perms=PROJECT_PERMISSIONS
+        )
+        result = execution.create_cycle(
+            uow,
+            ctx,
+            execution.CycleData(
+                name=f"Cycle {uuid.uuid4().hex[:8]}",
+                environment_id=_as_uuid(f.env_id),
+                selection=execution.Selection(case_ids=[case_id]),
+            ),
+        )
+        uow.session.flush()
+        runs = execution_repo.runs_in_cycle(uow.session, ctx, result.cycle.id)
+        return runs[0].id
+
+
+def _remove_run_probe(f: Fixture) -> tuple[str, str, dict[str, Any]]:
+    """DELETE a real not-run run of its own cycle (unknown run ids are a 404)."""
+    from tcms.core.permissions import PROJECT_PERMISSIONS
+    from tcms.core.uow import unit_of_work
+    from tcms.execution import queries as execution_queries
+
+    run_id = _run(f)
+    with unit_of_work(f.world.factory) as uow:
+        ctx = f.world.ctx(
+            f.org.id, f.org.admin.id, is_admin=True, project_id=f.project_id, perms=PROJECT_PERMISSIONS
+        )
+        row = execution_queries.run_row(uow.session, ctx, run_id)
+        assert row is not None
+        cycle_id = row.run.cycle_id
+    return ("DELETE", f"/api/v1/cycles/{cycle_id}/runs", {"run_ids": [str(run_id)]})
+
+
 P = "/api/v1/projects/{project_id}"
 TC = "/api/v1/test-cases/{case_id}"
+PL = "/api/v1/test-plans/{plan_id}"
+CY = "/api/v1/cycles/{cycle_id}"
+RN = "/api/v1/runs/{run_id}"
 
 
 def _p(f: Fixture, suffix: str) -> str:
@@ -394,5 +477,119 @@ MATRIX: dict[tuple[str, str], Entry] = {
     ("GET", "/api/v1/attachments/{attachment_id}/content"): Entry("project:project.view"),
     ("DELETE", "/api/v1/attachments/{attachment_id}/links/{entity_type}/{entity_id}"): Entry(
         "project:testcase.edit"
+    ),
+    # test plans (M3 / E07)
+    ("GET", P + "/test-plans"): Entry("project:project.view", lambda f: ("GET", _p(f, "/test-plans"), None)),
+    ("POST", P + "/test-plans"): Entry(
+        "project:plan.manage",
+        lambda f: ("POST", _p(f, "/test-plans"), {"name": "Probe plan", "type": "regression"}),
+    ),
+    ("GET", PL): Entry("project:project.view", lambda f: ("GET", PL.format(plan_id=_plan(f)), None)),
+    ("PATCH", PL): Entry(
+        "project:plan.manage",
+        lambda f: ("PATCH", PL.format(plan_id=_plan(f)), {"name": "Renamed plan", "row_version": 1}),
+    ),
+    ("GET", PL + "/cases"): Entry(
+        "project:project.view", lambda f: ("GET", PL.format(plan_id=_plan(f)) + "/cases", None)
+    ),
+    ("POST", PL + "/cases"): Entry(
+        "project:plan.manage",
+        lambda f: ("POST", PL.format(plan_id=_plan(f)) + "/cases", {"case_ids": []}),
+    ),
+    ("DELETE", PL + "/cases"): Entry(
+        "project:plan.manage",
+        lambda f: ("DELETE", PL.format(plan_id=_plan(f)) + "/cases", {"case_ids": [str(uuid.uuid4())]}),
+    ),
+    ("POST", PL + "/requirements"): Entry(
+        "project:plan.manage",
+        lambda f: (
+            "POST",
+            PL.format(plan_id=_plan(f)) + "/requirements",
+            {"requirement_ids": [str(uuid.uuid4())]},
+        ),
+    ),
+    ("DELETE", PL + "/requirements"): Entry(
+        "project:plan.manage",
+        lambda f: (
+            "DELETE",
+            PL.format(plan_id=_plan(f)) + "/requirements",
+            {"requirement_ids": [str(uuid.uuid4())]},
+        ),
+    ),
+    ("POST", PL + "/clone"): Entry(
+        "project:plan.manage", lambda f: ("POST", PL.format(plan_id=_plan(f)) + "/clone", {})
+    ),
+    ("POST", PL + "/archive"): Entry(
+        "project:plan.manage", lambda f: ("POST", PL.format(plan_id=_plan(f)) + "/archive", None)
+    ),
+    # cycles and runs (M3 / E08)
+    ("GET", P + "/cycles"): Entry("project:project.view", lambda f: ("GET", _p(f, "/cycles"), None)),
+    ("POST", P + "/cycles"): Entry(
+        "project:cycle.manage",
+        lambda f: (
+            "POST",
+            _p(f, "/cycles"),
+            {"name": f"Probe cycle {uuid.uuid4().hex[:8]}", "environment_id": str(f.env_id), "selection": {}},
+        ),
+    ),
+    ("GET", CY): Entry("project:project.view", lambda f: ("GET", CY.format(cycle_id=_cycle(f)), None)),
+    ("PATCH", CY): Entry(
+        "project:cycle.manage",
+        lambda f: ("PATCH", CY.format(cycle_id=_cycle(f)), {"name": "Renamed cycle", "row_version": 1}),
+    ),
+    ("POST", CY + "/start"): Entry(
+        "project:cycle.manage", lambda f: ("POST", CY.format(cycle_id=_cycle(f)) + "/start", None)
+    ),
+    ("POST", CY + "/close"): Entry(
+        "project:cycle.manage", lambda f: ("POST", CY.format(cycle_id=_cycle(f)) + "/close", {})
+    ),
+    ("POST", CY + "/reopen"): Entry(
+        "project:cycle.reopen",
+        lambda f: ("POST", CY.format(cycle_id=_cycle(f)) + "/reopen", {"reason": "probe"}),
+    ),
+    ("POST", CY + "/archive"): Entry(
+        "project:cycle.manage", lambda f: ("POST", CY.format(cycle_id=_cycle(f)) + "/archive", None)
+    ),
+    ("POST", CY + "/clone"): Entry(
+        "project:cycle.manage",
+        lambda f: (
+            "POST",
+            CY.format(cycle_id=_cycle(f)) + "/clone",
+            {"name": f"Clone {uuid.uuid4().hex[:8]}"},
+        ),
+    ),
+    ("POST", CY + "/sync-from-plan"): Entry(
+        "project:cycle.manage", lambda f: ("POST", CY.format(cycle_id=_cycle(f)) + "/sync-from-plan", None)
+    ),
+    ("GET", CY + "/runs"): Entry(
+        "project:project.view", lambda f: ("GET", CY.format(cycle_id=_cycle(f)) + "/runs", None)
+    ),
+    ("POST", CY + "/runs"): Entry(
+        "project:cycle.manage", lambda f: ("POST", CY.format(cycle_id=_cycle(f)) + "/runs", {"case_ids": []})
+    ),
+    ("DELETE", CY + "/runs"): Entry("project:cycle.manage", lambda f: _remove_run_probe(f)),
+    ("POST", CY + "/runs/assign"): Entry(
+        "project:cycle.manage",
+        lambda f: ("POST", CY.format(cycle_id=_cycle(f)) + "/runs/assign", {"run_ids": [str(uuid.uuid4())]}),
+    ),
+    ("POST", CY + "/runs/reorder"): Entry(
+        "project:cycle.manage",
+        lambda f: ("POST", CY.format(cycle_id=_cycle(f)) + "/runs/reorder", {"sort_by": "folder"}),
+    ),
+    ("POST", CY + "/runs/update-versions"): Entry(
+        "project:cycle.manage",
+        lambda f: ("POST", CY.format(cycle_id=_cycle(f)) + "/runs/update-versions", None),
+    ),
+    ("GET", RN): Entry(
+        "project:project.view", lambda f: ("GET", RN.format(run_id=_run(f)) + "?include=version", None)
+    ),
+    ("POST", RN + "/claim"): Entry(
+        "project:run.execute", lambda f: ("POST", RN.format(run_id=_run(f)) + "/claim", None)
+    ),
+    ("POST", RN + "/update-version"): Entry(
+        "project:cycle.manage", lambda f: ("POST", RN.format(run_id=_run(f)) + "/update-version", None)
+    ),
+    ("POST", RN + "/replace"): Entry(
+        "project:cycle.manage", lambda f: ("POST", RN.format(run_id=_run(f)) + "/replace", None)
     ),
 }

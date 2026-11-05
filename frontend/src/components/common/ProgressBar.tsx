@@ -7,15 +7,19 @@ export interface ProgressCounts {
   failed: number;
   blocked: number;
   skipped: number;
+  /** Optional: cycle progress also shows runs with a draft attempt (docs/design/CycleDetail.dc.html). */
+  in_progress?: number;
   not_run: number;
 }
 
-const SEGMENTS = ["passed", "failed", "blocked", "skipped", "not_run"] as const;
+const SEGMENTS = ["passed", "failed", "blocked", "skipped", "in_progress", "not_run"] as const;
 
 /** Segmented P/F/B/S/NR bar with counts in the accessible label and tooltip (docs/04 §11.4). */
 export function ProgressBar({ counts, className = "" }: { counts: ProgressCounts; className?: string }) {
-  const total = SEGMENTS.reduce((sum, s) => sum + counts[s], 0);
-  const label = SEGMENTS.map((s) => `${EXECUTION_STATUS[s].label} ${formatCount(counts[s])}`).join(", ");
+  const segments = SEGMENTS.filter((s) => s !== "in_progress" || counts.in_progress !== undefined);
+  const n = (s: (typeof SEGMENTS)[number]) => counts[s] ?? 0;
+  const total = segments.reduce((sum, s) => sum + n(s), 0);
+  const label = segments.map((s) => `${EXECUTION_STATUS[s].label} ${formatCount(n(s))}`).join(", ");
   return (
     <div
       role="img"
@@ -25,13 +29,13 @@ export function ProgressBar({ counts, className = "" }: { counts: ProgressCounts
       style={{ background: toneVars("notrun").bar }}
     >
       {total > 0 &&
-        SEGMENTS.map((s) =>
-          counts[s] > 0 ? (
+        segments.map((s) =>
+          n(s) > 0 ? (
             <div
               key={s}
               data-segment={s}
               style={{
-                width: `${(counts[s] / total) * 100}%`,
+                width: `${(n(s) / total) * 100}%`,
                 background: toneVars(EXECUTION_STATUS[s].tone).bar,
               }}
             />

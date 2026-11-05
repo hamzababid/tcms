@@ -356,3 +356,119 @@ def seed_repository(profile: str) -> str:
                 row_version=first.row_version,
             )
     return f"{len(folder_ids)} folders and {n_cases} cases in SPARK"
+
+
+# -- plans and cycles (M3) ------------------------------------------------------------------------
+
+
+@step("SPARK plan and cycle", profiles=("dev",))
+def seed_plans_and_cycles(profile: str) -> str:
+    """A regression plan over the SPARK cases and an active cycle created from it (US-070…087).
+
+    Gives the Plans and Cycles screens real content: a plan with a case list and a cycle whose runs
+    are assigned to the QA engineer, so the whole M3 flow is visible in `make seed`.
+    """
+    from tcms.core.enums import PlanType
+    from tcms.core.pagination import PageParams
+    from tcms.core.permissions import PROJECT_PERMISSIONS
+    from tcms.execution import queries as exec_queries
+    from tcms.execution import service as execution
+    from tcms.planning import queries as planning_queries
+    from tcms.planning import service as planning
+    from tcms.testdesign import queries as td_queries
+
+    page = PageParams(page=1, page_size=200)
+
+    del profile
+    factory = session_factory(app_engine(get_settings()))
+    with factory() as s:
+        org = workspace_queries.organization_by_slug(s, ORG_SLUG)
+        if org is None:
+            return "no organization — run the workspace step first"
+        spark = next(
+            (p for p in workspace_queries.projects(s, org.id, ids=None, status=None) if p.key == "SPARK"),
+            None,
+        )
+        if spark is None:
+            return "no SPARK project"
+        members = {m.user.email: m.user.id for m in identity_queries.project_members(s, org.id, spark.id)}
+    manager = members.get("ayesha@acme.test")
+    engineer = members.get("sana@acme.test")
+    if manager is None or engineer is None:
+        return "SPARK team is missing — run the workspace step first"
+
+    ctx = AccessContext.for_principal(
+        Principal(manager, org.id, False, display_name="Ayesha Raza"),
+        META,
+        project_id=spark.id,
+        permissions=PROJECT_PERMISSIONS,
+    )
+    ctx.project_status = "active"
+
+    with factory() as s:
+        existing = planning_queries.list_plans(s, ctx, {}, page)
+        if existing[1] > 0:
+            return "SPARK already has plans — nothing to do"
+        root_folders = [
+            f for f in td_queries.folder_tree(s, ctx, include_archived=False) if f.parent_id is None
+        ]
+        env = next(
+            (e for e in workspace_queries.environments(s, org.id, spark.id, include_archived=False)),
+            None,
+        )
+    if env is None:
+        return "SPARK has no environment"
+
+    # A plan that selects every case under the top-level folders.
+    with unit_of_work(factory) as uow:
+        plan = planning.create_plan(
+            uow,
+            ctx,
+            planning.PlanData(
+                name="SPARK v2.5 regression",
+                type=PlanType.regression,
+                objectives="Full regression ahead of the v2.5 release.",
+                environment_ids=[env.id],
+                exit_rules=[
+                    {"type": "min_execution_progress", "threshold": 1.0},
+                    {"type": "max_open_defects", "threshold": 0, "params": {"severities": ["critical"]}},
+                ],
+                risks=[
+                    {"description": "Payment gateway can be flaky", "impact": "medium", "mitigation": "Retry"}
+                ],
+            ),
+        )
+        uow.session.flush()
+        result = planning.add_cases(
+            uow,
+            ctx,
+            plan.id,
+            case_ids=None,
+            folder_ids=[f.id for f in root_folders],
+            include_subfolders=True,
+            tags=None,
+            saved_view_id=None,
+        )
+        plan_id = plan.id
+        added = result.added
+
+    # A cycle created from the plan, started, with runs assigned to the QA engineer.
+    with unit_of_work(factory) as uow:
+        created = execution.create_cycle(
+            uow,
+            ctx,
+            execution.CycleData(
+                name="Regression Cycle 1",
+                environment_id=env.id,
+                plan_id=plan_id,
+                selection=execution.Selection(from_plan=True),
+            ),
+        )
+        uow.session.flush()
+        cycle_id = created.cycle.id
+        run_ids = [r.run.id for r in exec_queries.list_runs(uow.session, ctx, cycle_id, {}, page)[0]]
+        if run_ids:
+            execution.assign_runs(uow, ctx, cycle_id, run_ids=run_ids, filter_=None, assignee_id=engineer)
+        execution.start_cycle(uow, ctx, cycle_id)
+
+    return f"SPARK plan with {added} cases and a started cycle of {len(run_ids)} runs"

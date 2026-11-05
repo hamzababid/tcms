@@ -90,6 +90,41 @@ export const useReleases = (id: string) =>
       ),
   });
 
+/** A human key (`SPARK-TC-12`, `SPARK-PL-3`, `SPARK-CY-12`) → its id (docs/04 §11.1, docs/06 §4.4). */
+export const useResolvedKey = (pid: string, key: string) =>
+  useQuery({
+    queryKey: ["projects", pid, "resolve", key] as const,
+    staleTime: Infinity,
+    retry: false,
+    queryFn: async () =>
+      must(
+        (
+          await api.GET("/api/v1/projects/{project_id}/resolve", {
+            params: { path: { project_id: pid }, query: { key } },
+          })
+        ).data,
+      ),
+  });
+
+/** A record's audit history (US-161; docs/06 §4.12): pages only, newest first. */
+export const useRecordHistory = (
+  entityType: string,
+  entityId: string,
+  page: { page: number; page_size: number },
+) =>
+  useQuery({
+    queryKey: ["history", entityType, entityId, page] as const,
+    placeholderData: keepPreviousData,
+    queryFn: async () =>
+      must(
+        (
+          await api.GET("/api/v1/audit-events/entity/{entity_type}/{entity_id}", {
+            params: { path: { entity_type: entityType, entity_id: entityId }, query: page },
+          })
+        ).data,
+      ),
+  });
+
 export interface AuditQuery {
   page: number;
   page_size: number;

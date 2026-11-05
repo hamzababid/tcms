@@ -384,7 +384,7 @@ class TagCreate(_Model):
 
 
 class ResolveRead(BaseModel):
-    entity_type: Literal["test_case"]
+    entity_type: Literal["test_case", "test_plan", "test_cycle"]
     id: UUID
     key: str
 

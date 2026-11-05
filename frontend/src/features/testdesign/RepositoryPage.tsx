@@ -72,6 +72,7 @@ export function RepositoryPage({
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
       if (
+        e.defaultPrevented ||
         e.ctrlKey ||
         e.metaKey ||
         e.altKey ||

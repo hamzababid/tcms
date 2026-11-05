@@ -846,7 +846,7 @@ Every audit event: `id`, `occurred_at`, `organization_id`, `project_id` (nullabl
 | Users & roles | `user.invited`, `user.activated`, `user.deactivated`, `membership.granted`, `membership.changed`, `membership.revoked`, `org_admin.granted/revoked`, `project.admin_accessed`, `user.reactivated`, `user.updated`, `user.invitation_revoked` |
 | Config | `organization.updated`, `project.created/updated/archived/restored`, `release.status_changed`, `project.settings_changed`, `environment.*`, `release.*`, `release.decision_recorded` |
 | Test design | `folder.*`, `test_case.created`, `test_case.version_created`, `test_case.updated` (metadata), `test_case.submitted/approved/returned/deprecated/archived/restored/deleted`, `test_case.moved`, link changes |
-| Planning/execution | `plan.*`, `cycle.created/updated/started/closed/reopened`, `run.added/removed/assigned/version_updated/replaced`, `result.started/discarded/finalized/corrected`, `result.draft_taken_over` |
+| Planning/execution | `plan.*`, `cycle.created/updated/started/closed/reopened/archived`, `run.added/removed/assigned/version_updated/replaced` (one event per run; bulk actions share `bulk_operation_id`; claiming is `run.assigned` with `claimed: true`), `result.started/discarded/finalized/corrected`, `result.draft_taken_over` |
 | Defects | `defect.created/updated/transitioned/linked/unlinked` |
 | Requirements | `requirement.*`, `requirement.linked/unlinked` |
 | Data | `import.committed`, `export.created`, `attachment.uploaded/deleted` |

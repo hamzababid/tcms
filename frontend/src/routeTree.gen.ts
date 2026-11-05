@@ -27,6 +27,10 @@ import { Route as AppPProjectKeyActivityRouteImport } from './routes/_app/p.$pro
 import { Route as AppPProjectKeyRepositoryRouteImport } from './routes/_app/p.$projectKey/repository'
 import { Route as AppPProjectKeySettingsRouteImport } from './routes/_app/p.$projectKey/settings'
 import { Route as AppPProjectKeyCasesNewRouteImport } from './routes/_app/p.$projectKey/cases.new'
+import { Route as AppPProjectKeyCyclesIndexRouteImport } from './routes/_app/p.$projectKey/cycles.index'
+import { Route as AppPProjectKeyCyclesCycleKeyRouteImport } from './routes/_app/p.$projectKey/cycles.$cycleKey'
+import { Route as AppPProjectKeyPlansIndexRouteImport } from './routes/_app/p.$projectKey/plans.index'
+import { Route as AppPProjectKeyPlansPlanKeyRouteImport } from './routes/_app/p.$projectKey/plans.$planKey'
 import { Route as AppPProjectKeyCasesCaseKeyIndexRouteImport } from './routes/_app/p.$projectKey/cases.$caseKey.index'
 import { Route as AppPProjectKeyCasesCaseKeyEditRouteImport } from './routes/_app/p.$projectKey/cases.$caseKey.edit'
 
@@ -120,6 +124,30 @@ const AppPProjectKeyCasesNewRoute = AppPProjectKeyCasesNewRouteImport.update({
   path: '/cases/new',
   getParentRoute: () => AppPProjectKeyRoute,
 } as any)
+const AppPProjectKeyCyclesIndexRoute =
+  AppPProjectKeyCyclesIndexRouteImport.update({
+    id: '/cycles/',
+    path: '/cycles/',
+    getParentRoute: () => AppPProjectKeyRoute,
+  } as any)
+const AppPProjectKeyCyclesCycleKeyRoute =
+  AppPProjectKeyCyclesCycleKeyRouteImport.update({
+    id: '/cycles/$cycleKey',
+    path: '/cycles/$cycleKey',
+    getParentRoute: () => AppPProjectKeyRoute,
+  } as any)
+const AppPProjectKeyPlansIndexRoute =
+  AppPProjectKeyPlansIndexRouteImport.update({
+    id: '/plans/',
+    path: '/plans/',
+    getParentRoute: () => AppPProjectKeyRoute,
+  } as any)
+const AppPProjectKeyPlansPlanKeyRoute =
+  AppPProjectKeyPlansPlanKeyRouteImport.update({
+    id: '/plans/$planKey',
+    path: '/plans/$planKey',
+    getParentRoute: () => AppPProjectKeyRoute,
+  } as any)
 const AppPProjectKeyCasesCaseKeyIndexRoute =
   AppPProjectKeyCasesCaseKeyIndexRouteImport.update({
     id: '/cases/$caseKey/',
@@ -151,6 +179,10 @@ export interface FileRoutesByFullPath {
   '/p/$projectKey/settings': typeof AppPProjectKeySettingsRoute
   '/p/$projectKey/': typeof AppPProjectKeyIndexRoute
   '/p/$projectKey/cases/new': typeof AppPProjectKeyCasesNewRoute
+  '/p/$projectKey/cycles/$cycleKey': typeof AppPProjectKeyCyclesCycleKeyRoute
+  '/p/$projectKey/plans/$planKey': typeof AppPProjectKeyPlansPlanKeyRoute
+  '/p/$projectKey/cycles/': typeof AppPProjectKeyCyclesIndexRoute
+  '/p/$projectKey/plans/': typeof AppPProjectKeyPlansIndexRoute
   '/p/$projectKey/cases/$caseKey/edit': typeof AppPProjectKeyCasesCaseKeyEditRoute
   '/p/$projectKey/cases/$caseKey/': typeof AppPProjectKeyCasesCaseKeyIndexRoute
 }
@@ -171,6 +203,10 @@ export interface FileRoutesByTo {
   '/p/$projectKey/settings': typeof AppPProjectKeySettingsRoute
   '/p/$projectKey': typeof AppPProjectKeyIndexRoute
   '/p/$projectKey/cases/new': typeof AppPProjectKeyCasesNewRoute
+  '/p/$projectKey/cycles/$cycleKey': typeof AppPProjectKeyCyclesCycleKeyRoute
+  '/p/$projectKey/plans/$planKey': typeof AppPProjectKeyPlansPlanKeyRoute
+  '/p/$projectKey/cycles': typeof AppPProjectKeyCyclesIndexRoute
+  '/p/$projectKey/plans': typeof AppPProjectKeyPlansIndexRoute
   '/p/$projectKey/cases/$caseKey/edit': typeof AppPProjectKeyCasesCaseKeyEditRoute
   '/p/$projectKey/cases/$caseKey': typeof AppPProjectKeyCasesCaseKeyIndexRoute
 }
@@ -194,6 +230,10 @@ export interface FileRoutesById {
   '/_app/p/$projectKey/settings': typeof AppPProjectKeySettingsRoute
   '/_app/p/$projectKey/': typeof AppPProjectKeyIndexRoute
   '/_app/p/$projectKey/cases/new': typeof AppPProjectKeyCasesNewRoute
+  '/_app/p/$projectKey/cycles/$cycleKey': typeof AppPProjectKeyCyclesCycleKeyRoute
+  '/_app/p/$projectKey/plans/$planKey': typeof AppPProjectKeyPlansPlanKeyRoute
+  '/_app/p/$projectKey/cycles/': typeof AppPProjectKeyCyclesIndexRoute
+  '/_app/p/$projectKey/plans/': typeof AppPProjectKeyPlansIndexRoute
   '/_app/p/$projectKey/cases/$caseKey/edit': typeof AppPProjectKeyCasesCaseKeyEditRoute
   '/_app/p/$projectKey/cases/$caseKey/': typeof AppPProjectKeyCasesCaseKeyIndexRoute
 }
@@ -217,6 +257,10 @@ export interface FileRouteTypes {
     | '/p/$projectKey/settings'
     | '/p/$projectKey/'
     | '/p/$projectKey/cases/new'
+    | '/p/$projectKey/cycles/$cycleKey'
+    | '/p/$projectKey/plans/$planKey'
+    | '/p/$projectKey/cycles/'
+    | '/p/$projectKey/plans/'
     | '/p/$projectKey/cases/$caseKey/edit'
     | '/p/$projectKey/cases/$caseKey/'
   fileRoutesByTo: FileRoutesByTo
@@ -237,6 +281,10 @@ export interface FileRouteTypes {
     | '/p/$projectKey/settings'
     | '/p/$projectKey'
     | '/p/$projectKey/cases/new'
+    | '/p/$projectKey/cycles/$cycleKey'
+    | '/p/$projectKey/plans/$planKey'
+    | '/p/$projectKey/cycles'
+    | '/p/$projectKey/plans'
     | '/p/$projectKey/cases/$caseKey/edit'
     | '/p/$projectKey/cases/$caseKey'
   id:
@@ -259,6 +307,10 @@ export interface FileRouteTypes {
     | '/_app/p/$projectKey/settings'
     | '/_app/p/$projectKey/'
     | '/_app/p/$projectKey/cases/new'
+    | '/_app/p/$projectKey/cycles/$cycleKey'
+    | '/_app/p/$projectKey/plans/$planKey'
+    | '/_app/p/$projectKey/cycles/'
+    | '/_app/p/$projectKey/plans/'
     | '/_app/p/$projectKey/cases/$caseKey/edit'
     | '/_app/p/$projectKey/cases/$caseKey/'
   fileRoutesById: FileRoutesById
@@ -401,6 +453,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPProjectKeyCasesNewRouteImport
       parentRoute: typeof AppPProjectKeyRoute
     }
+    '/_app/p/$projectKey/cycles/': {
+      id: '/_app/p/$projectKey/cycles/'
+      path: '/cycles'
+      fullPath: '/p/$projectKey/cycles/'
+      preLoaderRoute: typeof AppPProjectKeyCyclesIndexRouteImport
+      parentRoute: typeof AppPProjectKeyRoute
+    }
+    '/_app/p/$projectKey/cycles/$cycleKey': {
+      id: '/_app/p/$projectKey/cycles/$cycleKey'
+      path: '/cycles/$cycleKey'
+      fullPath: '/p/$projectKey/cycles/$cycleKey'
+      preLoaderRoute: typeof AppPProjectKeyCyclesCycleKeyRouteImport
+      parentRoute: typeof AppPProjectKeyRoute
+    }
+    '/_app/p/$projectKey/plans/': {
+      id: '/_app/p/$projectKey/plans/'
+      path: '/plans'
+      fullPath: '/p/$projectKey/plans/'
+      preLoaderRoute: typeof AppPProjectKeyPlansIndexRouteImport
+      parentRoute: typeof AppPProjectKeyRoute
+    }
+    '/_app/p/$projectKey/plans/$planKey': {
+      id: '/_app/p/$projectKey/plans/$planKey'
+      path: '/plans/$planKey'
+      fullPath: '/p/$projectKey/plans/$planKey'
+      preLoaderRoute: typeof AppPProjectKeyPlansPlanKeyRouteImport
+      parentRoute: typeof AppPProjectKeyRoute
+    }
     '/_app/p/$projectKey/cases/$caseKey/': {
       id: '/_app/p/$projectKey/cases/$caseKey/'
       path: '/cases/$caseKey'
@@ -424,6 +504,10 @@ interface AppPProjectKeyRouteChildren {
   AppPProjectKeySettingsRoute: typeof AppPProjectKeySettingsRoute
   AppPProjectKeyIndexRoute: typeof AppPProjectKeyIndexRoute
   AppPProjectKeyCasesNewRoute: typeof AppPProjectKeyCasesNewRoute
+  AppPProjectKeyCyclesCycleKeyRoute: typeof AppPProjectKeyCyclesCycleKeyRoute
+  AppPProjectKeyPlansPlanKeyRoute: typeof AppPProjectKeyPlansPlanKeyRoute
+  AppPProjectKeyCyclesIndexRoute: typeof AppPProjectKeyCyclesIndexRoute
+  AppPProjectKeyPlansIndexRoute: typeof AppPProjectKeyPlansIndexRoute
   AppPProjectKeyCasesCaseKeyEditRoute: typeof AppPProjectKeyCasesCaseKeyEditRoute
   AppPProjectKeyCasesCaseKeyIndexRoute: typeof AppPProjectKeyCasesCaseKeyIndexRoute
 }
@@ -434,6 +518,10 @@ const AppPProjectKeyRouteChildren: AppPProjectKeyRouteChildren = {
   AppPProjectKeySettingsRoute: AppPProjectKeySettingsRoute,
   AppPProjectKeyIndexRoute: AppPProjectKeyIndexRoute,
   AppPProjectKeyCasesNewRoute: AppPProjectKeyCasesNewRoute,
+  AppPProjectKeyCyclesCycleKeyRoute: AppPProjectKeyCyclesCycleKeyRoute,
+  AppPProjectKeyPlansPlanKeyRoute: AppPProjectKeyPlansPlanKeyRoute,
+  AppPProjectKeyCyclesIndexRoute: AppPProjectKeyCyclesIndexRoute,
+  AppPProjectKeyPlansIndexRoute: AppPProjectKeyPlansIndexRoute,
   AppPProjectKeyCasesCaseKeyEditRoute: AppPProjectKeyCasesCaseKeyEditRoute,
   AppPProjectKeyCasesCaseKeyIndexRoute: AppPProjectKeyCasesCaseKeyIndexRoute,
 }

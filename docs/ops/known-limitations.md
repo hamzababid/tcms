@@ -1,6 +1,6 @@
 # Known limitations
 
-Current as of M2 (2026-11-05). Remove entries when resolved.
+Current as of M3 (2026-11-05). Remove entries when resolved.
 
 | # | Limitation | Impact | Plan |
 | --- | --- | --- | --- |
@@ -16,5 +16,12 @@ Current as of M2 (2026-11-05). Remove entries when resolved.
 | L15 | Bulk actions over 200 cases run as a job, but the UI does not report completion; the list refreshes on the next load | User refreshes to see the result | M7 notification bell / job progress |
 | L16 | Notifications (review requested, returned, approved, mentions) are stored but there is no notification bell yet | Not visible in the UI | M7 |
 | L18 | Attachments and pasted images need a saved case (the upload targets its ID); the new-case editor says so | One extra step for new cases | — |
-| L19 | Requirement filters (`requirement_id`, `has_requirements`), "Add to plan/cycle" and export bulk actions are not built | — | M3 (plans/cycles), M6 (requirements), M8 (export) |
+| L19 | Requirement filters (`requirement_id`, `has_requirements`) and the export bulk action are not built. "Add to plan" / "Add to cycle" work on selected cases, not on "Select all matching" | — | M6 (requirements), M8 (export) |
 | L20 | The design's topbar search, notification bell and "Keyboard shortcuts" footer (docs/design/Topbar, Sidebar) are not rendered until those features exist (no dummy controls) | — | Global search and shortcut help: M8; notifications: M7 |
+| L21 | **Replace run (BR-05)** is built and API-tested (`test_br_05_replace_run_supersedes`) and offered in the run panel, but its retest-round **E2E is deferred**: a run only has results once the runner exists (M3 decision Q5) | No browser test of replace yet | M4: add the E2E with the runner |
+| L22 | Draft attempts come from the runner, so **closing a cycle with drafts** (409 `draft_exists` → list → discard) is covered by API tests only (`test_tcms_058_close_lists_drafts_and_discard_removes_them`); the M3 E2E closes a cycle without drafts | — | M4: E2E with a live draft |
+| L23 | A cycle starts with **Start cycle**; the automatic start on the first execution (BR-30) needs the runner. "Start testing" (runner queue) is not rendered | — | M4 |
+| L24 | The new-cycle dialog shows "added N · skipped M" with reasons **after** creating, not the "will add N, skip M" preview of docs/07 §5.8 (docs/06 has no dry-run endpoint) | One extra look after creating | Add a dry-run to docs/06 if the preview is wanted |
+| L25 | Plan detail has no **Requirements** tab and the "Add cases" dialog has no **Saved view** tab (`saved_view_id` → 422); the plan Overview lists exit rules but not their readiness | — | M6 (requirements, saved views), M7 (readiness) |
+| L26 | Cycle runs have no **Defects** column and no export | — | M5 (defects), M8 (export) |
+| L27 | Runs are reordered with "Sort runs by folder / priority"; drag-and-drop reordering (`run_ids_in_order` is supported by the API) is not in the UI | — | When asked for |
