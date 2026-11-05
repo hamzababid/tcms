@@ -6,6 +6,7 @@ the measurement is the transaction, not the test client.
 
 from __future__ import annotations
 
+import random
 import statistics
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -88,14 +89,22 @@ def test_br_07_concurrent_starts_make_one_draft(world: World) -> None:
 
 @pytest.mark.timing
 def test_ac_exe_09_fifty_testers_save_steps_concurrently(world: World) -> None:
-    """AC-EXE-09: 50 testers saving step results on different runs: no update lost, p95 < 200 ms."""
+    """AC-EXE-09: 50 testers saving step results on different runs: no update lost, p95 < 200 ms.
+
+    Load model of docs/08 §9 P2: 50 testers, 2 s think time between step saves, start times spread over
+    the first think interval (a zero-think burst of 200 saves is not the scenario)."""
     ctx, run_ids = _setup(world, 50, steps=4)
     drafts = [_draft(world, ctx, r) for r in run_ids]
+    think = 2.0
+    offsets = random.Random(9).sample([think * k / 50 for k in range(50)], 50)
 
     def tester(i: int) -> list[float]:
         res_id, steps = drafts[i]
         timings = []
+        time.sleep(offsets[i])
         for n, step_id in enumerate(steps):
+            if n:
+                time.sleep(think)
             t0 = time.perf_counter()
             with unit_of_work(world.factory) as uow:
                 service.record_step(
