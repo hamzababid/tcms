@@ -72,6 +72,7 @@ def _plan_read(uow: UnitOfWork, ctx: AccessContext, plan_id: UUID) -> s.PlanRead
         end_date=d.end_date,
         case_count=d.case_count,
         requirement_count=d.requirement_count,
+        allowed_transitions=d.allowed_transitions,
         archived=d.archived,
         created_at=d.created_at,
         updated_at=d.updated_at,

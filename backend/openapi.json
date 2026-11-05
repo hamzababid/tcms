@@ -4517,6 +4517,14 @@
             ],
             "title": "Acceptance Criteria"
           },
+          "allowed_transitions": {
+            "description": "Statuses this plan may move to via PATCH (archive has its own action).",
+            "items": {
+              "$ref": "#/components/schemas/PlanStatus"
+            },
+            "title": "Allowed Transitions",
+            "type": "array"
+          },
           "archived": {
             "title": "Archived",
             "type": "boolean"
@@ -4724,6 +4732,7 @@
           "end_date",
           "case_count",
           "requirement_count",
+          "allowed_transitions",
           "archived",
           "created_at",
           "updated_at",

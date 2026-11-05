@@ -3402,6 +3402,11 @@ export interface components {
     PlanRead: {
       /** Acceptance Criteria */
       acceptance_criteria: string | null;
+      /**
+       * Allowed Transitions
+       * @description Statuses this plan may move to via PATCH (archive has its own action).
+       */
+      allowed_transitions: components["schemas"]["PlanStatus"][];
       /** Archived */
       archived: boolean;
       /** Case Count */

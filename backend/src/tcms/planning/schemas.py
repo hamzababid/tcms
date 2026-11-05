@@ -127,6 +127,9 @@ class PlanRead(BaseModel):
     end_date: date | None
     case_count: int
     requirement_count: int
+    allowed_transitions: list[PlanStatus] = Field(
+        description="Statuses this plan may move to via PATCH (archive has its own action)."
+    )
     archived: bool
     created_at: datetime
     updated_at: datetime

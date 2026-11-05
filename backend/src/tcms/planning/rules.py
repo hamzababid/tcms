@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Final, Literal
 
+from tcms.core.enums import PlanStatus
 from tcms.core.errors import FieldError
 
 NAME_MIN: Final = 3
@@ -47,3 +48,26 @@ def risks_problem(risks: list[dict[str, Any]]) -> FieldError | None:
         if not desc:
             return FieldError("risks", "field_required", "Each risk needs a description")
     return None
+
+
+# -- status lifecycle -----------------------------------------------------------------------------
+#
+# docs/02 §6.1 lists the statuses but not the transitions. Mirroring the release machine
+# (docs/02 §4.4): forward draft → active → completed, with a step back allowed while the plan is not
+# archived. `archived` is terminal and only reached through the archive endpoint, never a status PATCH.
+_PLAN_TRANSITIONS: Final[dict[PlanStatus, frozenset[PlanStatus]]] = {
+    PlanStatus.draft: frozenset({PlanStatus.active}),
+    PlanStatus.active: frozenset({PlanStatus.draft, PlanStatus.completed}),
+    PlanStatus.completed: frozenset({PlanStatus.active}),
+    PlanStatus.archived: frozenset(),
+}
+
+
+def plan_transition_allowed(current: PlanStatus, target: PlanStatus) -> bool:
+    if current == target:
+        return True  # no-op patch is not an error
+    return target in _PLAN_TRANSITIONS[current]
+
+
+def allowed_plan_targets(current: PlanStatus) -> frozenset[PlanStatus]:
+    return _PLAN_TRANSITIONS[current]

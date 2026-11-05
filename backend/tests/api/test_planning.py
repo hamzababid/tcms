@@ -149,6 +149,39 @@ def test_us_070_patch_plan_audits_changes(world: World) -> None:
     assert r.json()["row_version"] == plan["row_version"] + 1
 
 
+def test_us_070_status_lifecycle(world: World) -> None:
+    """Plan status machine: draft → active → completed, step back allowed; bad jumps → 422; archive guarded."""
+    sp = Space(world)
+    plan = sp.create_plan(name="Lifecycle")
+    assert plan["status"] == "draft"
+    assert set(plan["allowed_transitions"]) == {"active"}
+
+    def patch(status: str, rv: int) -> Any:
+        return sp.admin.patch(f"/api/v1/test-plans/{plan['id']}", json={"status": status, "row_version": rv})
+
+    # draft → completed is not allowed (must go through active)
+    bad = patch("completed", plan["row_version"])
+    assert bad.status_code == 422
+    assert bad.json()["code"] == "invalid_transition"
+    # draft → active
+    active = patch("active", plan["row_version"])
+    assert active.status_code == 200
+    assert active.json()["status"] == "active"
+    assert set(active.json()["allowed_transitions"]) == {"draft", "completed"}
+    # active → completed
+    done = patch("completed", active.json()["row_version"])
+    assert done.status_code == 200
+    assert done.json()["status"] == "completed"
+    # completed → active (step back)
+    back = patch("active", done.json()["row_version"])
+    assert back.status_code == 200
+    assert back.json()["status"] == "active"
+    # cannot set archived via PATCH (use the archive action)
+    arch = patch("archived", back.json()["row_version"])
+    assert arch.status_code == 422
+    assert arch.json()["code"] == "invalid_transition"
+
+
 # -- TCMS-051: add cases with exclusions report (FR-PLN-002, BR-13) -------------------------------
 
 

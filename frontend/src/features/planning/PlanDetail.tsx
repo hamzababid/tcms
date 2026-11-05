@@ -10,8 +10,24 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import type { ColumnDef } from "@tanstack/react-table";
 
-import { useArchivePlan, useClonePlan, usePlan, usePlanCases, type PlanCaseItem } from "./api";
+import {
+  useArchivePlan,
+  useClonePlan,
+  usePlan,
+  usePlanCases,
+  useSetPlanStatus,
+  type PlanCaseItem,
+  type PlanStatus,
+} from "./api";
 import { PLAN_STATUS_LABEL, PLAN_TYPE_LABEL } from "./labels";
+
+/** Button label for moving a plan into each target status (docs/02 §6.1). `archived` uses its own action. */
+const STATUS_ACTION_LABEL: Record<PlanStatus, string> = {
+  draft: "Reopen",
+  active: "Activate",
+  completed: "Mark completed",
+  archived: "Archive",
+};
 
 /** Plan detail with its case list and per-cycle results (US-074). */
 export function PlanDetail({
@@ -29,6 +45,7 @@ export function PlanDetail({
   const cases = usePlanCases(planId);
   const archive = useArchivePlan(project.id);
   const clone = useClonePlan(project.id);
+  const setStatus = useSetPlanStatus(project.id);
   const [confirmArchive, setConfirmArchive] = useState(false);
 
   if (plan.isPending)
@@ -84,6 +101,22 @@ export function PlanDetail({
       actions={
         canManage ? (
           <>
+            {p.allowed_transitions.map((target) => (
+              <Button
+                key={target}
+                variant={target === "completed" ? "primary" : "secondary"}
+                disabled={setStatus.isPending}
+                onClick={() => {
+                  void setStatus
+                    .mutateAsync({ planId: p.id, status: target, rowVersion: p.row_version })
+                    .then(() => {
+                      toast(`Plan ${PLAN_STATUS_LABEL[target].toLowerCase()}`);
+                    });
+                }}
+              >
+                {STATUS_ACTION_LABEL[target]}
+              </Button>
+            ))}
             <Button
               variant="secondary"
               onClick={() => {

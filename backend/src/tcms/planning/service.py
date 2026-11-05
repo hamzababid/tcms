@@ -19,7 +19,7 @@ from tcms.core.errors import FieldError, NotFound, ValidationFailed
 from tcms.core.uow import UnitOfWork
 from tcms.planning import repository as repo
 from tcms.planning import rules
-from tcms.planning.errors import PlanArchived
+from tcms.planning.errors import InvalidTransition, PlanArchived
 from tcms.planning.models import TestPlan
 from tcms.requirements import queries as requirement_queries
 from tcms.testdesign import queries as testdesign_queries
@@ -229,7 +229,18 @@ def update_plan(
         if fields["release_id"] != plan.release_id:
             changes["release_id"] = [str(plan.release_id), str(fields["release_id"])]
             plan.release_id = fields["release_id"]
-    for name in ("type", "status", "owner_id", "start_date", "end_date", "member_ids"):
+    if "status" in fields and fields["status"] is not None and fields["status"] != plan.status:
+        target = PlanStatus(fields["status"])
+        if target == PlanStatus.archived:
+            raise InvalidTransition("Use the archive action to archive a plan")
+        if not rules.plan_transition_allowed(plan.status, target):
+            allowed = ", ".join(sorted(s.value for s in rules.allowed_plan_targets(plan.status))) or "none"
+            raise InvalidTransition(
+                f"Cannot move from {plan.status.value} to {target.value} (allowed: {allowed})"
+            )
+        changes["status"] = [plan.status.value, target.value]
+        plan.status = target
+    for name in ("type", "owner_id", "start_date", "end_date", "member_ids"):
         if name in fields and fields[name] is not None and getattr(plan, name) != fields[name]:
             changes[name] = [str(getattr(plan, name)), str(fields[name])]
             setattr(plan, name, fields[name])

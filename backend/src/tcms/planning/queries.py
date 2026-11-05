@@ -15,6 +15,7 @@ from tcms.core.context import AccessContext
 from tcms.core.enums import PlanStatus, PlanType
 from tcms.core.pagination import FilterField, PageParams, paginate, parse_filters, parse_sort
 from tcms.planning import repository as repo
+from tcms.planning import rules
 from tcms.planning.models import TestPlan, TestPlanCase
 
 PLAN_FILTERS: Mapping[str, FilterField] = {
@@ -55,6 +56,7 @@ class PlanSummary:
     end_date: date | None
     case_count: int
     requirement_count: int
+    allowed_transitions: list[str]
     archived: bool
     created_at: datetime
     updated_at: datetime
@@ -84,6 +86,7 @@ def _summary(s: Session, p: TestPlan) -> PlanSummary:
         end_date=p.end_date,
         case_count=_count_cases(s, p.id),
         requirement_count=len(repo.requirement_ids(s, p.id)),
+        allowed_transitions=sorted(t.value for t in rules.allowed_plan_targets(p.status)),
         archived=p.archived_at is not None,
         created_at=p.created_at,
         updated_at=p.updated_at,

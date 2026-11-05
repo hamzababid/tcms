@@ -111,6 +111,24 @@ export function useArchivePlan(pid: string) {
   });
 }
 
+export function useSetPlanStatus(pid: string) {
+  const invalidate = useInvalidatePlans();
+  return useMutation({
+    mutationFn: async (args: { planId: string; status: PlanStatus; rowVersion: number }) =>
+      must(
+        (
+          await api.PATCH("/api/v1/test-plans/{plan_id}", {
+            params: { path: { plan_id: args.planId } },
+            body: { status: args.status, row_version: args.rowVersion },
+          })
+        ).data,
+      ),
+    onSuccess: (_d, args) => {
+      invalidate(pid, args.planId);
+    },
+  });
+}
+
 export function useClonePlan(pid: string) {
   const invalidate = useInvalidatePlans();
   return useMutation({
