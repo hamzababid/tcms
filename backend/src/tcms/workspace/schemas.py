@@ -100,6 +100,10 @@ class ProjectPatch(_Model):
 
 class ArchiveRequest(_Model):
     confirm_key: str = Field(min_length=1, max_length=20)
+    close_open_cycles: bool = Field(
+        default=False,
+        description="Close planned/active cycles first (docs/02 §4.2); otherwise 409 lists them",
+    )
 
 
 class EnvironmentRead(BaseModel):

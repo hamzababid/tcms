@@ -450,9 +450,11 @@ class CaseRef:
 
     id: UUID
     key: str
+    key_num: int
     title: str
     folder_id: UUID
     status: str
+    priority: str
     latest_version_id: UUID | None
     approved_version_id: UUID | None
 
@@ -461,12 +463,98 @@ def _case_ref(c: TestCase) -> CaseRef:
     return CaseRef(
         c.id,
         c.key,
+        c.key_num,
         c.title,
         c.folder_id,
         c.status.value,
+        c.priority.value,
         c.latest_version_id,
         c.approved_version_id,
     )
+
+
+PRIORITY_RANK: dict[str, int] = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+
+
+def case_columns(ctx: AccessContext) -> Any:
+    """A project-scoped subquery of case columns other modules may join to (read-only interface,
+    docs/03 §5.2): `id, key, key_num, title, priority, priority_rank, folder_id, status`."""
+    from sqlalchemy import case as sql_case
+
+    rank = sql_case(
+        *((TestCase.priority == p, r) for p, r in PRIORITY_RANK.items()), else_=len(PRIORITY_RANK)
+    )
+    return (
+        select(
+            TestCase.id.label("id"),
+            TestCase.key.label("key"),
+            TestCase.key_num.label("key_num"),
+            TestCase.title.label("title"),
+            TestCase.priority.label("priority"),
+            rank.label("priority_rank"),
+            TestCase.folder_id.label("folder_id"),
+            TestCase.status.label("status"),
+        )
+        .where(TestCase.organization_id == ctx.principal.organization_id, TestCase.project_id == ctx.pid)
+        .subquery("case_cols")
+    )
+
+
+def folder_order(s: Session, ctx: AccessContext) -> dict[UUID, int]:
+    """Folder id → index in tree order (depth first, siblings by position, then name; docs/02 §7.1)."""
+    folders = repo.folders(s, ctx)
+    children: dict[UUID | None, list[Folder]] = {}
+    for f in folders:
+        children.setdefault(f.parent_id, []).append(f)
+    for lst in children.values():
+        lst.sort(key=lambda f: (f.position, f.name.lower()))
+    order: dict[UUID, int] = {}
+
+    def walk(parent: UUID | None) -> None:
+        for f in children.get(parent, []):
+            order[f.id] = len(order)
+            walk(f.id)
+
+    walk(None)
+    return order
+
+
+def folder_names(s: Session, ctx: AccessContext, folder_ids: list[UUID]) -> dict[UUID, str]:
+    if not folder_ids:
+        return {}
+    rows = s.execute(
+        select(Folder.id, Folder.name).where(
+            Folder.organization_id == ctx.principal.organization_id,
+            Folder.project_id == ctx.pid,
+            Folder.id.in_(folder_ids),
+        )
+    ).all()
+    return {i: n for i, n in rows}
+
+
+def subtree_folder_ids(s: Session, ctx: AccessContext, folder_id: UUID) -> list[UUID]:
+    """The folder and all of its descendants."""
+    return repo.folder_ids_under(s, ctx, folder_id) or [folder_id]
+
+
+def tagged_case_ids_stmt(ctx: AccessContext, tag_names: list[str]) -> Any:
+    """Subselect of case ids carrying any of the tags (for joins in other modules)."""
+    names = [t.strip().lower() for t in tag_names if t.strip()]
+    return (
+        select(TestCaseTag.test_case_id)
+        .join(Tag, Tag.id == TestCaseTag.tag_id)
+        .where(Tag.project_id == ctx.pid, Tag.name.in_(names))
+    )
+
+
+def search_case_ids_stmt(s: Session, ctx: AccessContext, q: str) -> Any:
+    """Subselect of case ids matching a key (`SPARK-TC-12`, `TC-12`, `12`) or text, like the case list."""
+    stmt = repo.case_list_stmt(ctx).with_only_columns(TestCase.id)
+    m = KEY_RE.match(q.strip())
+    if m and (m.group(1) is None or m.group(1).upper() == _project_key(s, ctx)):
+        return stmt.where(TestCase.key_num == int(m.group(2)))
+    ts = func.plainto_tsquery("simple", q)
+    return stmt.where(or_(TestCase.search_vector.op("@@")(ts), TestCase.title.icontains(q, autoescape=True)))
 
 
 def case_refs(s: Session, ctx: AccessContext, ids: list[UUID]) -> dict[UUID, CaseRef]:
@@ -524,3 +612,9 @@ def case_ids_with_tags(s: Session, ctx: AccessContext, tag_names: list[str]) -> 
         .order_by(TestCase.key_num)
     )
     return list(s.execute(stmt).scalars())
+
+
+def version_view_by_id(s: Session, ctx: AccessContext, version_id: UUID) -> VersionView | None:
+    """A specific (e.g. pinned) version's content, scoped to the project."""
+    v = repo.version(s, ctx, version_id)
+    return version_view(s, v) if v else None

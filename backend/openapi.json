@@ -465,6 +465,12 @@
       "ArchiveRequest": {
         "additionalProperties": false,
         "properties": {
+          "close_open_cycles": {
+            "default": false,
+            "description": "Close planned/active cycles first (docs/02 \u00a74.2); otherwise 409 lists them",
+            "title": "Close Open Cycles",
+            "type": "boolean"
+          },
           "confirm_key": {
             "maxLength": 20,
             "minLength": 1,
@@ -480,6 +486,7 @@
       },
       "AssignRequest": {
         "additionalProperties": false,
+        "description": "docs/06 \u00a74.6: `{run_ids? | filter?, assignee_id | null}`; `filter` takes the runs-list filters.",
         "properties": {
           "assignee_id": {
             "anyOf": [
@@ -493,52 +500,38 @@
             ],
             "title": "Assignee Id"
           },
-          "run_ids": {
-            "items": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "minItems": 1,
-            "title": "Run Ids",
-            "type": "array"
-          }
-        },
-        "required": [
-          "run_ids"
-        ],
-        "title": "AssignRequest",
-        "type": "object"
-      },
-      "AssigneeProgress": {
-        "properties": {
-          "assignee": {
+          "filter": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/UserRef"
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Filter"
           },
-          "by_status": {
-            "additionalProperties": {
-              "type": "integer"
-            },
-            "title": "By Status",
-            "type": "object"
-          },
-          "total": {
-            "title": "Total",
-            "type": "integer"
+          "run_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 5000,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Ids"
           }
         },
-        "required": [
-          "assignee",
-          "by_status",
-          "total"
-        ],
-        "title": "AssigneeProgress",
+        "title": "AssignRequest",
         "type": "object"
       },
       "AttachmentRead": {
@@ -601,6 +594,90 @@
           "url"
         ],
         "title": "AttachmentRead",
+        "type": "object"
+      },
+      "AttemptRead": {
+        "properties": {
+          "attempt_no": {
+            "title": "Attempt No",
+            "type": "integer"
+          },
+          "corrects_result_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corrects Result Id"
+          },
+          "executed_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "skipped_steps": {
+            "title": "Skipped Steps",
+            "type": "integer"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "required": [
+          "id",
+          "attempt_no",
+          "state",
+          "status",
+          "executed_by",
+          "started_at",
+          "finished_at",
+          "skipped_steps",
+          "corrects_result_id"
+        ],
+        "title": "AttemptRead",
         "type": "object"
       },
       "AutomationStatus": {
@@ -1884,19 +1961,14 @@
         "type": "object"
       },
       "CycleCreateResponse": {
+        "description": "docs/06 \u00a74.6: `201 {cycle, added, skipped[]}`, or `202` while runs are created in the background.",
         "properties": {
           "added": {
             "title": "Added",
             "type": "integer"
           },
-          "cycle_id": {
-            "format": "uuid",
-            "title": "Cycle Id",
-            "type": "string"
-          },
-          "key": {
-            "title": "Key",
-            "type": "string"
+          "cycle": {
+            "$ref": "#/components/schemas/CycleRead"
           },
           "runs_pending": {
             "title": "Runs Pending",
@@ -1911,8 +1983,7 @@
           }
         },
         "required": [
-          "cycle_id",
-          "key",
+          "cycle",
           "added",
           "skipped",
           "runs_pending"
@@ -1922,6 +1993,21 @@
       },
       "CycleListItem": {
         "properties": {
+          "archived": {
+            "title": "Archived",
+            "type": "boolean"
+          },
+          "build": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Build"
+          },
           "due_date": {
             "anyOf": [
               {
@@ -1934,10 +2020,8 @@
             ],
             "title": "Due Date"
           },
-          "environment_id": {
-            "format": "uuid",
-            "title": "Environment Id",
-            "type": "string"
+          "environment": {
+            "$ref": "#/components/schemas/Ref"
           },
           "id": {
             "format": "uuid",
@@ -1952,39 +2036,61 @@
             "title": "Name",
             "type": "string"
           },
-          "plan_id": {
+          "owner": {
             "anyOf": [
               {
-                "format": "uuid",
-                "type": "string"
+                "$ref": "#/components/schemas/UserRef"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Plan Id"
+            ]
           },
-          "release_id": {
+          "plan": {
             "anyOf": [
               {
-                "format": "uuid",
-                "type": "string"
+                "$ref": "#/components/schemas/KeyRef"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Release Id"
+            ]
+          },
+          "release": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Ref"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "row_version": {
             "title": "Row Version",
             "type": "integer"
           },
+          "runs_pending": {
+            "title": "Runs Pending",
+            "type": "boolean"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
           "status": {
             "$ref": "#/components/schemas/CycleStatus"
           },
           "summary": {
-            "$ref": "#/components/schemas/CycleSummary"
+            "$ref": "#/components/schemas/ExecutionSummaryRead"
           },
           "updated_at": {
             "format": "date-time",
@@ -1997,11 +2103,16 @@
           "key",
           "name",
           "status",
-          "release_id",
-          "plan_id",
-          "environment_id",
+          "release",
+          "plan",
+          "environment",
+          "build",
+          "start_date",
           "due_date",
+          "owner",
+          "runs_pending",
           "summary",
+          "archived",
           "updated_at",
           "row_version"
         ],
@@ -2072,6 +2183,18 @@
             ],
             "title": "Name"
           },
+          "release_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Id"
+          },
           "row_version": {
             "anyOf": [
               {
@@ -2100,6 +2223,7 @@
         "type": "object"
       },
       "CycleRead": {
+        "description": "docs/06 \u00a75.3 plus progress by assignee and folder (FR-EXE-013).",
         "properties": {
           "archived": {
             "title": "Archived",
@@ -2115,6 +2239,28 @@
               }
             ],
             "title": "Build"
+          },
+          "closed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          },
+          "closed_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "created_at": {
             "format": "date-time",
@@ -2144,10 +2290,8 @@
             ],
             "title": "Due Date"
           },
-          "environment_id": {
-            "format": "uuid",
-            "title": "Environment Id",
-            "type": "string"
+          "environment": {
+            "$ref": "#/components/schemas/Ref"
           },
           "id": {
             "format": "uuid",
@@ -2172,23 +2316,28 @@
               }
             ]
           },
-          "plan_id": {
+          "plan": {
             "anyOf": [
               {
-                "format": "uuid",
-                "type": "string"
+                "$ref": "#/components/schemas/KeyRef"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Plan Id"
+            ]
           },
           "progress_by_assignee": {
             "items": {
-              "$ref": "#/components/schemas/AssigneeProgress"
+              "$ref": "#/components/schemas/GroupProgress"
             },
             "title": "Progress By Assignee",
+            "type": "array"
+          },
+          "progress_by_folder": {
+            "items": {
+              "$ref": "#/components/schemas/GroupProgress"
+            },
+            "title": "Progress By Folder",
             "type": "array"
           },
           "project_id": {
@@ -2196,17 +2345,15 @@
             "title": "Project Id",
             "type": "string"
           },
-          "release_id": {
+          "release": {
             "anyOf": [
               {
-                "format": "uuid",
-                "type": "string"
+                "$ref": "#/components/schemas/Ref"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Release Id"
+            ]
           },
           "row_version": {
             "title": "Row Version",
@@ -2228,11 +2375,27 @@
             ],
             "title": "Start Date"
           },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
           "status": {
             "$ref": "#/components/schemas/CycleStatus"
           },
           "summary": {
-            "$ref": "#/components/schemas/CycleSummary"
+            "$ref": "#/components/schemas/ExecutionSummaryRead"
+          },
+          "superseded_runs": {
+            "title": "Superseded Runs",
+            "type": "integer"
           },
           "updated_at": {
             "format": "date-time",
@@ -2246,17 +2409,22 @@
           "project_id",
           "name",
           "description",
-          "release_id",
-          "plan_id",
-          "environment_id",
-          "build",
           "status",
+          "release",
+          "plan",
+          "environment",
+          "build",
           "start_date",
           "due_date",
           "owner",
           "runs_pending",
           "summary",
+          "superseded_runs",
           "progress_by_assignee",
+          "progress_by_folder",
+          "started_at",
+          "closed_at",
+          "closed_by",
           "archived",
           "created_at",
           "updated_at",
@@ -2273,28 +2441,6 @@
         ],
         "title": "CycleStatus",
         "type": "string"
-      },
-      "CycleSummary": {
-        "description": "Counts by run status over non-superseded runs.",
-        "properties": {
-          "by_status": {
-            "additionalProperties": {
-              "type": "integer"
-            },
-            "title": "By Status",
-            "type": "object"
-          },
-          "total": {
-            "title": "Total",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "total",
-          "by_status"
-        ],
-        "title": "CycleSummary",
-        "type": "object"
       },
       "DesignTechnique": {
         "enum": [
@@ -2544,32 +2690,168 @@
         "title": "ExecutionRead",
         "type": "object"
       },
-      "ExitRule": {
-        "additionalProperties": true,
-        "description": "A structured readiness rule (docs/02 \u00a711.4); evaluated in M7. Stored verbatim in exit_rules.",
+      "ExecutionSummaryRead": {
+        "description": "docs/06 \u00a75.7; rates are null when the denominator is 0 (BR-24).",
         "properties": {
-          "metric": {
-            "maxLength": 100,
-            "minLength": 1,
-            "title": "Metric",
-            "type": "string"
+          "applicable": {
+            "title": "Applicable",
+            "type": "integer"
           },
-          "operator": {
-            "pattern": "^(gte|lte|gt|lt|eq)$",
-            "title": "Operator",
-            "type": "string"
+          "blocked": {
+            "title": "Blocked",
+            "type": "integer"
           },
-          "threshold": {
-            "title": "Threshold",
-            "type": "number"
+          "blocked_rate": {
+            "$ref": "#/components/schemas/RateRead"
+          },
+          "executed": {
+            "title": "Executed",
+            "type": "integer"
+          },
+          "execution_progress": {
+            "$ref": "#/components/schemas/RateRead"
+          },
+          "failed": {
+            "title": "Failed",
+            "type": "integer"
+          },
+          "failure_rate": {
+            "$ref": "#/components/schemas/RateRead"
+          },
+          "in_progress": {
+            "title": "In Progress",
+            "type": "integer"
+          },
+          "needs_retest": {
+            "title": "Needs Retest",
+            "type": "integer"
+          },
+          "not_applicable": {
+            "title": "Not Applicable",
+            "type": "integer"
+          },
+          "not_run": {
+            "title": "Not Run",
+            "type": "integer"
+          },
+          "pass_rate": {
+            "$ref": "#/components/schemas/RateRead"
+          },
+          "pass_rate_applicable": {
+            "$ref": "#/components/schemas/RateRead"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "integer"
+          },
+          "skipped": {
+            "title": "Skipped",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
           }
         },
         "required": [
-          "metric",
-          "operator",
+          "total",
+          "not_applicable",
+          "applicable",
+          "passed",
+          "failed",
+          "blocked",
+          "skipped",
+          "in_progress",
+          "not_run",
+          "executed",
+          "execution_progress",
+          "pass_rate",
+          "pass_rate_applicable",
+          "failure_rate",
+          "blocked_rate",
+          "needs_retest"
+        ],
+        "title": "ExecutionSummaryRead",
+        "type": "object"
+      },
+      "ExitRule": {
+        "additionalProperties": false,
+        "description": "A readiness rule (docs/02 \u00a711.4, docs/06 \u00a75.9 shape); evaluated in M7.\n\nPercentage rules take a fraction 0\u20131; `max_*` rules take a count.",
+        "properties": {
+          "params": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExitRuleParams"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "threshold": {
+            "minimum": 0.0,
+            "title": "Threshold",
+            "type": "number"
+          },
+          "type": {
+            "enum": [
+              "min_execution_progress",
+              "min_pass_rate",
+              "min_pass_rate_applicable",
+              "max_open_defects",
+              "max_blocked",
+              "min_requirement_coverage",
+              "min_requirements_verified",
+              "tag_fully_executed"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
           "threshold"
         ],
         "title": "ExitRule",
+        "type": "object"
+      },
+      "ExitRuleParams": {
+        "additionalProperties": false,
+        "properties": {
+          "severities": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "critical",
+                    "high",
+                    "medium",
+                    "low"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Severities"
+          },
+          "tag": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tag"
+          }
+        },
+        "title": "ExitRuleParams",
         "type": "object"
       },
       "FieldDiffRead": {
@@ -2860,6 +3142,37 @@
         "title": "ForgotPasswordRequest",
         "type": "object"
       },
+      "GroupProgress": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Assignee or folder id; null = unassigned",
+            "title": "Id"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/ExecutionSummaryRead"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "summary"
+        ],
+        "title": "GroupProgress",
+        "type": "object"
+      },
       "InvitationCreate": {
         "additionalProperties": false,
         "properties": {
@@ -3115,6 +3428,30 @@
           "expired"
         ],
         "title": "InvitationRead",
+        "type": "object"
+      },
+      "KeyRef": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "title"
+        ],
+        "title": "KeyRef",
         "type": "object"
       },
       "LifecycleRequest": {
@@ -3448,6 +3785,41 @@
           }
         },
         "title": "MfaVerifyRequest",
+        "type": "object"
+      },
+      "NewerVersionRead": {
+        "properties": {
+          "can_update": {
+            "title": "Can Update",
+            "type": "boolean"
+          },
+          "eligible": {
+            "title": "Eligible",
+            "type": "boolean"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "version_no": {
+            "title": "Version No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version_no",
+          "eligible",
+          "can_update",
+          "reason"
+        ],
+        "title": "NewerVersionRead",
         "type": "object"
       },
       "OrgMemberPatch": {
@@ -3882,11 +4254,11 @@
         "title": "Page[PlanListItem]",
         "type": "object"
       },
-      "Page_RunRead_": {
+      "Page_RunListItem_": {
         "properties": {
           "items": {
             "items": {
-              "$ref": "#/components/schemas/RunRead"
+              "$ref": "#/components/schemas/RunListItem"
             },
             "title": "Items",
             "type": "array"
@@ -3910,7 +4282,7 @@
           "page_size",
           "total"
         ],
-        "title": "Page[RunRead]",
+        "title": "Page[RunListItem]",
         "type": "object"
       },
       "PasswordChangeRequest": {
@@ -3978,12 +4350,21 @@
             "title": "Case Id",
             "type": "string"
           },
+          "folder_id": {
+            "format": "uuid",
+            "title": "Folder Id",
+            "type": "string"
+          },
           "key": {
             "title": "Key",
             "type": "string"
           },
+          "priority": {
+            "title": "Priority",
+            "type": "string"
+          },
           "results": {
-            "description": "Latest result per linked cycle (docs/02 \u00a76.2)",
+            "description": "Run status in each cycle created from the plan",
             "items": {
               "$ref": "#/components/schemas/PlanCaseResult"
             },
@@ -4004,6 +4385,8 @@
           "key",
           "title",
           "status",
+          "priority",
+          "folder_id",
           "results"
         ],
         "title": "PlanCaseItem",
@@ -4203,11 +4586,71 @@
         "title": "PlanCreate",
         "type": "object"
       },
+      "PlanCycle": {
+        "description": "A cycle created from the plan (plan detail \u203a Cycles, docs/07 \u00a75.7).",
+        "properties": {
+          "executed": {
+            "title": "Executed",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CycleStatus"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "name",
+          "status",
+          "total",
+          "executed",
+          "passed"
+        ],
+        "title": "PlanCycle",
+        "type": "object"
+      },
       "PlanListItem": {
         "properties": {
+          "archived": {
+            "title": "Archived",
+            "type": "boolean"
+          },
           "case_count": {
             "title": "Case Count",
             "type": "integer"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
           },
           "id": {
             "format": "uuid",
@@ -4248,6 +4691,18 @@
             "title": "Row Version",
             "type": "integer"
           },
+          "start_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
           "status": {
             "$ref": "#/components/schemas/PlanStatus"
           },
@@ -4269,6 +4724,9 @@
           "release_id",
           "owner",
           "case_count",
+          "start_date",
+          "end_date",
+          "archived",
           "updated_at",
           "row_version"
         ],
@@ -4533,10 +4991,39 @@
             "title": "Case Count",
             "type": "integer"
           },
+          "case_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Case Ids"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
             "type": "string"
+          },
+          "cycles": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PlanCycle"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cycles"
           },
           "end_date": {
             "anyOf": [
@@ -4650,6 +5137,21 @@
           "requirement_count": {
             "title": "Requirement Count",
             "type": "integer"
+          },
+          "requirement_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requirement Ids"
           },
           "risks": {
             "items": {
@@ -5263,6 +5765,36 @@
         "title": "ProjectStatus",
         "type": "string"
       },
+      "RateRead": {
+        "properties": {
+          "denominator": {
+            "title": "Denominator",
+            "type": "integer"
+          },
+          "numerator": {
+            "title": "Numerator",
+            "type": "integer"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "numerator",
+          "denominator",
+          "value"
+        ],
+        "title": "RateRead",
+        "type": "object"
+      },
       "ReadyStatus": {
         "properties": {
           "checks": {
@@ -5302,6 +5834,25 @@
           "recovery_codes"
         ],
         "title": "RecoveryCodesResponse",
+        "type": "object"
+      },
+      "Ref": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "Ref",
         "type": "object"
       },
       "ReleaseCreate": {
@@ -5541,7 +6092,6 @@
         "properties": {
           "reason": {
             "maxLength": 2000,
-            "minLength": 1,
             "title": "Reason",
             "type": "string"
           }
@@ -5554,8 +6104,9 @@
       },
       "ReorderRequest": {
         "additionalProperties": false,
+        "description": "docs/06 \u00a74.6: `{run_ids_in_order}` or `{sort_by: folder|priority}`.",
         "properties": {
-          "ordered_run_ids": {
+          "run_ids_in_order": {
             "anyOf": [
               {
                 "items": {
@@ -5568,12 +6119,15 @@
                 "type": "null"
               }
             ],
-            "title": "Ordered Run Ids"
+            "title": "Run Ids In Order"
           },
           "sort_by": {
             "anyOf": [
               {
-                "pattern": "^(folder|priority)$",
+                "enum": [
+                  "folder",
+                  "priority"
+                ],
                 "type": "string"
               },
               {
@@ -5651,7 +6205,11 @@
       "ResolveRead": {
         "properties": {
           "entity_type": {
-            "const": "test_case",
+            "enum": [
+              "test_case",
+              "test_plan",
+              "test_cycle"
+            ],
             "title": "Entity Type",
             "type": "string"
           },
@@ -5806,6 +6364,122 @@
         "title": "RoleRead",
         "type": "object"
       },
+      "RunCase": {
+        "properties": {
+          "folder_id": {
+            "format": "uuid",
+            "title": "Folder Id",
+            "type": "string"
+          },
+          "folder_name": {
+            "title": "Folder Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "priority": {
+            "title": "Priority",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "title",
+          "priority",
+          "folder_id",
+          "folder_name"
+        ],
+        "title": "RunCase",
+        "type": "object"
+      },
+      "RunCaseDetail": {
+        "properties": {
+          "folder_id": {
+            "format": "uuid",
+            "title": "Folder Id",
+            "type": "string"
+          },
+          "folder_name": {
+            "title": "Folder Name",
+            "type": "string"
+          },
+          "folder_path": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Folder Path",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "priority": {
+            "title": "Priority",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "title",
+          "priority",
+          "folder_id",
+          "folder_name",
+          "folder_path"
+        ],
+        "title": "RunCaseDetail",
+        "type": "object"
+      },
+      "RunCycleRef": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CycleStatus"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "name",
+          "status"
+        ],
+        "title": "RunCycleRef",
+        "type": "object"
+      },
       "RunIdsRequest": {
         "additionalProperties": false,
         "properties": {
@@ -5814,6 +6488,7 @@
               "format": "uuid",
               "type": "string"
             },
+            "maxItems": 5000,
             "minItems": 1,
             "title": "Run Ids",
             "type": "array"
@@ -5825,7 +6500,7 @@
         "title": "RunIdsRequest",
         "type": "object"
       },
-      "RunRead": {
+      "RunListItem": {
         "properties": {
           "assignee": {
             "anyOf": [
@@ -5837,10 +6512,6 @@
               }
             ]
           },
-          "case_key": {
-            "title": "Case Key",
-            "type": "string"
-          },
           "cycle_id": {
             "format": "uuid",
             "title": "Cycle Id",
@@ -5851,13 +6522,25 @@
             "title": "Id",
             "type": "string"
           },
-          "latest_version_no": {
-            "title": "Latest Version No",
-            "type": "integer"
-          },
           "needs_retest": {
             "title": "Needs Retest",
             "type": "boolean"
+          },
+          "newer_version_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Set when a newer eligible version exists ('v3\u2191')",
+            "title": "Newer Version No"
+          },
+          "pinned_version_no": {
+            "title": "Pinned Version No",
+            "type": "integer"
           },
           "position": {
             "title": "Position",
@@ -5874,33 +6557,149 @@
             "title": "Superseded",
             "type": "boolean"
           },
-          "test_case_id": {
-            "format": "uuid",
-            "title": "Test Case Id",
-            "type": "string"
+          "test_case": {
+            "$ref": "#/components/schemas/RunCase"
           },
-          "title": {
-            "title": "Title",
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
             "type": "string"
-          },
-          "version_no": {
-            "title": "Version No",
-            "type": "integer"
           }
         },
         "required": [
           "id",
           "cycle_id",
-          "test_case_id",
-          "case_key",
-          "title",
-          "version_no",
-          "latest_version_no",
           "position",
+          "test_case",
+          "pinned_version_no",
+          "newer_version_no",
           "assignee",
           "status",
           "needs_retest",
           "superseded",
+          "updated_at",
+          "row_version"
+        ],
+        "title": "RunListItem",
+        "type": "object"
+      },
+      "RunRead": {
+        "description": "docs/06 \u00a75.4. `version`, `draft` and `history` are filled when requested with `include=`; linked\ndefects arrive with M5.",
+        "properties": {
+          "assignee": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cycle": {
+            "$ref": "#/components/schemas/RunCycleRef"
+          },
+          "draft": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AttemptRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "has_attempts": {
+            "title": "Has Attempts",
+            "type": "boolean"
+          },
+          "history": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/AttemptRead"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "History"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "needs_retest": {
+            "title": "Needs Retest",
+            "type": "boolean"
+          },
+          "newer_version": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NewerVersionRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pinned_version_no": {
+            "title": "Pinned Version No",
+            "type": "integer"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "row_version": {
+            "title": "Row Version",
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RunStatus"
+          },
+          "superseded_by_run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Superseded By Run Id"
+          },
+          "test_case": {
+            "$ref": "#/components/schemas/RunCaseDetail"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VersionRead"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The pinned version (include=version)"
+          }
+        },
+        "required": [
+          "id",
+          "cycle",
+          "position",
+          "test_case",
+          "pinned_version_no",
+          "newer_version",
+          "assignee",
+          "status",
+          "needs_retest",
+          "superseded_by_run_id",
+          "has_attempts",
           "row_version"
         ],
         "title": "RunRead",
@@ -5944,6 +6743,7 @@
               "format": "uuid",
               "type": "string"
             },
+            "maxItems": 5000,
             "title": "Case Ids",
             "type": "array"
           },
@@ -5962,6 +6762,12 @@
           },
           "priorities": {
             "items": {
+              "enum": [
+                "critical",
+                "high",
+                "medium",
+                "low"
+              ],
               "type": "string"
             },
             "title": "Priorities",
@@ -6611,6 +7417,7 @@
               "format": "uuid",
               "type": "string"
             },
+            "maxItems": 5000,
             "title": "Case Ids",
             "type": "array"
           },
@@ -6646,7 +7453,12 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/RunStatus"
+                  "enum": [
+                    "failed",
+                    "blocked",
+                    "not_run"
+                  ],
+                  "type": "string"
                 },
                 "type": "array"
               },
@@ -8202,7 +9014,7 @@
     },
     "/api/v1/cycles/{cycle_id}": {
       "get": {
-        "description": "US-083 / FR-EXE-013: cycle with summary and progress by assignee.",
+        "description": "US-083 / FR-EXE-013: cycle, ExecutionSummary and progress by assignee and folder.",
         "operationId": "get_cycle_api_v1_cycles__cycle_id__get",
         "parameters": [
           {
@@ -8451,6 +9263,16 @@
             },
             "description": "Successful Response"
           },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CycleCreateResponse"
+                }
+              }
+            },
+            "description": "Runs are created in the background"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -8490,7 +9312,7 @@
     },
     "/api/v1/cycles/{cycle_id}/close": {
       "post": {
-        "description": "US-084 (TCMS-058): 409 draft_exists lists drafts unless discard_drafts.",
+        "description": "US-084 (TCMS-058): `409 draft_exists` lists the drafts unless `discard_drafts`.",
         "operationId": "close_cycle_api_v1_cycles__cycle_id__close_post",
         "parameters": [
           {
@@ -8638,7 +9460,7 @@
     },
     "/api/v1/cycles/{cycle_id}/runs": {
       "delete": {
-        "description": "US-081: only not_run runs without attempts (409 run_has_results).",
+        "description": "US-081 (TCMS-057): only not-run runs without attempts (409 run_has_results).",
         "operationId": "remove_runs_api_v1_cycles__cycle_id__runs_delete",
         "parameters": [
           {
@@ -8710,7 +9532,7 @@
         ]
       },
       "get": {
-        "description": "US-083 / FR-EXE-013: filters per docs/06 \u00a74.6.",
+        "description": "US-083 / FR-EXE-013: filters and sorts of docs/06 \u00a74.6.",
         "operationId": "list_runs_api_v1_cycles__cycle_id__runs_get",
         "parameters": [
           {
@@ -8764,6 +9586,23 @@
           },
           {
             "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
             "name": "status",
             "required": false,
             "schema": {
@@ -8792,6 +9631,55 @@
                 }
               ],
               "title": "Assignee Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "folder_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Folder Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "priority",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Priority"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tag",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tag"
             }
           },
           {
@@ -8826,7 +9714,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Page_RunRead_"
+                  "$ref": "#/components/schemas/Page_RunListItem_"
                 }
               }
             },
@@ -8869,7 +9757,7 @@
         ]
       },
       "post": {
-        "description": "US-081 / FR-EXE-003 (TCMS-057).",
+        "description": "US-081 / FR-EXE-003.",
         "operationId": "add_runs_api_v1_cycles__cycle_id__runs_post",
         "parameters": [
           {
@@ -8943,7 +9831,7 @@
     },
     "/api/v1/cycles/{cycle_id}/runs/assign": {
       "post": {
-        "description": "US-082 / FR-EXE-004 (TCMS-055).",
+        "description": "US-082 / FR-EXE-004 (TCMS-055): selected runs or every run matching `filter`.",
         "operationId": "assign_runs_api_v1_cycles__cycle_id__runs_assign_post",
         "parameters": [
           {
@@ -9091,7 +9979,7 @@
     },
     "/api/v1/cycles/{cycle_id}/runs/update-versions": {
       "post": {
-        "description": "US-086 bulk: update all not-run runs to the latest eligible version (BR-04).",
+        "description": "US-086 bulk: every not-run run moves to its eligible version (BR-04).",
         "operationId": "update_not_run_versions_api_v1_cycles__cycle_id__runs_update_versions_post",
         "parameters": [
           {
@@ -11555,7 +12443,7 @@
     },
     "/api/v1/projects/{project_id}/archive": {
       "post": {
-        "description": "US-029 / AC-WS-02.",
+        "description": "US-029 / AC-WS-02. All cycles must be closed first, or closed here with `close_open_cycles`\n(docs/02 \u00a74.2, review K17k).",
         "operationId": "archive_project_api_v1_projects__project_id__archive_post",
         "parameters": [
           {
@@ -11629,7 +12517,7 @@
     },
     "/api/v1/projects/{project_id}/cycles": {
       "get": {
-        "description": "US-080 / FR-EXE-001.",
+        "description": "US-080 / FR-EXE-001: each item has its ExecutionSummary.",
         "operationId": "list_cycles_api_v1_projects__project_id__cycles_get",
         "parameters": [
           {
@@ -11781,6 +12669,16 @@
               ],
               "title": "Owner Id"
             }
+          },
+          {
+            "in": "query",
+            "name": "include_archived",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Archived",
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -11831,7 +12729,7 @@
         ]
       },
       "post": {
-        "description": "US-080 / FR-EXE-001/002, BR-03 (AC-PLN-01, TCMS-052/054).",
+        "description": "US-080 / FR-EXE-001/002, BR-03 (AC-PLN-01, TCMS-052/054, TCMS-025b).",
         "operationId": "create_cycle_api_v1_projects__project_id__cycles_post",
         "parameters": [
           {
@@ -11856,7 +12754,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -11865,6 +12763,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CycleCreateResponse"
+                }
+              }
+            },
+            "description": "Runs are created in the background"
           },
           "422": {
             "content": {
@@ -12695,7 +13603,7 @@
     },
     "/api/v1/projects/{project_id}/resolve": {
       "get": {
-        "description": "`SPARK-TC-12`, `TC-12` or `12` \u2192 the case (more entity types arrive with their milestones).",
+        "description": "`SPARK-TC-12`, `TC-12`, `12` \u2192 case; `SPARK-PL-3` / `PL-3` \u2192 plan; `SPARK-CY-1` / `CY-1` \u2192 cycle\n(docs/04 \u00a711.1). A bare number is a test case. More entity types arrive with their milestones.",
         "operationId": "resolve_api_v1_projects__project_id__resolve_get",
         "parameters": [
           {
@@ -13433,7 +14341,7 @@
     },
     "/api/v1/projects/{project_id}/test-plans": {
       "get": {
-        "description": "US-070 / FR-PLN-001.",
+        "description": "US-070 / FR-PLN-001: filters status, type, release_id, owner_id, q.",
         "operationId": "list_plans_api_v1_projects__project_id__test_plans_get",
         "parameters": [
           {
@@ -13567,6 +14475,16 @@
               ],
               "title": "Owner Id"
             }
+          },
+          {
+            "in": "query",
+            "name": "include_archived",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Archived",
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -13617,7 +14535,7 @@
         ]
       },
       "post": {
-        "description": "US-070 / FR-PLN-001 (TCMS-050).",
+        "description": "US-070 / FR-PLN-001/005 (TCMS-050).",
         "operationId": "create_plan_api_v1_projects__project_id__test_plans_post",
         "parameters": [
           {
@@ -13840,6 +14758,87 @@
         ]
       }
     },
+    "/api/v1/runs/{run_id}": {
+      "get": {
+        "description": "docs/06 \u00a74.6 / \u00a75.4: run, case summary, pinned version, newer version info, attempts.",
+        "operationId": "get_run_api_v1_runs__run_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Include"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Get Run",
+        "tags": [
+          "cycles"
+        ]
+      }
+    },
     "/api/v1/runs/{run_id}/claim": {
       "post": {
         "description": "US-082 / FR-EXE-004 (TCMS-056).",
@@ -13906,7 +14905,7 @@
     },
     "/api/v1/runs/{run_id}/replace": {
       "post": {
-        "description": "US-086 / BR-05.",
+        "description": "US-086 / BR-05: returns the new run.",
         "operationId": "replace_run_api_v1_runs__run_id__replace_post",
         "parameters": [
           {
@@ -15637,6 +16636,7 @@
     },
     "/api/v1/test-plans/{plan_id}": {
       "get": {
+        "description": "`?include=cases,requirements,cycles` (docs/06 \u00a74.5).",
         "operationId": "get_plan_api_v1_test_plans__plan_id__get",
         "parameters": [
           {
@@ -15647,6 +16647,23 @@
               "format": "uuid",
               "title": "Plan Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Include"
             }
           }
         ],
@@ -15850,6 +16867,7 @@
     },
     "/api/v1/test-plans/{plan_id}/cases": {
       "delete": {
+        "description": "Removing cases does not change existing cycles (docs/02 \u00a76.2).",
         "operationId": "remove_cases_api_v1_test_plans__plan_id__cases_delete",
         "parameters": [
           {
@@ -15878,7 +16896,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AddCasesResponse"
+                  "$ref": "#/components/schemas/CountResponse"
                 }
               }
             },
@@ -15921,7 +16939,7 @@
         ]
       },
       "get": {
-        "description": "US-074 / docs/02 \u00a76.2: each case with its latest result in every linked cycle.",
+        "description": "US-074 / docs/02 \u00a76.2: each case with its status in every cycle created from the plan.",
         "operationId": "list_plan_cases_api_v1_test_plans__plan_id__cases_get",
         "parameters": [
           {
@@ -16006,7 +17024,7 @@
         ]
       },
       "post": {
-        "description": "FR-PLN-002 / BR-13 (TCMS-051).",
+        "description": "FR-PLN-002 / BR-13 (TCMS-051): `{added, skipped[]}`.",
         "operationId": "add_cases_api_v1_test_plans__plan_id__cases_post",
         "parameters": [
           {
@@ -16080,7 +17098,7 @@
     },
     "/api/v1/test-plans/{plan_id}/clone": {
       "post": {
-        "description": "US-073 / FR-PLN-006.",
+        "description": "US-073 / FR-PLN-006: everything except cycles; draft; \"Copy of \u2026\".",
         "operationId": "clone_plan_api_v1_test_plans__plan_id__clone_post",
         "parameters": [
           {
@@ -16182,7 +17200,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AddCasesResponse"
+                  "$ref": "#/components/schemas/CountResponse"
                 }
               }
             },
@@ -16225,7 +17243,7 @@
         ]
       },
       "post": {
-        "description": "FR-PLN-003.",
+        "description": "FR-PLN-003 (the requirements screens arrive in M6).",
         "operationId": "link_requirements_api_v1_test_plans__plan_id__requirements_post",
         "parameters": [
           {
@@ -16254,7 +17272,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AddCasesResponse"
+                  "$ref": "#/components/schemas/CountResponse"
                 }
               }
             },

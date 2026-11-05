@@ -1,4 +1,4 @@
-"""Cycles and runs (docs/06 §4.6)."""
+"""Cycles and runs (docs/06 §4.6, §5.3, §5.4)."""
 
 from __future__ import annotations
 
@@ -6,86 +6,147 @@ from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, Query, Request, Response, status
+from fastapi.responses import JSONResponse
 
-from tcms.api.deps import (
-    get_read_uow,
-    get_uow,
-    project_context,
-    project_context_from,
-    resolve_row_version,
-)
+from tcms.api.deps import get_read_uow, get_uow, project_context, project_context_from, resolve_row_version
 from tcms.api.idempotency import Idempotency, idempotency
+from tcms.api.v1.test_cases import version_read
 from tcms.core.context import AccessContext
-from tcms.core.errors import NotFound
+from tcms.core.errors import InvalidInclude, NotFound
 from tcms.core.pagination import Page, PageParams
 from tcms.core.uow import UnitOfWork
 from tcms.execution import queries as eq
 from tcms.execution import schemas as s
 from tcms.execution import service
+from tcms.execution.queries import TestCycle
 from tcms.execution.service import CycleData, Selection
 from tcms.identity import queries as identity_queries
 from tcms.identity.schemas import UserRef
+from tcms.planning import queries as planning_queries
+from tcms.reporting.metrics import ExecutionSummary
+from tcms.testdesign import queries as tq
+from tcms.workspace import queries as workspace_queries
 
 router = APIRouter(prefix="/api/v1", tags=["cycles"])
 
 CycleCtx = Depends(project_context_from("test_cycle", "cycle_id"))
 RunCtx = Depends(project_context_from("test_run", "run_id"))
+RUN_INCLUDES = frozenset({"version", "draft", "history"})
 
 
 def _etag(response: Response, rv: int) -> None:
     response.headers["ETag"] = f'"{rv}"'
 
 
-def _ref(uow: UnitOfWork, user_id: UUID | None) -> UserRef | None:
-    if user_id is None:
-        return None
-    found = identity_queries.user_refs(uow.session, {user_id})
-    v = found.get(user_id)
-    return UserRef(**vars(v)) if v else None
+def _users(uow: UnitOfWork, ids_: set[UUID | None]) -> dict[UUID, UserRef]:
+    found = identity_queries.user_refs(uow.session, {i for i in ids_ if i is not None})
+    return {k: UserRef(**vars(v)) for k, v in found.items()}
 
 
-def _summary(uow: UnitOfWork, ctx: AccessContext, cycle_id: UUID) -> s.CycleSummary:
-    data = eq.cycle_summary(uow.session, ctx, cycle_id)
-    return s.CycleSummary(total=data.total, by_status=data.by_status)
+def summary_read(counts: dict[str, int], needs_retest: int = 0) -> s.ExecutionSummaryRead:
+    """The only way cycle numbers are produced: reporting/metrics.py (CLAUDE.md rule 5)."""
+    m = ExecutionSummary.from_counts(counts, needs_retest=needs_retest)
+    return s.ExecutionSummaryRead.model_validate(m, from_attributes=True)
 
 
-def _cycle_read(uow: UnitOfWork, ctx: AccessContext, cycle_id: UUID) -> s.CycleRead:
-    c = eq.cycle(uow.session, ctx, cycle_id)
+class _Refs:
+    """Release / plan / environment names for a set of cycles (one query each)."""
+
+    def __init__(self, uow: UnitOfWork, ctx: AccessContext, cycles: list[TestCycle]) -> None:
+        org = ctx.principal.organization_id
+        self.releases = {r.id: r.name for r in workspace_queries.releases(uow.session, org, ctx.pid)}
+        self.envs = {
+            e.id: e.name
+            for e in workspace_queries.environments(uow.session, org, ctx.pid, include_archived=True)
+        }
+        self.plans: dict[UUID, s.KeyRef] = {}
+        for pid in {c.plan_id for c in cycles if c.plan_id}:
+            p = planning_queries.plan_detail(uow.session, ctx, pid)
+            if p:
+                self.plans[pid] = s.KeyRef(id=p.id, key=p.key, title=p.name)
+        people: set[UUID | None] = {c.owner_id for c in cycles}
+        people |= {c.closed_by for c in cycles}
+        self.users = _users(uow, people)
+
+    def release(self, c: TestCycle) -> s.Ref | None:
+        return s.Ref(id=c.release_id, name=self.releases.get(c.release_id, "—")) if c.release_id else None
+
+    def env(self, c: TestCycle) -> s.Ref:
+        return s.Ref(id=c.environment_id, name=self.envs.get(c.environment_id, "—"))
+
+    def plan(self, c: TestCycle) -> s.KeyRef | None:
+        return self.plans.get(c.plan_id) if c.plan_id else None
+
+
+def cycle_read(uow: UnitOfWork, ctx: AccessContext, cycle_id: UUID) -> s.CycleRead:
+    se = uow.session
+    c = eq.cycle(se, ctx, cycle_id)
     if c is None:
         raise NotFound()
-    progress = eq.cycle_progress_by_assignee(uow.session, ctx, cycle_id)
-    refs = identity_queries.user_refs(
-        uow.session, {p.assignee_id for p in progress if p.assignee_id} | {c.owner_id}
-    )
+    refs = _Refs(uow, ctx, [c])
+    counts = eq.status_counts(se, ctx, [c.id])[c.id]
+    retest = eq.needs_retest_counts(se, ctx, [c.id]).get(c.id, 0)
     return s.CycleRead(
         id=c.id,
         key=c.key,
         project_id=ctx.pid,
         name=c.name,
         description=c.description,
-        release_id=c.release_id,
-        plan_id=c.plan_id,
-        environment_id=c.environment_id,
-        build=c.build,
         status=c.status,
+        release=refs.release(c),
+        plan=refs.plan(c),
+        environment=refs.env(c),
+        build=c.build,
         start_date=c.start_date,
         due_date=c.due_date,
-        owner=UserRef(**vars(refs[c.owner_id])) if c.owner_id in refs else None,
+        owner=refs.users.get(c.owner_id),
         runs_pending=c.runs_pending,
-        summary=_summary(uow, ctx, cycle_id),
+        summary=summary_read(counts, retest),
+        superseded_runs=eq.superseded_count(se, ctx, c.id),
         progress_by_assignee=[
-            s.AssigneeProgress(
-                assignee=UserRef(**vars(refs[p.assignee_id])) if p.assignee_id in refs else None,
-                by_status=p.by_status,
-                total=p.total,
-            )
-            for p in progress
+            s.GroupProgress(id=g.id, name=g.name, summary=summary_read(g.counts))
+            for g in eq.progress_by_assignee(se, ctx, c.id)
         ],
+        progress_by_folder=[
+            s.GroupProgress(id=g.id, name=g.name, summary=summary_read(g.counts))
+            for g in eq.progress_by_folder(se, ctx, c.id)
+        ],
+        started_at=c.started_at,
+        closed_at=c.closed_at,
+        closed_by=refs.users.get(c.closed_by) if c.closed_by else None,
         archived=c.archived_at is not None,
         created_at=c.created_at,
         updated_at=c.updated_at,
         row_version=c.row_version,
     )
+
+
+def cycle_list_items(uow: UnitOfWork, ctx: AccessContext, cycles: list[TestCycle]) -> list[s.CycleListItem]:
+    ids_ = [c.id for c in cycles]
+    counts = eq.status_counts(uow.session, ctx, ids_)
+    retest = eq.needs_retest_counts(uow.session, ctx, ids_)
+    refs = _Refs(uow, ctx, cycles)
+    return [
+        s.CycleListItem(
+            id=c.id,
+            key=c.key,
+            name=c.name,
+            status=c.status,
+            release=refs.release(c),
+            plan=refs.plan(c),
+            environment=refs.env(c),
+            build=c.build,
+            start_date=c.start_date,
+            due_date=c.due_date,
+            owner=refs.users.get(c.owner_id),
+            runs_pending=c.runs_pending,
+            summary=summary_read(counts.get(c.id, {}), retest.get(c.id, 0)),
+            archived=c.archived_at is not None,
+            updated_at=c.updated_at,
+            row_version=c.row_version,
+        )
+        for c in cycles
+    ]
 
 
 def _selection(body: s.SelectionIn) -> Selection:
@@ -94,12 +155,24 @@ def _selection(body: s.SelectionIn) -> Selection:
         case_ids=body.case_ids,
         folder_ids=body.folder_ids,
         tags=body.tags,
-        priorities=body.priorities,
+        priorities=list(body.priorities),
     )
 
 
 def _skipped(pairs: list[tuple[str, str]]) -> list[s.Skipped]:
     return [s.Skipped(key=k, reason=r) for k, r in pairs]
+
+
+def _create_response(
+    uow: UnitOfWork, ctx: AccessContext, result: service.CreateCycleResult
+) -> s.CycleCreateResponse:
+    uow.session.flush()
+    return s.CycleCreateResponse(
+        cycle=cycle_read(uow, ctx, result.cycle.id),
+        added=result.added,
+        skipped=_skipped(result.skipped),
+        runs_pending=result.runs_pending,
+    )
 
 
 # -- cycles ---------------------------------------------------------------------------------------
@@ -117,46 +190,33 @@ def list_cycles(
     plan_id: UUID | None = None,
     environment_id: UUID | None = None,
     owner_id: UUID | None = None,
+    include_archived: bool = False,
     ctx: AccessContext = Depends(project_context),
     uow: UnitOfWork = Depends(get_read_uow),
 ) -> Page[s.CycleListItem]:
-    """US-080 / FR-EXE-001."""
+    """US-080 / FR-EXE-001: each item has its ExecutionSummary."""
     ctx.require("project.view")
     rows, total = eq.list_cycles(
         uow.session, ctx, dict(request.query_params), PageParams(page=page, page_size=page_size)
     )
     return Page[s.CycleListItem](
-        items=[
-            s.CycleListItem(
-                id=c.id,
-                key=c.key,
-                name=c.name,
-                status=c.status,
-                release_id=c.release_id,
-                plan_id=c.plan_id,
-                environment_id=c.environment_id,
-                due_date=c.due_date,
-                summary=_summary(uow, ctx, c.id),
-                updated_at=c.updated_at,
-                row_version=c.row_version,
-            )
-            for c in rows
-        ],
-        page=page,
-        page_size=page_size,
-        total=total,
+        items=cycle_list_items(uow, ctx, rows), page=page, page_size=page_size, total=total
     )
 
 
-@router.post("/projects/{project_id}/cycles", response_model=s.CycleCreateResponse)
+@router.post(
+    "/projects/{project_id}/cycles",
+    response_model=s.CycleCreateResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={202: {"model": s.CycleCreateResponse, "description": "Runs are created in the background"}},
+)
 def create_cycle(
     body: s.CycleCreate,
-    response: Response,
     ctx: AccessContext = Depends(project_context),
     uow: UnitOfWork = Depends(get_uow),
     guard: Idempotency = Depends(idempotency("create_cycle")),
 ) -> Any:
-    """US-080 / FR-EXE-001/002, BR-03 (AC-PLN-01, TCMS-052/054)."""
+    """US-080 / FR-EXE-001/002, BR-03 (AC-PLN-01, TCMS-052/054, TCMS-025b)."""
     if (replay := guard.replay(body)) is not None:
         return replay
     result = service.create_cycle(
@@ -175,27 +235,19 @@ def create_cycle(
             default_assignee_id=body.default_assignee_id,
         ),
     )
-    uow.session.flush()
-    out = s.CycleCreateResponse(
-        cycle_id=result.cycle.id,
-        key=result.cycle.key,
-        added=result.added,
-        skipped=_skipped(result.skipped),
-        runs_pending=result.runs_pending,
-    )
+    out = _create_response(uow, ctx, result)
     code = 202 if result.runs_pending else 201
     guard.store(code, out)
-    response.status_code = code
-    return out
+    return JSONResponse(out.model_dump(mode="json"), status_code=code)
 
 
 @router.get("/cycles/{cycle_id}", response_model=s.CycleRead)
 def get_cycle(
     cycle_id: UUID, response: Response, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Depends(get_read_uow)
 ) -> s.CycleRead:
-    """US-083 / FR-EXE-013: cycle with summary and progress by assignee."""
+    """US-083 / FR-EXE-013: cycle, ExecutionSummary and progress by assignee and folder."""
     ctx.require("project.view")
-    out = _cycle_read(uow, ctx, cycle_id)
+    out = cycle_read(uow, ctx, cycle_id)
     _etag(response, out.row_version)
     return out
 
@@ -204,6 +256,7 @@ def get_cycle(
 def patch_cycle(
     cycle_id: UUID,
     body: s.CyclePatch,
+    response: Response,
     if_match: str | None = Header(default=None, alias="If-Match"),
     ctx: AccessContext = CycleCtx,
     uow: UnitOfWork = Depends(get_uow),
@@ -213,7 +266,9 @@ def patch_cycle(
         uow, ctx, cycle_id, row_version=resolve_row_version(body.row_version, if_match), fields=fields
     )
     uow.session.flush()
-    return _cycle_read(uow, ctx, cycle_id)
+    out = cycle_read(uow, ctx, cycle_id)
+    _etag(response, out.row_version)
+    return out
 
 
 @router.post("/cycles/{cycle_id}/start", response_model=s.CycleRead)
@@ -222,17 +277,17 @@ def start_cycle(
 ) -> s.CycleRead:
     service.start_cycle(uow, ctx, cycle_id)
     uow.session.flush()
-    return _cycle_read(uow, ctx, cycle_id)
+    return cycle_read(uow, ctx, cycle_id)
 
 
 @router.post("/cycles/{cycle_id}/close", response_model=s.CycleRead)
 def close_cycle(
     cycle_id: UUID, body: s.CloseRequest, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Depends(get_uow)
 ) -> s.CycleRead:
-    """US-084 (TCMS-058): 409 draft_exists lists drafts unless discard_drafts."""
+    """US-084 (TCMS-058): `409 draft_exists` lists the drafts unless `discard_drafts`."""
     service.close_cycle(uow, ctx, cycle_id, discard_drafts=body.discard_drafts)
     uow.session.flush()
-    return _cycle_read(uow, ctx, cycle_id)
+    return cycle_read(uow, ctx, cycle_id)
 
 
 @router.post("/cycles/{cycle_id}/reopen", response_model=s.CycleRead)
@@ -242,7 +297,7 @@ def reopen_cycle(
     """US-084 / BR-11 (TCMS-059)."""
     service.reopen_cycle(uow, ctx, cycle_id, reason=body.reason)
     uow.session.flush()
-    return _cycle_read(uow, ctx, cycle_id)
+    return cycle_read(uow, ctx, cycle_id)
 
 
 @router.post("/cycles/{cycle_id}/archive", response_model=s.CycleRead)
@@ -251,31 +306,28 @@ def archive_cycle(
 ) -> s.CycleRead:
     service.archive_cycle(uow, ctx, cycle_id)
     uow.session.flush()
-    return _cycle_read(uow, ctx, cycle_id)
+    return cycle_read(uow, ctx, cycle_id)
 
 
 @router.post(
-    "/cycles/{cycle_id}/clone", response_model=s.CycleCreateResponse, status_code=status.HTTP_201_CREATED
+    "/cycles/{cycle_id}/clone",
+    response_model=s.CycleCreateResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={202: {"model": s.CycleCreateResponse, "description": "Runs are created in the background"}},
 )
 def clone_cycle(
     cycle_id: UUID, body: s.CloneRequest, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Depends(get_uow)
-) -> s.CycleCreateResponse:
+) -> Any:
     """US-084 (TCMS-060)."""
     result = service.clone_cycle(
         uow,
         ctx,
         cycle_id,
         name=body.name,
-        only_statuses=[st.value for st in body.only_statuses] if body.only_statuses else None,
+        only_statuses=list(body.only_statuses) if body.only_statuses else None,
     )
-    uow.session.flush()
-    return s.CycleCreateResponse(
-        cycle_id=result.cycle.id,
-        key=result.cycle.key,
-        added=result.added,
-        skipped=_skipped(result.skipped),
-        runs_pending=result.runs_pending,
-    )
+    out = _create_response(uow, ctx, result)
+    return JSONResponse(out.model_dump(mode="json"), status_code=202 if result.runs_pending else 201)
 
 
 @router.post("/cycles/{cycle_id}/sync-from-plan", response_model=s.AddRunsResponse)
@@ -284,55 +336,62 @@ def sync_from_plan(
 ) -> s.AddRunsResponse:
     """US-085 / BR-31 (AC-PLN-02, TCMS-053)."""
     result = service.sync_from_plan(uow, ctx, cycle_id)
-    uow.session.flush()
     return s.AddRunsResponse(added=result.added, skipped=_skipped(result.skipped))
 
 
 # -- runs -----------------------------------------------------------------------------------------
 
 
-@router.get("/cycles/{cycle_id}/runs", response_model=Page[s.RunRead])
+def _run_item(r: eq.RunRow, users: dict[UUID, UserRef]) -> s.RunListItem:
+    return s.RunListItem(
+        id=r.run.id,
+        cycle_id=r.run.cycle_id,
+        position=r.run.position,
+        test_case=s.RunCase(
+            id=r.run.test_case_id,
+            key=r.case_key,
+            title=r.title,
+            priority=r.priority,
+            folder_id=r.folder_id,
+            folder_name=r.folder_name,
+        ),
+        pinned_version_no=r.pinned_version_no,
+        newer_version_no=r.eligible_version_no,
+        assignee=users.get(r.run.assignee_id) if r.run.assignee_id else None,
+        status=r.run.status,
+        needs_retest=r.run.needs_retest,
+        superseded=r.run.superseded_by_run_id is not None,
+        updated_at=r.run.updated_at,
+        row_version=r.run.row_version,
+    )
+
+
+@router.get("/cycles/{cycle_id}/runs", response_model=Page[s.RunListItem])
 def list_runs(
     cycle_id: UUID,
     request: Request,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=50, ge=1, le=200),
     sort: str | None = None,
+    q: str | None = Query(default=None, max_length=200),
     status_: str | None = Query(default=None, alias="status"),
     assignee_id: str | None = None,
+    folder_id: UUID | None = None,
+    priority: str | None = None,
+    tag: str | None = None,
     needs_retest: bool | None = None,
     include_superseded: bool = False,
     ctx: AccessContext = CycleCtx,
     uow: UnitOfWork = Depends(get_read_uow),
-) -> Page[s.RunRead]:
-    """US-083 / FR-EXE-013: filters per docs/06 §4.6."""
+) -> Page[s.RunListItem]:
+    """US-083 / FR-EXE-013: filters and sorts of docs/06 §4.6."""
     ctx.require("project.view")
     rows, total = eq.list_runs(
         uow.session, ctx, cycle_id, dict(request.query_params), PageParams(page=page, page_size=page_size)
     )
-    refs = identity_queries.user_refs(uow.session, {r.run.assignee_id for r in rows if r.run.assignee_id})
-    return Page[s.RunRead](
-        items=[
-            s.RunRead(
-                id=r.run.id,
-                cycle_id=r.run.cycle_id,
-                test_case_id=r.run.test_case_id,
-                case_key=r.case_key,
-                title=r.title,
-                version_no=r.version_no,
-                latest_version_no=r.latest_version_no,
-                position=r.run.position,
-                assignee=UserRef(**vars(refs[r.run.assignee_id])) if r.run.assignee_id in refs else None,
-                status=r.run.status,
-                needs_retest=r.run.needs_retest,
-                superseded=r.run.superseded_by_run_id is not None,
-                row_version=r.run.row_version,
-            )
-            for r in rows
-        ],
-        page=page,
-        page_size=page_size,
-        total=total,
+    users = _users(uow, {r.run.assignee_id for r in rows})
+    return Page[s.RunListItem](
+        items=[_run_item(r, users) for r in rows], page=page, page_size=page_size, total=total
     )
 
 
@@ -340,11 +399,10 @@ def list_runs(
 def add_runs(
     cycle_id: UUID, body: s.AddCasesRequest, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Depends(get_uow)
 ) -> s.AddRunsResponse:
-    """US-081 / FR-EXE-003 (TCMS-057)."""
+    """US-081 / FR-EXE-003."""
     result = service.add_cases(
         uow, ctx, cycle_id, Selection(case_ids=body.case_ids, folder_ids=body.folder_ids, tags=body.tags)
     )
-    uow.session.flush()
     return s.AddRunsResponse(added=result.added, skipped=_skipped(result.skipped))
 
 
@@ -352,20 +410,19 @@ def add_runs(
 def remove_runs(
     cycle_id: UUID, body: s.RunIdsRequest, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Depends(get_uow)
 ) -> s.CountResponse:
-    """US-081: only not_run runs without attempts (409 run_has_results)."""
-    removed = service.remove_runs(uow, ctx, cycle_id, run_ids=body.run_ids)
-    uow.session.flush()
-    return s.CountResponse(count=removed)
+    """US-081 (TCMS-057): only not-run runs without attempts (409 run_has_results)."""
+    return s.CountResponse(count=service.remove_runs(uow, ctx, cycle_id, run_ids=body.run_ids))
 
 
 @router.post("/cycles/{cycle_id}/runs/assign", response_model=s.CountResponse)
 def assign_runs(
     cycle_id: UUID, body: s.AssignRequest, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Depends(get_uow)
 ) -> s.CountResponse:
-    """US-082 / FR-EXE-004 (TCMS-055)."""
-    changed = service.assign_runs(uow, ctx, cycle_id, run_ids=body.run_ids, assignee_id=body.assignee_id)
-    uow.session.flush()
-    return s.CountResponse(count=changed)
+    """US-082 / FR-EXE-004 (TCMS-055): selected runs or every run matching `filter`."""
+    n = service.assign_runs(
+        uow, ctx, cycle_id, run_ids=body.run_ids, filter_=body.filter, assignee_id=body.assignee_id
+    )
+    return s.CountResponse(count=n)
 
 
 @router.post("/cycles/{cycle_id}/runs/reorder", response_model=s.CountResponse)
@@ -373,8 +430,7 @@ def reorder_runs(
     cycle_id: UUID, body: s.ReorderRequest, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Depends(get_uow)
 ) -> s.CountResponse:
     """US-087 / docs/02 §7.1."""
-    n = service.reorder_runs(uow, ctx, cycle_id, ordered_run_ids=body.ordered_run_ids, sort_by=body.sort_by)
-    uow.session.flush()
+    n = service.reorder_runs(uow, ctx, cycle_id, run_ids_in_order=body.run_ids_in_order, sort_by=body.sort_by)
     return s.CountResponse(count=n)
 
 
@@ -382,10 +438,89 @@ def reorder_runs(
 def update_not_run_versions(
     cycle_id: UUID, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Depends(get_uow)
 ) -> s.CountResponse:
-    """US-086 bulk: update all not-run runs to the latest eligible version (BR-04)."""
-    n = service.update_not_run_versions(uow, ctx, cycle_id)
-    uow.session.flush()
-    return s.CountResponse(count=n)
+    """US-086 bulk: every not-run run moves to its eligible version (BR-04)."""
+    return s.CountResponse(count=service.update_not_run_versions(uow, ctx, cycle_id))
+
+
+def run_read(uow: UnitOfWork, ctx: AccessContext, run_id: UUID, includes: frozenset[str]) -> s.RunRead:
+    d = eq.run_detail(uow.session, ctx, run_id)
+    r = d.row
+    attempts = [*d.history, *([d.draft] if d.draft else [])]
+    users = _users(uow, {r.run.assignee_id, *(a.executed_by for a in attempts)})
+
+    def attempt(a: eq.AttemptView) -> s.AttemptRead:
+        return s.AttemptRead(
+            id=a.id,
+            attempt_no=a.attempt_no,
+            state=a.state,
+            status=a.status,
+            executed_by=users.get(a.executed_by) if a.executed_by else None,
+            started_at=a.started_at,
+            finished_at=a.finished_at,
+            skipped_steps=a.skipped_steps,
+            corrects_result_id=a.corrects_result_id,
+        )
+
+    version = None
+    if "version" in includes:
+        v = tq.version_view_by_id(uow.session, ctx, r.run.test_case_version_id)
+        if v is not None:
+            refs = _users(uow, {v.created_by, v.approved_by, v.submitted_by})
+            version = version_read(uow, ctx, v, refs)
+    newer = None
+    if d.newer is not None:
+        number = tq.version_numbers(uow.session, [d.newer.version_id]).get(d.newer.version_id, 0)
+        newer = s.NewerVersionRead(
+            version_no=number, eligible=d.newer.eligible, can_update=d.newer.can_update, reason=d.newer.reason
+        )
+    return s.RunRead(
+        id=r.run.id,
+        cycle=s.RunCycleRef(id=d.cycle.id, key=d.cycle.key, name=d.cycle.name, status=d.cycle.status),
+        position=r.run.position,
+        test_case=s.RunCaseDetail(
+            id=r.run.test_case_id,
+            key=r.case_key,
+            title=r.title,
+            priority=r.priority,
+            folder_id=r.folder_id,
+            folder_name=r.folder_name,
+            folder_path=d.folder_path,
+        ),
+        pinned_version_no=r.pinned_version_no,
+        newer_version=newer,
+        assignee=users.get(r.run.assignee_id) if r.run.assignee_id else None,
+        status=r.run.status,
+        needs_retest=r.run.needs_retest,
+        superseded_by_run_id=r.run.superseded_by_run_id,
+        has_attempts=d.has_attempts,
+        version=version,
+        draft=attempt(d.draft) if "draft" in includes and d.draft else None,
+        history=[attempt(a) for a in d.history] if "history" in includes else None,
+        row_version=r.run.row_version,
+    )
+
+
+def _includes(raw: str | None) -> frozenset[str]:
+    wanted = frozenset(x.strip() for x in (raw or "").split(",") if x.strip())
+    unknown = wanted - RUN_INCLUDES
+    if unknown:
+        raise InvalidInclude(f"Unknown include: {', '.join(sorted(unknown))}")
+    return wanted
+
+
+@router.get("/runs/{run_id}", response_model=s.RunRead)
+def get_run(
+    run_id: UUID,
+    response: Response,
+    include: str | None = Query(default=None, max_length=100),
+    ctx: AccessContext = RunCtx,
+    uow: UnitOfWork = Depends(get_read_uow),
+) -> s.RunRead:
+    """docs/06 §4.6 / §5.4: run, case summary, pinned version, newer version info, attempts."""
+    ctx.require("project.view")
+    out = run_read(uow, ctx, run_id, _includes(include))
+    _etag(response, out.row_version)
+    return out
 
 
 @router.post("/runs/{run_id}/claim", response_model=s.RunRead)
@@ -393,7 +528,7 @@ def claim_run(run_id: UUID, ctx: AccessContext = RunCtx, uow: UnitOfWork = Depen
     """US-082 / FR-EXE-004 (TCMS-056)."""
     service.claim_run(uow, ctx, run_id)
     uow.session.flush()
-    return _run_read(uow, ctx, run_id)
+    return run_read(uow, ctx, run_id, frozenset())
 
 
 @router.post("/runs/{run_id}/update-version", response_model=s.RunRead)
@@ -403,33 +538,12 @@ def update_run_version(
     """US-086 / BR-04."""
     service.update_run_version(uow, ctx, run_id)
     uow.session.flush()
-    return _run_read(uow, ctx, run_id)
+    return run_read(uow, ctx, run_id, frozenset())
 
 
 @router.post("/runs/{run_id}/replace", response_model=s.RunRead, status_code=status.HTTP_201_CREATED)
 def replace_run(run_id: UUID, ctx: AccessContext = RunCtx, uow: UnitOfWork = Depends(get_uow)) -> s.RunRead:
-    """US-086 / BR-05."""
+    """US-086 / BR-05: returns the new run."""
     new = service.replace_run(uow, ctx, run_id)
     uow.session.flush()
-    return _run_read(uow, ctx, new.id)
-
-
-def _run_read(uow: UnitOfWork, ctx: AccessContext, run_id: UUID) -> s.RunRead:
-    r = eq.run_row(uow.session, ctx, run_id)
-    if r is None:
-        raise NotFound()
-    return s.RunRead(
-        id=r.run.id,
-        cycle_id=r.run.cycle_id,
-        test_case_id=r.run.test_case_id,
-        case_key=r.case_key,
-        title=r.title,
-        version_no=r.version_no,
-        latest_version_no=r.latest_version_no,
-        position=r.run.position,
-        assignee=_ref(uow, r.run.assignee_id),
-        status=r.run.status,
-        needs_retest=r.run.needs_retest,
-        superseded=r.run.superseded_by_run_id is not None,
-        row_version=r.run.row_version,
-    )
+    return run_read(uow, ctx, new.id, frozenset())

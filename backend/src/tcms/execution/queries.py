@@ -1,7 +1,8 @@
 """Public read functions of the execution module.
 
-Case execution history (FR-TD-013) plus, from M3, cycle/run reads (lists, summary, progress).
-Recording attempts (the runner) arrives in M4.
+Case execution history (FR-TD-013) and cycle/run reads (docs/06 §4.6, §5.3–5.4). Counts are returned
+raw; the metrics built from them come from `reporting/metrics.py` (CLAUDE.md rule 5). Recording
+attempts (the runner) arrives in M4.
 """
 
 from __future__ import annotations
@@ -16,12 +17,20 @@ from sqlalchemy import ColumnElement, Select, func, or_, select
 from sqlalchemy.orm import Session
 
 from tcms.core.context import AccessContext
-from tcms.core.enums import CycleStatus, RunStatus
+from tcms.core.enums import CycleStatus, PriorityLevel, ResultState, RunStatus
+from tcms.core.errors import InvalidFilter, NotFound
 from tcms.core.pagination import FilterField, PageParams, paginate, parse_filters, parse_sort
 from tcms.execution import repository as exec_repo
+from tcms.execution import rules
 from tcms.execution.models import TestCycle, TestResult, TestRun
-from tcms.testdesign.queries import case_refs
-from tcms.testdesign.queries import versions as case_versions
+from tcms.testdesign import queries as td
+
+__all__ = [
+    "TestCycle"
+]  # the read type other layers annotate with (the model stays module-private for writes)
+from tcms.workspace import queries as workspace_queries
+
+# -- case execution history (M2 case detail) ------------------------------------------------------
 
 
 @dataclass(frozen=True)
@@ -42,7 +51,7 @@ class CaseExecution:
 
 
 def case_executions(s: Session, ctx: AccessContext, case_id: UUID) -> list[CaseExecution]:
-    numbers = {v.id: v.version_no for v in case_versions(s, ctx, case_id)}
+    numbers = {v.id: v.version_no for v in td.versions(s, ctx, case_id)}
     rows = s.execute(
         select(TestRun, TestCycle, TestResult)
         .join(TestCycle, TestCycle.id == TestRun.cycle_id)
@@ -74,32 +83,76 @@ def case_executions(s: Session, ctx: AccessContext, case_id: UUID) -> list[CaseE
     ]
 
 
-# -- cycles and runs (M3) -------------------------------------------------------------------------
+# -- cycles ---------------------------------------------------------------------------------------
+
+
+def cycle(s: Session, ctx: AccessContext, cycle_id: UUID) -> TestCycle | None:
+    return exec_repo.cycle(s, ctx, cycle_id)
+
+
+def cycle_by_key(s: Session, ctx: AccessContext, key: str) -> TestCycle | None:
+    """`SPARK-CY-12`, `CY-12` or `12` within the project."""
+    number = _key_number(s, ctx, key, "CY")
+    if number is None:
+        return None
+    return s.execute(exec_repo.cycle_list_stmt(ctx).where(TestCycle.key_num == number)).scalar_one_or_none()
+
+
+def _key_number(s: Session, ctx: AccessContext, key: str, prefix: str) -> int | None:
+    import re
+
+    m = re.match(rf"^(?:([A-Z][A-Z0-9]{{1,9}})-{prefix}-|{prefix}-)?(\d+)$", key.strip(), re.I)
+    if not m:
+        return None
+    if m.group(1):
+        p = workspace_queries.project_ref(s, ctx.principal.organization_id, ctx.pid)
+        if p is None or m.group(1).upper() != p.key:
+            return None
+    return int(m.group(2))
+
+
+def status_counts(s: Session, ctx: AccessContext, cycle_ids: list[UUID]) -> dict[UUID, dict[str, int]]:
+    return exec_repo.status_counts(s, ctx, cycle_ids)
+
+
+def needs_retest_counts(s: Session, ctx: AccessContext, cycle_ids: list[UUID]) -> dict[UUID, int]:
+    return exec_repo.needs_retest_counts(s, ctx, cycle_ids)
+
+
+def superseded_count(s: Session, ctx: AccessContext, cycle_id: UUID) -> int:
+    return exec_repo.superseded_count(s, ctx, cycle_id)
 
 
 @dataclass(frozen=True)
-class CycleSummaryData:
-    total: int
-    by_status: dict[str, int]
+class GroupCounts:
+    """Run counts by status for one assignee or folder (FR-EXE-013)."""
+
+    id: UUID | None
+    name: str
+    counts: dict[str, int]
 
 
-def cycle_summary(s: Session, ctx: AccessContext, cycle_id: UUID) -> CycleSummaryData:
-    counts = exec_repo.status_counts(s, ctx, cycle_id)
-    return CycleSummaryData(total=sum(counts.values()), by_status=counts)
+def progress_by_assignee(s: Session, ctx: AccessContext, cycle_id: UUID) -> list[GroupCounts]:
+    from tcms.identity import queries as identity_queries
 
-
-@dataclass(frozen=True)
-class AssigneeProgressData:
-    assignee_id: UUID | None
-    by_status: dict[str, int]
-    total: int
-
-
-def cycle_progress_by_assignee(s: Session, ctx: AccessContext, cycle_id: UUID) -> list[AssigneeProgressData]:
     grouped: dict[UUID | None, dict[str, int]] = {}
     for assignee_id, status, n in exec_repo.assignee_counts(s, ctx, cycle_id):
         grouped.setdefault(assignee_id, {})[status] = n
-    return [AssigneeProgressData(a, by_status, sum(by_status.values())) for a, by_status in grouped.items()]
+    refs = identity_queries.user_refs(s, {a for a in grouped if a is not None})
+    rows = [
+        GroupCounts(a, refs[a].display_name if a in refs else "Unassigned", c) for a, c in grouped.items()
+    ]
+    return sorted(rows, key=lambda g: (g.id is None, g.name.lower()))
+
+
+def progress_by_folder(s: Session, ctx: AccessContext, cycle_id: UUID) -> list[GroupCounts]:
+    grouped: dict[UUID, dict[str, int]] = {}
+    for folder_id, status, n in exec_repo.folder_counts(s, ctx, cycle_id, td.case_columns(ctx)):
+        grouped.setdefault(folder_id, {})[status] = n
+    names = td.folder_names(s, ctx, list(grouped))
+    order = td.folder_order(s, ctx)
+    rows = [GroupCounts(f, names.get(f, "—"), c) for f, c in grouped.items()]
+    return sorted(rows, key=lambda g: order.get(g.id, len(order)) if g.id else len(order))
 
 
 CYCLE_FILTERS: Mapping[str, FilterField] = {
@@ -113,112 +166,280 @@ CYCLE_SORTS: Mapping[str, ColumnElement[Any]] = {
     "key": TestCycle.key_num,  # type: ignore[dict-item]
     "name": func.lower(TestCycle.name),
     "status": TestCycle.status,  # type: ignore[dict-item]
+    "due_date": TestCycle.due_date,  # type: ignore[dict-item]
     "updated_at": TestCycle.updated_at,  # type: ignore[dict-item]
     "created_at": TestCycle.created_at,  # type: ignore[dict-item]
 }
-
-
-def cycle(s: Session, ctx: AccessContext, cycle_id: UUID) -> TestCycle | None:
-    return exec_repo.cycle(s, ctx, cycle_id)
 
 
 def list_cycles(
     s: Session, ctx: AccessContext, params: Mapping[str, str], page: PageParams
 ) -> tuple[list[TestCycle], int]:
     stmt: Select[Any] = exec_repo.cycle_list_stmt(ctx)
-    conditions = parse_filters(params, CYCLE_FILTERS)
+    conditions = parse_filters(params, CYCLE_FILTERS, extra_allowed=("include_archived",))
     if conditions:
         stmt = stmt.where(*conditions)
-    if "status" not in params and params.get("include_archived") != "true":
+    if params.get("include_archived") != "true":
         stmt = stmt.where(TestCycle.archived_at.is_(None))
     q = (params.get("q") or "").strip()
     if q:
-        stmt = stmt.where(or_(TestCycle.name.icontains(q, autoescape=True), TestCycle.key.icontains(q)))
-    stmt = stmt.order_by(*parse_sort(params.get("sort"), CYCLE_SORTS, default="key"))
+        number = _key_number(s, ctx, q, "CY")
+        text_match = or_(
+            TestCycle.name.icontains(q, autoescape=True), TestCycle.key.icontains(q, autoescape=True)
+        )
+        stmt = stmt.where(or_(text_match, TestCycle.key_num == number) if number is not None else text_match)
+    stmt = stmt.order_by(*parse_sort(params.get("sort"), CYCLE_SORTS, default="-key"))
     rows, total = paginate(s, stmt, page)
     return [r[0] for r in rows], total
 
 
-RUN_FILTERS: Mapping[str, FilterField] = {
-    "status": FilterField(TestRun.status, kind="enum", choices=frozenset(s.value for s in RunStatus)),
-    "needs_retest": FilterField(TestRun.needs_retest, kind="bool"),
-}
-RUN_SORTS: Mapping[str, ColumnElement[Any]] = {
-    "position": TestRun.position,  # type: ignore[dict-item]
-    "status": TestRun.status,  # type: ignore[dict-item]
-    "updated_at": TestRun.updated_at,  # type: ignore[dict-item]
-}
+def cycles_of_plan(s: Session, ctx: AccessContext, plan_id: UUID) -> list[TestCycle]:
+    return exec_repo.cycles_of_plan(s, ctx, plan_id)
+
+
+def open_cycles(s: Session, ctx: AccessContext) -> list[TestCycle]:
+    return exec_repo.open_cycles(s, ctx)
 
 
 @dataclass(frozen=True)
-class RunRowData:
+class PlanCaseResult:
+    cycle_id: UUID
+    cycle_key: str
+    status: str
+
+
+def plan_case_results(
+    s: Session, ctx: AccessContext, plan_id: UUID, case_ids: list[UUID]
+) -> dict[UUID, list[PlanCaseResult]]:
+    """Per case, its run status in every cycle created from the plan (docs/02 §6.2), one query."""
+    out: dict[UUID, list[PlanCaseResult]] = {c: [] for c in case_ids}
+    if not case_ids:
+        return out
+    rows = s.execute(
+        select(TestRun.test_case_id, TestCycle.id, TestCycle.key, TestRun.status)
+        .join(TestCycle, TestCycle.id == TestRun.cycle_id)
+        .where(
+            TestRun.organization_id == ctx.principal.organization_id,
+            TestRun.project_id == ctx.pid,
+            TestCycle.plan_id == plan_id,
+            TestRun.superseded_by_run_id.is_(None),
+            TestRun.test_case_id.in_(case_ids),
+        )
+        .order_by(TestCycle.key_num)
+    ).all()
+    for case_id, cid, ckey, status in rows:
+        out[case_id].append(PlanCaseResult(cid, ckey, status.value))
+    return out
+
+
+# -- runs -----------------------------------------------------------------------------------------
+
+RUN_SPECIAL = ("assignee_id", "folder_id", "tag", "include_superseded")
+
+
+@dataclass(frozen=True)
+class RunRow:
     run: TestRun
     case_key: str
     title: str
-    version_no: int
-    latest_version_no: int
+    priority: str
+    folder_id: UUID
+    folder_name: str
+    pinned_version_no: int
+    eligible_version_no: int | None  # when a newer eligible version exists (docs/07 §5.8 "v3↑")
+
+
+def _runs_stmt(
+    s: Session, ctx: AccessContext, cycle_id: UUID, params: Mapping[str, str]
+) -> tuple[Select[Any], Any]:
+    cols = td.case_columns(ctx)
+    include_superseded = params.get("include_superseded") == "true"
+    stmt = (
+        exec_repo.run_list_stmt(ctx, cycle_id, include_superseded=include_superseded)
+        .join(cols, cols.c.id == TestRun.test_case_id)
+        .add_columns(cols.c.key, cols.c.title, cols.c.priority, cols.c.folder_id)
+    )
+    allowed: Mapping[str, FilterField] = {
+        "status": FilterField(TestRun.status, kind="enum", choices=frozenset(x.value for x in RunStatus)),
+        "priority": FilterField(
+            cols.c.priority, kind="enum", choices=frozenset(p.value for p in PriorityLevel)
+        ),
+        "needs_retest": FilterField(TestRun.needs_retest, kind="bool"),
+    }
+    conditions = parse_filters(params, allowed, extra_allowed=RUN_SPECIAL)
+    if conditions:
+        stmt = stmt.where(*conditions)
+    assignee = params.get("assignee_id")
+    if assignee == "me":
+        stmt = stmt.where(TestRun.assignee_id == ctx.principal.user_id)
+    elif assignee == "none":
+        stmt = stmt.where(TestRun.assignee_id.is_(None))
+    elif assignee:
+        stmt = stmt.where(TestRun.assignee_id.in_([_uuid("assignee_id", a) for a in assignee.split(",")]))
+    folder = params.get("folder_id")
+    if folder:
+        stmt = stmt.where(cols.c.folder_id.in_(td.subtree_folder_ids(s, ctx, _uuid("folder_id", folder))))
+    tag = params.get("tag")
+    if tag:
+        stmt = stmt.where(TestRun.test_case_id.in_(td.tagged_case_ids_stmt(ctx, tag.split(","))))
+    q = (params.get("q") or "").strip()
+    if q:
+        stmt = stmt.where(TestRun.test_case_id.in_(td.search_case_ids_stmt(s, ctx, q)))
+    return stmt, cols
+
+
+def _uuid(name: str, raw: str) -> UUID:
+    try:
+        return UUID(raw)
+    except ValueError as exc:
+        raise InvalidFilter(f"Invalid value '{raw}' for '{name}'") from exc
+
+
+def _rows(s: Session, ctx: AccessContext, raw: list[Any]) -> list[RunRow]:
+    runs = [r[0] for r in raw]
+    refs = td.case_refs(s, ctx, [r.test_case_id for r in runs])
+    approval = _approval_required(s, ctx)
+    eligible: dict[UUID, UUID | None] = {}
+    for r in runs:
+        ref = refs.get(r.test_case_id)
+        eligible[r.id] = (
+            rules.eligible_version(ref, approval_required=approval, purpose="existing").version_id
+            if ref
+            else None
+        )
+    numbers = td.version_numbers(
+        s, list({r.test_case_version_id for r in runs} | {v for v in eligible.values() if v is not None})
+    )
+    folders = td.folder_names(s, ctx, list({row[4] for row in raw}))
+    out: list[RunRow] = []
+    for row in raw:
+        r, key, title, priority, folder_id = row[0], row[1], row[2], row[3], row[4]
+        v = eligible[r.id]
+        newer = numbers.get(v) if v is not None and v != r.test_case_version_id else None
+        out.append(
+            RunRow(
+                r,
+                key,
+                title,
+                priority.value if hasattr(priority, "value") else str(priority),
+                folder_id,
+                folders.get(folder_id, "—"),
+                numbers.get(r.test_case_version_id, 0),
+                newer,
+            )
+        )
+    return out
+
+
+def _approval_required(s: Session, ctx: AccessContext) -> bool:
+    p = workspace_queries.project(s, ctx.principal.organization_id, ctx.pid)
+    return bool(p and workspace_queries.project_settings(p)["approval_required"])
 
 
 def list_runs(
     s: Session, ctx: AccessContext, cycle_id: UUID, params: Mapping[str, str], page: PageParams
-) -> tuple[list[RunRowData], int]:
-    base = exec_repo.run_list_stmt(
-        ctx, cycle_id, include_superseded=params.get("include_superseded") == "true"
-    )
-    conditions = parse_filters(params, RUN_FILTERS, extra_allowed=("include_superseded", "assignee_id"))
-    if conditions:
-        base = base.where(*conditions)
-    assignee = params.get("assignee_id")
-    if assignee == "me" and ctx.principal.user_id is not None:
-        base = base.where(TestRun.assignee_id == ctx.principal.user_id)
-    elif assignee == "none":
-        base = base.where(TestRun.assignee_id.is_(None))
-    elif assignee:
-        base = base.where(TestRun.assignee_id == UUID(assignee))
-    base = base.order_by(*parse_sort(params.get("sort"), RUN_SORTS, default="position"))
-    rows, total = paginate(s, base, page)
-    runs = [r[0] for r in rows]
-    refs = case_refs(s, ctx, [r.test_case_id for r in runs])
-    version_numbers = _version_numbers(s, [r.test_case_version_id for r in runs])
-    out: list[RunRowData] = []
-    for r in runs:
-        ref = refs.get(r.test_case_id)
-        out.append(
-            RunRowData(
-                run=r,
-                case_key=ref.key if ref else "",
-                title=ref.title if ref else "",
-                version_no=version_numbers.get(r.test_case_version_id, 0),
-                latest_version_no=_latest_version_no(s, ctx, r.test_case_id),
-            )
-        )
-    return out, total
+) -> tuple[list[RunRow], int]:
+    """docs/06 §4.6: filters status, assignee_id (me, none), folder_id, priority, needs_retest, tag, q,
+    include_superseded; sort position, key, status, priority, updated_at."""
+    stmt, cols = _runs_stmt(s, ctx, cycle_id, params)
+    sorts: Mapping[str, ColumnElement[Any]] = {
+        "position": TestRun.position,  # type: ignore[dict-item]
+        "key": cols.c.key_num,
+        "status": TestRun.status,  # type: ignore[dict-item]
+        "priority": cols.c.priority_rank,
+        "updated_at": TestRun.updated_at,  # type: ignore[dict-item]
+    }
+    stmt = stmt.order_by(*parse_sort(params.get("sort"), sorts, default="position"), TestRun.id)
+    raw, total = paginate(s, stmt, page)
+    return _rows(s, ctx, raw), total
 
 
-def _version_numbers(s: Session, version_ids: list[UUID]) -> dict[UUID, int]:
-    from tcms.testdesign.queries import version_numbers
-
-    return version_numbers(s, version_ids)
-
-
-def _latest_version_no(s: Session, ctx: AccessContext, case_id: UUID) -> int:
-    ref = case_refs(s, ctx, [case_id]).get(case_id)
-    if ref is None or ref.latest_version_id is None:
-        return 0
-    return _version_numbers(s, [ref.latest_version_id]).get(ref.latest_version_id, 0)
+def run_ids_matching(s: Session, ctx: AccessContext, cycle_id: UUID, params: Mapping[str, str]) -> list[UUID]:
+    """Active run ids matching a runs-list filter (filter-based bulk assign, docs/06 §4.6)."""
+    stmt, _ = _runs_stmt(s, ctx, cycle_id, {**params, "include_superseded": "false"})
+    return list(s.execute(stmt.with_only_columns(TestRun.id).order_by(TestRun.position)).scalars())
 
 
-def run_row(s: Session, ctx: AccessContext, run_id: UUID) -> RunRowData | None:
+def run_row(s: Session, ctx: AccessContext, run_id: UUID) -> RunRow | None:
     r = exec_repo.run(s, ctx, run_id)
     if r is None:
         return None
-    ref = case_refs(s, ctx, [r.test_case_id]).get(r.test_case_id)
-    return RunRowData(
-        run=r,
-        case_key=ref.key if ref else "",
-        title=ref.title if ref else "",
-        version_no=_version_numbers(s, [r.test_case_version_id]).get(r.test_case_version_id, 0),
-        latest_version_no=_latest_version_no(s, ctx, r.test_case_id),
+    stmt, _ = _runs_stmt(s, ctx, r.cycle_id, {"include_superseded": "true"})
+    raw = s.execute(stmt.where(TestRun.id == run_id)).all()
+    rows = _rows(s, ctx, list(raw))
+    return rows[0] if rows else None
+
+
+@dataclass(frozen=True)
+class AttemptView:
+    id: UUID
+    attempt_no: int
+    state: str
+    status: str | None
+    executed_by: UUID | None
+    started_at: datetime
+    finished_at: datetime | None
+    skipped_steps: int
+    corrects_result_id: UUID | None
+
+
+@dataclass(frozen=True)
+class RunDetail:
+    row: RunRow
+    cycle: TestCycle
+    folder_path: list[str]
+    has_attempts: bool
+    newer: rules.NewerVersion | None
+    history: list[AttemptView]
+    draft: AttemptView | None
+
+
+def run_detail(s: Session, ctx: AccessContext, run_id: UUID) -> RunDetail:
+    """docs/06 §5.4 (`GET /runs/{id}`): run, case summary, newer-version info and attempts."""
+    row = run_row(s, ctx, run_id)
+    if row is None:
+        raise NotFound()
+    cyc = exec_repo.cycle(s, ctx, row.run.cycle_id)
+    if cyc is None:
+        raise NotFound()
+    attempts = exec_repo.attempts(s, run_id)
+    views = [
+        AttemptView(
+            a.id,
+            a.attempt_no,
+            a.state.value,
+            a.status.value if a.status else None,
+            a.executed_by,
+            a.started_at,
+            a.finished_at,
+            a.skipped_steps,
+            a.corrects_result_id,
+        )
+        for a in attempts
+    ]
+    ref = td.case_refs(s, ctx, [row.run.test_case_id]).get(row.run.test_case_id)
+    eligible = (
+        rules.eligible_version(
+            ref, approval_required=_approval_required(s, ctx), purpose="existing"
+        ).version_id
+        if ref
+        else None
+    )
+    newer = rules.newer_version(
+        pinned_version_id=row.run.test_case_version_id,
+        eligible_version_id=eligible,
+        has_attempts=bool(attempts),
+        cycle_status=cyc.status,
+        superseded=row.run.superseded_by_run_id is not None,
+    )
+    return RunDetail(
+        row=row,
+        cycle=cyc,
+        folder_path=td.folder_path_names(s, ctx, row.folder_id),
+        has_attempts=bool(attempts),
+        newer=newer,
+        history=[v for v in views if v.state == ResultState.final.value],
+        draft=next((v for v in views if v.state == ResultState.draft.value), None),
     )
 
 

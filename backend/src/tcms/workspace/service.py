@@ -258,8 +258,18 @@ def update_project(
     return project
 
 
+def check_archive_confirmation(uow: UnitOfWork, ctx: AccessContext, *, confirm_key: str) -> None:
+    """Permission and typed-key check, before the API closes open cycles (docs/02 §4.2)."""
+    ctx.require("project.configure")
+    project = repo.project(uow.session, _org_id(ctx), _require_project(ctx))
+    if project is None:
+        raise NotFound()
+    if confirm_key.strip().upper() != project.key:
+        raise ConfirmationMismatch("Type the project key to confirm")
+
+
 def archive_project(uow: UnitOfWork, ctx: AccessContext, *, confirm_key: str) -> Project:
-    """US-029. Typing the key confirms. (M3 adds: all cycles must be closed, review K17k.)"""
+    """US-029. Typing the key confirms. The API refuses or closes open cycles first (docs/02 §4.2)."""
     ctx.require("project.configure")
     project = repo.project(uow.session, _org_id(ctx), _require_project(ctx), for_update=True)
     if project is None:

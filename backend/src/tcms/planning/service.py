@@ -17,6 +17,7 @@ from tcms.core.context import AccessContext
 from tcms.core.enums import PlanStatus, PlanType
 from tcms.core.errors import FieldError, NotFound, ValidationFailed
 from tcms.core.uow import UnitOfWork
+from tcms.identity import queries as identity_queries
 from tcms.planning import repository as repo
 from tcms.planning import rules
 from tcms.planning.errors import InvalidTransition, PlanArchived
@@ -76,6 +77,32 @@ def _validate_risks(risks: list[dict[str, Any]]) -> None:
     problem = rules.risks_problem(risks)
     if problem:
         raise ValidationFailed("Invalid risks", errors=[problem])
+
+
+def _validate_exit_rules(exit_rules: list[dict[str, Any]]) -> None:
+    problem = rules.exit_rules_problem(exit_rules)
+    if problem:
+        raise ValidationFailed("Invalid exit criteria", errors=[problem])
+
+
+def _validate_people(
+    uow: UnitOfWork, ctx: AccessContext, *, owner_id: UUID | None, member_ids: list[UUID]
+) -> None:
+    """Owner and QA members are members of the project (docs/02 §6.1)."""
+    members = {
+        m.user.id
+        for m in identity_queries.project_members(uow.session, ctx.principal.organization_id, ctx.pid)
+    }
+    if owner_id is not None and owner_id not in members and owner_id != ctx.principal.user_id:
+        raise ValidationFailed(
+            "The owner must be a project member",
+            errors=[FieldError("owner_id", "not_member", "Choose a project member")],
+        )
+    if any(m not in members for m in member_ids):
+        raise ValidationFailed(
+            "QA members must be project members",
+            errors=[FieldError("member_ids", "not_member", "Choose project members")],
+        )
 
 
 def _validate_release(uow: UnitOfWork, ctx: AccessContext, release_id: UUID | None) -> None:
@@ -140,6 +167,8 @@ def create_plan(uow: UnitOfWork, ctx: AccessContext, data: PlanData) -> TestPlan
         raise NameTaken("A plan with this name already exists")
     _validate_dates(data.start_date, data.end_date)
     _validate_risks(data.risks)
+    _validate_exit_rules(data.exit_rules)
+    _validate_people(uow, ctx, owner_id=data.owner_id, member_ids=data.member_ids)
     _validate_release(uow, ctx, data.release_id)
     env_ids = _validate_environments(uow, ctx, data.environment_ids)
     number, key = workspace.allocate_key(uow, ctx, "test_plan")
@@ -174,7 +203,7 @@ def create_plan(uow: UnitOfWork, ctx: AccessContext, data: PlanData) -> TestPlan
     s.add(plan)
     s.flush()
     repo.set_environments(s, plan.id, env_ids)
-    uow.audit(ctx, "test_plan.created", plan, summary=f"{ctx.principal.display_name} created plan {key}")
+    uow.audit(ctx, "plan.created", plan, summary=f"{ctx.principal.display_name} created plan {key}")
     return plan
 
 
@@ -218,6 +247,7 @@ def update_plan(
         changes["risks"] = [plan.risks, fields["risks"]]
         plan.risks = fields["risks"]
     if "exit_rules" in fields and fields["exit_rules"] is not None:
+        _validate_exit_rules(fields["exit_rules"])
         changes["exit_rules"] = [plan.exit_rules, fields["exit_rules"]]
         plan.exit_rules = fields["exit_rules"]
     if "environment_ids" in fields and fields["environment_ids"] is not None:
@@ -240,6 +270,10 @@ def update_plan(
             )
         changes["status"] = [plan.status.value, target.value]
         plan.status = target
+    if fields.get("owner_id") is not None or fields.get("member_ids") is not None:
+        _validate_people(
+            uow, ctx, owner_id=fields.get("owner_id"), member_ids=list(fields.get("member_ids") or [])
+        )
     for name in ("type", "owner_id", "start_date", "end_date", "member_ids"):
         if name in fields and fields[name] is not None and getattr(plan, name) != fields[name]:
             changes[name] = [str(getattr(plan, name)), str(fields[name])]
@@ -252,7 +286,7 @@ def update_plan(
                 setattr(plan, name, new_md)
     if changes:
         _touch(plan, ctx)
-        uow.audit(ctx, "test_plan.updated", plan, changes=changes)
+        uow.audit(ctx, "plan.updated", plan, changes=changes)
     return plan
 
 
@@ -338,7 +372,7 @@ def add_cases(
     if added:
         uow.audit(
             ctx,
-            "test_plan.cases_added",
+            "plan.cases_added",
             plan,
             summary=f"{added} case(s) added to plan {plan.key}",
             extra={"added": added},
@@ -353,9 +387,7 @@ def remove_cases(uow: UnitOfWork, ctx: AccessContext, plan_id: UUID, *, case_ids
     _require_active(plan)
     removed = repo.remove_cases(uow.session, plan_id, case_ids)
     if removed:
-        uow.audit(
-            ctx, "test_plan.cases_removed", plan, summary=f"{removed} case(s) removed from plan {plan.key}"
-        )
+        uow.audit(ctx, "plan.cases_removed", plan, summary=f"{removed} case(s) removed from plan {plan.key}")
     return removed
 
 
@@ -386,7 +418,7 @@ def link_requirements(
         existing.add(rid)
         added += 1
     if added:
-        uow.audit(ctx, "test_plan.requirements_linked", plan, summary=f"{added} requirement(s) linked")
+        uow.audit(ctx, "plan.requirements_linked", plan, summary=f"{added} requirement(s) linked")
     return added
 
 
@@ -398,7 +430,7 @@ def unlink_requirements(
     _require_active(plan)
     removed = repo.remove_requirements(uow.session, plan_id, requirement_ids)
     if removed:
-        uow.audit(ctx, "test_plan.requirements_unlinked", plan, summary=f"{removed} requirement(s) unlinked")
+        uow.audit(ctx, "plan.requirements_unlinked", plan, summary=f"{removed} requirement(s) unlinked")
     return removed
 
 
@@ -454,5 +486,5 @@ def archive_plan(uow: UnitOfWork, ctx: AccessContext, plan_id: UUID) -> TestPlan
     plan.archived_at = clock.now()
     plan.status = PlanStatus.archived
     _touch(plan, ctx)
-    uow.audit(ctx, "test_plan.archived", plan, summary=f"Plan {plan.key} archived")
+    uow.audit(ctx, "plan.archived", plan, summary=f"Plan {plan.key} archived")
     return plan

@@ -50,6 +50,54 @@ def risks_problem(risks: list[dict[str, Any]]) -> FieldError | None:
     return None
 
 
+# -- exit criteria as readiness rules (FR-PLN-005, docs/02 §11.4, docs/06 §5.9) -------------------
+#
+# A rule is `{type, threshold, params?}`. Percentage rules take a fraction 0–1 (docs/06 §5.9 shows
+# `"threshold": 1.0` for 100 %); count rules take a whole number ≥ 0. Rules are evaluated in M7.
+
+PERCENT_RULES: Final = frozenset(
+    {
+        "min_execution_progress",
+        "min_pass_rate",
+        "min_pass_rate_applicable",
+        "min_requirement_coverage",
+        "min_requirements_verified",
+    }
+)
+COUNT_RULES: Final = frozenset({"max_open_defects", "max_blocked"})
+FLAG_RULES: Final = frozenset({"tag_fully_executed"})
+RULE_TYPES: Final = PERCENT_RULES | COUNT_RULES | FLAG_RULES
+SEVERITIES: Final = ("critical", "high", "medium", "low")
+MAX_EXIT_RULES: Final = 20
+
+
+def exit_rules_problem(rules: list[dict[str, Any]]) -> FieldError | None:
+    if len(rules) > MAX_EXIT_RULES:
+        return FieldError("exit_rules", "too_many", f"At most {MAX_EXIT_RULES} rules")
+    for i, r in enumerate(rules):
+        where = f"exit_rules[{i}]"
+        kind = r.get("type")
+        params = r.get("params") or {}
+        threshold = r.get("threshold")
+        if kind not in RULE_TYPES:
+            return FieldError(f"{where}.type", "invalid_value", "Unknown rule type")
+        if kind in PERCENT_RULES and not (isinstance(threshold, int | float) and 0 <= threshold <= 1):
+            return FieldError(f"{where}.threshold", "invalid_range", "Give a percentage between 0 and 100")
+        if kind in COUNT_RULES and not (
+            isinstance(threshold, int | float) and threshold >= 0 and float(threshold).is_integer()
+        ):
+            return FieldError(f"{where}.threshold", "invalid_range", "Give a whole number of 0 or more")
+        if kind == "max_open_defects":
+            sev = params.get("severities")
+            if not sev or not set(sev) <= set(SEVERITIES):
+                return FieldError(
+                    f"{where}.params.severities", "field_required", "Choose at least one severity"
+                )
+        if kind == "tag_fully_executed" and not str(params.get("tag") or "").strip():
+            return FieldError(f"{where}.params.tag", "field_required", "Choose a tag")
+    return None
+
+
 # -- status lifecycle -----------------------------------------------------------------------------
 #
 # docs/02 §6.1 lists the statuses but not the transitions. Mirroring the release machine

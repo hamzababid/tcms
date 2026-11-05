@@ -134,7 +134,23 @@ def patch_project(
 def archive_project(
     body: ws.ArchiveRequest, ctx: AccessContext = Depends(project_context), uow: UnitOfWork = Depends(get_uow)
 ) -> ws.ProjectRead:
-    """US-029 / AC-WS-02."""
+    """US-029 / AC-WS-02. All cycles must be closed first, or closed here with `close_open_cycles`
+    (docs/02 §4.2, review K17k)."""
+    from tcms.execution import queries as execution_queries
+    from tcms.execution import service as execution
+    from tcms.execution.errors import InvalidStatus
+
+    workspace.check_archive_confirmation(uow, ctx, confirm_key=body.confirm_key)
+    open_cycles = execution_queries.open_cycles(uow.session, ctx)
+    if open_cycles and not body.close_open_cycles:
+        raise InvalidStatus(
+            "Close the open cycles before archiving the project",
+            open_cycles=[
+                {"id": str(c.id), "key": c.key, "name": c.name, "status": c.status.value} for c in open_cycles
+            ],
+        )
+    if open_cycles:
+        execution.close_open_cycles(uow, ctx)
     return _project_read(workspace.archive_project(uow, ctx, confirm_key=body.confirm_key))
 
 

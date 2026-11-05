@@ -429,7 +429,10 @@ def seed_plans_and_cycles(profile: str) -> str:
                 type=PlanType.regression,
                 objectives="Full regression ahead of the v2.5 release.",
                 environment_ids=[env.id],
-                exit_rules=[{"metric": "pass_rate", "operator": "gte", "threshold": 95}],
+                exit_rules=[
+                    {"type": "min_execution_progress", "threshold": 1.0},
+                    {"type": "max_open_defects", "threshold": 0, "params": {"severities": ["critical"]}},
+                ],
                 risks=[
                     {"description": "Payment gateway can be flaky", "impact": "medium", "mitigation": "Retry"}
                 ],
@@ -465,7 +468,7 @@ def seed_plans_and_cycles(profile: str) -> str:
         cycle_id = created.cycle.id
         run_ids = [r.run.id for r in exec_queries.list_runs(uow.session, ctx, cycle_id, {}, page)[0]]
         if run_ids:
-            execution.assign_runs(uow, ctx, cycle_id, run_ids=run_ids, assignee_id=engineer)
+            execution.assign_runs(uow, ctx, cycle_id, run_ids=run_ids, filter_=None, assignee_id=engineer)
         execution.start_cycle(uow, ctx, cycle_id)
 
     return f"SPARK plan with {added} cases and a started cycle of {len(run_ids)} runs"

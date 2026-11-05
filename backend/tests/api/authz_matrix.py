@@ -166,6 +166,23 @@ def _run(f: Fixture) -> UUID:
         return runs[0].id
 
 
+def _remove_run_probe(f: Fixture) -> tuple[str, str, dict[str, Any]]:
+    """DELETE a real not-run run of its own cycle (unknown run ids are a 404)."""
+    from tcms.core.permissions import PROJECT_PERMISSIONS
+    from tcms.core.uow import unit_of_work
+    from tcms.execution import queries as execution_queries
+
+    run_id = _run(f)
+    with unit_of_work(f.world.factory) as uow:
+        ctx = f.world.ctx(
+            f.org.id, f.org.admin.id, is_admin=True, project_id=f.project_id, perms=PROJECT_PERMISSIONS
+        )
+        row = execution_queries.run_row(uow.session, ctx, run_id)
+        assert row is not None
+        cycle_id = row.run.cycle_id
+    return ("DELETE", f"/api/v1/cycles/{cycle_id}/runs", {"run_ids": [str(run_id)]})
+
+
 P = "/api/v1/projects/{project_id}"
 TC = "/api/v1/test-cases/{case_id}"
 PL = "/api/v1/test-plans/{plan_id}"
@@ -550,10 +567,7 @@ MATRIX: dict[tuple[str, str], Entry] = {
     ("POST", CY + "/runs"): Entry(
         "project:cycle.manage", lambda f: ("POST", CY.format(cycle_id=_cycle(f)) + "/runs", {"case_ids": []})
     ),
-    ("DELETE", CY + "/runs"): Entry(
-        "project:cycle.manage",
-        lambda f: ("DELETE", CY.format(cycle_id=_cycle(f)) + "/runs", {"run_ids": [str(uuid.uuid4())]}),
-    ),
+    ("DELETE", CY + "/runs"): Entry("project:cycle.manage", lambda f: _remove_run_probe(f)),
     ("POST", CY + "/runs/assign"): Entry(
         "project:cycle.manage",
         lambda f: ("POST", CY.format(cycle_id=_cycle(f)) + "/runs/assign", {"run_ids": [str(uuid.uuid4())]}),
@@ -565,6 +579,9 @@ MATRIX: dict[tuple[str, str], Entry] = {
     ("POST", CY + "/runs/update-versions"): Entry(
         "project:cycle.manage",
         lambda f: ("POST", CY.format(cycle_id=_cycle(f)) + "/runs/update-versions", None),
+    ),
+    ("GET", RN): Entry(
+        "project:project.view", lambda f: ("GET", RN.format(run_id=_run(f)) + "?include=version", None)
     ),
     ("POST", RN + "/claim"): Entry(
         "project:run.execute", lambda f: ("POST", RN.format(run_id=_run(f)) + "/claim", None)

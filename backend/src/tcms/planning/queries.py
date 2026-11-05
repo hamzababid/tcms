@@ -111,10 +111,10 @@ def list_plans(
     s: Session, ctx: AccessContext, params: Mapping[str, str], page: PageParams
 ) -> tuple[list[PlanSummary], int]:
     stmt: Select[Any] = repo.plan_list_stmt(ctx)
-    conditions = parse_filters(params, PLAN_FILTERS)
+    conditions = parse_filters(params, PLAN_FILTERS, extra_allowed=("include_archived",))
     if conditions:
         stmt = stmt.where(*conditions)
-    if "status" not in params:
+    if "status" not in params and params.get("include_archived") != "true":
         stmt = stmt.where(TestPlan.status != PlanStatus.archived)
     q = (params.get("q") or "").strip()
     if q:
@@ -122,6 +122,19 @@ def list_plans(
     stmt = stmt.order_by(*parse_sort(params.get("sort"), PLAN_SORTS, default="key"))
     rows, total = paginate(s, stmt, page)
     return [_summary(s, r[0]) for r in rows], total
+
+
+def plan_by_key(s: Session, ctx: AccessContext, key: str) -> PlanSummary | None:
+    """`SPARK-PL-3`, `PL-3` or `3` within the project."""
+    import re
+
+    m = re.match(r"^(?:([A-Z][A-Z0-9]{1,9})-PL-|PL-)?(\d+)$", key.strip(), re.I)
+    if not m:
+        return None
+    p = s.execute(repo.plan_list_stmt(ctx).where(TestPlan.key_num == int(m.group(2)))).scalar_one_or_none()
+    if p is None or (m.group(1) and not p.key.upper().startswith(m.group(1).upper() + "-")):
+        return None
+    return _summary(s, p)
 
 
 def plan_case_ids(s: Session, ctx: AccessContext, plan_id: UUID) -> list[UUID]:

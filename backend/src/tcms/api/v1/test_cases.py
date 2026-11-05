@@ -63,7 +63,7 @@ def attachment_read(a: attachments.AttachmentRow, refs: dict[UUID, UserRef]) -> 
     )
 
 
-def _version_read(
+def version_read(
     uow: UnitOfWork, ctx: AccessContext, v: tq.VersionView, refs: dict[UUID, UserRef]
 ) -> s.VersionRead:
     step_atts = attachments.list_for(
@@ -166,7 +166,7 @@ def case_read(
         tags=d.summary.tags,
         latest_version_no=c.latest_version_no,
         approved_version_no=d.summary.approved_version_no,
-        version=_version_read(uow, ctx, v, refs),
+        version=version_read(uow, ctx, v, refs),
         links=[
             s.CaseLinkRead(
                 case_id=lk.case_id,
@@ -799,8 +799,22 @@ def resolve(
     ctx: AccessContext = Depends(project_context),
     uow: UnitOfWork = Depends(get_read_uow),
 ) -> s.ResolveRead:
-    """`SPARK-TC-12`, `TC-12` or `12` → the case (more entity types arrive with their milestones)."""
+    """`SPARK-TC-12`, `TC-12`, `12` → case; `SPARK-PL-3` / `PL-3` → plan; `SPARK-CY-1` / `CY-1` → cycle
+    (docs/04 §11.1). A bare number is a test case. More entity types arrive with their milestones."""
+    from tcms.planning import queries as planning_queries
+
     ctx.require("project.view")
+    upper = key.strip().upper()
+    if "-PL-" in upper or upper.startswith("PL-"):
+        plan = planning_queries.plan_by_key(uow.session, ctx, key)
+        if plan is None:
+            raise NotFound()
+        return s.ResolveRead(entity_type="test_plan", id=plan.id, key=plan.key)
+    if "-CY-" in upper or upper.startswith("CY-"):
+        cycle = execution_queries.cycle_by_key(uow.session, ctx, key)
+        if cycle is None:
+            raise NotFound()
+        return s.ResolveRead(entity_type="test_cycle", id=cycle.id, key=cycle.key)
     case = tq.case_by_key(uow.session, ctx, key)
     if case is None:
         raise NotFound()

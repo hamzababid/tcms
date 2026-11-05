@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from tcms.core.enums import PlanStatus, PlanType
+from tcms.core.enums import CycleStatus, PlanStatus, PlanType
 from tcms.identity.schemas import UserRef
 from tcms.planning.rules import MD_MAX, NAME_MAX, NAME_MIN
 
@@ -25,13 +25,31 @@ class Risk(_Model):
     mitigation: str | None = Field(default=None, max_length=2000)
 
 
-class ExitRule(_Model):
-    """A structured readiness rule (docs/02 §11.4); evaluated in M7. Stored verbatim in exit_rules."""
+RuleType = Literal[
+    "min_execution_progress",
+    "min_pass_rate",
+    "min_pass_rate_applicable",
+    "max_open_defects",
+    "max_blocked",
+    "min_requirement_coverage",
+    "min_requirements_verified",
+    "tag_fully_executed",
+]
 
-    model_config = ConfigDict(extra="allow")
-    metric: str = Field(min_length=1, max_length=100)
-    operator: str = Field(pattern="^(gte|lte|gt|lt|eq)$")
-    threshold: float
+
+class ExitRuleParams(_Model):
+    severities: list[Literal["critical", "high", "medium", "low"]] | None = None
+    tag: str | None = Field(default=None, max_length=40)
+
+
+class ExitRule(_Model):
+    """A readiness rule (docs/02 §11.4, docs/06 §5.9 shape); evaluated in M7.
+
+    Percentage rules take a fraction 0–1; `max_*` rules take a count."""
+
+    type: RuleType
+    threshold: float = Field(ge=0)
+    params: ExitRuleParams | None = None
 
 
 class PlanCreate(_Model):
@@ -104,6 +122,22 @@ class AddCasesResponse(BaseModel):
     skipped: list[Skipped]
 
 
+class CountResponse(BaseModel):
+    count: int
+
+
+class PlanCycle(BaseModel):
+    """A cycle created from the plan (plan detail › Cycles, docs/07 §5.7)."""
+
+    id: UUID
+    key: str
+    name: str
+    status: CycleStatus
+    total: int
+    executed: int
+    passed: int
+
+
 class PlanRead(BaseModel):
     id: UUID
     key: str
@@ -134,6 +168,10 @@ class PlanRead(BaseModel):
     created_at: datetime
     updated_at: datetime
     row_version: int
+    # ?include=cases,requirements,cycles (docs/06 §4.5)
+    case_ids: list[UUID] | None = None
+    requirement_ids: list[UUID] | None = None
+    cycles: list[PlanCycle] | None = None
 
 
 class PlanListItem(BaseModel):
@@ -145,6 +183,9 @@ class PlanListItem(BaseModel):
     release_id: UUID | None
     owner: UserRef | None
     case_count: int
+    start_date: date | None
+    end_date: date | None
+    archived: bool
     updated_at: datetime
     row_version: int
 
@@ -160,4 +201,6 @@ class PlanCaseItem(BaseModel):
     key: str
     title: str
     status: str
-    results: list[PlanCaseResult] = Field(description="Latest result per linked cycle (docs/02 §6.2)")
+    priority: str
+    folder_id: UUID
+    results: list[PlanCaseResult] = Field(description="Run status in each cycle created from the plan")

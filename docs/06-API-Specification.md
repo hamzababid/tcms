@@ -184,9 +184,9 @@ Legend: **Perm** = required permission (project scope unless prefixed `org.`); `
 | POST | `/projects` | org: project.create | `{key, name, description?}` | WS-002 |
 | GET | `/projects/{project_id}` | project.view | Includes settings, counts | |
 | PATCH | `/projects/{project_id}` | project.configure | name, description, settings | WS-004 |
-| POST | `/projects/{project_id}/archive` | project.configure | `{confirm_key}` | |
+| POST | `/projects/{project_id}/archive` | project.configure | `{confirm_key, close_open_cycles?: bool}`; while planned/active cycles exist and `close_open_cycles` is false → `409 invalid_status` with `open_cycles[]` (docs/02 §4.2) | |
 | POST | `/projects/{project_id}/restore` | project.configure | | |
-| GET | `/projects/{project_id}/resolve` | project.view | `?key=SPARK-TC-12` → `{entity_type, id}` (arrives in M2 with the first keyed entity) | |
+| GET | `/projects/{project_id}/resolve` | project.view | `?key=SPARK-TC-12` → `{entity_type, id}`; `TC`, `PL` and `CY` keys (a bare number is a test case) | |
 | GET | `/projects/{project_id}/activity` | project.view | Activity feed (rendered audit summaries). Filters: `entity_type`, `actor_id`, `action`, `occurred_at__gte/lte` (dates), `q` (summary, record key or actor) | WS-007 |
 | GET | `/projects/{project_id}/members` | project.view | | WS-003 |
 | GET | `/projects/{project_id}/member-candidates` | project.members.manage | Active organization users who are not members (add-member picker) | WS-003 |
@@ -264,7 +264,7 @@ Bulk response: `200 {bulk_operation_id, updated, skipped: [{key, code, detail}]}
 | GET | `/cycles/{id}` | project.view | Cycle + summary + progress by assignee and folder | EXE-013 |
 | PATCH | `/cycles/{id}` | cycle.manage | name, description, build, dates, environment (only if no attempts) | |
 | POST | `/cycles/{id}/start` | cycle.manage | planned → active | EXE-012 |
-| POST | `/cycles/{id}/close` | cycle.manage | `{discard_drafts?: bool}`; `409` lists drafts if any and not discarding | EXE-012 |
+| POST | `/cycles/{id}/close` | cycle.manage | `{discard_drafts?: bool}`; `409 draft_exists` with `drafts[] {run_id, case_key, executed_by}` if any and not discarding; discarding deletes the drafts | EXE-012 |
 | POST | `/cycles/{id}/reopen` | cycle.reopen | `{reason}` | EXE-012 |
 | POST | `/cycles/{id}/clone` | cycle.manage | `{name, only_statuses?: [failed, blocked, not_run]}` | |
 | POST | `/cycles/{id}/archive` | cycle.manage | closed only | |

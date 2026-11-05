@@ -383,7 +383,7 @@ export interface paths {
     };
     /**
      * Get Cycle
-     * @description US-083 / FR-EXE-013: cycle with summary and progress by assignee.
+     * @description US-083 / FR-EXE-013: cycle, ExecutionSummary and progress by assignee and folder.
      */
     get: operations["get_cycle_api_v1_cycles__cycle_id__get"];
     put?: never;
@@ -443,7 +443,7 @@ export interface paths {
     put?: never;
     /**
      * Close Cycle
-     * @description US-084 (TCMS-058): 409 draft_exists lists drafts unless discard_drafts.
+     * @description US-084 (TCMS-058): `409 draft_exists` lists the drafts unless `discard_drafts`.
      */
     post: operations["close_cycle_api_v1_cycles__cycle_id__close_post"];
     delete?: never;
@@ -481,18 +481,18 @@ export interface paths {
     };
     /**
      * List Runs
-     * @description US-083 / FR-EXE-013: filters per docs/06 §4.6.
+     * @description US-083 / FR-EXE-013: filters and sorts of docs/06 §4.6.
      */
     get: operations["list_runs_api_v1_cycles__cycle_id__runs_get"];
     put?: never;
     /**
      * Add Runs
-     * @description US-081 / FR-EXE-003 (TCMS-057).
+     * @description US-081 / FR-EXE-003.
      */
     post: operations["add_runs_api_v1_cycles__cycle_id__runs_post"];
     /**
      * Remove Runs
-     * @description US-081: only not_run runs without attempts (409 run_has_results).
+     * @description US-081 (TCMS-057): only not-run runs without attempts (409 run_has_results).
      */
     delete: operations["remove_runs_api_v1_cycles__cycle_id__runs_delete"];
     options?: never;
@@ -511,7 +511,7 @@ export interface paths {
     put?: never;
     /**
      * Assign Runs
-     * @description US-082 / FR-EXE-004 (TCMS-055).
+     * @description US-082 / FR-EXE-004 (TCMS-055): selected runs or every run matching `filter`.
      */
     post: operations["assign_runs_api_v1_cycles__cycle_id__runs_assign_post"];
     delete?: never;
@@ -551,7 +551,7 @@ export interface paths {
     put?: never;
     /**
      * Update Not Run Versions
-     * @description US-086 bulk: update all not-run runs to the latest eligible version (BR-04).
+     * @description US-086 bulk: every not-run run moves to its eligible version (BR-04).
      */
     post: operations["update_not_run_versions_api_v1_cycles__cycle_id__runs_update_versions_post"];
     delete?: never;
@@ -1117,7 +1117,8 @@ export interface paths {
     put?: never;
     /**
      * Archive Project
-     * @description US-029 / AC-WS-02.
+     * @description US-029 / AC-WS-02. All cycles must be closed first, or closed here with `close_open_cycles`
+     *     (docs/02 §4.2, review K17k).
      */
     post: operations["archive_project_api_v1_projects__project_id__archive_post"];
     delete?: never;
@@ -1135,13 +1136,13 @@ export interface paths {
     };
     /**
      * List Cycles
-     * @description US-080 / FR-EXE-001.
+     * @description US-080 / FR-EXE-001: each item has its ExecutionSummary.
      */
     get: operations["list_cycles_api_v1_projects__project_id__cycles_get"];
     put?: never;
     /**
      * Create Cycle
-     * @description US-080 / FR-EXE-001/002, BR-03 (AC-PLN-01, TCMS-052/054).
+     * @description US-080 / FR-EXE-001/002, BR-03 (AC-PLN-01, TCMS-052/054, TCMS-025b).
      */
     post: operations["create_cycle_api_v1_projects__project_id__cycles_post"];
     delete?: never;
@@ -1278,7 +1279,8 @@ export interface paths {
     };
     /**
      * Resolve
-     * @description `SPARK-TC-12`, `TC-12` or `12` → the case (more entity types arrive with their milestones).
+     * @description `SPARK-TC-12`, `TC-12`, `12` → case; `SPARK-PL-3` / `PL-3` → plan; `SPARK-CY-1` / `CY-1` → cycle
+     *     (docs/04 §11.1). A bare number is a test case. More entity types arrive with their milestones.
      */
     get: operations["resolve_api_v1_projects__project_id__resolve_get"];
     put?: never;
@@ -1380,13 +1382,13 @@ export interface paths {
     };
     /**
      * List Plans
-     * @description US-070 / FR-PLN-001.
+     * @description US-070 / FR-PLN-001: filters status, type, release_id, owner_id, q.
      */
     get: operations["list_plans_api_v1_projects__project_id__test_plans_get"];
     put?: never;
     /**
      * Create Plan
-     * @description US-070 / FR-PLN-001 (TCMS-050).
+     * @description US-070 / FR-PLN-001/005 (TCMS-050).
      */
     post: operations["create_plan_api_v1_projects__project_id__test_plans_post"];
     delete?: never;
@@ -1414,6 +1416,26 @@ export interface paths {
      * @description US-026 / TCMS-024: status changes follow the transition table (docs/02 §4.4).
      */
     patch: operations["patch_release_api_v1_releases__release_id__patch"];
+    trace?: never;
+  };
+  "/api/v1/runs/{run_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Run
+     * @description docs/06 §4.6 / §5.4: run, case summary, pinned version, newer version info, attempts.
+     */
+    get: operations["get_run_api_v1_runs__run_id__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
     trace?: never;
   };
   "/api/v1/runs/{run_id}/claim": {
@@ -1447,7 +1469,7 @@ export interface paths {
     put?: never;
     /**
      * Replace Run
-     * @description US-086 / BR-05.
+     * @description US-086 / BR-05: returns the new run.
      */
     post: operations["replace_run_api_v1_runs__run_id__replace_post"];
     delete?: never;
@@ -1826,7 +1848,10 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** Get Plan */
+    /**
+     * Get Plan
+     * @description `?include=cases,requirements,cycles` (docs/06 §4.5).
+     */
     get: operations["get_plan_api_v1_test_plans__plan_id__get"];
     put?: never;
     post?: never;
@@ -1863,16 +1888,19 @@ export interface paths {
     };
     /**
      * List Plan Cases
-     * @description US-074 / docs/02 §6.2: each case with its latest result in every linked cycle.
+     * @description US-074 / docs/02 §6.2: each case with its status in every cycle created from the plan.
      */
     get: operations["list_plan_cases_api_v1_test_plans__plan_id__cases_get"];
     put?: never;
     /**
      * Add Cases
-     * @description FR-PLN-002 / BR-13 (TCMS-051).
+     * @description FR-PLN-002 / BR-13 (TCMS-051): `{added, skipped[]}`.
      */
     post: operations["add_cases_api_v1_test_plans__plan_id__cases_post"];
-    /** Remove Cases */
+    /**
+     * Remove Cases
+     * @description Removing cases does not change existing cycles (docs/02 §6.2).
+     */
     delete: operations["remove_cases_api_v1_test_plans__plan_id__cases_delete"];
     options?: never;
     head?: never;
@@ -1890,7 +1918,7 @@ export interface paths {
     put?: never;
     /**
      * Clone Plan
-     * @description US-073 / FR-PLN-006.
+     * @description US-073 / FR-PLN-006: everything except cycles; draft; "Copy of …".
      */
     post: operations["clone_plan_api_v1_test_plans__plan_id__clone_post"];
     delete?: never;
@@ -1910,7 +1938,7 @@ export interface paths {
     put?: never;
     /**
      * Link Requirements
-     * @description FR-PLN-003.
+     * @description FR-PLN-003 (the requirements screens arrive in M6).
      */
     post: operations["link_requirements_api_v1_test_plans__plan_id__requirements_post"];
     /** Unlink Requirements */
@@ -2094,25 +2122,28 @@ export interface components {
     };
     /** ArchiveRequest */
     ArchiveRequest: {
+      /**
+       * Close Open Cycles
+       * @description Close planned/active cycles first (docs/02 §4.2); otherwise 409 lists them
+       * @default false
+       */
+      close_open_cycles: boolean;
       /** Confirm Key */
       confirm_key: string;
     };
-    /** AssignRequest */
+    /**
+     * AssignRequest
+     * @description docs/06 §4.6: `{run_ids? | filter?, assignee_id | null}`; `filter` takes the runs-list filters.
+     */
     AssignRequest: {
       /** Assignee Id */
       assignee_id?: string | null;
+      /** Filter */
+      filter?: {
+        [key: string]: string;
+      } | null;
       /** Run Ids */
-      run_ids: string[];
-    };
-    /** AssigneeProgress */
-    AssigneeProgress: {
-      assignee: components["schemas"]["UserRef"] | null;
-      /** By Status */
-      by_status: {
-        [key: string]: number;
-      };
-      /** Total */
-      total: number;
+      run_ids?: string[] | null;
     };
     /** AttachmentRead */
     AttachmentRead: {
@@ -2142,6 +2173,32 @@ export interface components {
       uploaded_by: components["schemas"]["UserRef"] | null;
       /** Url */
       url: string;
+    };
+    /** AttemptRead */
+    AttemptRead: {
+      /** Attempt No */
+      attempt_no: number;
+      /** Corrects Result Id */
+      corrects_result_id: string | null;
+      executed_by: components["schemas"]["UserRef"] | null;
+      /** Finished At */
+      finished_at: string | null;
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Skipped Steps */
+      skipped_steps: number;
+      /**
+       * Started At
+       * Format: date-time
+       */
+      started_at: string;
+      /** State */
+      state: string;
+      /** Status */
+      status: string | null;
     };
     /**
      * AutomationStatus
@@ -2572,17 +2629,14 @@ export interface components {
       /** Start Date */
       start_date?: string | null;
     };
-    /** CycleCreateResponse */
+    /**
+     * CycleCreateResponse
+     * @description docs/06 §4.6: `201 {cycle, added, skipped[]}`, or `202` while runs are created in the background.
+     */
     CycleCreateResponse: {
       /** Added */
       added: number;
-      /**
-       * Cycle Id
-       * Format: uuid
-       */
-      cycle_id: string;
-      /** Key */
-      key: string;
+      cycle: components["schemas"]["CycleRead"];
       /** Runs Pending */
       runs_pending: boolean;
       /** Skipped */
@@ -2590,13 +2644,13 @@ export interface components {
     };
     /** CycleListItem */
     CycleListItem: {
+      /** Archived */
+      archived: boolean;
+      /** Build */
+      build: string | null;
       /** Due Date */
       due_date: string | null;
-      /**
-       * Environment Id
-       * Format: uuid
-       */
-      environment_id: string;
+      environment: components["schemas"]["Ref"];
       /**
        * Id
        * Format: uuid
@@ -2606,14 +2660,17 @@ export interface components {
       key: string;
       /** Name */
       name: string;
-      /** Plan Id */
-      plan_id: string | null;
-      /** Release Id */
-      release_id: string | null;
+      owner: components["schemas"]["UserRef"] | null;
+      plan: components["schemas"]["KeyRef"] | null;
+      release: components["schemas"]["Ref"] | null;
       /** Row Version */
       row_version: number;
+      /** Runs Pending */
+      runs_pending: boolean;
+      /** Start Date */
+      start_date: string | null;
       status: components["schemas"]["CycleStatus"];
-      summary: components["schemas"]["CycleSummary"];
+      summary: components["schemas"]["ExecutionSummaryRead"];
       /**
        * Updated At
        * Format: date-time
@@ -2632,17 +2689,25 @@ export interface components {
       environment_id?: string | null;
       /** Name */
       name?: string | null;
+      /** Release Id */
+      release_id?: string | null;
       /** Row Version */
       row_version?: number | null;
       /** Start Date */
       start_date?: string | null;
     };
-    /** CycleRead */
+    /**
+     * CycleRead
+     * @description docs/06 §5.3 plus progress by assignee and folder (FR-EXE-013).
+     */
     CycleRead: {
       /** Archived */
       archived: boolean;
       /** Build */
       build: string | null;
+      /** Closed At */
+      closed_at: string | null;
+      closed_by: components["schemas"]["UserRef"] | null;
       /**
        * Created At
        * Format: date-time
@@ -2652,11 +2717,7 @@ export interface components {
       description: string | null;
       /** Due Date */
       due_date: string | null;
-      /**
-       * Environment Id
-       * Format: uuid
-       */
-      environment_id: string;
+      environment: components["schemas"]["Ref"];
       /**
        * Id
        * Format: uuid
@@ -2667,25 +2728,29 @@ export interface components {
       /** Name */
       name: string;
       owner: components["schemas"]["UserRef"] | null;
-      /** Plan Id */
-      plan_id: string | null;
+      plan: components["schemas"]["KeyRef"] | null;
       /** Progress By Assignee */
-      progress_by_assignee: components["schemas"]["AssigneeProgress"][];
+      progress_by_assignee: components["schemas"]["GroupProgress"][];
+      /** Progress By Folder */
+      progress_by_folder: components["schemas"]["GroupProgress"][];
       /**
        * Project Id
        * Format: uuid
        */
       project_id: string;
-      /** Release Id */
-      release_id: string | null;
+      release: components["schemas"]["Ref"] | null;
       /** Row Version */
       row_version: number;
       /** Runs Pending */
       runs_pending: boolean;
       /** Start Date */
       start_date: string | null;
+      /** Started At */
+      started_at: string | null;
       status: components["schemas"]["CycleStatus"];
-      summary: components["schemas"]["CycleSummary"];
+      summary: components["schemas"]["ExecutionSummaryRead"];
+      /** Superseded Runs */
+      superseded_runs: number;
       /**
        * Updated At
        * Format: date-time
@@ -2697,18 +2762,6 @@ export interface components {
      * @enum {string}
      */
     CycleStatus: "planned" | "active" | "closed";
-    /**
-     * CycleSummary
-     * @description Counts by run status over non-superseded runs.
-     */
-    CycleSummary: {
-      /** By Status */
-      by_status: {
-        [key: string]: number;
-      };
-      /** Total */
-      total: number;
-    };
     /**
      * DesignTechnique
      * @enum {string}
@@ -2790,18 +2843,68 @@ export interface components {
       version_no: number;
     };
     /**
+     * ExecutionSummaryRead
+     * @description docs/06 §5.7; rates are null when the denominator is 0 (BR-24).
+     */
+    ExecutionSummaryRead: {
+      /** Applicable */
+      applicable: number;
+      /** Blocked */
+      blocked: number;
+      blocked_rate: components["schemas"]["RateRead"];
+      /** Executed */
+      executed: number;
+      execution_progress: components["schemas"]["RateRead"];
+      /** Failed */
+      failed: number;
+      failure_rate: components["schemas"]["RateRead"];
+      /** In Progress */
+      in_progress: number;
+      /** Needs Retest */
+      needs_retest: number;
+      /** Not Applicable */
+      not_applicable: number;
+      /** Not Run */
+      not_run: number;
+      pass_rate: components["schemas"]["RateRead"];
+      pass_rate_applicable: components["schemas"]["RateRead"];
+      /** Passed */
+      passed: number;
+      /** Skipped */
+      skipped: number;
+      /** Total */
+      total: number;
+    };
+    /**
      * ExitRule
-     * @description A structured readiness rule (docs/02 §11.4); evaluated in M7. Stored verbatim in exit_rules.
+     * @description A readiness rule (docs/02 §11.4, docs/06 §5.9 shape); evaluated in M7.
+     *
+     *     Percentage rules take a fraction 0–1; `max_*` rules take a count.
      */
     ExitRule: {
-      /** Metric */
-      metric: string;
-      /** Operator */
-      operator: string;
+      params?: components["schemas"]["ExitRuleParams"] | null;
       /** Threshold */
       threshold: number;
-    } & {
-      [key: string]: unknown;
+      /**
+       * Type
+       * @enum {string}
+       */
+      type:
+        | "min_execution_progress"
+        | "min_pass_rate"
+        | "min_pass_rate_applicable"
+        | "max_open_defects"
+        | "max_blocked"
+        | "min_requirement_coverage"
+        | "min_requirements_verified"
+        | "tag_fully_executed";
+    };
+    /** ExitRuleParams */
+    ExitRuleParams: {
+      /** Severities */
+      severities?: ("critical" | "high" | "medium" | "low")[] | null;
+      /** Tag */
+      tag?: string | null;
     };
     /** FieldDiffRead */
     FieldDiffRead: {
@@ -2889,6 +2992,17 @@ export interface components {
     ForgotPasswordRequest: {
       /** Email */
       email: string;
+    };
+    /** GroupProgress */
+    GroupProgress: {
+      /**
+       * Id
+       * @description Assignee or folder id; null = unassigned
+       */
+      id: string | null;
+      /** Name */
+      name: string;
+      summary: components["schemas"]["ExecutionSummaryRead"];
     };
     /** InvitationCreate */
     InvitationCreate: {
@@ -2980,6 +3094,18 @@ export interface components {
       project_id: string | null;
       /** Role Code */
       role_code: string | null;
+    };
+    /** KeyRef */
+    KeyRef: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Key */
+      key: string;
+      /** Title */
+      title: string;
     };
     /** LifecycleRequest */
     LifecycleRequest: {
@@ -3093,6 +3219,17 @@ export interface components {
       code?: string | null;
       /** Recovery Code */
       recovery_code?: string | null;
+    };
+    /** NewerVersionRead */
+    NewerVersionRead: {
+      /** Can Update */
+      can_update: boolean;
+      /** Eligible */
+      eligible: boolean;
+      /** Reason */
+      reason: string | null;
+      /** Version No */
+      version_no: number;
     };
     /** OrgMemberPatch */
     OrgMemberPatch: {
@@ -3237,10 +3374,10 @@ export interface components {
       /** Total */
       total: number;
     };
-    /** Page[RunRead] */
-    Page_RunRead_: {
+    /** Page[RunListItem] */
+    Page_RunListItem_: {
       /** Items */
-      items: components["schemas"]["RunRead"][];
+      items: components["schemas"]["RunListItem"][];
       /** Page */
       page: number;
       /** Page Size */
@@ -3277,11 +3414,18 @@ export interface components {
        * Format: uuid
        */
       case_id: string;
+      /**
+       * Folder Id
+       * Format: uuid
+       */
+      folder_id: string;
       /** Key */
       key: string;
+      /** Priority */
+      priority: string;
       /**
        * Results
-       * @description Latest result per linked cycle (docs/02 §6.2)
+       * @description Run status in each cycle created from the plan
        */
       results: components["schemas"]["PlanCaseResult"][];
       /** Status */
@@ -3335,10 +3479,36 @@ export interface components {
       start_date?: string | null;
       type: components["schemas"]["PlanType"];
     };
+    /**
+     * PlanCycle
+     * @description A cycle created from the plan (plan detail › Cycles, docs/07 §5.7).
+     */
+    PlanCycle: {
+      /** Executed */
+      executed: number;
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Key */
+      key: string;
+      /** Name */
+      name: string;
+      /** Passed */
+      passed: number;
+      status: components["schemas"]["CycleStatus"];
+      /** Total */
+      total: number;
+    };
     /** PlanListItem */
     PlanListItem: {
+      /** Archived */
+      archived: boolean;
       /** Case Count */
       case_count: number;
+      /** End Date */
+      end_date: string | null;
       /**
        * Id
        * Format: uuid
@@ -3353,6 +3523,8 @@ export interface components {
       release_id: string | null;
       /** Row Version */
       row_version: number;
+      /** Start Date */
+      start_date: string | null;
       status: components["schemas"]["PlanStatus"];
       type: components["schemas"]["PlanType"];
       /**
@@ -3411,11 +3583,15 @@ export interface components {
       archived: boolean;
       /** Case Count */
       case_count: number;
+      /** Case Ids */
+      case_ids?: string[] | null;
       /**
        * Created At
        * Format: date-time
        */
       created_at: string;
+      /** Cycles */
+      cycles?: components["schemas"]["PlanCycle"][] | null;
       /** End Date */
       end_date: string | null;
       /** Entry Criteria */
@@ -3451,6 +3627,8 @@ export interface components {
       release_id: string | null;
       /** Requirement Count */
       requirement_count: number;
+      /** Requirement Ids */
+      requirement_ids?: string[] | null;
       /** Risks */
       risks: {
         [key: string]: unknown;
@@ -3652,6 +3830,15 @@ export interface components {
      * @enum {string}
      */
     ProjectStatus: "active" | "archived";
+    /** RateRead */
+    RateRead: {
+      /** Denominator */
+      denominator: number;
+      /** Numerator */
+      numerator: number;
+      /** Value */
+      value: number | null;
+    };
     /** ReadyStatus */
     ReadyStatus: {
       /** Checks */
@@ -3668,6 +3855,16 @@ export interface components {
     RecoveryCodesResponse: {
       /** Recovery Codes */
       recovery_codes: string[];
+    };
+    /** Ref */
+    Ref: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Name */
+      name: string;
     };
     /** ReleaseCreate */
     ReleaseCreate: {
@@ -3732,12 +3929,15 @@ export interface components {
       /** Reason */
       reason: string;
     };
-    /** ReorderRequest */
+    /**
+     * ReorderRequest
+     * @description docs/06 §4.6: `{run_ids_in_order}` or `{sort_by: folder|priority}`.
+     */
     ReorderRequest: {
-      /** Ordered Run Ids */
-      ordered_run_ids?: string[] | null;
+      /** Run Ids In Order */
+      run_ids_in_order?: string[] | null;
       /** Sort By */
-      sort_by?: string | null;
+      sort_by?: ("folder" | "priority") | null;
     };
     /** RequirementIdsRequest */
     RequirementIdsRequest: {
@@ -3765,9 +3965,9 @@ export interface components {
     ResolveRead: {
       /**
        * Entity Type
-       * @constant
+       * @enum {string}
        */
-      entity_type: "test_case";
+      entity_type: "test_case" | "test_plan" | "test_cycle";
       /**
        * Id
        * Format: uuid
@@ -3818,16 +4018,71 @@ export interface components {
       /** Permissions */
       permissions: string[];
     };
+    /** RunCase */
+    RunCase: {
+      /**
+       * Folder Id
+       * Format: uuid
+       */
+      folder_id: string;
+      /** Folder Name */
+      folder_name: string;
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Key */
+      key: string;
+      /** Priority */
+      priority: string;
+      /** Title */
+      title: string;
+    };
+    /** RunCaseDetail */
+    RunCaseDetail: {
+      /**
+       * Folder Id
+       * Format: uuid
+       */
+      folder_id: string;
+      /** Folder Name */
+      folder_name: string;
+      /** Folder Path */
+      folder_path: string[];
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Key */
+      key: string;
+      /** Priority */
+      priority: string;
+      /** Title */
+      title: string;
+    };
+    /** RunCycleRef */
+    RunCycleRef: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Key */
+      key: string;
+      /** Name */
+      name: string;
+      status: components["schemas"]["CycleStatus"];
+    };
     /** RunIdsRequest */
     RunIdsRequest: {
       /** Run Ids */
       run_ids: string[];
     };
-    /** RunRead */
-    RunRead: {
+    /** RunListItem */
+    RunListItem: {
       assignee: components["schemas"]["UserRef"] | null;
-      /** Case Key */
-      case_key: string;
       /**
        * Cycle Id
        * Format: uuid
@@ -3838,10 +4093,15 @@ export interface components {
        * Format: uuid
        */
       id: string;
-      /** Latest Version No */
-      latest_version_no: number;
       /** Needs Retest */
       needs_retest: boolean;
+      /**
+       * Newer Version No
+       * @description Set when a newer eligible version exists ('v3↑')
+       */
+      newer_version_no: number | null;
+      /** Pinned Version No */
+      pinned_version_no: number;
       /** Position */
       position: number;
       /** Row Version */
@@ -3849,15 +4109,46 @@ export interface components {
       status: components["schemas"]["RunStatus"];
       /** Superseded */
       superseded: boolean;
+      test_case: components["schemas"]["RunCase"];
       /**
-       * Test Case Id
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
+    };
+    /**
+     * RunRead
+     * @description docs/06 §5.4. `version`, `draft` and `history` are filled when requested with `include=`; linked
+     *     defects arrive with M5.
+     */
+    RunRead: {
+      assignee: components["schemas"]["UserRef"] | null;
+      cycle: components["schemas"]["RunCycleRef"];
+      draft?: components["schemas"]["AttemptRead"] | null;
+      /** Has Attempts */
+      has_attempts: boolean;
+      /** History */
+      history?: components["schemas"]["AttemptRead"][] | null;
+      /**
+       * Id
        * Format: uuid
        */
-      test_case_id: string;
-      /** Title */
-      title: string;
-      /** Version No */
-      version_no: number;
+      id: string;
+      /** Needs Retest */
+      needs_retest: boolean;
+      newer_version: components["schemas"]["NewerVersionRead"] | null;
+      /** Pinned Version No */
+      pinned_version_no: number;
+      /** Position */
+      position: number;
+      /** Row Version */
+      row_version: number;
+      status: components["schemas"]["RunStatus"];
+      /** Superseded By Run Id */
+      superseded_by_run_id: string | null;
+      test_case: components["schemas"]["RunCaseDetail"];
+      /** @description The pinned version (include=version) */
+      version?: components["schemas"]["VersionRead"] | null;
     };
     /**
      * RunStatus
@@ -3882,7 +4173,7 @@ export interface components {
        */
       from_plan: boolean;
       /** Priorities */
-      priorities?: string[];
+      priorities?: ("critical" | "high" | "medium" | "low")[];
       /** Tags */
       tags?: string[];
     };
@@ -4094,7 +4385,7 @@ export interface components {
       /** Name */
       name: string;
       /** Only Statuses */
-      only_statuses?: components["schemas"]["RunStatus"][] | null;
+      only_statuses?: ("failed" | "blocked" | "not_run")[] | null;
     };
     /** AddCasesRequest */
     tcms__planning__schemas__AddCasesRequest: {
@@ -5268,6 +5559,15 @@ export interface operations {
           "application/json": components["schemas"]["CycleCreateResponse"];
         };
       };
+      /** @description Runs are created in the background */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CycleCreateResponse"];
+        };
+      };
       /** @description Validation or business-rule error */
       422: {
         headers: {
@@ -5388,8 +5688,12 @@ export interface operations {
         page?: number;
         page_size?: number;
         sort?: string | null;
+        q?: string | null;
         status?: string | null;
         assignee_id?: string | null;
+        folder_id?: string | null;
+        priority?: string | null;
+        tag?: string | null;
         needs_retest?: boolean | null;
         include_superseded?: boolean;
       };
@@ -5407,7 +5711,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["Page_RunRead_"];
+          "application/json": components["schemas"]["Page_RunListItem_"];
         };
       };
       /** @description Validation or business-rule error */
@@ -7254,6 +7558,7 @@ export interface operations {
         plan_id?: string | null;
         environment_id?: string | null;
         owner_id?: string | null;
+        include_archived?: boolean;
       };
       header?: never;
       path: {
@@ -7310,7 +7615,16 @@ export interface operations {
     };
     responses: {
       /** @description Successful Response */
-      200: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CycleCreateResponse"];
+        };
+      };
+      /** @description Runs are created in the background */
+      202: {
         headers: {
           [name: string]: unknown;
         };
@@ -8171,6 +8485,7 @@ export interface operations {
         type?: string | null;
         release_id?: string | null;
         owner_id?: string | null;
+        include_archived?: boolean;
       };
       header?: never;
       path: {
@@ -8323,6 +8638,50 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ReleaseRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  get_run_api_v1_runs__run_id__get: {
+    parameters: {
+      query?: {
+        include?: string | null;
+      };
+      header?: never;
+      path: {
+        run_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RunRead"];
         };
       };
       /** @description Validation or business-rule error */
@@ -9381,7 +9740,9 @@ export interface operations {
   };
   get_plan_api_v1_test_plans__plan_id__get: {
     parameters: {
-      query?: never;
+      query?: {
+        include?: string | null;
+      };
       header?: never;
       path: {
         plan_id: string;
@@ -9623,7 +9984,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["AddCasesResponse"];
+          "application/json": components["schemas"]["CountResponse"];
         };
       };
       /** @description Validation or business-rule error */
@@ -9715,7 +10076,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["AddCasesResponse"];
+          "application/json": components["schemas"]["CountResponse"];
         };
       };
       /** @description Validation or business-rule error */
@@ -9761,7 +10122,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["AddCasesResponse"];
+          "application/json": components["schemas"]["CountResponse"];
         };
       };
       /** @description Validation or business-rule error */

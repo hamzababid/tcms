@@ -89,14 +89,20 @@ def test_us_070_create_plan_with_exit_rules_and_risks(world: World) -> None:
         release_id=rel["id"],
         objectives="Cover the regression suite",
         environment_ids=[env_id],
-        exit_rules=[{"metric": "pass_rate", "operator": "gte", "threshold": 95}],
+        exit_rules=[
+            {"type": "min_execution_progress", "threshold": 1.0},
+            {"type": "max_open_defects", "threshold": 0, "params": {"severities": ["critical"]}},
+        ],
         risks=[{"description": "Flaky payment gateway", "impact": "high", "mitigation": "Retry"}],
         start_date="2026-11-01",
         end_date="2026-11-30",
     )
     assert plan["key"].endswith("-PL-1")  # BR-16
     assert plan["status"] == "draft"
-    assert plan["exit_rules"] == [{"metric": "pass_rate", "operator": "gte", "threshold": 95}]
+    assert plan["exit_rules"] == [
+        {"type": "min_execution_progress", "threshold": 1.0},
+        {"type": "max_open_defects", "threshold": 0, "params": {"severities": ["critical"]}},
+    ]
     assert plan["risks"][0]["impact"] == "high"
     assert plan["environment_ids"] == [env_id]
     # audit recorded
@@ -108,7 +114,7 @@ def test_us_070_create_plan_with_exit_rules_and_risks(world: World) -> None:
                 {"id": plan["id"]},
             ).all()
         ]
-    assert "test_plan.created" in actions
+    assert "plan.created" in actions
 
 
 def test_us_070_validation(world: World) -> None:
@@ -223,7 +229,7 @@ def test_us_071_add_by_folder_and_remove(world: World) -> None:
     rem = sp.admin.request(
         "DELETE", f"/api/v1/test-plans/{plan['id']}/cases", json={"case_ids": [str(c1)]}
     ).json()
-    assert rem["added"] == -1
+    assert rem["count"] == 1
     assert sp.admin.get(f"/api/v1/test-plans/{plan['id']}/cases").json()["total"] == 1
 
 
@@ -246,7 +252,7 @@ def test_us_072_link_and_unlink_requirements(world: World) -> None:
         f"/api/v1/test-plans/{plan['id']}/requirements", json={"requirement_ids": [str(rid)]}
     )
     assert linked.status_code == 200, linked.text
-    assert linked.json()["added"] == 1
+    assert linked.json()["count"] == 1
     assert sp.admin.get(f"/api/v1/test-plans/{plan['id']}").json()["requirement_count"] == 1
     # unknown requirement rejected
     bad = sp.admin.post(
@@ -257,7 +263,7 @@ def test_us_072_link_and_unlink_requirements(world: World) -> None:
     rem = sp.admin.request(
         "DELETE", f"/api/v1/test-plans/{plan['id']}/requirements", json={"requirement_ids": [str(rid)]}
     ).json()
-    assert rem["added"] == -1
+    assert rem["count"] == 1
 
 
 # -- US-073: clone (FR-PLN-006) -------------------------------------------------------------------
@@ -307,3 +313,76 @@ def test_us_070_archive_plan_is_read_only(world: World) -> None:
     assert r.status_code == 409
     # archived plans are hidden from the default list
     assert all(p["name"] != "To archive" for p in sp.admin.get(sp.url("/test-plans")).json()["items"])
+
+
+# -- exit rules, people, cycles of a plan ---------------------------------------------------------
+
+
+def test_us_070_exit_rules_are_validated_against_the_rule_types(world: World) -> None:
+    """FR-PLN-005 / docs/02 §11.4: rule types, percentage 0–1, counts, required params."""
+    sp = Space(world)
+    for bad in (
+        [{"type": "pass_rate_above", "threshold": 0.9}],
+        [{"type": "min_pass_rate", "threshold": 95}],
+        [{"type": "max_blocked", "threshold": 1.5}],
+        [{"type": "max_open_defects", "threshold": 0}],
+        [{"type": "tag_fully_executed", "threshold": 1}],
+    ):
+        r = sp.admin.post(sp.url("/test-plans"), json={"name": "Rules", "type": "smoke", "exit_rules": bad})
+        assert r.status_code == 422, (bad, r.text)
+    ok = sp.create_plan(
+        name="Good rules",
+        exit_rules=[
+            {"type": "min_pass_rate_applicable", "threshold": 0.95},
+            {"type": "max_blocked", "threshold": 2},
+            {"type": "tag_fully_executed", "threshold": 1, "params": {"tag": "smoke"}},
+        ],
+    )
+    assert [r["type"] for r in ok["exit_rules"]] == [
+        "min_pass_rate_applicable",
+        "max_blocked",
+        "tag_fully_executed",
+    ]
+
+
+def test_us_070_owner_and_members_must_be_project_members(world: World) -> None:
+    sp = Space(world)
+    outsider = world.user(sp.org, "Outsider")
+    r = sp.admin.post(
+        sp.url("/test-plans"), json={"name": "People", "type": "smoke", "member_ids": [str(outsider.id)]}
+    )
+    assert r.status_code == 422
+    world.member(sp.org, sp.pid, outsider, "qa_engineer")
+    assert sp.create_plan(name="People ok", member_ids=[str(outsider.id)])["member_ids"] == [str(outsider.id)]
+
+
+def test_us_074_plan_cases_show_results_of_the_plans_cycles_only(world: World) -> None:
+    """docs/02 §6.2: per case, its result in each cycle created from the plan (not unrelated cycles)."""
+    sp = Space(world)
+    c1, _ = sp.case("Planned case")
+    plan = sp.create_plan(name="Results plan")
+    sp.admin.post(f"/api/v1/test-plans/{plan['id']}/cases", json={"case_ids": [str(c1)]})
+    env_id = sp.admin.get(sp.url("/environments")).json()[0]["id"]
+    from_plan = sp.admin.post(
+        sp.url("/cycles"),
+        json={
+            "name": "Plan cycle",
+            "environment_id": env_id,
+            "plan_id": plan["id"],
+            "selection": {"from_plan": True},
+        },
+    ).json()["cycle"]
+    sp.admin.post(
+        sp.url("/cycles"),
+        json={"name": "Unrelated cycle", "environment_id": env_id, "selection": {"case_ids": [str(c1)]}},
+    )
+    item = sp.admin.get(f"/api/v1/test-plans/{plan['id']}/cases").json()["items"][0]
+    assert item["results"] == [
+        {"cycle_id": from_plan["id"], "cycle_key": from_plan["key"], "status": "not_run"}
+    ]
+    assert item["priority"] == "medium"
+    detail = sp.admin.get(f"/api/v1/test-plans/{plan['id']}", params={"include": "cycles,cases"}).json()
+    assert [c["key"] for c in detail["cycles"]] == [from_plan["key"]]
+    assert detail["cycles"][0]["total"] == 1
+    assert detail["case_ids"] == [str(c1)]
+    assert sp.admin.get(f"/api/v1/test-plans/{plan['id']}", params={"include": "nope"}).status_code == 400
