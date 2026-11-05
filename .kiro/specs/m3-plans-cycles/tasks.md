@@ -9,11 +9,18 @@ without approval.
 Tasks are grouped: plans (E07) first since cycles depend on the plan case list, then cycles/runs (E08),
 then cross-cutting close-out. Within each group, tests precede implementation.
 
-## 0. Resolve open questions
+## 0. Decisions (resolved 2026-11-05 — see design §7)
 
-- [ ] 0.1 Get answers to design §7 Q1–Q7 (schema change policy, `saved_view_id`, run action shapes,
-  close-drafts contract, replace-run M3-vs-M4 split, BR-30 split, audit action names). Record decisions in
-  the spec. _(blocks the tasks they touch)_
+All open questions are resolved; implementation follows these:
+
+- **Q1** No migration unless a genuine gap surfaces; then migration 0003 + `docs/schema/04_m3_additions.sql`,
+  schema-diff + `99_verify.sql` kept green.
+- **Q2** `saved_view_id` in add-cases is accepted but returns `422` ("not available until M6"); real support in M6.
+- **Q3** Run action endpoint shapes per design §4.2 / §7 item 3 (agent's discretion; docs/06 wins where it fixes a shape).
+- **Q4** Build `POST /cycles/{id}/close` with the no-drafts success path and the `409`-lists-drafts contract now.
+- **Q5** Build replace-run in M3 against seeded finalized results; ⚠️ **defer the replace-run/retest-round E2E to M4** (see §7.5).
+- **Q6** M3 builds explicit `POST /cycles/{id}/start`; BR-30 auto-start lands with the runner in M4.
+- **Q7** Audit action names follow `entity.verb_past` and must match docs/02 §13.1; add any missing to §13.1 as a doc change.
 
 ## 1. Plans — tests first (E07)
 
@@ -40,7 +47,8 @@ then cross-cutting close-out. Within each group, tests precede implementation.
   exclusion reasons, clone rules. **Satisfies:** FR-PLN-001/005, BR-13.
 - [ ] 2.5 `planning/service.py`: `create_plan`, `update_plan`, `add_cases`, `remove_cases`,
   `link_requirements`/`unlink_requirements`, `clone_plan`, `archive_plan` — each permission-checked,
-  validated, audited, one transaction. `planning/queries.py`: public reads (plan, plan cases with
+  validated, audited, one transaction. `add_cases` accepts `saved_view_id` but rejects it with `422`
+  ("not available until M6") per Q2. `planning/queries.py`: public reads (plan, plan cases with
   per-cycle results) for other modules and the router. **Satisfies:** FR-PLN-001/002/003/004/006, BR-13/16.
 - [ ] 2.6 `planning/schemas.py` + `planning/errors.py`: Pydantic request/response models, DomainError
   subclasses mapping to docs/06 §3 codes. **Satisfies:** docs/06 §4.5.
@@ -134,7 +142,10 @@ then cross-cutting close-out. Within each group, tests precede implementation.
 - [ ] 7.4 Add `M3` to `tests/br_manifest.COMPLETED`; confirm BR-03/04/05/11/12/31 (and the M3 slice of
   BR-30) are covered by `test_rule_coverage.py`.
 - [ ] 7.5 Update `docs/ops/CHECKLIST.md`: mark M3 stories ✅ with their test paths and acceptance evidence;
-  move resolved known-limitations; note any new deferrals (e.g. runner-dependent tails landing in M4).
-  Update `docs/ops/HANDOFF-kiro.md` / known-limitations only if behaviour or contracts changed.
+  move resolved known-limitations; note any new deferrals. ⚠️ **Record the Q5 deferral explicitly in
+  `docs/ops/known-limitations.md`**: replace-run/BR-05 is built and unit-tested in M3, but its
+  retest-round **E2E is deferred to M4** (add when the runner lands). Also note the runner-dependent tails
+  (close-with-live-drafts, BR-30 auto-start) that complete in M4. Update `docs/ops/HANDOFF-kiro.md` only if
+  behaviour or contracts changed.
 - [ ] 7.6 Summarize per CLAUDE.md §4.5: what changed, which ACs are covered by which tests, any doc
   conflicts found (e.g. audit action names per Q7), any follow-ups. Stop for review before merge.

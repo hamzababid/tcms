@@ -218,25 +218,30 @@ M7; use for cycle layout only).
 
 ## 7. Questions (departures from the docs — decide before implementing)
 
-1. **Q1 — Any schema change needed?** The baseline appears complete for M3; the plan is **no migration**.
-   If implementation reveals a missing column (e.g. a per-run label, or a `runs_pending` progress counter
-   beyond the existing boolean), is adding migration 0003 (+ `docs/schema/04_m3_additions.sql`, schema-diff
-   and `99_verify.sql` kept green) acceptable, or should any such need be raised to you first?
-2. **Q2 — `saved_view_id` in add-cases.** Saved views are M6. Proposal: accept the field in the schema but
-   return `422` ("not available until M6") rather than silently ignoring it. Acceptable, or omit the field
-   from the M3 schema entirely until M6?
-3. **Q3 — Run action endpoint shapes.** docs/06 §4.6 lists cycle/run endpoints; assign/claim/
-   update-version/replace/reorder shapes above are my reading. Where docs/06 fixes a shape it wins; where
-   it is silent I will follow the table in §4.2. Any shape you want fixed up front?
-4. **Q4 — Close-cycle drafts contract in M3.** Draft attempts only exist with the runner (M4). Proposal:
-   build `POST /cycles/{id}/close` now returning the "no drafts" success path and the `409`-lists-drafts
-   contract (exercised with a seeded draft fixture) so M4 needs no contract change. Acceptable?
-5. **Q5 — Replace-run / BR-05 in M3 vs M4.** Replace-run needs a finalized attempt, which is M4. Proposal:
-   build the endpoint + rules + superseded bookkeeping in M3 and unit-test against seeded finalized
-   `test_results` rows; defer the full retest-round E2E to M4. Acceptable, or move US-086 entirely to M4?
-6. **Q6 — BR-30 auto-start.** "Executing a run in a Planned cycle moves it to Active" fires from the
-   runner (M4). M3 builds the explicit `POST /cycles/{id}/start` and leaves the auto-trigger to M4. Confirm
-   this split (it matches docs/09 M4 scope).
-7. **Q7 — Audit action names.** The names in §5 follow `entity.verb_past`. Please confirm they should match
-   whatever docs/02 §13.1 lists; if §13.1 omits some of these M3 actions, I will add them to §13.1 as a
-   doc change (behaviour → Functional Spec wins) and note it, rather than inventing silently.
+> **All resolved (product owner, 2026-11-05).** Each item below records the agreed decision. Implementation
+> follows these; no further approval needed to start.
+
+1. **Q1 — RESOLVED.** No migration is expected. Add migration 0003 (+ `docs/schema/04_m3_additions.sql`,
+   keeping the schema-diff and `99_verify.sql` green) **only if** implementation reveals a genuine gap; do
+   not add a migration otherwise.
+2. **Q2 — RESOLVED.** `saved_view_id` is accepted in the add-cases schema but returns `422` ("not
+   available until M6") rather than being silently ignored (no-dummy-UI rule). Saved-view support lands in
+   M6.
+3. **Q3 — RESOLVED (agent's discretion).** Where docs/06 §4.6 fixes an endpoint shape it wins; where it is
+   silent, follow the §4.2 table as my best judgement: `POST /cycles/{id}/runs/assign` (bulk
+   `{run_ids, assignee_id?}`, null = unassign), `POST /runs/{id}/claim`, `POST /runs/{id}/update-version`
+   (+ a cycle-level bulk "update all not-run"), `POST /runs/{id}/replace`, `POST /cycles/{id}/runs/reorder`
+   (`{ordered_run_ids}` or `{sort_by: folder|priority}`). Keep names/shapes consistent with the existing
+   M1/M2 router conventions.
+4. **Q4 — RESOLVED.** Build `POST /cycles/{id}/close` now: the "no drafts" success path plus the
+   `409`-lists-drafts contract (exercised with a seeded draft fixture) so the M4 runner needs no contract
+   change.
+5. **Q5 — RESOLVED.** Build replace-run (US-086, BR-05) in M3: endpoint + rules + superseded bookkeeping,
+   unit-tested against seeded finalized `test_results` rows. The full retest-round E2E is **deferred to
+   M4**. ⚠️ **Reminder to carry into M4:** add the replace-run / retest-round E2E when the runner lands
+   (tracked in tasks §7.5 and to be noted in `docs/ops/known-limitations.md`).
+6. **Q6 — RESOLVED.** M3 builds the explicit `POST /cycles/{id}/start` (planned → active); the BR-30
+   auto-start on first execution lands with the runner in **M4** (matches docs/09 M4 scope).
+7. **Q7 — RESOLVED.** Audit action names follow `entity.verb_past` and must match docs/02 §13.1. If §13.1
+   omits any M3 action, add it to §13.1 as a doc change (behaviour → Functional Spec wins) and note it in
+   the summary — never invent a name silently.
