@@ -687,7 +687,7 @@ def test_get_run_includes(world: World) -> None:
     assert body["version"]["steps"][0]["action"].startswith("Do")
     assert body["history"] == []
     assert body["draft"] is None
-    assert sp.admin.get(f"/api/v1/runs/{run['id']}", params={"include": "queue"}).status_code == 400
+    assert sp.admin.get(f"/api/v1/runs/{run['id']}", params={"include": "defects"}).status_code == 400
 
 
 # -- reorder (US-087) -----------------------------------------------------------------------------

@@ -10,6 +10,7 @@ import {
   ClipboardList,
   FolderKanban,
   FolderTree,
+  ListTodo,
   PlayCircle,
   Settings,
   Shield,
@@ -202,6 +203,25 @@ function useCrumbs(project: Project | undefined): Crumb[] {
     const params = { projectKey: project.key };
     crumbs.push({ label: project.key, to: "/p/$projectKey", params, mono: true });
     if (path.endsWith("/activity")) crumbs.push({ label: "Activity" });
+    if (path.includes("/plans")) {
+      crumbs.push({ label: "Plans", to: "/p/$projectKey/plans", params });
+      const planKey = /\/plans\/([^/]+)/.exec(path)?.[1];
+      if (planKey) crumbs.push({ label: decodeURIComponent(planKey), mono: true });
+    }
+    if (path.includes("/cycles")) {
+      crumbs.push({ label: "Cycles", to: "/p/$projectKey/cycles", params });
+      const cycleKey = /\/cycles\/([^/]+)/.exec(path)?.[1];
+      if (cycleKey) {
+        const key = decodeURIComponent(cycleKey);
+        crumbs.push({
+          label: key,
+          to: "/p/$projectKey/cycles/$cycleKey",
+          params: { ...params, cycleKey: key },
+          mono: true,
+        });
+        if (path.includes("/run/")) crumbs.push({ label: "Runner" });
+      }
+    }
     if (path.includes("/settings")) crumbs.push({ label: "Settings" });
     if (path.includes("/repository") || path.includes("/cases/")) {
       crumbs.push({ label: "Repository", to: "/p/$projectKey/repository", params });
@@ -223,6 +243,7 @@ function useCrumbs(project: Project | undefined): Crumb[] {
       if (path.endsWith("/edit")) crumbs.push({ label: "Edit" });
     }
   } else if (path.startsWith("/projects")) crumbs.push({ label: "Projects" });
+  else if (path.startsWith("/my-work")) crumbs.push({ label: "My Work" });
   else if (path.startsWith("/profile")) crumbs.push({ label: "Your account" });
   else if (path.startsWith("/admin")) {
     crumbs.push({ label: "Administration" });
@@ -417,6 +438,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Logo variant="dark" className="h-7 w-auto" />
           )}
         </Link>
+        <NavSection collapsed={collapsed}>
+          <NavLink item={{ to: "/my-work", label: "My Work", icon: ListTodo }} collapsed={collapsed} />
+        </NavSection>
         {projects ? (
           <NavSection collapsed={collapsed}>
             <ProjectSwitcher projects={projects} current={current} collapsed={collapsed} />

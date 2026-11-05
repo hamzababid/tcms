@@ -596,11 +596,80 @@
         "title": "AttachmentRead",
         "type": "object"
       },
+      "AttemptPatch": {
+        "additionalProperties": false,
+        "properties": {
+          "build": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Build"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "maximum": 86400.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          }
+        },
+        "title": "AttemptPatch",
+        "type": "object"
+      },
       "AttemptRead": {
+        "description": "An attempt in a run's history (docs/06 \u00a75.4).",
         "properties": {
           "attempt_no": {
             "title": "Attempt No",
             "type": "integer"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "corrected_by_result_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Set when a later attempt corrects this one (shown struck through)",
+            "title": "Corrected By Result Id"
           },
           "corrects_result_id": {
             "anyOf": [
@@ -613,6 +682,17 @@
               }
             ],
             "title": "Corrects Result Id"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
           },
           "executed_by": {
             "anyOf": [
@@ -640,6 +720,17 @@
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
           },
           "skipped_steps": {
             "title": "Skipped Steps",
@@ -700,7 +791,8 @@
           "entity_type": {
             "enum": [
               "test_case",
-              "test_case_step"
+              "test_case_step",
+              "test_step_result"
             ],
             "title": "Entity Type",
             "type": "string"
@@ -849,6 +941,27 @@
           "detail"
         ],
         "title": "BulkSkipped",
+        "type": "object"
+      },
+      "BulkStepsRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "only_not_run": {
+            "const": true,
+            "title": "Only Not Run",
+            "type": "boolean"
+          },
+          "status": {
+            "const": "passed",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "only_not_run"
+        ],
+        "title": "BulkStepsRequest",
         "type": "object"
       },
       "CaseCounts": {
@@ -2896,6 +3009,72 @@
         "title": "FieldDiffRead",
         "type": "object"
       },
+      "FinalizeRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "maximum": 86400.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "enum": [
+                  "passed",
+                  "failed",
+                  "blocked",
+                  "skipped",
+                  "not_applicable"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "title": "FinalizeRequest",
+        "type": "object"
+      },
+      "FinalizeResponse": {
+        "properties": {
+          "result": {
+            "$ref": "#/components/schemas/ResultRead"
+          },
+          "run": {
+            "$ref": "#/components/schemas/RunRead"
+          }
+        },
+        "required": [
+          "result",
+          "run"
+        ],
+        "title": "FinalizeResponse",
+        "type": "object"
+      },
       "FolderCreate": {
         "additionalProperties": false,
         "properties": {
@@ -3785,6 +3964,133 @@
           }
         },
         "title": "MfaVerifyRequest",
+        "type": "object"
+      },
+      "MyWorkCycle": {
+        "properties": {
+          "due_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "next_run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "My first run that is not finished (Start / Continue)",
+            "title": "Next Run Id"
+          },
+          "project": {
+            "$ref": "#/components/schemas/ProjectRef"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CycleStatus"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/ExecutionSummaryRead"
+          }
+        },
+        "required": [
+          "project",
+          "id",
+          "key",
+          "name",
+          "status",
+          "due_date",
+          "summary",
+          "next_run_id"
+        ],
+        "title": "MyWorkCycle",
+        "type": "object"
+      },
+      "MyWorkRead": {
+        "description": "docs/06 \u00a74.1 `GET /me/work` (docs/07 \u00a75.14). Defects assigned to me arrive with M5.",
+        "properties": {
+          "cycles": {
+            "items": {
+              "$ref": "#/components/schemas/MyWorkCycle"
+            },
+            "title": "Cycles",
+            "type": "array"
+          },
+          "reviews": {
+            "items": {
+              "$ref": "#/components/schemas/MyWorkReview"
+            },
+            "title": "Reviews",
+            "type": "array"
+          },
+          "week": {
+            "$ref": "#/components/schemas/ExecutionSummaryRead",
+            "description": "Attempts I finished in the last 7 days"
+          }
+        },
+        "required": [
+          "cycles",
+          "reviews",
+          "week"
+        ],
+        "title": "MyWorkRead",
+        "type": "object"
+      },
+      "MyWorkReview": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "project": {
+            "$ref": "#/components/schemas/ProjectRef"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project",
+          "id",
+          "key",
+          "title",
+          "updated_at"
+        ],
+        "title": "MyWorkReview",
         "type": "object"
       },
       "NewerVersionRead": {
@@ -5646,6 +5952,30 @@
         "title": "ProjectRead",
         "type": "object"
       },
+      "ProjectRef": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "name"
+        ],
+        "title": "ProjectRef",
+        "type": "object"
+      },
       "ProjectSettings": {
         "properties": {
           "allow_self_approval": {
@@ -5764,6 +6094,68 @@
         ],
         "title": "ProjectStatus",
         "type": "string"
+      },
+      "QueueRead": {
+        "properties": {
+          "filter": {
+            "enum": [
+              "mine_open",
+              "mine",
+              "open",
+              "all"
+            ],
+            "title": "Filter",
+            "type": "string"
+          },
+          "next_run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Run Id"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "previous_run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Run Id"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "filter",
+          "position",
+          "total",
+          "previous_run_id",
+          "next_run_id"
+        ],
+        "title": "QueueRead",
+        "type": "object"
       },
       "RateRead": {
         "properties": {
@@ -6257,6 +6649,172 @@
         "title": "RestoreVersionRequest",
         "type": "object"
       },
+      "ResultRead": {
+        "properties": {
+          "attempt_no": {
+            "title": "Attempt No",
+            "type": "integer"
+          },
+          "build": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Build"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "corrects_result_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corrects Result Id"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "environment": {
+            "$ref": "#/components/schemas/Ref"
+          },
+          "executed_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "run_id": {
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "skipped_steps": {
+            "title": "Skipped Steps",
+            "type": "integer"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "draft",
+              "final"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "passed",
+                  "failed",
+                  "blocked",
+                  "skipped",
+                  "not_applicable"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/StepResultRead"
+            },
+            "title": "Steps",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "run_id",
+          "attempt_no",
+          "state",
+          "status",
+          "source",
+          "executed_by",
+          "started_at",
+          "finished_at",
+          "duration_seconds",
+          "build",
+          "environment",
+          "comment",
+          "reason",
+          "skipped_steps",
+          "corrects_result_id",
+          "steps"
+        ],
+        "title": "ResultRead",
+        "type": "object"
+      },
       "ReturnRequest": {
         "additionalProperties": false,
         "properties": {
@@ -6602,12 +7160,13 @@
           "draft": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/AttemptRead"
+                "$ref": "#/components/schemas/ResultRead"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "description": "The open attempt with its steps (include=draft)"
           },
           "has_attempts": {
             "title": "Has Attempts",
@@ -6653,6 +7212,17 @@
           "position": {
             "title": "Position",
             "type": "integer"
+          },
+          "queue": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QueueRead"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Runner queue neighbours (include=queue)"
           },
           "row_version": {
             "title": "Row Version",
@@ -6863,6 +7433,30 @@
         "title": "Skipped",
         "type": "object"
       },
+      "StartAttemptRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "corrects_result_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corrects Result Id"
+          },
+          "take_over": {
+            "default": false,
+            "title": "Take Over",
+            "type": "boolean"
+          }
+        },
+        "title": "StartAttemptRequest",
+        "type": "object"
+      },
       "StepContentRead": {
         "properties": {
           "action": {
@@ -6985,6 +7579,55 @@
         "title": "StepIn",
         "type": "object"
       },
+      "StepPatch": {
+        "additionalProperties": false,
+        "properties": {
+          "actual_result": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Result"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "not_run",
+                  "passed",
+                  "failed",
+                  "blocked",
+                  "skipped"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "title": "StepPatch",
+        "type": "object"
+      },
       "StepRead": {
         "properties": {
           "action": {
@@ -7039,6 +7682,82 @@
           "data"
         ],
         "title": "StepRead",
+        "type": "object"
+      },
+      "StepResultRead": {
+        "properties": {
+          "actual_result": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Result"
+          },
+          "attachments": {
+            "items": {
+              "$ref": "#/components/schemas/AttachmentRead"
+            },
+            "title": "Attachments",
+            "type": "array"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "id": {
+            "description": "Step result id (attachments use entity_type=test_step_result)",
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "not_run",
+              "passed",
+              "failed",
+              "blocked",
+              "skipped"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "step_id": {
+            "format": "uuid",
+            "title": "Step Id",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "step_id",
+          "position",
+          "status",
+          "actual_result",
+          "comment",
+          "attachments",
+          "updated_at"
+        ],
+        "title": "StepResultRead",
         "type": "object"
       },
       "Submission": {
@@ -7790,7 +8509,8 @@
             "schema": {
               "enum": [
                 "test_case",
-                "test_case_step"
+                "test_case_step",
+                "test_step_result"
               ],
               "title": "Entity Type",
               "type": "string"
@@ -11133,6 +11853,58 @@
         "summary": "Revoke My Session",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/api/v1/me/work": {
+      "get": {
+        "description": "US-099 / FR-EXE-014 (docs/07 \u00a75.14): my runs in planned and active cycles of my active projects,\ncases awaiting my review, and what I finished in the last 7 days. Defects arrive with M5.",
+        "operationId": "my_work_api_v1_me_work_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyWorkRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "My Work",
+        "tags": [
+          "results"
         ]
       }
     },
@@ -14758,9 +15530,431 @@
         ]
       }
     },
+    "/api/v1/results/{result_id}": {
+      "delete": {
+        "description": "Discard a draft (executor or cycle.manage); a final attempt answers 409 immutable_record.",
+        "operationId": "discard_api_v1_results__result_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "result_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Result Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Discard",
+        "tags": [
+          "results"
+        ]
+      },
+      "get": {
+        "operationId": "get_result_api_v1_results__result_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "result_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Result Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Get Result",
+        "tags": [
+          "results"
+        ]
+      },
+      "patch": {
+        "description": "Draft comment, build and duration (executor or cycle.manage).",
+        "operationId": "patch_result_api_v1_results__result_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "result_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Result Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Patch Result",
+        "tags": [
+          "results"
+        ]
+      }
+    },
+    "/api/v1/results/{result_id}/finalize": {
+      "post": {
+        "description": "US-091/092/096/098 (TCMS-071\u2026075, 079, 080, 089, 090): roll-up (BR-09), reasons (BR-10).",
+        "operationId": "finalize_api_v1_results__result_id__finalize_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "result_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Result Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinalizeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinalizeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Finalize",
+        "tags": [
+          "results"
+        ]
+      }
+    },
+    "/api/v1/results/{result_id}/steps/bulk": {
+      "post": {
+        "description": "\"Pass all remaining\" (docs/02 \u00a77.4): `{status: passed, only_not_run: true}`.",
+        "operationId": "pass_remaining_api_v1_results__result_id__steps_bulk_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "result_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Result Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkStepsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Pass Remaining",
+        "tags": [
+          "results"
+        ]
+      }
+    },
+    "/api/v1/results/{result_id}/steps/{step_id}": {
+      "patch": {
+        "description": "US-090 / FR-EXE-006: one step's status, actual result or comment; saved as typed (AC-EXE-09).",
+        "operationId": "patch_step_api_v1_results__result_id__steps__step_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "result_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Result Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "step_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Step Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StepPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StepResultRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Patch Step",
+        "tags": [
+          "results"
+        ]
+      }
+    },
     "/api/v1/runs/{run_id}": {
       "get": {
-        "description": "docs/06 \u00a74.6 / \u00a75.4: run, case summary, pinned version, newer version info, attempts.",
+        "description": "docs/06 \u00a74.6 / \u00a75.4: run, case summary, pinned version, newer version, draft, attempts, queue.",
         "operationId": "get_run_api_v1_runs__run_id__get",
         "parameters": [
           {
@@ -14788,6 +15982,24 @@
                 }
               ],
               "title": "Include"
+            }
+          },
+          {
+            "description": "Runner queue (include=queue): mine_open (default), mine, open, all",
+            "in": "query",
+            "name": "queue_filter",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Runner queue (include=queue): mine_open (default), mine, open, all",
+              "title": "Queue Filter"
             }
           }
         ],
@@ -14964,6 +16176,97 @@
         "summary": "Replace Run",
         "tags": [
           "cycles"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/results": {
+      "post": {
+        "description": "US-090/095/096 (TCMS-070, 077, 078, 084, 085): start, retest or correct (`corrects_result_id`).\n201 with a new draft, 200 with the caller's existing draft, 409 `draft_exists` for someone else's.",
+        "operationId": "start_attempt_api_v1_runs__run_id__results_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/StartAttemptRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultRead"
+                }
+              }
+            },
+            "description": "The caller's open draft (already started)"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Start Attempt",
+        "tags": [
+          "results"
         ]
       }
     },

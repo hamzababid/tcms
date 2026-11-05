@@ -8,7 +8,18 @@ from tcms import platform
 from tcms.api.deps import AppState
 from tcms.api.middleware import RequestContextMiddleware
 from tcms.api.problems import PROBLEM_RESPONSES, install_problem_handlers
-from tcms.api.v1 import auth, cycles, health, meta, organization, plans, projects, records, test_cases
+from tcms.api.v1 import (
+    auth,
+    cycles,
+    health,
+    meta,
+    organization,
+    plans,
+    projects,
+    records,
+    results,
+    test_cases,
+)
 from tcms.core.config import Settings, get_settings
 from tcms.core.db import app_engine, session_factory
 from tcms.core.logging import configure_logging
@@ -46,6 +57,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.add_middleware(RequestContextMiddleware)
     install_problem_handlers(app)
-    for module in (health, auth, organization, projects, meta, test_cases, plans, cycles, records):
+    for module in (health, auth, organization, projects, meta, test_cases, plans, cycles, results, records):
         app.include_router(module.router, responses=PROBLEM_RESPONSES)
     return app

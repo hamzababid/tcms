@@ -163,3 +163,155 @@ def test_br_11_lifecycle_transition_matrix() -> None:
     assert rules.next_status("start") == CS.active
     assert rules.next_status("close") == CS.closed
     assert rules.next_status("reopen") == CS.active
+
+
+# -- attempts: roll-up (BR-09, TCMS-071) ---------------------------------------------------------
+
+from datetime import UTC, datetime, timedelta  # noqa: E402
+from itertools import product  # noqa: E402
+
+from tcms.execution.rules import (  # noqa: E402
+    FinalStatus,
+    IncompleteAttempt,
+    OutcomeConflictsWithSteps,
+    OutcomeRequired,
+    StepRecord,
+)
+
+STEP = ("not_run", "passed", "failed", "blocked", "skipped")
+EXPLICIT = (None, "passed", "failed", "blocked", "skipped", "not_applicable")
+
+
+def _oracle(steps: tuple[str, ...], explicit: str | None) -> str:
+    """docs/02 §7.3 precedence table, row by row (with reviews K17h/i): the expected status or error code."""
+    if explicit in ("passed", "failed"):
+        return "outcome_conflicts_with_steps"
+    if "failed" in steps:
+        return "failed" if explicit is None else "outcome_conflicts_with_steps"
+    if "blocked" in steps:
+        return "blocked" if explicit in (None, "blocked") else "outcome_conflicts_with_steps"
+    if explicit is not None:
+        return explicit
+    if all(s in ("passed", "skipped") for s in steps) and "passed" in steps:
+        return "passed"
+    return "incomplete_attempt"
+
+
+@pytest.mark.br("BR-09")
+def test_br_09_tcms_071_roll_up_matrix_is_exhaustive() -> None:
+    """TCMS-071 / AC-EXE-01/02/03: every combination of 1–4 step statuses × every explicit outcome."""
+    checked = 0
+    for n in range(1, 5):
+        for steps in product(STEP, repeat=n):
+            for explicit in EXPLICIT:
+                expected = _oracle(steps, explicit)
+                try:
+                    got: str = rules.compute_final_status("steps", steps, explicit).status
+                except (IncompleteAttempt, OutcomeConflictsWithSteps) as exc:
+                    got = exc.code
+                assert got == expected, (steps, explicit)
+                checked += 1
+    assert checked == (5 + 25 + 125 + 625) * 6
+
+
+@pytest.mark.parametrize(
+    ("steps", "explicit", "expected"),
+    [
+        (("passed", "failed", "not_run"), None, FinalStatus("failed", 0)),  # AC-EXE-01
+        (("passed", "skipped", "passed"), None, FinalStatus("passed", 1)),  # AC-EXE-02
+        (("passed", "not_run"), "blocked", FinalStatus("blocked", 0)),  # partly passed, env went down
+        (("skipped", "skipped"), "not_applicable", FinalStatus("not_applicable", 2)),
+    ],
+)
+def test_ac_exe_01_02_examples(steps: tuple[str, ...], explicit: str | None, expected: FinalStatus) -> None:
+    assert rules.compute_final_status("steps", steps, explicit) == expected
+
+
+def test_ac_exe_03_incomplete_lists_the_unrecorded_steps() -> None:
+    with pytest.raises(IncompleteAttempt) as exc:
+        rules.compute_final_status("steps", ("passed", "not_run", "not_run"), None)
+    assert exc.value.detail.startswith("Steps 2, 3 have no result")
+    assert [e.field for e in exc.value.errors] == ["steps[1].status", "steps[2].status"]
+    with pytest.raises(IncompleteAttempt) as one:
+        rules.compute_final_status("steps", ("passed", "not_run"), None)
+    assert one.value.detail.startswith("Step 2 has no result")
+    with pytest.raises(IncompleteAttempt, match="Every step is skipped"):
+        rules.compute_final_status("steps", ("skipped",), None)
+
+
+def test_tcms_089_text_format_takes_the_testers_outcome() -> None:
+    for outcome in ("passed", "failed", "blocked", "skipped", "not_applicable"):
+        assert rules.compute_final_status("text", (), outcome) == FinalStatus(outcome, 0)
+    with pytest.raises(OutcomeRequired):
+        rules.compute_final_status("text", (), None)
+    with pytest.raises(OutcomeConflictsWithSteps):
+        rules.compute_final_status("text", (), "in_progress")
+
+
+@pytest.mark.br("BR-10")
+@pytest.mark.parametrize(
+    ("fmt", "steps", "status", "reason", "comment", "codes"),
+    [
+        ("steps", [StepRecord(1, "passed", None)], "passed", None, None, []),
+        ("steps", [StepRecord(1, "failed", "  ")], "failed", None, None, ["actual_result_required"]),
+        ("steps", [StepRecord(2, "failed", "Took 9 s")], "failed", None, None, []),
+        ("steps", [StepRecord(1, "blocked", None)], "blocked", None, None, ["reason_required"]),  # K2
+        ("steps", [StepRecord(1, "blocked", None)], "blocked", "Env down", None, []),
+        ("steps", [], "skipped", "x" * 1001, None, ["too_long"]),
+        ("steps", [], "not_applicable", " ", None, ["reason_required"]),
+        ("text", [], "failed", None, None, ["field_required"]),
+        ("text", [], "failed", None, "Login button missing", []),
+        ("text", [], "passed", None, None, []),
+    ],
+)
+def test_br_10_finalize_problems(
+    fmt: str, steps: list[StepRecord], status: str, reason: str | None, comment: str | None, codes: list[str]
+) -> None:
+    assert [p.code for p in rules.finalize_problems(fmt, steps, status, reason, comment)] == codes
+
+
+def test_br_10_actual_result_problem_names_the_step() -> None:
+    (p,) = rules.finalize_problems("steps", [StepRecord(3, "failed", None)], "failed", None, None)
+    assert p.field == "steps[2].actual_result"
+    assert "Step 3" in p.message
+
+
+@pytest.mark.br("BR-08")
+@pytest.mark.parametrize(
+    ("attempts", "status"),
+    [
+        ([], "not_run"),
+        ([(1, "draft", None)], "in_progress"),
+        ([(1, "final", "failed")], "failed"),
+        ([(1, "final", "failed"), (2, "final", "passed")], "passed"),  # AC-EXE-07
+        ([(2, "final", "blocked"), (1, "final", "passed")], "blocked"),
+        ([(1, "final", "failed"), (2, "draft", None)], "in_progress"),
+    ],
+)
+def test_br_08_derive_run_status(attempts: list[tuple[int, str, str | None]], status: str) -> None:
+    assert rules.derive_run_status(attempts) == status
+
+
+@pytest.mark.br("BR-32")
+def test_br_32_only_assignee_executes() -> None:
+    me, other = uuid4(), uuid4()
+    for only, manage, assignee, ok in [
+        (False, False, other, True),
+        (True, False, me, True),
+        (True, False, None, True),
+        (True, False, other, False),
+        (True, True, other, True),
+    ]:
+        assert (
+            rules.may_execute(assignee_id=assignee, user_id=me, only_assignee=only, has_manage=manage) is ok
+        )
+
+
+def test_duration_uses_the_given_value_or_elapsed_time_within_bounds() -> None:
+    t0 = datetime(2026, 11, 3, 10, 0, tzinfo=UTC)
+    assert rules.duration_seconds(t0, t0 + timedelta(seconds=252), None) == 252
+    assert rules.duration_seconds(t0, t0 + timedelta(days=2), None) == 86_400
+    assert rules.duration_seconds(t0, t0 - timedelta(seconds=5), None) == 0
+    assert rules.duration_seconds(t0, t0, 90) == 90
+    assert rules.duration_seconds(t0, t0, 100_000) == 86_400
+    assert rules.duration_seconds(t0, t0, -3) == 0

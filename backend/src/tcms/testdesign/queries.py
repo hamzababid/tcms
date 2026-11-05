@@ -618,3 +618,33 @@ def version_view_by_id(s: Session, ctx: AccessContext, version_id: UUID) -> Vers
     """A specific (e.g. pinned) version's content, scoped to the project."""
     v = repo.version(s, ctx, version_id)
     return version_view(s, v) if v else None
+
+
+@dataclass(frozen=True)
+class ReviewItem:
+    id: UUID
+    project_id: UUID
+    key: str
+    title: str
+    updated_at: datetime
+
+
+def awaiting_review(
+    s: Session, org_id: UUID, user_id: UUID, approve_project_ids: list[UUID], limit: int = 50
+) -> list[ReviewItem]:
+    """My Work › Awaiting my review (docs/02 §7.5): cases in review where I am the reviewer, or with no
+    reviewer in projects where I may approve (docs/02 §2.7 recipients). Oldest first."""
+    if not approve_project_ids:
+        return []
+    rows = s.execute(
+        select(TestCase.id, TestCase.project_id, TestCase.key, TestCase.title, TestCase.updated_at)
+        .where(
+            TestCase.organization_id == org_id,
+            TestCase.project_id.in_(approve_project_ids),
+            TestCase.status == CaseStatus.in_review,
+            or_(TestCase.reviewer_id == user_id, TestCase.reviewer_id.is_(None)),
+        )
+        .order_by(TestCase.updated_at, TestCase.key_num)
+        .limit(limit)
+    ).all()
+    return [ReviewItem(*r) for r in rows]

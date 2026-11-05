@@ -166,6 +166,24 @@ def _run(f: Fixture) -> UUID:
         return runs[0].id
 
 
+def _draft(f: Fixture) -> tuple[UUID, UUID]:
+    """A fresh run with a draft attempt started by the Org Admin → (result id, step id). Editing it needs
+    the executor or cycle.manage (BR-06), so the matrix kind is cycle.manage."""
+    from tcms.core.permissions import PROJECT_PERMISSIONS
+    from tcms.core.uow import unit_of_work
+    from tcms.execution import repository as execution_repo
+    from tcms.execution import service as execution
+
+    run_id = _run(f)
+    with unit_of_work(f.world.factory) as uow:
+        ctx = f.world.ctx(
+            f.org.id, f.org.admin.id, is_admin=True, project_id=f.project_id, perms=PROJECT_PERMISSIONS
+        )
+        res = execution.start_attempt(uow, ctx, run_id).result
+        step = execution_repo.step_results(uow.session, res.id)[0]
+        return res.id, step.step_id
+
+
 def _remove_run_probe(f: Fixture) -> tuple[str, str, dict[str, Any]]:
     """DELETE a real not-run run of its own cycle (unknown run ids are a 404)."""
     from tcms.core.permissions import PROJECT_PERMISSIONS
@@ -188,6 +206,7 @@ TC = "/api/v1/test-cases/{case_id}"
 PL = "/api/v1/test-plans/{plan_id}"
 CY = "/api/v1/cycles/{cycle_id}"
 RN = "/api/v1/runs/{run_id}"
+RS = "/api/v1/results/{result_id}"
 
 
 def _p(f: Fixture, suffix: str) -> str:
@@ -591,5 +610,35 @@ MATRIX: dict[tuple[str, str], Entry] = {
     ),
     ("POST", RN + "/replace"): Entry(
         "project:cycle.manage", lambda f: ("POST", RN.format(run_id=_run(f)) + "/replace", None)
+    ),
+    # result attempts and My Work (M4 / E09)
+    ("GET", "/api/v1/me/work"): Entry("auth", lambda f: ("GET", "/api/v1/me/work", None)),
+    ("POST", RN + "/results"): Entry(
+        "project:run.execute", lambda f: ("POST", RN.format(run_id=_run(f)) + "/results", None)
+    ),
+    ("GET", RS): Entry("project:project.view", lambda f: ("GET", RS.format(result_id=_draft(f)[0]), None)),
+    ("PATCH", RS): Entry(
+        "project:cycle.manage",
+        lambda f: ("PATCH", RS.format(result_id=_draft(f)[0]), {"comment": "probe"}),
+    ),
+    ("PATCH", RS + "/steps/{step_id}"): Entry(
+        "project:cycle.manage",
+        lambda f: (lambda r, st: ("PATCH", RS.format(result_id=r) + f"/steps/{st}", {"status": "passed"}))(
+            *_draft(f)
+        ),
+    ),
+    ("POST", RS + "/steps/bulk"): Entry(
+        "project:cycle.manage",
+        lambda f: (
+            "POST",
+            RS.format(result_id=_draft(f)[0]) + "/steps/bulk",
+            {"status": "passed", "only_not_run": True},
+        ),
+    ),
+    ("POST", RS + "/finalize"): Entry(
+        "project:cycle.manage", lambda f: ("POST", RS.format(result_id=_draft(f)[0]) + "/finalize", {})
+    ),
+    ("DELETE", RS): Entry(
+        "project:cycle.manage", lambda f: ("DELETE", RS.format(result_id=_draft(f)[0]), None)
     ),
 }

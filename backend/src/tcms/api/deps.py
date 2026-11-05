@@ -228,6 +228,8 @@ ENTITY_PROJECT: dict[str, Callable[[Session, UUID], tuple[UUID, UUID] | None]] =
     "test_plan": planning_queries.owning_project_of_plan,
     "test_cycle": execution_queries.owning_project_of_cycle,
     "test_run": execution_queries.owning_project_of_run,
+    "test_result": execution_queries.owning_project_of_result,
+    "test_step_result": execution_queries.owning_project_of_step_result,
     "comment": comments.owner_of,
     "attachment": attachments.owner_of,
 }

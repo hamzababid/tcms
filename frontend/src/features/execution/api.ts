@@ -121,8 +121,9 @@ export function useInvalidateCycle() {
   return (pid: string, cycleId?: string) => {
     void qc.invalidateQueries({ queryKey: cycleKeys.all(pid) });
     void qc.invalidateQueries({ queryKey: ["run"] });
-    // Plans show their cycles' progress (plan detail › Cycles, Cases).
+    // Plans show their cycles' progress (plan detail › Cycles, Cases); My Work counts runs.
     void qc.invalidateQueries({ queryKey: ["plan"] });
+    void qc.invalidateQueries({ queryKey: ["me", "work"] });
     if (cycleId) void qc.invalidateQueries({ queryKey: ["cycle", cycleId] });
   };
 }
@@ -281,3 +282,123 @@ export function useExecutors(members: ProjectMember[]): ProjectMember[] {
   );
   return members.filter((m) => m.user.is_active && executing.has(m.role.code));
 }
+
+// -- attempts (M4, docs/06 §4.7) -------------------------------------------------------------------
+
+export type ResultRead = components["schemas"]["ResultRead"];
+export type StepResultRead = components["schemas"]["StepResultRead"];
+export type AttemptRead = components["schemas"]["AttemptRead"];
+export type QueueRead = components["schemas"]["QueueRead"];
+export type MyWork = components["schemas"]["MyWorkRead"];
+export type MyWorkCycle = components["schemas"]["MyWorkCycle"];
+export type Outcome = NonNullable<components["schemas"]["FinalizeRequest"]["outcome"]>;
+export type StepStatus = StepResultRead["status"];
+export type QueueFilter = QueueRead["filter"];
+export type StepFields = components["schemas"]["StepPatch"];
+
+/** Everything the runner needs in one read (docs/04 §11.5). */
+export const useRunnerRun = (runId: string, queueFilter: QueueFilter) =>
+  useQuery({
+    queryKey: ["run", runId, "runner", queueFilter] as const,
+    queryFn: async () =>
+      must(
+        (
+          await api.GET("/api/v1/runs/{run_id}", {
+            params: {
+              path: { run_id: runId },
+              query: { include: "version,draft,history,queue", queue_filter: queueFilter },
+            },
+          })
+        ).data,
+      ),
+  });
+
+export const useResult = (id: string | null) =>
+  useQuery({
+    queryKey: ["run", "result", id ?? ""] as const,
+    enabled: Boolean(id),
+    queryFn: async () =>
+      must(
+        (await api.GET("/api/v1/results/{result_id}", { params: { path: { result_id: id ?? "" } } })).data,
+      ),
+  });
+
+export async function getResult(id: string): Promise<ResultRead> {
+  return must((await api.GET("/api/v1/results/{result_id}", { params: { path: { result_id: id } } })).data);
+}
+
+export async function startAttempt(
+  runId: string,
+  body: { take_over?: boolean; corrects_result_id?: string | null } = {},
+): Promise<ResultRead> {
+  return must(
+    (
+      await api.POST("/api/v1/runs/{run_id}/results", {
+        params: { path: { run_id: runId } },
+        body: { take_over: body.take_over ?? false, corrects_result_id: body.corrects_result_id ?? null },
+      })
+    ).data,
+  );
+}
+
+export async function saveStep(
+  resultId: string,
+  stepId: string,
+  fields: StepFields,
+): Promise<StepResultRead> {
+  return must(
+    (
+      await api.PATCH("/api/v1/results/{result_id}/steps/{step_id}", {
+        params: { path: { result_id: resultId, step_id: stepId } },
+        body: fields,
+      })
+    ).data,
+  );
+}
+
+export async function patchAttempt(
+  resultId: string,
+  body: { comment?: string | null; build?: string | null },
+): Promise<ResultRead> {
+  return must(
+    (await api.PATCH("/api/v1/results/{result_id}", { params: { path: { result_id: resultId } }, body }))
+      .data,
+  );
+}
+
+export async function passRemaining(resultId: string): Promise<number> {
+  const data = must(
+    (
+      await api.POST("/api/v1/results/{result_id}/steps/bulk", {
+        params: { path: { result_id: resultId } },
+        body: { status: "passed", only_not_run: true },
+      })
+    ).data,
+  );
+  return data.count;
+}
+
+export async function finalizeAttempt(
+  resultId: string,
+  body: { outcome?: Outcome | null; reason?: string | null },
+) {
+  return must(
+    (
+      await api.POST("/api/v1/results/{result_id}/finalize", {
+        params: { path: { result_id: resultId } },
+        body: { outcome: body.outcome ?? null, reason: body.reason ?? null },
+      })
+    ).data,
+  );
+}
+
+export async function discardAttempt(resultId: string): Promise<void> {
+  await api.DELETE("/api/v1/results/{result_id}", { params: { path: { result_id: resultId } } });
+}
+
+/** docs/06 §4.1 `GET /me/work`. */
+export const useMyWork = () =>
+  useQuery({
+    queryKey: ["me", "work"] as const,
+    queryFn: async () => must((await api.GET("/api/v1/me/work")).data),
+  });

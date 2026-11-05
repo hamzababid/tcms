@@ -826,6 +826,27 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/me/work": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * My Work
+     * @description US-099 / FR-EXE-014 (docs/07 §5.14): my runs in planned and active cycles of my active projects,
+     *     cases awaiting my review, and what I finished in the last 7 days. Defects arrive with M5.
+     */
+    get: operations["my_work_api_v1_me_work_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/meta/enums": {
     parameters: {
       query?: never;
@@ -1418,6 +1439,91 @@ export interface paths {
     patch: operations["patch_release_api_v1_releases__release_id__patch"];
     trace?: never;
   };
+  "/api/v1/results/{result_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Result */
+    get: operations["get_result_api_v1_results__result_id__get"];
+    put?: never;
+    post?: never;
+    /**
+     * Discard
+     * @description Discard a draft (executor or cycle.manage); a final attempt answers 409 immutable_record.
+     */
+    delete: operations["discard_api_v1_results__result_id__delete"];
+    options?: never;
+    head?: never;
+    /**
+     * Patch Result
+     * @description Draft comment, build and duration (executor or cycle.manage).
+     */
+    patch: operations["patch_result_api_v1_results__result_id__patch"];
+    trace?: never;
+  };
+  "/api/v1/results/{result_id}/finalize": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Finalize
+     * @description US-091/092/096/098 (TCMS-071…075, 079, 080, 089, 090): roll-up (BR-09), reasons (BR-10).
+     */
+    post: operations["finalize_api_v1_results__result_id__finalize_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/results/{result_id}/steps/bulk": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Pass Remaining
+     * @description "Pass all remaining" (docs/02 §7.4): `{status: passed, only_not_run: true}`.
+     */
+    post: operations["pass_remaining_api_v1_results__result_id__steps_bulk_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/results/{result_id}/steps/{step_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Patch Step
+     * @description US-090 / FR-EXE-006: one step's status, actual result or comment; saved as typed (AC-EXE-09).
+     */
+    patch: operations["patch_step_api_v1_results__result_id__steps__step_id__patch"];
+    trace?: never;
+  };
   "/api/v1/runs/{run_id}": {
     parameters: {
       query?: never;
@@ -1427,7 +1533,7 @@ export interface paths {
     };
     /**
      * Get Run
-     * @description docs/06 §4.6 / §5.4: run, case summary, pinned version, newer version info, attempts.
+     * @description docs/06 §4.6 / §5.4: run, case summary, pinned version, newer version, draft, attempts, queue.
      */
     get: operations["get_run_api_v1_runs__run_id__get"];
     put?: never;
@@ -1472,6 +1578,27 @@ export interface paths {
      * @description US-086 / BR-05: returns the new run.
      */
     post: operations["replace_run_api_v1_runs__run_id__replace_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/runs/{run_id}/results": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Start Attempt
+     * @description US-090/095/096 (TCMS-070, 077, 078, 084, 085): start, retest or correct (`corrects_result_id`).
+     *     201 with a new draft, 200 with the caller's existing draft, 409 `draft_exists` for someone else's.
+     */
+    post: operations["start_attempt_api_v1_runs__run_id__results_post"];
     delete?: never;
     options?: never;
     head?: never;
@@ -2174,12 +2301,33 @@ export interface components {
       /** Url */
       url: string;
     };
-    /** AttemptRead */
+    /** AttemptPatch */
+    AttemptPatch: {
+      /** Build */
+      build?: string | null;
+      /** Comment */
+      comment?: string | null;
+      /** Duration Seconds */
+      duration_seconds?: number | null;
+    };
+    /**
+     * AttemptRead
+     * @description An attempt in a run's history (docs/06 §5.4).
+     */
     AttemptRead: {
       /** Attempt No */
       attempt_no: number;
+      /** Comment */
+      comment?: string | null;
+      /**
+       * Corrected By Result Id
+       * @description Set when a later attempt corrects this one (shown struck through)
+       */
+      corrected_by_result_id?: string | null;
       /** Corrects Result Id */
       corrects_result_id: string | null;
+      /** Duration Seconds */
+      duration_seconds?: number | null;
       executed_by: components["schemas"]["UserRef"] | null;
       /** Finished At */
       finished_at: string | null;
@@ -2188,6 +2336,8 @@ export interface components {
        * Format: uuid
        */
       id: string;
+      /** Reason */
+      reason?: string | null;
       /** Skipped Steps */
       skipped_steps: number;
       /**
@@ -2216,7 +2366,7 @@ export interface components {
        * Entity Type
        * @enum {string}
        */
-      entity_type: "test_case" | "test_case_step";
+      entity_type: "test_case" | "test_case_step" | "test_step_result";
       /** File */
       file: string;
     };
@@ -2280,6 +2430,19 @@ export interface components {
       detail: string;
       /** Key */
       key: string;
+    };
+    /** BulkStepsRequest */
+    BulkStepsRequest: {
+      /**
+       * Only Not Run
+       * @constant
+       */
+      only_not_run: true;
+      /**
+       * Status
+       * @constant
+       */
+      status: "passed";
     };
     /** CaseCounts */
     CaseCounts: {
@@ -2917,6 +3080,20 @@ export interface components {
       /** Field */
       field: string;
     };
+    /** FinalizeRequest */
+    FinalizeRequest: {
+      /** Duration Seconds */
+      duration_seconds?: number | null;
+      /** Outcome */
+      outcome?: ("passed" | "failed" | "blocked" | "skipped" | "not_applicable") | null;
+      /** Reason */
+      reason?: string | null;
+    };
+    /** FinalizeResponse */
+    FinalizeResponse: {
+      result: components["schemas"]["ResultRead"];
+      run: components["schemas"]["RunRead"];
+    };
     /** FolderCreate */
     FolderCreate: {
       /** Description */
@@ -3219,6 +3396,58 @@ export interface components {
       code?: string | null;
       /** Recovery Code */
       recovery_code?: string | null;
+    };
+    /** MyWorkCycle */
+    MyWorkCycle: {
+      /** Due Date */
+      due_date: string | null;
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Key */
+      key: string;
+      /** Name */
+      name: string;
+      /**
+       * Next Run Id
+       * @description My first run that is not finished (Start / Continue)
+       */
+      next_run_id: string | null;
+      project: components["schemas"]["ProjectRef"];
+      status: components["schemas"]["CycleStatus"];
+      summary: components["schemas"]["ExecutionSummaryRead"];
+    };
+    /**
+     * MyWorkRead
+     * @description docs/06 §4.1 `GET /me/work` (docs/07 §5.14). Defects assigned to me arrive with M5.
+     */
+    MyWorkRead: {
+      /** Cycles */
+      cycles: components["schemas"]["MyWorkCycle"][];
+      /** Reviews */
+      reviews: components["schemas"]["MyWorkReview"][];
+      /** @description Attempts I finished in the last 7 days */
+      week: components["schemas"]["ExecutionSummaryRead"];
+    };
+    /** MyWorkReview */
+    MyWorkReview: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Key */
+      key: string;
+      project: components["schemas"]["ProjectRef"];
+      /** Title */
+      title: string;
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
     };
     /** NewerVersionRead */
     NewerVersionRead: {
@@ -3795,6 +4024,18 @@ export interface components {
        */
       updated_at: string;
     };
+    /** ProjectRef */
+    ProjectRef: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Key */
+      key: string;
+      /** Name */
+      name: string;
+    };
     /** ProjectSettings */
     ProjectSettings: {
       /** Allow Self Approval */
@@ -3830,6 +4071,22 @@ export interface components {
      * @enum {string}
      */
     ProjectStatus: "active" | "archived";
+    /** QueueRead */
+    QueueRead: {
+      /**
+       * Filter
+       * @enum {string}
+       */
+      filter: "mine_open" | "mine" | "open" | "all";
+      /** Next Run Id */
+      next_run_id: string | null;
+      /** Position */
+      position: number | null;
+      /** Previous Run Id */
+      previous_run_id: string | null;
+      /** Total */
+      total: number;
+    };
     /** RateRead */
     RateRead: {
       /** Denominator */
@@ -3983,6 +4240,53 @@ export interface components {
       /** Version No */
       version_no: number;
     };
+    /** ResultRead */
+    ResultRead: {
+      /** Attempt No */
+      attempt_no: number;
+      /** Build */
+      build: string | null;
+      /** Comment */
+      comment: string | null;
+      /** Corrects Result Id */
+      corrects_result_id: string | null;
+      /** Duration Seconds */
+      duration_seconds: number | null;
+      environment: components["schemas"]["Ref"];
+      executed_by: components["schemas"]["UserRef"] | null;
+      /** Finished At */
+      finished_at: string | null;
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Reason */
+      reason: string | null;
+      /**
+       * Run Id
+       * Format: uuid
+       */
+      run_id: string;
+      /** Skipped Steps */
+      skipped_steps: number;
+      /** Source */
+      source: string;
+      /**
+       * Started At
+       * Format: date-time
+       */
+      started_at: string;
+      /**
+       * State
+       * @enum {string}
+       */
+      state: "draft" | "final";
+      /** Status */
+      status: ("passed" | "failed" | "blocked" | "skipped" | "not_applicable") | null;
+      /** Steps */
+      steps: components["schemas"]["StepResultRead"][];
+    };
     /** ReturnRequest */
     ReturnRequest: {
       /** Comment */
@@ -4124,7 +4428,8 @@ export interface components {
     RunRead: {
       assignee: components["schemas"]["UserRef"] | null;
       cycle: components["schemas"]["RunCycleRef"];
-      draft?: components["schemas"]["AttemptRead"] | null;
+      /** @description The open attempt with its steps (include=draft) */
+      draft?: components["schemas"]["ResultRead"] | null;
       /** Has Attempts */
       has_attempts: boolean;
       /** History */
@@ -4141,6 +4446,8 @@ export interface components {
       pinned_version_no: number;
       /** Position */
       position: number;
+      /** @description Runner queue neighbours (include=queue) */
+      queue?: components["schemas"]["QueueRead"] | null;
       /** Row Version */
       row_version: number;
       status: components["schemas"]["RunStatus"];
@@ -4213,6 +4520,16 @@ export interface components {
       /** Reason */
       reason: string;
     };
+    /** StartAttemptRequest */
+    StartAttemptRequest: {
+      /** Corrects Result Id */
+      corrects_result_id?: string | null;
+      /**
+       * Take Over
+       * @default false
+       */
+      take_over: boolean;
+    };
     /** StepContentRead */
     StepContentRead: {
       /** Action */
@@ -4243,6 +4560,15 @@ export interface components {
       /** Expected Result */
       expected_result?: string | null;
     };
+    /** StepPatch */
+    StepPatch: {
+      /** Actual Result */
+      actual_result?: string | null;
+      /** Comment */
+      comment?: string | null;
+      /** Status */
+      status?: ("not_run" | "passed" | "failed" | "blocked" | "skipped") | null;
+    };
     /** StepRead */
     StepRead: {
       /** Action */
@@ -4263,6 +4589,38 @@ export interface components {
       id: string;
       /** Position */
       position: number;
+    };
+    /** StepResultRead */
+    StepResultRead: {
+      /** Actual Result */
+      actual_result: string | null;
+      /** Attachments */
+      attachments: components["schemas"]["AttachmentRead"][];
+      /** Comment */
+      comment: string | null;
+      /**
+       * Id
+       * Format: uuid
+       * @description Step result id (attachments use entity_type=test_step_result)
+       */
+      id: string;
+      /** Position */
+      position: number;
+      /**
+       * Status
+       * @enum {string}
+       */
+      status: "not_run" | "passed" | "failed" | "blocked" | "skipped";
+      /**
+       * Step Id
+       * Format: uuid
+       */
+      step_id: string;
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
     };
     /** Submission */
     Submission: {
@@ -4554,7 +4912,7 @@ export interface operations {
       header?: never;
       path: {
         attachment_id: string;
-        entity_type: "test_case" | "test_case_step";
+        entity_type: "test_case" | "test_case_step" | "test_step_result";
         entity_id: string;
       };
       cookie?: never;
@@ -6691,6 +7049,46 @@ export interface operations {
       };
     };
   };
+  my_work_api_v1_me_work_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MyWorkRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   enums_api_v1_meta_enums_get: {
     parameters: {
       query?: never;
@@ -8662,10 +9060,279 @@ export interface operations {
       };
     };
   };
+  get_result_api_v1_results__result_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        result_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResultRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  discard_api_v1_results__result_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        result_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  patch_result_api_v1_results__result_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        result_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AttemptPatch"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResultRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  finalize_api_v1_results__result_id__finalize_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        result_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FinalizeRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FinalizeResponse"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  pass_remaining_api_v1_results__result_id__steps_bulk_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        result_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["BulkStepsRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CountResponse"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  patch_step_api_v1_results__result_id__steps__step_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        result_id: string;
+        step_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["StepPatch"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["StepResultRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   get_run_api_v1_runs__run_id__get: {
     parameters: {
       query?: {
         include?: string | null;
+        /** @description Runner queue (include=queue): mine_open (default), mine, open, all */
+        queue_filter?: string | null;
       };
       header?: never;
       path: {
@@ -8766,6 +9433,61 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["RunRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  start_attempt_api_v1_runs__run_id__results_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        run_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["StartAttemptRequest"] | null;
+      };
+    };
+    responses: {
+      /** @description The caller's open draft (already started) */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResultRead"];
+        };
+      };
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResultRead"];
         };
       };
       /** @description Validation or business-rule error */

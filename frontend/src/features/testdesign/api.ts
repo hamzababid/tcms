@@ -192,7 +192,7 @@ export function useInvalidateCase() {
 }
 
 export async function uploadAttachment(
-  entityType: "test_case" | "test_case_step",
+  entityType: "test_case" | "test_case_step" | "test_step_result",
   entityId: string,
   file: File,
 ) {
