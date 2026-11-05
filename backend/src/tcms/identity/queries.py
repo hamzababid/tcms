@@ -263,3 +263,16 @@ def members_with_permission(s: Session, org_id: UUID, project_id: UUID, permissi
         for m, u, _ in repo.project_memberships(s, org_id, project_id)
         if u.is_active and permission in perms.get(m.role_id, frozenset())
     ]
+
+
+def user_project_permissions(s: Session, org_id: UUID, project_id: UUID, user_id: UUID) -> frozenset[str]:
+    """Effective project permissions of an arbitrary member (empty if not a member).
+
+    Used by other modules to validate that a candidate (e.g. a run assignee) can act in the project.
+    Org-admin's implicit access is not included here: callers that need a *member* with a permission
+    (docs/02 §7.1 assignment) rely on an explicit membership role.
+    """
+    member = repo.membership(s, org_id, project_id, user_id)
+    if member is None:
+        return frozenset()
+    return repo.role_permission_map(s).get(member.role_id, frozenset())

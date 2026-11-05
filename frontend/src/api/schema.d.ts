@@ -374,6 +374,229 @@ export interface paths {
     patch: operations["edit_comment_api_v1_comments__comment_id__patch"];
     trace?: never;
   };
+  "/api/v1/cycles/{cycle_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Cycle
+     * @description US-083 / FR-EXE-013: cycle with summary and progress by assignee.
+     */
+    get: operations["get_cycle_api_v1_cycles__cycle_id__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Patch Cycle */
+    patch: operations["patch_cycle_api_v1_cycles__cycle_id__patch"];
+    trace?: never;
+  };
+  "/api/v1/cycles/{cycle_id}/archive": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Archive Cycle */
+    post: operations["archive_cycle_api_v1_cycles__cycle_id__archive_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/cycles/{cycle_id}/clone": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Clone Cycle
+     * @description US-084 (TCMS-060).
+     */
+    post: operations["clone_cycle_api_v1_cycles__cycle_id__clone_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/cycles/{cycle_id}/close": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Close Cycle
+     * @description US-084 (TCMS-058): 409 draft_exists lists drafts unless discard_drafts.
+     */
+    post: operations["close_cycle_api_v1_cycles__cycle_id__close_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/cycles/{cycle_id}/reopen": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Reopen Cycle
+     * @description US-084 / BR-11 (TCMS-059).
+     */
+    post: operations["reopen_cycle_api_v1_cycles__cycle_id__reopen_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/cycles/{cycle_id}/runs": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Runs
+     * @description US-083 / FR-EXE-013: filters per docs/06 §4.6.
+     */
+    get: operations["list_runs_api_v1_cycles__cycle_id__runs_get"];
+    put?: never;
+    /**
+     * Add Runs
+     * @description US-081 / FR-EXE-003 (TCMS-057).
+     */
+    post: operations["add_runs_api_v1_cycles__cycle_id__runs_post"];
+    /**
+     * Remove Runs
+     * @description US-081: only not_run runs without attempts (409 run_has_results).
+     */
+    delete: operations["remove_runs_api_v1_cycles__cycle_id__runs_delete"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/cycles/{cycle_id}/runs/assign": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Assign Runs
+     * @description US-082 / FR-EXE-004 (TCMS-055).
+     */
+    post: operations["assign_runs_api_v1_cycles__cycle_id__runs_assign_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/cycles/{cycle_id}/runs/reorder": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Reorder Runs
+     * @description US-087 / docs/02 §7.1.
+     */
+    post: operations["reorder_runs_api_v1_cycles__cycle_id__runs_reorder_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/cycles/{cycle_id}/runs/update-versions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Update Not Run Versions
+     * @description US-086 bulk: update all not-run runs to the latest eligible version (BR-04).
+     */
+    post: operations["update_not_run_versions_api_v1_cycles__cycle_id__runs_update_versions_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/cycles/{cycle_id}/start": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Start Cycle */
+    post: operations["start_cycle_api_v1_cycles__cycle_id__start_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/cycles/{cycle_id}/sync-from-plan": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Sync From Plan
+     * @description US-085 / BR-31 (AC-PLN-02, TCMS-053).
+     */
+    post: operations["sync_from_plan_api_v1_cycles__cycle_id__sync_from_plan_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/environments/{environment_id}": {
     parameters: {
       query?: never;
@@ -903,6 +1126,30 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/projects/{project_id}/cycles": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Cycles
+     * @description US-080 / FR-EXE-001.
+     */
+    get: operations["list_cycles_api_v1_projects__project_id__cycles_get"];
+    put?: never;
+    /**
+     * Create Cycle
+     * @description US-080 / FR-EXE-001/002, BR-03 (AC-PLN-01, TCMS-052/054).
+     */
+    post: operations["create_cycle_api_v1_projects__project_id__cycles_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/projects/{project_id}/environments": {
     parameters: {
       query?: never;
@@ -1167,6 +1414,66 @@ export interface paths {
      * @description US-026 / TCMS-024: status changes follow the transition table (docs/02 §4.4).
      */
     patch: operations["patch_release_api_v1_releases__release_id__patch"];
+    trace?: never;
+  };
+  "/api/v1/runs/{run_id}/claim": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Claim Run
+     * @description US-082 / FR-EXE-004 (TCMS-056).
+     */
+    post: operations["claim_run_api_v1_runs__run_id__claim_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/runs/{run_id}/replace": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Replace Run
+     * @description US-086 / BR-05.
+     */
+    post: operations["replace_run_api_v1_runs__run_id__replace_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/runs/{run_id}/update-version": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Update Run Version
+     * @description US-086 / BR-04.
+     */
+    post: operations["update_run_version_api_v1_runs__run_id__update_version_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
     trace?: never;
   };
   "/api/v1/tags/{tag_id}": {
@@ -1662,24 +1969,15 @@ export interface components {
       /** Summary */
       summary: string | null;
     };
-    /** AddCasesRequest */
-    AddCasesRequest: {
-      /** Case Ids */
-      case_ids?: string[] | null;
-      /** Folder Ids */
-      folder_ids?: string[] | null;
-      /**
-       * Include Subfolders
-       * @default true
-       */
-      include_subfolders: boolean;
-      /** Saved View Id */
-      saved_view_id?: string | null;
-      /** Tags */
-      tags?: string[] | null;
-    };
     /** AddCasesResponse */
     AddCasesResponse: {
+      /** Added */
+      added: number;
+      /** Skipped */
+      skipped: components["schemas"]["Skipped"][];
+    };
+    /** AddRunsResponse */
+    AddRunsResponse: {
       /** Added */
       added: number;
       /** Skipped */
@@ -1798,6 +2096,23 @@ export interface components {
     ArchiveRequest: {
       /** Confirm Key */
       confirm_key: string;
+    };
+    /** AssignRequest */
+    AssignRequest: {
+      /** Assignee Id */
+      assignee_id?: string | null;
+      /** Run Ids */
+      run_ids: string[];
+    };
+    /** AssigneeProgress */
+    AssigneeProgress: {
+      assignee: components["schemas"]["UserRef"] | null;
+      /** By Status */
+      by_status: {
+        [key: string]: number;
+      };
+      /** Total */
+      total: number;
     };
     /** AttachmentRead */
     AttachmentRead: {
@@ -2125,10 +2440,13 @@ export interface components {
       /** Ok */
       ok: boolean;
     };
-    /** CloneRequest */
-    CloneRequest: {
-      /** Name */
-      name?: string | null;
+    /** CloseRequest */
+    CloseRequest: {
+      /**
+       * Discard Drafts
+       * @default false
+       */
+      discard_drafts: boolean;
     };
     /** CommentCreate */
     CommentCreate: {
@@ -2223,6 +2541,173 @@ export interface components {
       content: components["schemas"]["ContentIn"];
       /** Row Version */
       row_version?: number | null;
+    };
+    /** CountResponse */
+    CountResponse: {
+      /** Count */
+      count: number;
+    };
+    /** CycleCreate */
+    CycleCreate: {
+      /** Build */
+      build?: string | null;
+      /** Default Assignee Id */
+      default_assignee_id?: string | null;
+      /** Description */
+      description?: string | null;
+      /** Due Date */
+      due_date?: string | null;
+      /**
+       * Environment Id
+       * Format: uuid
+       */
+      environment_id: string;
+      /** Name */
+      name: string;
+      /** Plan Id */
+      plan_id?: string | null;
+      /** Release Id */
+      release_id?: string | null;
+      selection?: components["schemas"]["SelectionIn"];
+      /** Start Date */
+      start_date?: string | null;
+    };
+    /** CycleCreateResponse */
+    CycleCreateResponse: {
+      /** Added */
+      added: number;
+      /**
+       * Cycle Id
+       * Format: uuid
+       */
+      cycle_id: string;
+      /** Key */
+      key: string;
+      /** Runs Pending */
+      runs_pending: boolean;
+      /** Skipped */
+      skipped: components["schemas"]["Skipped"][];
+    };
+    /** CycleListItem */
+    CycleListItem: {
+      /** Due Date */
+      due_date: string | null;
+      /**
+       * Environment Id
+       * Format: uuid
+       */
+      environment_id: string;
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Key */
+      key: string;
+      /** Name */
+      name: string;
+      /** Plan Id */
+      plan_id: string | null;
+      /** Release Id */
+      release_id: string | null;
+      /** Row Version */
+      row_version: number;
+      status: components["schemas"]["CycleStatus"];
+      summary: components["schemas"]["CycleSummary"];
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
+    };
+    /** CyclePatch */
+    CyclePatch: {
+      /** Build */
+      build?: string | null;
+      /** Description */
+      description?: string | null;
+      /** Due Date */
+      due_date?: string | null;
+      /** Environment Id */
+      environment_id?: string | null;
+      /** Name */
+      name?: string | null;
+      /** Row Version */
+      row_version?: number | null;
+      /** Start Date */
+      start_date?: string | null;
+    };
+    /** CycleRead */
+    CycleRead: {
+      /** Archived */
+      archived: boolean;
+      /** Build */
+      build: string | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Description */
+      description: string | null;
+      /** Due Date */
+      due_date: string | null;
+      /**
+       * Environment Id
+       * Format: uuid
+       */
+      environment_id: string;
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Key */
+      key: string;
+      /** Name */
+      name: string;
+      owner: components["schemas"]["UserRef"] | null;
+      /** Plan Id */
+      plan_id: string | null;
+      /** Progress By Assignee */
+      progress_by_assignee: components["schemas"]["AssigneeProgress"][];
+      /**
+       * Project Id
+       * Format: uuid
+       */
+      project_id: string;
+      /** Release Id */
+      release_id: string | null;
+      /** Row Version */
+      row_version: number;
+      /** Runs Pending */
+      runs_pending: boolean;
+      /** Start Date */
+      start_date: string | null;
+      status: components["schemas"]["CycleStatus"];
+      summary: components["schemas"]["CycleSummary"];
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
+    };
+    /**
+     * CycleStatus
+     * @enum {string}
+     */
+    CycleStatus: "planned" | "active" | "closed";
+    /**
+     * CycleSummary
+     * @description Counts by run status over non-superseded runs.
+     */
+    CycleSummary: {
+      /** By Status */
+      by_status: {
+        [key: string]: number;
+      };
+      /** Total */
+      total: number;
     };
     /**
      * DesignTechnique
@@ -2719,6 +3204,17 @@ export interface components {
       /** Total */
       total: number;
     };
+    /** Page[CycleListItem] */
+    Page_CycleListItem_: {
+      /** Items */
+      items: components["schemas"]["CycleListItem"][];
+      /** Page */
+      page: number;
+      /** Page Size */
+      page_size: number;
+      /** Total */
+      total: number;
+    };
     /** Page[PlanCaseItem] */
     Page_PlanCaseItem_: {
       /** Items */
@@ -2734,6 +3230,17 @@ export interface components {
     Page_PlanListItem_: {
       /** Items */
       items: components["schemas"]["PlanListItem"][];
+      /** Page */
+      page: number;
+      /** Page Size */
+      page_size: number;
+      /** Total */
+      total: number;
+    };
+    /** Page[RunRead] */
+    Page_RunRead_: {
+      /** Items */
+      items: components["schemas"]["RunRead"][];
       /** Page */
       page: number;
       /** Page Size */
@@ -3215,6 +3722,18 @@ export interface components {
      * @enum {string}
      */
     ReleaseStatus: "planned" | "active" | "released" | "archived";
+    /** ReopenRequest */
+    ReopenRequest: {
+      /** Reason */
+      reason: string;
+    };
+    /** ReorderRequest */
+    ReorderRequest: {
+      /** Ordered Run Ids */
+      ordered_run_ids?: string[] | null;
+      /** Sort By */
+      sort_by?: string | null;
+    };
     /** RequirementIdsRequest */
     RequirementIdsRequest: {
       /** Requirement Ids */
@@ -3294,11 +3813,73 @@ export interface components {
       /** Permissions */
       permissions: string[];
     };
+    /** RunIdsRequest */
+    RunIdsRequest: {
+      /** Run Ids */
+      run_ids: string[];
+    };
+    /** RunRead */
+    RunRead: {
+      assignee: components["schemas"]["UserRef"] | null;
+      /** Case Key */
+      case_key: string;
+      /**
+       * Cycle Id
+       * Format: uuid
+       */
+      cycle_id: string;
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Latest Version No */
+      latest_version_no: number;
+      /** Needs Retest */
+      needs_retest: boolean;
+      /** Position */
+      position: number;
+      /** Row Version */
+      row_version: number;
+      status: components["schemas"]["RunStatus"];
+      /** Superseded */
+      superseded: boolean;
+      /**
+       * Test Case Id
+       * Format: uuid
+       */
+      test_case_id: string;
+      /** Title */
+      title: string;
+      /** Version No */
+      version_no: number;
+    };
+    /**
+     * RunStatus
+     * @enum {string}
+     */
+    RunStatus: "not_run" | "in_progress" | "passed" | "failed" | "blocked" | "skipped" | "not_applicable";
     /** SaveResponse */
     SaveResponse: {
       case: components["schemas"]["CaseRead"];
       /** Version Created */
       version_created: boolean;
+    };
+    /** SelectionIn */
+    SelectionIn: {
+      /** Case Ids */
+      case_ids?: string[];
+      /** Folder Ids */
+      folder_ids?: string[];
+      /**
+       * From Plan
+       * @default false
+       */
+      from_plan: boolean;
+      /** Priorities */
+      priorities?: string[];
+      /** Tags */
+      tags?: string[];
     };
     /** SessionRead */
     SessionRead: {
@@ -3493,6 +4074,43 @@ export interface components {
       title: string;
       /** Version No */
       version_no: number;
+    };
+    /** AddCasesRequest */
+    tcms__execution__schemas__AddCasesRequest: {
+      /** Case Ids */
+      case_ids?: string[];
+      /** Folder Ids */
+      folder_ids?: string[];
+      /** Tags */
+      tags?: string[];
+    };
+    /** CloneRequest */
+    tcms__execution__schemas__CloneRequest: {
+      /** Name */
+      name: string;
+      /** Only Statuses */
+      only_statuses?: components["schemas"]["RunStatus"][] | null;
+    };
+    /** AddCasesRequest */
+    tcms__planning__schemas__AddCasesRequest: {
+      /** Case Ids */
+      case_ids?: string[] | null;
+      /** Folder Ids */
+      folder_ids?: string[] | null;
+      /**
+       * Include Subfolders
+       * @default true
+       */
+      include_subfolders: boolean;
+      /** Saved View Id */
+      saved_view_id?: string | null;
+      /** Tags */
+      tags?: string[] | null;
+    };
+    /** CloneRequest */
+    tcms__planning__schemas__CloneRequest: {
+      /** Name */
+      name?: string | null;
     };
   };
   responses: never;
@@ -4465,6 +5083,636 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["CommentRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  get_cycle_api_v1_cycles__cycle_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        cycle_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CycleRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  patch_cycle_api_v1_cycles__cycle_id__patch: {
+    parameters: {
+      query?: never;
+      header?: {
+        "If-Match"?: string | null;
+      };
+      path: {
+        cycle_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CyclePatch"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CycleRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  archive_cycle_api_v1_cycles__cycle_id__archive_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        cycle_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CycleRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  clone_cycle_api_v1_cycles__cycle_id__clone_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        cycle_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["tcms__execution__schemas__CloneRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CycleCreateResponse"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  close_cycle_api_v1_cycles__cycle_id__close_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        cycle_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CloseRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CycleRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  reopen_cycle_api_v1_cycles__cycle_id__reopen_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        cycle_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ReopenRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CycleRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  list_runs_api_v1_cycles__cycle_id__runs_get: {
+    parameters: {
+      query?: {
+        page?: number;
+        page_size?: number;
+        sort?: string | null;
+        status?: string | null;
+        assignee_id?: string | null;
+        needs_retest?: boolean | null;
+        include_superseded?: boolean;
+      };
+      header?: never;
+      path: {
+        cycle_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Page_RunRead_"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  add_runs_api_v1_cycles__cycle_id__runs_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        cycle_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["tcms__execution__schemas__AddCasesRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AddRunsResponse"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  remove_runs_api_v1_cycles__cycle_id__runs_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        cycle_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RunIdsRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CountResponse"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  assign_runs_api_v1_cycles__cycle_id__runs_assign_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        cycle_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AssignRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CountResponse"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  reorder_runs_api_v1_cycles__cycle_id__runs_reorder_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        cycle_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ReorderRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CountResponse"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  update_not_run_versions_api_v1_cycles__cycle_id__runs_update_versions_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        cycle_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CountResponse"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  start_cycle_api_v1_cycles__cycle_id__start_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        cycle_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CycleRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  sync_from_plan_api_v1_cycles__cycle_id__sync_from_plan_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        cycle_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AddRunsResponse"];
         };
       };
       /** @description Validation or business-rule error */
@@ -5989,6 +7237,104 @@ export interface operations {
       };
     };
   };
+  list_cycles_api_v1_projects__project_id__cycles_get: {
+    parameters: {
+      query?: {
+        page?: number;
+        page_size?: number;
+        sort?: string | null;
+        q?: string | null;
+        status?: string | null;
+        release_id?: string | null;
+        plan_id?: string | null;
+        environment_id?: string | null;
+        owner_id?: string | null;
+      };
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Page_CycleListItem_"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  create_cycle_api_v1_projects__project_id__cycles_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CycleCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CycleCreateResponse"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   list_environments_api_v1_projects__project_id__environments_get: {
     parameters: {
       query?: {
@@ -6972,6 +8318,132 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ReleaseRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  claim_run_api_v1_runs__run_id__claim_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        run_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RunRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  replace_run_api_v1_runs__run_id__replace_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        run_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RunRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  update_run_version_api_v1_runs__run_id__update_version_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        run_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RunRead"];
         };
       };
       /** @description Validation or business-rule error */
@@ -8090,7 +9562,7 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "application/json": components["schemas"]["AddCasesRequest"];
+        "application/json": components["schemas"]["tcms__planning__schemas__AddCasesRequest"];
       };
     };
     responses: {
@@ -8182,7 +9654,7 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "application/json": components["schemas"]["CloneRequest"];
+        "application/json": components["schemas"]["tcms__planning__schemas__CloneRequest"];
       };
     };
     responses: {

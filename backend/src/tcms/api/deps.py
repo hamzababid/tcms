@@ -19,6 +19,7 @@ from tcms.core.context import AccessContext, RequestMeta
 from tcms.core.crypto import constant_time_equals
 from tcms.core.errors import NotFound, RowVersionRequired, Unauthenticated
 from tcms.core.uow import AuditTarget, UnitOfWork, unit_of_work
+from tcms.execution import queries as execution_queries
 from tcms.identity import queries as identity_queries
 from tcms.identity import rules as identity_rules
 from tcms.identity import service as identity
@@ -225,6 +226,8 @@ ENTITY_PROJECT: dict[str, Callable[[Session, UUID], tuple[UUID, UUID] | None]] =
     "test_case_version": testdesign_queries.owning_project_of_version,
     "test_case_step": testdesign_queries.owning_project_of_step,
     "test_plan": planning_queries.owning_project_of_plan,
+    "test_cycle": execution_queries.owning_project_of_cycle,
+    "test_run": execution_queries.owning_project_of_run,
     "comment": comments.owner_of,
     "attachment": attachments.owner_of,
 }

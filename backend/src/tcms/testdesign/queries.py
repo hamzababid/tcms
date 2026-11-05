@@ -494,6 +494,17 @@ def case_ids_in_folders(
     return list(s.execute(stmt).scalars())
 
 
+def version_numbers(s: Session, version_ids: list[UUID]) -> dict[UUID, int]:
+    """Map version id → version_no (public; used by execution to label pinned run versions)."""
+    if not version_ids:
+        return {}
+    return dict(
+        s.execute(
+            select(TestCaseVersion.id, TestCaseVersion.version_no).where(TestCaseVersion.id.in_(version_ids))
+        ).all()
+    )
+
+
 def case_ids_with_tags(s: Session, ctx: AccessContext, tag_names: list[str]) -> list[UUID]:
     """Non-archived case ids carrying any of the given tags, in key order."""
     names = [t.strip().lower() for t in tag_names if t.strip()]
