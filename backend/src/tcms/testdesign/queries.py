@@ -439,3 +439,77 @@ def owning_project_of_step(s: Session, step_id: UUID) -> tuple[UUID, UUID] | Non
         select(TestCaseStep.organization_id, TestCaseStep.project_id).where(TestCaseStep.id == step_id)
     ).first()
     return (row[0], row[1]) if row else None
+
+
+# -- case references for planning / execution (public cross-module read) --------------------------
+
+
+@dataclass(frozen=True)
+class CaseRef:
+    """What planning and execution need to know about a case without touching its private repo."""
+
+    id: UUID
+    key: str
+    title: str
+    folder_id: UUID
+    status: str
+    latest_version_id: UUID | None
+    approved_version_id: UUID | None
+
+
+def _case_ref(c: TestCase) -> CaseRef:
+    return CaseRef(
+        c.id,
+        c.key,
+        c.title,
+        c.folder_id,
+        c.status.value,
+        c.latest_version_id,
+        c.approved_version_id,
+    )
+
+
+def case_refs(s: Session, ctx: AccessContext, ids: list[UUID]) -> dict[UUID, CaseRef]:
+    """Case eligibility info (status + pinned-version candidates), scoped to the project."""
+    if not ids:
+        return {}
+    return {c.id: _case_ref(c) for c in repo.cases_by_ids(s, ctx, ids)}
+
+
+def case_ids_in_folders(
+    s: Session, ctx: AccessContext, folder_ids: list[UUID], *, include_subfolders: bool
+) -> list[UUID]:
+    """All non-archived case ids in the given folders (optionally their subtrees), in key order."""
+    if not folder_ids:
+        return []
+    ids: list[UUID] = []
+    for fid in folder_ids:
+        ids.extend(repo.folder_ids_under(s, ctx, fid) if include_subfolders else [fid])
+    stmt = (
+        repo.case_list_stmt(ctx)
+        .with_only_columns(TestCase.id)
+        .where(TestCase.folder_id.in_(ids or folder_ids), TestCase.status != CaseStatus.archived)
+        .order_by(TestCase.key_num)
+    )
+    return list(s.execute(stmt).scalars())
+
+
+def case_ids_with_tags(s: Session, ctx: AccessContext, tag_names: list[str]) -> list[UUID]:
+    """Non-archived case ids carrying any of the given tags, in key order."""
+    names = [t.strip().lower() for t in tag_names if t.strip()]
+    if not names:
+        return []
+    stmt = (
+        repo.case_list_stmt(ctx)
+        .with_only_columns(TestCase.id)
+        .where(
+            TestCase.status != CaseStatus.archived,
+            TestCase.id.in_(
+                select(TestCaseTag.test_case_id)
+                .join(Tag, Tag.id == TestCaseTag.tag_id)
+                .where(Tag.project_id == ctx.pid, Tag.name.in_(names))
+            ),
+        )
+        .order_by(TestCase.key_num)
+    )
+    return list(s.execute(stmt).scalars())

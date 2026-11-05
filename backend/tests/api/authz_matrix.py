@@ -103,8 +103,25 @@ def _tag(f: Fixture) -> UUID:
         return testdesign.create_tag(uow, ctx, f"t{uuid.uuid4().hex[:12]}").id
 
 
+def _plan(f: Fixture) -> UUID:
+    from tcms.core.enums import PlanType
+    from tcms.core.permissions import PROJECT_PERMISSIONS
+    from tcms.core.uow import unit_of_work
+    from tcms.planning import service as planning
+
+    with unit_of_work(f.world.factory) as uow:
+        ctx = f.world.ctx(
+            f.org.id, f.org.admin.id, is_admin=True, project_id=f.project_id, perms=PROJECT_PERMISSIONS
+        )
+        plan = planning.create_plan(
+            uow, ctx, planning.PlanData(name=f"Plan {uuid.uuid4().hex[:8]}", type=PlanType.regression)
+        )
+        return plan.id
+
+
 P = "/api/v1/projects/{project_id}"
 TC = "/api/v1/test-cases/{case_id}"
+PL = "/api/v1/test-plans/{plan_id}"
 
 
 def _p(f: Fixture, suffix: str) -> str:
@@ -394,5 +411,49 @@ MATRIX: dict[tuple[str, str], Entry] = {
     ("GET", "/api/v1/attachments/{attachment_id}/content"): Entry("project:project.view"),
     ("DELETE", "/api/v1/attachments/{attachment_id}/links/{entity_type}/{entity_id}"): Entry(
         "project:testcase.edit"
+    ),
+    # test plans (M3 / E07)
+    ("GET", P + "/test-plans"): Entry("project:project.view", lambda f: ("GET", _p(f, "/test-plans"), None)),
+    ("POST", P + "/test-plans"): Entry(
+        "project:plan.manage",
+        lambda f: ("POST", _p(f, "/test-plans"), {"name": "Probe plan", "type": "regression"}),
+    ),
+    ("GET", PL): Entry("project:project.view", lambda f: ("GET", PL.format(plan_id=_plan(f)), None)),
+    ("PATCH", PL): Entry(
+        "project:plan.manage",
+        lambda f: ("PATCH", PL.format(plan_id=_plan(f)), {"name": "Renamed plan", "row_version": 1}),
+    ),
+    ("GET", PL + "/cases"): Entry(
+        "project:project.view", lambda f: ("GET", PL.format(plan_id=_plan(f)) + "/cases", None)
+    ),
+    ("POST", PL + "/cases"): Entry(
+        "project:plan.manage",
+        lambda f: ("POST", PL.format(plan_id=_plan(f)) + "/cases", {"case_ids": []}),
+    ),
+    ("DELETE", PL + "/cases"): Entry(
+        "project:plan.manage",
+        lambda f: ("DELETE", PL.format(plan_id=_plan(f)) + "/cases", {"case_ids": [str(uuid.uuid4())]}),
+    ),
+    ("POST", PL + "/requirements"): Entry(
+        "project:plan.manage",
+        lambda f: (
+            "POST",
+            PL.format(plan_id=_plan(f)) + "/requirements",
+            {"requirement_ids": [str(uuid.uuid4())]},
+        ),
+    ),
+    ("DELETE", PL + "/requirements"): Entry(
+        "project:plan.manage",
+        lambda f: (
+            "DELETE",
+            PL.format(plan_id=_plan(f)) + "/requirements",
+            {"requirement_ids": [str(uuid.uuid4())]},
+        ),
+    ),
+    ("POST", PL + "/clone"): Entry(
+        "project:plan.manage", lambda f: ("POST", PL.format(plan_id=_plan(f)) + "/clone", {})
+    ),
+    ("POST", PL + "/archive"): Entry(
+        "project:plan.manage", lambda f: ("POST", PL.format(plan_id=_plan(f)) + "/archive", None)
     ),
 }

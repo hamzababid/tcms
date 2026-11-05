@@ -1124,6 +1124,30 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/projects/{project_id}/test-plans": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Plans
+     * @description US-070 / FR-PLN-001.
+     */
+    get: operations["list_plans_api_v1_projects__project_id__test_plans_get"];
+    put?: never;
+    /**
+     * Create Plan
+     * @description US-070 / FR-PLN-001 (TCMS-050).
+     */
+    post: operations["create_plan_api_v1_projects__project_id__test_plans_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/releases/{release_id}": {
     parameters: {
       query?: never;
@@ -1488,6 +1512,107 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/test-plans/{plan_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Plan */
+    get: operations["get_plan_api_v1_test_plans__plan_id__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Patch Plan */
+    patch: operations["patch_plan_api_v1_test_plans__plan_id__patch"];
+    trace?: never;
+  };
+  "/api/v1/test-plans/{plan_id}/archive": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Archive Plan */
+    post: operations["archive_plan_api_v1_test_plans__plan_id__archive_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/test-plans/{plan_id}/cases": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Plan Cases
+     * @description US-074 / docs/02 §6.2: each case with its latest result in every linked cycle.
+     */
+    get: operations["list_plan_cases_api_v1_test_plans__plan_id__cases_get"];
+    put?: never;
+    /**
+     * Add Cases
+     * @description FR-PLN-002 / BR-13 (TCMS-051).
+     */
+    post: operations["add_cases_api_v1_test_plans__plan_id__cases_post"];
+    /** Remove Cases */
+    delete: operations["remove_cases_api_v1_test_plans__plan_id__cases_delete"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/test-plans/{plan_id}/clone": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Clone Plan
+     * @description US-073 / FR-PLN-006.
+     */
+    post: operations["clone_plan_api_v1_test_plans__plan_id__clone_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/test-plans/{plan_id}/requirements": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Link Requirements
+     * @description FR-PLN-003.
+     */
+    post: operations["link_requirements_api_v1_test_plans__plan_id__requirements_post"];
+    /** Unlink Requirements */
+    delete: operations["unlink_requirements_api_v1_test_plans__plan_id__requirements_delete"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1536,6 +1661,29 @@ export interface components {
       occurred_at: string;
       /** Summary */
       summary: string | null;
+    };
+    /** AddCasesRequest */
+    AddCasesRequest: {
+      /** Case Ids */
+      case_ids?: string[] | null;
+      /** Folder Ids */
+      folder_ids?: string[] | null;
+      /**
+       * Include Subfolders
+       * @default true
+       */
+      include_subfolders: boolean;
+      /** Saved View Id */
+      saved_view_id?: string | null;
+      /** Tags */
+      tags?: string[] | null;
+    };
+    /** AddCasesResponse */
+    AddCasesResponse: {
+      /** Added */
+      added: number;
+      /** Skipped */
+      skipped: components["schemas"]["Skipped"][];
     };
     /** ApiTokenCreate */
     ApiTokenCreate: {
@@ -1801,6 +1949,11 @@ export interface components {
      * @enum {string}
      */
     CaseFormat: "steps" | "text";
+    /** CaseIdsRequest */
+    CaseIdsRequest: {
+      /** Case Ids */
+      case_ids: string[];
+    };
     /** CaseLinkRead */
     CaseLinkRead: {
       /**
@@ -1971,6 +2124,11 @@ export interface components {
       detail?: string | null;
       /** Ok */
       ok: boolean;
+    };
+    /** CloneRequest */
+    CloneRequest: {
+      /** Name */
+      name?: string | null;
     };
     /** CommentCreate */
     CommentCreate: {
@@ -2145,6 +2303,20 @@ export interface components {
       superseded: boolean;
       /** Version No */
       version_no: number;
+    };
+    /**
+     * ExitRule
+     * @description A structured readiness rule (docs/02 §11.4); evaluated in M7. Stored verbatim in exit_rules.
+     */
+    ExitRule: {
+      /** Metric */
+      metric: string;
+      /** Operator */
+      operator: string;
+      /** Threshold */
+      threshold: number;
+    } & {
+      [key: string]: unknown;
     };
     /** FieldDiffRead */
     FieldDiffRead: {
@@ -2547,6 +2719,28 @@ export interface components {
       /** Total */
       total: number;
     };
+    /** Page[PlanCaseItem] */
+    Page_PlanCaseItem_: {
+      /** Items */
+      items: components["schemas"]["PlanCaseItem"][];
+      /** Page */
+      page: number;
+      /** Page Size */
+      page_size: number;
+      /** Total */
+      total: number;
+    };
+    /** Page[PlanListItem] */
+    Page_PlanListItem_: {
+      /** Items */
+      items: components["schemas"]["PlanListItem"][];
+      /** Page */
+      page: number;
+      /** Page Size */
+      page_size: number;
+      /** Total */
+      total: number;
+    };
     /** PasswordChangeRequest */
     PasswordChangeRequest: {
       /** Current Password */
@@ -2569,6 +2763,220 @@ export interface components {
        */
       scope: "org" | "project";
     };
+    /** PlanCaseItem */
+    PlanCaseItem: {
+      /**
+       * Case Id
+       * Format: uuid
+       */
+      case_id: string;
+      /** Key */
+      key: string;
+      /**
+       * Results
+       * @description Latest result per linked cycle (docs/02 §6.2)
+       */
+      results: components["schemas"]["PlanCaseResult"][];
+      /** Status */
+      status: string;
+      /** Title */
+      title: string;
+    };
+    /** PlanCaseResult */
+    PlanCaseResult: {
+      /**
+       * Cycle Id
+       * Format: uuid
+       */
+      cycle_id: string;
+      /** Cycle Key */
+      cycle_key: string;
+      /** Status */
+      status: string;
+    };
+    /** PlanCreate */
+    PlanCreate: {
+      /** Acceptance Criteria */
+      acceptance_criteria?: string | null;
+      /** End Date */
+      end_date?: string | null;
+      /** Entry Criteria */
+      entry_criteria?: string | null;
+      /** Environment Ids */
+      environment_ids?: string[];
+      /** Exit Criteria Notes */
+      exit_criteria_notes?: string | null;
+      /** Exit Rules */
+      exit_rules?: components["schemas"]["ExitRule"][];
+      /** Member Ids */
+      member_ids?: string[];
+      /** Name */
+      name: string;
+      /** Objectives */
+      objectives?: string | null;
+      /** Owner Id */
+      owner_id?: string | null;
+      /** Release Id */
+      release_id?: string | null;
+      /** Risks */
+      risks?: components["schemas"]["Risk"][];
+      /** Scope In */
+      scope_in?: string | null;
+      /** Scope Out */
+      scope_out?: string | null;
+      /** Start Date */
+      start_date?: string | null;
+      type: components["schemas"]["PlanType"];
+    };
+    /** PlanListItem */
+    PlanListItem: {
+      /** Case Count */
+      case_count: number;
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Key */
+      key: string;
+      /** Name */
+      name: string;
+      owner: components["schemas"]["UserRef"] | null;
+      /** Release Id */
+      release_id: string | null;
+      /** Row Version */
+      row_version: number;
+      status: components["schemas"]["PlanStatus"];
+      type: components["schemas"]["PlanType"];
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
+    };
+    /** PlanPatch */
+    PlanPatch: {
+      /** Acceptance Criteria */
+      acceptance_criteria?: string | null;
+      /** End Date */
+      end_date?: string | null;
+      /** Entry Criteria */
+      entry_criteria?: string | null;
+      /** Environment Ids */
+      environment_ids?: string[] | null;
+      /** Exit Criteria Notes */
+      exit_criteria_notes?: string | null;
+      /** Exit Rules */
+      exit_rules?: components["schemas"]["ExitRule"][] | null;
+      /** Member Ids */
+      member_ids?: string[] | null;
+      /** Name */
+      name?: string | null;
+      /** Objectives */
+      objectives?: string | null;
+      /** Owner Id */
+      owner_id?: string | null;
+      /** Release Id */
+      release_id?: string | null;
+      /** Risks */
+      risks?: components["schemas"]["Risk"][] | null;
+      /** Row Version */
+      row_version?: number | null;
+      /** Scope In */
+      scope_in?: string | null;
+      /** Scope Out */
+      scope_out?: string | null;
+      /** Start Date */
+      start_date?: string | null;
+      status?: components["schemas"]["PlanStatus"] | null;
+      type?: components["schemas"]["PlanType"] | null;
+    };
+    /** PlanRead */
+    PlanRead: {
+      /** Acceptance Criteria */
+      acceptance_criteria: string | null;
+      /** Archived */
+      archived: boolean;
+      /** Case Count */
+      case_count: number;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** End Date */
+      end_date: string | null;
+      /** Entry Criteria */
+      entry_criteria: string | null;
+      /** Environment Ids */
+      environment_ids: string[];
+      /** Exit Criteria Notes */
+      exit_criteria_notes: string | null;
+      /** Exit Rules */
+      exit_rules: {
+        [key: string]: unknown;
+      }[];
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Key */
+      key: string;
+      /** Member Ids */
+      member_ids: string[];
+      /** Name */
+      name: string;
+      /** Objectives */
+      objectives: string | null;
+      owner: components["schemas"]["UserRef"] | null;
+      /**
+       * Project Id
+       * Format: uuid
+       */
+      project_id: string;
+      /** Release Id */
+      release_id: string | null;
+      /** Requirement Count */
+      requirement_count: number;
+      /** Risks */
+      risks: {
+        [key: string]: unknown;
+      }[];
+      /** Row Version */
+      row_version: number;
+      /** Scope In */
+      scope_in: string | null;
+      /** Scope Out */
+      scope_out: string | null;
+      /** Start Date */
+      start_date: string | null;
+      status: components["schemas"]["PlanStatus"];
+      type: components["schemas"]["PlanType"];
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
+    };
+    /**
+     * PlanStatus
+     * @enum {string}
+     */
+    PlanStatus: "draft" | "active" | "completed" | "archived";
+    /**
+     * PlanType
+     * @enum {string}
+     */
+    PlanType:
+      | "functional"
+      | "integration"
+      | "regression"
+      | "release_validation"
+      | "uat"
+      | "smoke"
+      | "performance"
+      | "security";
     /**
      * PriorityLevel
      * @enum {string}
@@ -2807,6 +3215,11 @@ export interface components {
      * @enum {string}
      */
     ReleaseStatus: "planned" | "active" | "released" | "archived";
+    /** RequirementIdsRequest */
+    RequirementIdsRequest: {
+      /** Requirement Ids */
+      requirement_ids: string[];
+    };
     /** ResetMfaRequest */
     ResetMfaRequest: {
       /** Reason */
@@ -2855,6 +3268,15 @@ export interface components {
     RevokedCount: {
       /** Revoked */
       revoked: number;
+    };
+    /** Risk */
+    Risk: {
+      /** Description */
+      description: string;
+      /** Impact */
+      impact: string;
+      /** Mitigation */
+      mitigation?: string | null;
     };
     /** RoleBrief */
     RoleBrief: {
@@ -2906,6 +3328,13 @@ export interface components {
       last_seen_at: string;
       /** User Agent */
       user_agent: string | null;
+    };
+    /** Skipped */
+    Skipped: {
+      /** Key */
+      key: string;
+      /** Reason */
+      reason: string;
     };
     /** StepContentRead */
     StepContentRead: {
@@ -6380,6 +6809,103 @@ export interface operations {
       };
     };
   };
+  list_plans_api_v1_projects__project_id__test_plans_get: {
+    parameters: {
+      query?: {
+        page?: number;
+        page_size?: number;
+        sort?: string | null;
+        q?: string | null;
+        status?: string | null;
+        type?: string | null;
+        release_id?: string | null;
+        owner_id?: string | null;
+      };
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Page_PlanListItem_"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  create_plan_api_v1_projects__project_id__test_plans_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PlanCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PlanRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   get_release_api_v1_releases__release_id__get: {
     parameters: {
       query?: never;
@@ -7352,6 +7878,413 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["VersionRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  get_plan_api_v1_test_plans__plan_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        plan_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PlanRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  patch_plan_api_v1_test_plans__plan_id__patch: {
+    parameters: {
+      query?: never;
+      header?: {
+        "If-Match"?: string | null;
+      };
+      path: {
+        plan_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PlanPatch"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PlanRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  archive_plan_api_v1_test_plans__plan_id__archive_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        plan_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PlanRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  list_plan_cases_api_v1_test_plans__plan_id__cases_get: {
+    parameters: {
+      query?: {
+        page?: number;
+        page_size?: number;
+      };
+      header?: never;
+      path: {
+        plan_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Page_PlanCaseItem_"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  add_cases_api_v1_test_plans__plan_id__cases_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        plan_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AddCasesRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AddCasesResponse"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  remove_cases_api_v1_test_plans__plan_id__cases_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        plan_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CaseIdsRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AddCasesResponse"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  clone_plan_api_v1_test_plans__plan_id__clone_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        plan_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CloneRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PlanRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  link_requirements_api_v1_test_plans__plan_id__requirements_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        plan_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RequirementIdsRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AddCasesResponse"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  unlink_requirements_api_v1_test_plans__plan_id__requirements_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        plan_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RequirementIdsRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AddCasesResponse"];
         };
       };
       /** @description Validation or business-rule error */

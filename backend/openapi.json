@@ -138,6 +138,95 @@
         "title": "ActivityItem",
         "type": "object"
       },
+      "AddCasesRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "case_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Case Ids"
+          },
+          "folder_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder Ids"
+          },
+          "include_subfolders": {
+            "default": true,
+            "title": "Include Subfolders",
+            "type": "boolean"
+          },
+          "saved_view_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Saved View Id"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tags"
+          }
+        },
+        "title": "AddCasesRequest",
+        "type": "object"
+      },
+      "AddCasesResponse": {
+        "properties": {
+          "added": {
+            "title": "Added",
+            "type": "integer"
+          },
+          "skipped": {
+            "items": {
+              "$ref": "#/components/schemas/Skipped"
+            },
+            "title": "Skipped",
+            "type": "array"
+          }
+        },
+        "required": [
+          "added",
+          "skipped"
+        ],
+        "title": "AddCasesResponse",
+        "type": "object"
+      },
       "ApiTokenCreate": {
         "additionalProperties": false,
         "properties": {
@@ -794,6 +883,25 @@
         "title": "CaseFormat",
         "type": "string"
       },
+      "CaseIdsRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "case_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Case Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "case_ids"
+        ],
+        "title": "CaseIdsRequest",
+        "type": "object"
+      },
       "CaseLinkRead": {
         "properties": {
           "case_id": {
@@ -1320,6 +1428,26 @@
           "ok"
         ],
         "title": "CheckResult",
+        "type": "object"
+      },
+      "CloneRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 150,
+                "minLength": 3,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "CloneRequest",
         "type": "object"
       },
       "CommentCreate": {
@@ -1871,6 +1999,34 @@
           "finished_at"
         ],
         "title": "ExecutionRead",
+        "type": "object"
+      },
+      "ExitRule": {
+        "additionalProperties": true,
+        "description": "A structured readiness rule (docs/02 \u00a711.4); evaluated in M7. Stored verbatim in exit_rules.",
+        "properties": {
+          "metric": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Metric",
+            "type": "string"
+          },
+          "operator": {
+            "pattern": "^(gte|lte|gt|lt|eq)$",
+            "title": "Operator",
+            "type": "string"
+          },
+          "threshold": {
+            "title": "Threshold",
+            "type": "number"
+          }
+        },
+        "required": [
+          "metric",
+          "operator",
+          "threshold"
+        ],
+        "title": "ExitRule",
         "type": "object"
       },
       "FieldDiffRead": {
@@ -3090,6 +3246,68 @@
         "title": "Page[CaseListItem]",
         "type": "object"
       },
+      "Page_PlanCaseItem_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PlanCaseItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "title": "Page[PlanCaseItem]",
+        "type": "object"
+      },
+      "Page_PlanListItem_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PlanListItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "title": "Page[PlanListItem]",
+        "type": "object"
+      },
       "PasswordChangeRequest": {
         "additionalProperties": false,
         "properties": {
@@ -3147,6 +3365,791 @@
         ],
         "title": "PermissionRead",
         "type": "object"
+      },
+      "PlanCaseItem": {
+        "properties": {
+          "case_id": {
+            "format": "uuid",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "results": {
+            "description": "Latest result per linked cycle (docs/02 \u00a76.2)",
+            "items": {
+              "$ref": "#/components/schemas/PlanCaseResult"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "case_id",
+          "key",
+          "title",
+          "status",
+          "results"
+        ],
+        "title": "PlanCaseItem",
+        "type": "object"
+      },
+      "PlanCaseResult": {
+        "properties": {
+          "cycle_id": {
+            "format": "uuid",
+            "title": "Cycle Id",
+            "type": "string"
+          },
+          "cycle_key": {
+            "title": "Cycle Key",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cycle_id",
+          "cycle_key",
+          "status"
+        ],
+        "title": "PlanCaseResult",
+        "type": "object"
+      },
+      "PlanCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "acceptance_criteria": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acceptance Criteria"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "entry_criteria": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entry Criteria"
+          },
+          "environment_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Environment Ids",
+            "type": "array"
+          },
+          "exit_criteria_notes": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exit Criteria Notes"
+          },
+          "exit_rules": {
+            "items": {
+              "$ref": "#/components/schemas/ExitRule"
+            },
+            "title": "Exit Rules",
+            "type": "array"
+          },
+          "member_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Member Ids",
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 150,
+            "minLength": 3,
+            "title": "Name",
+            "type": "string"
+          },
+          "objectives": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives"
+          },
+          "owner_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
+          },
+          "release_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Id"
+          },
+          "risks": {
+            "items": {
+              "$ref": "#/components/schemas/Risk"
+            },
+            "title": "Risks",
+            "type": "array"
+          },
+          "scope_in": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope In"
+          },
+          "scope_out": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Out"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "type": {
+            "$ref": "#/components/schemas/PlanType"
+          }
+        },
+        "required": [
+          "name",
+          "type"
+        ],
+        "title": "PlanCreate",
+        "type": "object"
+      },
+      "PlanListItem": {
+        "properties": {
+          "case_count": {
+            "title": "Case Count",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "owner": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "release_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Id"
+          },
+          "row_version": {
+            "title": "Row Version",
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PlanStatus"
+          },
+          "type": {
+            "$ref": "#/components/schemas/PlanType"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "name",
+          "type",
+          "status",
+          "release_id",
+          "owner",
+          "case_count",
+          "updated_at",
+          "row_version"
+        ],
+        "title": "PlanListItem",
+        "type": "object"
+      },
+      "PlanPatch": {
+        "additionalProperties": false,
+        "properties": {
+          "acceptance_criteria": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acceptance Criteria"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "entry_criteria": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entry Criteria"
+          },
+          "environment_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Environment Ids"
+          },
+          "exit_criteria_notes": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exit Criteria Notes"
+          },
+          "exit_rules": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ExitRule"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exit Rules"
+          },
+          "member_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Member Ids"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 150,
+                "minLength": 3,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "objectives": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives"
+          },
+          "owner_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
+          },
+          "release_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Id"
+          },
+          "risks": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Risk"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risks"
+          },
+          "row_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Row Version"
+          },
+          "scope_in": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope In"
+          },
+          "scope_out": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Out"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlanStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlanType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "PlanPatch",
+        "type": "object"
+      },
+      "PlanRead": {
+        "properties": {
+          "acceptance_criteria": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acceptance Criteria"
+          },
+          "archived": {
+            "title": "Archived",
+            "type": "boolean"
+          },
+          "case_count": {
+            "title": "Case Count",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "entry_criteria": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entry Criteria"
+          },
+          "environment_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Environment Ids",
+            "type": "array"
+          },
+          "exit_criteria_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exit Criteria Notes"
+          },
+          "exit_rules": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Exit Rules",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "member_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Member Ids",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "objectives": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives"
+          },
+          "owner": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "project_id": {
+            "format": "uuid",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "release_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Id"
+          },
+          "requirement_count": {
+            "title": "Requirement Count",
+            "type": "integer"
+          },
+          "risks": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Risks",
+            "type": "array"
+          },
+          "row_version": {
+            "title": "Row Version",
+            "type": "integer"
+          },
+          "scope_in": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope In"
+          },
+          "scope_out": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Out"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PlanStatus"
+          },
+          "type": {
+            "$ref": "#/components/schemas/PlanType"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "project_id",
+          "name",
+          "type",
+          "status",
+          "release_id",
+          "objectives",
+          "scope_in",
+          "scope_out",
+          "entry_criteria",
+          "exit_criteria_notes",
+          "acceptance_criteria",
+          "exit_rules",
+          "risks",
+          "environment_ids",
+          "member_ids",
+          "owner",
+          "start_date",
+          "end_date",
+          "case_count",
+          "requirement_count",
+          "archived",
+          "created_at",
+          "updated_at",
+          "row_version"
+        ],
+        "title": "PlanRead",
+        "type": "object"
+      },
+      "PlanStatus": {
+        "enum": [
+          "draft",
+          "active",
+          "completed",
+          "archived"
+        ],
+        "title": "PlanStatus",
+        "type": "string"
+      },
+      "PlanType": {
+        "enum": [
+          "functional",
+          "integration",
+          "regression",
+          "release_validation",
+          "uat",
+          "smoke",
+          "performance",
+          "security"
+        ],
+        "title": "PlanType",
+        "type": "string"
       },
       "PriorityLevel": {
         "enum": [
@@ -3919,6 +4922,25 @@
         "title": "ReleaseStatus",
         "type": "string"
       },
+      "RequirementIdsRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "requirement_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Requirement Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "requirement_ids"
+        ],
+        "title": "RequirementIdsRequest",
+        "type": "object"
+      },
       "ResetMfaRequest": {
         "additionalProperties": false,
         "properties": {
@@ -4042,6 +5064,40 @@
         "title": "RevokedCount",
         "type": "object"
       },
+      "Risk": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          },
+          "impact": {
+            "pattern": "^(low|medium|high)$",
+            "title": "Impact",
+            "type": "string"
+          },
+          "mitigation": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mitigation"
+          }
+        },
+        "required": [
+          "description",
+          "impact"
+        ],
+        "title": "Risk",
+        "type": "object"
+      },
       "RoleBrief": {
         "properties": {
           "code": {
@@ -4162,6 +5218,24 @@
           "current"
         ],
         "title": "SessionRead",
+        "type": "object"
+      },
+      "Skipped": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "reason"
+        ],
+        "title": "Skipped",
         "type": "object"
       },
       "StepContentRead": {
@@ -10034,6 +11108,264 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/test-plans": {
+      "get": {
+        "description": "US-070 / FR-PLN-001.",
+        "operationId": "list_plans_api_v1_projects__project_id__test_plans_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sort"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "release_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Release Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "owner_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Owner Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_PlanListItem_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "List Plans",
+        "tags": [
+          "test-plans"
+        ]
+      },
+      "post": {
+        "description": "US-070 / FR-PLN-001 (TCMS-050).",
+        "operationId": "create_plan_api_v1_projects__project_id__test_plans_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Create Plan",
+        "tags": [
+          "test-plans"
+        ]
+      }
+    },
     "/api/v1/releases/{release_id}": {
       "get": {
         "operationId": "get_release_api_v1_releases__release_id__get",
@@ -11785,6 +13117,668 @@
         "summary": "Get Version",
         "tags": [
           "test-cases"
+        ]
+      }
+    },
+    "/api/v1/test-plans/{plan_id}": {
+      "get": {
+        "operationId": "get_plan_api_v1_test_plans__plan_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Get Plan",
+        "tags": [
+          "test-plans"
+        ]
+      },
+      "patch": {
+        "operationId": "patch_plan_api_v1_test_plans__plan_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-Match"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Patch Plan",
+        "tags": [
+          "test-plans"
+        ]
+      }
+    },
+    "/api/v1/test-plans/{plan_id}/archive": {
+      "post": {
+        "operationId": "archive_plan_api_v1_test_plans__plan_id__archive_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Archive Plan",
+        "tags": [
+          "test-plans"
+        ]
+      }
+    },
+    "/api/v1/test-plans/{plan_id}/cases": {
+      "delete": {
+        "operationId": "remove_cases_api_v1_test_plans__plan_id__cases_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaseIdsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddCasesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Remove Cases",
+        "tags": [
+          "test-plans"
+        ]
+      },
+      "get": {
+        "description": "US-074 / docs/02 \u00a76.2: each case with its latest result in every linked cycle.",
+        "operationId": "list_plan_cases_api_v1_test_plans__plan_id__cases_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_PlanCaseItem_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "List Plan Cases",
+        "tags": [
+          "test-plans"
+        ]
+      },
+      "post": {
+        "description": "FR-PLN-002 / BR-13 (TCMS-051).",
+        "operationId": "add_cases_api_v1_test_plans__plan_id__cases_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddCasesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddCasesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Add Cases",
+        "tags": [
+          "test-plans"
+        ]
+      }
+    },
+    "/api/v1/test-plans/{plan_id}/clone": {
+      "post": {
+        "description": "US-073 / FR-PLN-006.",
+        "operationId": "clone_plan_api_v1_test_plans__plan_id__clone_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloneRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Clone Plan",
+        "tags": [
+          "test-plans"
+        ]
+      }
+    },
+    "/api/v1/test-plans/{plan_id}/requirements": {
+      "delete": {
+        "operationId": "unlink_requirements_api_v1_test_plans__plan_id__requirements_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequirementIdsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddCasesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Unlink Requirements",
+        "tags": [
+          "test-plans"
+        ]
+      },
+      "post": {
+        "description": "FR-PLN-003.",
+        "operationId": "link_requirements_api_v1_test_plans__plan_id__requirements_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequirementIdsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddCasesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Link Requirements",
+        "tags": [
+          "test-plans"
         ]
       }
     }
