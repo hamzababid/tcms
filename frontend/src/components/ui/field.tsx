@@ -95,3 +95,34 @@ export function Checkbox({
     </div>
   );
 }
+
+/** Checkbox with a title and an explanation (settings, policies). */
+export function ToggleField({
+  label,
+  description,
+  className,
+  ...props
+}: InputHTMLAttributes<HTMLInputElement> & { label: string; description?: string }) {
+  const id = useId();
+  return (
+    <div className={cn("flex items-start gap-3", className)}>
+      <input
+        id={id}
+        type="checkbox"
+        className="mt-0.5"
+        aria-describedby={description ? `${id}-d` : undefined}
+        {...props}
+      />
+      <div>
+        <label htmlFor={id} className="text-[13.5px] font-medium text-ink">
+          {label}
+        </label>
+        {description ? (
+          <p id={`${id}-d`} className="mt-0.5 text-[13px] leading-5 text-ink-secondary">
+            {description}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+}

@@ -153,29 +153,67 @@ export function Page({
   );
 }
 
-/** White card with an optional titled header row (docs/design/Dashboard.dc.html sections). */
+/** White card with an optional titled header and footer (docs/design/Dashboard.dc.html sections). */
 export function Card({
   title,
+  description,
   actions,
+  footer,
   children,
   className,
   flush = false,
+  tone = "default",
 }: {
   title?: string;
+  description?: string;
   actions?: ReactNode;
+  footer?: ReactNode;
   children: ReactNode;
   className?: string;
   flush?: boolean;
+  tone?: "default" | "danger";
 }) {
   return (
-    <section className={cn("rounded-card border border-border bg-surface", className)}>
+    <section
+      className={cn(
+        "flex flex-col rounded-card border bg-surface",
+        tone === "danger" ? "border-danger-border" : "border-border",
+        className,
+      )}
+    >
       {title ? (
-        <div className="flex items-center justify-between gap-3 border-b border-border px-[18px] py-3.5">
-          <h2 className="text-[15px] font-semibold text-ink">{title}</h2>
-          {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+        <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-3.5">
+          <div className="min-w-0">
+            <h2
+              className={cn("text-[15px] font-semibold", tone === "danger" ? "text-danger-ink" : "text-ink")}
+            >
+              {title}
+            </h2>
+            {description ? <p className="mt-0.5 text-[13px] text-ink-secondary">{description}</p> : null}
+          </div>
+          {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
         </div>
       ) : null}
-      <div className={flush ? "" : "p-[18px]"}>{children}</div>
+      <div className={cn("flex-1", flush ? "" : "p-5")}>{children}</div>
+      {footer ? (
+        <div className="flex items-center justify-end gap-2 rounded-b-card border-t border-border bg-ground px-5 py-3">
+          {footer}
+        </div>
+      ) : null}
     </section>
+  );
+}
+
+/** Label/value list for summary cards. */
+export function Facts({ items }: { items: [label: string, value: ReactNode][] }) {
+  return (
+    <dl className="grid grid-cols-[minmax(110px,auto)_minmax(0,1fr)] gap-x-4 gap-y-2.5 text-[13px]">
+      {items.map(([k, v]) => (
+        <div key={k} className="contents">
+          <dt className="text-ink-secondary">{k}</dt>
+          <dd className="min-w-0 text-ink">{v}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }

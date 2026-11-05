@@ -67,3 +67,18 @@ describe("renderMentions", () => {
     );
   });
 });
+
+describe("deviceName", () => {
+  it("summarises common user agents", async () => {
+    const { deviceName } = await import("@/features/profile/ProfilePage");
+    expect(
+      deviceName(
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36",
+      ),
+    ).toBe("Chrome on Windows");
+    expect(
+      deviceName("Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605 Version/17 Safari/605"),
+    ).toBe("Safari on macOS");
+    expect(deviceName(null)).toBe("Unknown device");
+  });
+});

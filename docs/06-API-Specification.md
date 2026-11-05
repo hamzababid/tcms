@@ -187,7 +187,7 @@ Legend: **Perm** = required permission (project scope unless prefixed `org.`); `
 | POST | `/projects/{project_id}/archive` | project.configure | `{confirm_key}` | |
 | POST | `/projects/{project_id}/restore` | project.configure | | |
 | GET | `/projects/{project_id}/resolve` | project.view | `?key=SPARK-TC-12` → `{entity_type, id}` (arrives in M2 with the first keyed entity) | |
-| GET | `/projects/{project_id}/activity` | project.view | Activity feed (rendered audit summaries) | WS-007 |
+| GET | `/projects/{project_id}/activity` | project.view | Activity feed (rendered audit summaries). Filters: `entity_type`, `actor_id`, `action`, `occurred_at__gte/lte` (dates), `q` (summary, record key or actor) | WS-007 |
 | GET | `/projects/{project_id}/members` | project.view | | WS-003 |
 | GET | `/projects/{project_id}/member-candidates` | project.members.manage | Active organization users who are not members (add-member picker) | WS-003 |
 | POST | `/projects/{project_id}/members` | project.members.manage | `{user_id, role_code?}` (default Viewer, BR-29) | |
@@ -228,7 +228,7 @@ Legend: **Perm** = required permission (project scope unless prefixed `org.`); `
 | DELETE | `/test-cases/{id}` | testcase.delete | BR-14 (`409 case_has_runs`) | |
 | POST | `/test-cases/{id}/duplicate` | testcase.create | `{folder_id?, title?}` | TD-009 |
 | GET | `/test-cases/{id}/executions` | project.view | Runs and attempts across cycles | TD-013 |
-| GET | `/test-cases/{id}/history` | project.view | Audit events for the case | AUD-002 |
+| GET | `/test-cases/{id}/history` | project.view | Audit events for the case; filters `actor_id`, `action`, `occurred_at__gte/lte`, `q` | AUD-002 |
 | POST/DELETE | `/test-cases/{id}/links` | testcase.edit | `{target_case_id, link_type}` | TD-012 |
 | POST | `/projects/{project_id}/test-cases/bulk` | per action | `{action, case_ids? \| filter?, params}` → `200 {updated}` or `202 {job_id}` | TD-010 |
 | GET/POST | `/projects/{project_id}/tags` | view / testcase.edit | | TD-008 |

@@ -8245,7 +8245,7 @@
     },
     "/api/v1/projects/{project_id}/activity": {
       "get": {
-        "description": "US-028 / FR-WS-007: rendered audit summaries, filter by entity type and user.",
+        "description": "US-028 / FR-WS-007: rendered audit summaries; filters as audit events (docs/06 \u00a74.12) plus `q`.",
         "operationId": "activity_api_v1_projects__project_id__activity_get",
         "parameters": [
           {
@@ -8313,6 +8313,74 @@
                 }
               ],
               "title": "Actor Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "action",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Action"
+            }
+          },
+          {
+            "in": "query",
+            "name": "occurred_at__gte",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Occurred At  Gte"
+            }
+          },
+          {
+            "in": "query",
+            "name": "occurred_at__lte",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Occurred At  Lte"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
             }
           }
         ],
@@ -9726,6 +9794,40 @@
               ],
               "title": "Automation Status"
             }
+          },
+          {
+            "in": "query",
+            "name": "updated_at__gte",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Updated At  Gte"
+            }
+          },
+          {
+            "in": "query",
+            "name": "updated_at__lte",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Updated At  Lte"
+            }
           }
         ],
         "responses": {
@@ -10919,7 +11021,7 @@
     },
     "/api/v1/test-cases/{case_id}/history": {
       "get": {
-        "description": "FR-AUD-002 for a case.",
+        "description": "FR-AUD-002 for a case; filters as audit events (docs/06 \u00a74.12) plus `q`.",
         "operationId": "history_api_v1_test_cases__case_id__history_get",
         "parameters": [
           {
@@ -10953,6 +11055,91 @@
               "minimum": 1,
               "title": "Page Size",
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "actor_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Actor Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "action",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Action"
+            }
+          },
+          {
+            "in": "query",
+            "name": "occurred_at__gte",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Occurred At  Gte"
+            }
+          },
+          {
+            "in": "query",
+            "name": "occurred_at__lte",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Occurred At  Lte"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
             }
           }
         ],

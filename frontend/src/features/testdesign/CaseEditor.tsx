@@ -462,7 +462,7 @@ export function CaseEditor({
           </>
         }
       />
-      <div className="flex max-w-[1320px] flex-col gap-4 px-6 py-6">
+      <div className="flex flex-col gap-4 px-6 py-6">
         {restored ? (
           <div
             role="status"

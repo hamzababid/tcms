@@ -105,6 +105,7 @@ flowchart TB
 - Click row → open side panel; `Ctrl/Cmd+click` or middle-click → open full page in new tab.
 - Column resize/reorder/visibility persisted per user per table.
 - Bulk action bar appears on selection; "select all matching" switches the action to filter-based.
+- Implementation (`DataTable`, used by every table): toolbar (context + actions on the left; result count, Clear filters and Columns on the right), sortable headers, a per-column filter row (text, select, or a date-range popover), and a footer with "Showing x–y of N", rows per page (10/25/50/100) and first/previous/next/last. Large lists (cases, activity, history) filter, sort and page on the server; small lists in the browser. Tables in the side panel use the dense variant, with less-used columns hidden until chosen in Columns.
 - Sticky header; virtualized rows for > 200 rows per page.
 - Inline edit (double-click cell) for priority, assignee, tags where permitted.
 - Keyboard: `J/K` move row focus, `X` select, `Enter` open panel, `Esc` close.

@@ -14,7 +14,7 @@ import { can } from "@/lib/permissions";
 
 import { useFolders, useInvalidateCase, useResolvedCase, useTags, type Folder } from "./api";
 import { CaseDetail } from "./CaseDetail";
-import { CaseList, DEFAULT_FILTERS, type ListFilters } from "./CaseList";
+import { CaseList } from "./CaseList";
 import { FolderTree, type FolderActions } from "./FolderTree";
 
 type FolderDialog =
@@ -46,7 +46,6 @@ export function RepositoryPage({
   const toast = useToast();
   const invalidate = useInvalidateCase();
   const [showArchived, setShowArchived] = useState(false);
-  const [filters, setFilters] = useState<ListFilters>(DEFAULT_FILTERS);
   const [dialog, setDialog] = useState<FolderDialog>(null);
   const folders = useFolders(project.id, showArchived);
   const tags = useTags(project.id);
@@ -262,7 +261,6 @@ export function RepositoryPage({
               selectedId={folderId}
               onSelect={(id) => {
                 onFolder(id);
-                setFilters((f) => ({ ...f, page: 1 }));
               }}
               canManage={canFolders}
               canMoveCases={canEdit}
@@ -283,8 +281,6 @@ export function RepositoryPage({
           projectId={project.id}
           folderId={folderId}
           folderName={selected?.name ?? null}
-          filters={filters}
-          onFilters={setFilters}
           selectedKey={caseKey}
           onOpen={(c) => {
             onCase(c.key);

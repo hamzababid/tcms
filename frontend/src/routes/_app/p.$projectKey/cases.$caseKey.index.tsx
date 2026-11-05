@@ -30,7 +30,7 @@ export const Route = createFileRoute("/_app/p/$projectKey/cases/$caseKey/")({
       );
     return (
       <div className="px-6 py-6">
-        <div className="max-w-5xl rounded-card border border-border bg-surface p-6">
+        <div className="rounded-card border border-border bg-surface p-6">
           <CaseDetail
             key={resolved.data.id}
             project={project}

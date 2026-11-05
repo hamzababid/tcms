@@ -98,6 +98,9 @@ Also: `GET /projects/{id}/resolve` and `Idempotency-Key` on creates (`test_resol
 | Shell: dark sidebar with project switcher, 34 px nav items, chevron breadcrumbs, avatar menu | ✅ | E2E TCMS-001 (switcher, nav), axe on every screen |
 | Page frame: white header bar + full-bleed panes (repository) or padded content | ✅ | Screenshots; E2E 15/15 |
 | Components: buttons (primary/secondary/ghost/outline destructive/tint, 36/32/28), fields, select chevron, menus, dialogs, tabs with counts, tags, keycaps, status badges, data tables | ✅ | `make lint`, Vitest, E2E with axe |
+| One `DataTable` for every table (repository cases, activity, case versions/executions/history, projects, members, environments, releases, invitations, sessions, API tokens): column filters, sorting, Columns menu, rows per page, pagination | ✅ | `DataTable.test.tsx`; screenshots of every screen and tab; E2E 15/15 |
+| Full-width layouts: settings, profile and security policy as card grids with summary cards; create forms (invitation, API token, release) in dialogs; full-page case with a Properties side card | ✅ | Screenshots at 1440 px |
+| Audit filters for Activity and case History (`action`, `occurred_at__gte/lte`, `q`; docs/06) | ✅ | `test_activity_and_history_filters` |
 
 ## Brand assets (branch `feat/brand-assets`)
 

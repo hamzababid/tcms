@@ -758,3 +758,27 @@ def test_us_060_automation_keys_unique_per_project(space: Space, world: World) -
         json={"automation_keys": ["auth.login_ok"], "row_version": c["row_version"]},
     )
     assert r.status_code == 200, r.text
+
+
+def test_activity_and_history_filters(space: Space) -> None:
+    """docs/06 §4.12 audit filters (actor_id, action, entity_type, occurred_at__gte/lte) plus q."""
+    case = space.post_case(title="Filterable case")
+    space.post_folder("Filter folder")
+    url = space.url("/activity")
+    by_type = space.admin.get(url, params={"entity_type": "folder"}).json()
+    assert by_type["total"] >= 2
+    assert all(e["entity_type"] == "folder" for e in by_type["items"])
+    by_action = space.admin.get(url, params={"action": "test_case.created"}).json()
+    assert [e["entity_key"] for e in by_action["items"]] == [case["key"]]
+    assert space.admin.get(url, params={"q": "Filterable"}).json()["total"] == 1
+    today = by_action["items"][0]["occurred_at"][:10]
+    assert (
+        space.admin.get(url, params={"occurred_at__gte": today, "occurred_at__lte": today}).json()["total"]
+        >= 3
+    )
+    assert space.admin.get(url, params={"occurred_at__lte": "2000-01-01"}).json()["total"] == 0
+    assert space.admin.get(url, params={"actor_id": str(space.org.admin.id)}).json()["total"] >= 3
+    hist = space.admin.get(
+        f"/api/v1/test-cases/{case['id']}/history", params={"action": "test_case.created"}
+    ).json()
+    assert hist["total"] == 1

@@ -31,7 +31,7 @@ export function Tabs({
           <T.Trigger
             key={i.value}
             value={i.value}
-            className="-mb-px inline-flex h-[38px] items-center gap-1.5 whitespace-nowrap border-b-2 border-transparent px-2.5 text-[13px] font-medium text-ink-secondary transition-colors hover:text-ink data-[state=active]:border-accent data-[state=active]:font-semibold data-[state=active]:text-ink"
+            className="-mb-px inline-flex h-[38px] items-center gap-1.5 whitespace-nowrap rounded-t-[4px] border-b-2 border-transparent px-2.5 focus-visible:bg-accent-tint focus-visible:outline-none text-[13px] font-medium text-ink-secondary transition-colors hover:text-ink data-[state=active]:border-accent data-[state=active]:font-semibold data-[state=active]:text-ink"
           >
             {i.label}
             {i.count !== undefined ? (

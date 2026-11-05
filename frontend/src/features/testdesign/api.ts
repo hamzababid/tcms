@@ -4,7 +4,7 @@
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/api/client";
-import { useRoles, type ProjectMember } from "@/api/queries";
+import { useRoles, type AuditQuery, type ProjectMember } from "@/api/queries";
 import type { components } from "@/api/schema";
 
 export type Folder = components["schemas"]["FolderRead"];
@@ -32,7 +32,7 @@ export const tdKeys = {
   versions: (id: string) => ["case", id, "versions"] as const,
   compare: (id: string, from: number, to: number) => ["case", id, "compare", from, to] as const,
   executions: (id: string) => ["case", id, "executions"] as const,
-  history: (id: string, page: number) => ["case", id, "history", page] as const,
+  history: (id: string, query: object) => ["case", id, "history", query] as const,
   comments: (entityType: string, id: string) => ["comments", entityType, id] as const,
   resolve: (pid: string, key: string) => ["projects", pid, "resolve", key] as const,
 };
@@ -67,6 +67,8 @@ export interface CaseQuery {
   tag?: string;
   owner_id?: string;
   sort?: string;
+  updated_at__gte?: string;
+  updated_at__lte?: string;
   page: number;
   page_size: number;
 }
@@ -156,14 +158,15 @@ export const useExecutions = (id: string) =>
       ),
   });
 
-export const useCaseHistory = (id: string, page: number) =>
+export const useCaseHistory = (id: string, query: AuditQuery) =>
   useQuery({
-    queryKey: tdKeys.history(id, page),
+    queryKey: tdKeys.history(id, query),
+    placeholderData: keepPreviousData,
     queryFn: async () =>
       must(
         (
           await api.GET("/api/v1/test-cases/{case_id}/history", {
-            params: { path: { case_id: id }, query: { page, page_size: 50 } },
+            params: { path: { case_id: id }, query },
           })
         ).data,
       ),

@@ -135,8 +135,8 @@ test("TCMS-020: a QA Manager creates a project and becomes its QA Manager", asyn
   await page.goto("/projects");
   await expectAccessible(page);
   await page.getByRole("button", { name: "New project" }).click();
-  await page.getByLabel("Key").fill(key.toLowerCase());
-  await page.getByLabel("Name").fill(`E2E ${run}`);
+  await page.getByRole("dialog").getByLabel("Key").fill(key.toLowerCase());
+  await page.getByRole("dialog").getByLabel("Name").fill(`E2E ${run}`);
   await page.getByRole("button", { name: "Create project" }).click();
   await expect(page).toHaveURL(new RegExp(`/p/${key}/settings$`));
   await expectAccessible(page);

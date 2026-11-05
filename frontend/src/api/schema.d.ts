@@ -872,7 +872,7 @@ export interface paths {
     };
     /**
      * Activity
-     * @description US-028 / FR-WS-007: rendered audit summaries, filter by entity type and user.
+     * @description US-028 / FR-WS-007: rendered audit summaries; filters as audit events (docs/06 §4.12) plus `q`.
      */
     get: operations["activity_api_v1_projects__project_id__activity_get"];
     put?: never;
@@ -1339,7 +1339,7 @@ export interface paths {
     };
     /**
      * History
-     * @description FR-AUD-002 for a case.
+     * @description FR-AUD-002 for a case; filters as audit events (docs/06 §4.12) plus `q`.
      */
     get: operations["history_api_v1_test_cases__case_id__history_get"];
     put?: never;
@@ -5470,6 +5470,10 @@ export interface operations {
         page_size?: number;
         entity_type?: string | null;
         actor_id?: string | null;
+        action?: string | null;
+        occurred_at__gte?: string | null;
+        occurred_at__lte?: string | null;
+        q?: string | null;
       };
       header?: never;
       path: {
@@ -6233,6 +6237,8 @@ export interface operations {
         reviewer_id?: string | null;
         tag?: string | null;
         automation_status?: string | null;
+        updated_at__gte?: string | null;
+        updated_at__lte?: string | null;
       };
       header?: never;
       path: {
@@ -6962,6 +6968,11 @@ export interface operations {
       query?: {
         page?: number;
         page_size?: number;
+        actor_id?: string | null;
+        action?: string | null;
+        occurred_at__gte?: string | null;
+        occurred_at__lte?: string | null;
+        q?: string | null;
       };
       header?: never;
       path: {
