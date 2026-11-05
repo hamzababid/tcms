@@ -78,7 +78,7 @@ test("TCMS-030: create nested folders and move a folder", async ({ browser }) =>
   await expect(page.getByRole("heading", { name: "Repository" })).toBeVisible();
   const tree = page.getByRole("tree", { name: "Repository folders" });
 
-  await page.getByRole("button", { name: "+ Folder" }).click();
+  await page.getByRole("button", { name: "Folder", exact: true }).click();
   await page.getByRole("dialog").getByLabel("Name").fill(`E2E ${run}`);
   await page.getByRole("dialog").getByRole("button", { name: "Create" }).click();
   const parent = tree.getByRole("treeitem", { name: new RegExp(`E2E ${run}`) });
@@ -92,9 +92,9 @@ test("TCMS-030: create nested folders and move a folder", async ({ browser }) =>
   const child = tree.getByRole("treeitem", { name: new RegExp(`Child ${run}`) });
   await expect(child).toHaveAttribute("aria-level", "2");
 
-  // "+ Folder" creates inside the selected folder: select the root first.
+  // "Folder" creates inside the selected folder: select the root first.
   await tree.getByRole("treeitem", { name: "All cases" }).click();
-  await page.getByRole("button", { name: "+ Folder" }).click();
+  await page.getByRole("button", { name: "Folder", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "New folder" })).toBeVisible();
   await page.getByRole("dialog").getByLabel("Name").fill(`Target ${run}`);
   await page.getByRole("dialog").getByRole("button", { name: "Create" }).click();

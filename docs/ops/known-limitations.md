@@ -17,3 +17,4 @@ Current as of M2 (2026-11-05). Remove entries when resolved.
 | L16 | Notifications (review requested, returned, approved, mentions) are stored but there is no notification bell yet | Not visible in the UI | M7 |
 | L18 | Attachments and pasted images need a saved case (the upload targets its ID); the new-case editor says so | One extra step for new cases | — |
 | L19 | Requirement filters (`requirement_id`, `has_requirements`), "Add to plan/cycle" and export bulk actions are not built | — | M3 (plans/cycles), M6 (requirements), M8 (export) |
+| L20 | The design's topbar search, notification bell and "Keyboard shortcuts" footer (docs/design/Topbar, Sidebar) are not rendered until those features exist (no dummy controls) | — | Global search and shortcut help: M8; notifications: M7 |

@@ -1,5 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import type { ColumnDef } from "@tanstack/react-table";
+import { Plus } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 import { api, ApiError } from "@/api/client";
@@ -11,28 +13,23 @@ import {
   useReleases,
   type Environment,
   type Project,
+  type ProjectMember,
   type Release,
 } from "@/api/queries";
-import {
-  EmptyState,
-  ErrorState,
-  errorMessage,
-  PageHeader,
-  Skeleton,
-  useToast,
-} from "@/components/common/feedback";
+import { DataTable } from "@/components/common/DataTable";
+import { Card, ErrorState, Facts, Page, errorMessage, useToast } from "@/components/common/feedback";
+import { Tag } from "@/components/common/Tag";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { Checkbox, Field, Input, Select } from "@/components/ui/field";
+import { Field, Input, Select, Textarea, ToggleField } from "@/components/ui/field";
 import { Tabs } from "@/components/ui/tabs";
 import { FormError } from "@/features/auth/AuthCard";
+import { formatDate, formatDateTime } from "@/lib/format";
 import { can, projectPermissions, ROLE_LABELS } from "@/lib/permissions";
 
 const ROLE_CODES = ["qa_manager", "qa_lead", "qa_engineer", "developer", "pm_ba", "viewer"] as const;
 type RoleCode = (typeof ROLE_CODES)[number];
-
-const th = "px-4 text-left text-xs font-medium text-ink-secondary";
-const td = "px-4 text-[13px]";
+const ROLE_OPTIONS = ROLE_CODES.map((r) => ({ value: r, label: ROLE_LABELS[r] ?? r }));
 
 function useInvalidateProject(projectId: string) {
   const qc = useQueryClient();
@@ -44,10 +41,10 @@ function StaleNotice({ onReload }: { onReload: () => void }) {
   return (
     <div
       role="alert"
-      className="flex items-center justify-between rounded-control border border-border bg-ground px-3 py-2 text-sm"
+      className="flex items-center justify-between rounded-control border border-border bg-ground px-3 py-2 text-[13px]"
     >
       <span>This item was changed by someone else.</span>
-      <Button size="sm" variant="secondary" onClick={onReload}>
+      <Button size="xs" variant="secondary" onClick={onReload}>
         Reload
       </Button>
     </div>
@@ -60,6 +57,9 @@ function General({ project, editable }: { project: Project; editable: boolean })
   const toast = useToast();
   const invalidate = useInvalidateProject(project.id);
   const qc = useQueryClient();
+  const members = useMembers(project.id);
+  const envs = useEnvironments(project.id);
+  const releases = useReleases(project.id);
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -80,51 +80,93 @@ function General({ project, editable }: { project: Project; editable: boolean })
       else setError(errorMessage(err));
     }
   }
+  const s = project.settings;
   return (
-    <form className="flex max-w-xl flex-col gap-4" onSubmit={(e) => void save(e)}>
-      {stale ? (
-        <StaleNotice
-          onReload={() =>
-            void invalidate().then(() => {
-              setStale(false);
-            })
-          }
-        />
-      ) : null}
-      <FormError message={error} />
-      <Field label="Key" hint="The project key never changes (BR-27).">
-        {(p) => <Input {...p} value={project.key} readOnly className="font-mono" />}
-      </Field>
-      <Field label="Name" required>
-        {(p) => (
-          <Input
-            {...p}
-            value={name}
-            disabled={!editable}
-            onChange={(e) => {
-              setName(e.target.value);
-            }}
+    <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
+      <form onSubmit={(e) => void save(e)}>
+        <Card
+          title="Project details"
+          description="Name and description shown across the project."
+          footer={editable ? <Button type="submit">Save changes</Button> : undefined}
+        >
+          <div className="flex flex-col gap-4">
+            {stale ? (
+              <StaleNotice
+                onReload={() =>
+                  void invalidate().then(() => {
+                    setStale(false);
+                  })
+                }
+              />
+            ) : null}
+            <FormError message={error} />
+            <div className="grid gap-4 md:grid-cols-[200px_minmax(0,1fr)]">
+              <Field label="Key" hint="The key never changes.">
+                {(p) => <Input {...p} value={project.key} readOnly className="font-mono" />}
+              </Field>
+              <Field label="Name" required>
+                {(p) => (
+                  <Input
+                    {...p}
+                    value={name}
+                    disabled={!editable}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                    }}
+                  />
+                )}
+              </Field>
+            </div>
+            <Field label="Description">
+              {(p) => (
+                <Textarea
+                  {...p}
+                  rows={4}
+                  value={description}
+                  disabled={!editable}
+                  onChange={(e) => {
+                    setDescription(e.target.value);
+                  }}
+                />
+              )}
+            </Field>
+          </div>
+        </Card>
+      </form>
+      <div className="flex flex-col gap-5">
+        <Card title="Summary">
+          <Facts
+            items={[
+              [
+                "Status",
+                project.status === "archived" ? (
+                  <Tag tone="neutral">Archived · read-only</Tag>
+                ) : (
+                  <Tag>Active</Tag>
+                ),
+              ],
+              ["Members", members.data?.length ?? "—"],
+              ["Environments", envs.data?.filter((e) => !e.archived).length ?? "—"],
+              ["Releases", releases.data?.length ?? "—"],
+              ["Created", formatDateTime(project.created_at)],
+              ["Last changed", formatDateTime(project.updated_at)],
+            ]}
           />
-        )}
-      </Field>
-      <Field label="Description">
-        {(p) => (
-          <Input
-            {...p}
-            value={description}
-            disabled={!editable}
-            onChange={(e) => {
-              setDescription(e.target.value);
-            }}
+        </Card>
+        <Card title="Options in effect">
+          <Facts
+            items={[
+              ["Case approval", s.approval_required ? "Required" : "Off (auto-approved)"],
+              ["Self-approval", s.allow_self_approval ? "Allowed" : "Not allowed"],
+              ["Execution", s.only_assignee_executes ? "Assignee only" : "Any tester"],
+              ["Failed results", s.require_defect_for_failure ? "Need a defect" : "Defect optional"],
+              ["Report module", `Folder level ${s.report_module_depth}`],
+              ["Attachments", `Up to ${s.attachment_max_mb} MB`],
+            ]}
           />
-        )}
-      </Field>
-      {editable ? (
-        <div>
-          <Button type="submit">Save</Button>
-        </div>
-      ) : null}
-    </form>
+        </Card>
+      </div>
+    </div>
   );
 }
 
@@ -156,9 +198,11 @@ function Options({ project, editable }: { project: Project; editable: boolean })
   const flag = (
     k: "approval_required" | "allow_self_approval" | "only_assignee_executes" | "require_defect_for_failure",
     label: string,
+    description: string,
   ) => (
-    <Checkbox
+    <ToggleField
       label={label}
+      description={description}
       checked={settings[k]}
       disabled={!editable}
       onChange={(e) => {
@@ -167,7 +211,7 @@ function Options({ project, editable }: { project: Project; editable: boolean })
     />
   );
   return (
-    <form className="flex max-w-xl flex-col gap-4" onSubmit={(e) => void save(e)}>
+    <form onSubmit={(e) => void save(e)} className="flex flex-col gap-5">
       {stale ? (
         <StaleNotice
           onReload={() =>
@@ -177,45 +221,81 @@ function Options({ project, editable }: { project: Project; editable: boolean })
           }
         />
       ) : null}
-      {flag("approval_required", "Test cases need approval before cycles use them")}
-      {flag("allow_self_approval", "Authors may approve their own versions")}
-      {flag("only_assignee_executes", "Only the assignee may execute a run")}
-      {flag("require_defect_for_failure", "A failed result needs a linked defect")}
-      <Field
-        label="Module depth for reports"
-        hint="Folder level used as “module” (1–5)."
-        error={errors["settings.report_module_depth"]}
-      >
-        {(p) => (
-          <Input
-            {...p}
-            type="number"
-            min={1}
-            max={5}
-            disabled={!editable}
-            value={settings.report_module_depth}
-            onChange={(e) => {
-              setSettings({ ...settings, report_module_depth: Number(e.target.value) });
-            }}
-          />
-        )}
-      </Field>
-      <Field label="Attachment size limit (MB)" error={errors["settings.attachment_max_mb"]}>
-        {(p) => (
-          <Input
-            {...p}
-            type="number"
-            min={1}
-            disabled={!editable}
-            value={settings.attachment_max_mb}
-            onChange={(e) => {
-              setSettings({ ...settings, attachment_max_mb: Number(e.target.value) });
-            }}
-          />
-        )}
-      </Field>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <Card title="Review workflow" description="How test case versions become usable in cycles.">
+          <div className="flex flex-col gap-4">
+            {flag(
+              "approval_required",
+              "Test cases need approval before cycles use them",
+              "New versions start as Draft and are reviewed. Turning this on keeps existing cases approved.",
+            )}
+            {flag(
+              "allow_self_approval",
+              "Authors may approve their own versions",
+              "When off, a different person with approval rights must approve.",
+            )}
+          </div>
+        </Card>
+        <Card title="Execution" description="Rules applied while running tests.">
+          <div className="flex flex-col gap-4">
+            {flag(
+              "only_assignee_executes",
+              "Only the assignee may execute a run",
+              "Other testers can view the run but not record results.",
+            )}
+            {flag(
+              "require_defect_for_failure",
+              "A failed result needs a linked defect",
+              "Finishing a failed run asks for a new or existing defect.",
+            )}
+          </div>
+        </Card>
+        <Card title="Reporting" description="How folders roll up in reports.">
+          <Field
+            label="Module depth"
+            hint="Folder level used as “module” in reports (1–5)."
+            error={errors["settings.report_module_depth"]}
+          >
+            {(p) => (
+              <Input
+                {...p}
+                type="number"
+                min={1}
+                max={5}
+                className="max-w-40"
+                disabled={!editable}
+                value={settings.report_module_depth}
+                onChange={(e) => {
+                  setSettings({ ...settings, report_module_depth: Number(e.target.value) });
+                }}
+              />
+            )}
+          </Field>
+        </Card>
+        <Card title="Attachments" description="Applies to cases, steps, results and defects.">
+          <Field
+            label="Size limit (MB)"
+            hint="Up to the organization limit."
+            error={errors["settings.attachment_max_mb"]}
+          >
+            {(p) => (
+              <Input
+                {...p}
+                type="number"
+                min={1}
+                className="max-w-40"
+                disabled={!editable}
+                value={settings.attachment_max_mb}
+                onChange={(e) => {
+                  setSettings({ ...settings, attachment_max_mb: Number(e.target.value) });
+                }}
+              />
+            )}
+          </Field>
+        </Card>
+      </div>
       {editable ? (
-        <div>
+        <div className="flex justify-end">
           <Button type="submit">Save options</Button>
         </div>
       ) : null}
@@ -260,149 +340,168 @@ function Members({ project, manage }: { project: Project; manage: boolean }) {
     }
   }
 
-  if (members.isPending) return <Skeleton />;
+  const columns: ColumnDef<ProjectMember>[] = [
+    {
+      id: "name",
+      accessorFn: (m) => m.user.display_name,
+      header: "Name",
+      cell: (c) => (
+        <span className="font-medium">
+          {c.row.original.user.display_name}
+          {!c.row.original.user.is_active ? (
+            <Tag tone="neutral" className="ml-2">
+              Deactivated
+            </Tag>
+          ) : null}
+        </span>
+      ),
+      meta: { filter: { kind: "text" }, fixed: true },
+    },
+    {
+      id: "email",
+      accessorFn: (m) => m.user.email,
+      header: "Email",
+      cell: (c) => <span className="text-ink-secondary">{c.getValue() as string}</span>,
+      meta: { filter: { kind: "text" } },
+    },
+    {
+      id: "role",
+      accessorFn: (m) => m.role.code,
+      header: "Role",
+      cell: (c) => {
+        const m = c.row.original;
+        return manage ? (
+          <Select
+            aria-label={`Role of ${m.user.display_name}`}
+            value={m.role.code}
+            className="h-8 w-44"
+            onChange={(e) =>
+              void act(
+                () =>
+                  api.PATCH("/api/v1/projects/{project_id}/members/{user_id}", {
+                    params: { path: { project_id: project.id, user_id: m.user.id } },
+                    body: { role_code: e.target.value as RoleCode },
+                  }),
+                "Role changed",
+              )
+            }
+          >
+            {ROLE_OPTIONS.map((r) => (
+              <option key={r.value} value={r.value}>
+                {r.label}
+              </option>
+            ))}
+          </Select>
+        ) : (
+          m.role.name
+        );
+      },
+      meta: { filter: { kind: "select", options: ROLE_OPTIONS }, width: "w-56" },
+    },
+    {
+      id: "granted_at",
+      accessorKey: "granted_at",
+      header: "Member since",
+      cell: (c) => <span className="text-ink-secondary">{formatDate(c.getValue() as string)}</span>,
+      meta: { filter: { kind: "daterange" }, width: "w-44" },
+    },
+    ...(manage
+      ? [
+          {
+            id: "actions",
+            header: () => <span className="sr-only">Actions</span>,
+            enableSorting: false,
+            cell: (c) => (
+              <Button
+                variant="ghost"
+                size="xs"
+                className="text-danger hover:bg-danger-surface hover:text-danger"
+                onClick={() =>
+                  void act(
+                    () =>
+                      api.DELETE("/api/v1/projects/{project_id}/members/{user_id}", {
+                        params: { path: { project_id: project.id, user_id: c.row.original.user.id } },
+                      }),
+                    "Member removed",
+                  )
+                }
+              >
+                Remove
+              </Button>
+            ),
+            meta: { align: "right", width: "w-28", fixed: true, label: "Actions" },
+          } satisfies ColumnDef<ProjectMember>,
+        ]
+      : []),
+  ];
+
   if (members.isError) return <ErrorState error={members.error} />;
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <FormError message={error} />
-      {manage ? (
-        <form
-          className="flex items-end gap-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void act(
-              () =>
-                api.POST("/api/v1/projects/{project_id}/members", {
-                  params: { path: { project_id: project.id } },
-                  body: { user_id: userId, role_code: role },
-                }),
-              "Member added",
-            ).then(() => {
-              setUserId("");
-            });
-          }}
-        >
-          <div className="w-72">
-            <Field label="Add a person">
-              {(p) => (
-                <Select
-                  {...p}
-                  value={userId}
-                  onChange={(e) => {
-                    setUserId(e.target.value);
-                  }}
-                >
-                  <option value="">Choose…</option>
-                  {(candidates.data ?? []).map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.display_name} · {u.email}
-                    </option>
-                  ))}
-                </Select>
-              )}
-            </Field>
-          </div>
-          <div className="w-44">
-            <Field label="Role">
-              {(p) => (
-                <Select
-                  {...p}
-                  value={role}
-                  onChange={(e) => {
-                    setRole(e.target.value as RoleCode);
-                  }}
-                >
-                  {ROLE_CODES.map((r) => (
-                    <option key={r} value={r}>
-                      {ROLE_LABELS[r]}
-                    </option>
-                  ))}
-                </Select>
-              )}
-            </Field>
-          </div>
-          <Button type="submit" disabled={!userId}>
-            Add
-          </Button>
-        </form>
-      ) : null}
-      <table className="w-full rounded-card border border-border bg-surface">
-        <thead className="bg-ground">
-          <tr className="h-9">
-            <th scope="col" className={th}>
-              Name
-            </th>
-            <th scope="col" className={th}>
-              Email
-            </th>
-            <th scope="col" className={th}>
-              Role
-            </th>
-            {manage ? (
-              <th scope="col" className={th}>
-                <span className="sr-only">Actions</span>
-              </th>
-            ) : null}
-          </tr>
-        </thead>
-        <tbody>
-          {members.data.map((m) => (
-            <tr key={m.user.id} className="h-10 border-t border-border">
-              <td className={td}>
-                {m.user.display_name}
-                {!m.user.is_active ? <span className="ml-2 text-xs text-ink-muted">deactivated</span> : null}
-              </td>
-              <td className={`${td} text-ink-secondary`}>{m.user.email}</td>
-              <td className={td}>
-                {manage ? (
-                  <Select
-                    aria-label={`Role of ${m.user.display_name}`}
-                    value={m.role.code}
-                    className="h-8 w-40"
-                    onChange={(e) =>
-                      void act(
-                        () =>
-                          api.PATCH("/api/v1/projects/{project_id}/members/{user_id}", {
-                            params: { path: { project_id: project.id, user_id: m.user.id } },
-                            body: { role_code: e.target.value as RoleCode },
-                          }),
-                        "Role changed",
-                      )
-                    }
-                  >
-                    {ROLE_CODES.map((r) => (
-                      <option key={r} value={r}>
-                        {ROLE_LABELS[r]}
-                      </option>
-                    ))}
-                  </Select>
-                ) : (
-                  m.role.name
-                )}
-              </td>
-              {manage ? (
-                <td className={`${td} text-right`}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      void act(
-                        () =>
-                          api.DELETE("/api/v1/projects/{project_id}/members/{user_id}", {
-                            params: { path: { project_id: project.id, user_id: m.user.id } },
-                          }),
-                        "Member removed",
-                      )
-                    }
-                  >
-                    Remove
-                  </Button>
-                </td>
-              ) : null}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <DataTable
+        label="Project members"
+        columns={columns}
+        data={members.data ?? []}
+        loading={members.isPending}
+        getRowId={(m) => m.user.id}
+        noun={["member", "members"]}
+        initialSorting={[{ id: "name", desc: false }]}
+        toolbar={
+          manage ? (
+            <form
+              className="flex flex-wrap items-center gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void act(
+                  () =>
+                    api.POST("/api/v1/projects/{project_id}/members", {
+                      params: { path: { project_id: project.id } },
+                      body: { user_id: userId, role_code: role },
+                    }),
+                  "Member added",
+                ).then(() => {
+                  setUserId("");
+                });
+              }}
+            >
+              <Select
+                aria-label="Add a person"
+                className="h-8 w-72 text-[13px]"
+                value={userId}
+                onChange={(e) => {
+                  setUserId(e.target.value);
+                }}
+              >
+                <option value="">Add a person…</option>
+                {(candidates.data ?? []).map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.display_name} · {u.email}
+                  </option>
+                ))}
+              </Select>
+              <Select
+                aria-label="Role"
+                className="h-8 w-40 text-[13px]"
+                value={role}
+                onChange={(e) => {
+                  setRole(e.target.value as RoleCode);
+                }}
+              >
+                {ROLE_OPTIONS.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
+              </Select>
+              <Button type="submit" size="sm" disabled={!userId}>
+                <Plus aria-hidden="true" className="size-4" />
+                Add
+              </Button>
+            </form>
+          ) : undefined
+        }
+      />
     </div>
   );
 }
@@ -440,64 +539,105 @@ function Environments({ project, editable }: { project: Project; editable: boole
       e.archived ? `${e.name} restored` : `${e.name} archived`,
     );
 
-  if (envs.isPending) return <Skeleton />;
+  const columns: ColumnDef<Environment>[] = [
+    {
+      accessorKey: "name",
+      header: "Environment",
+      cell: (c) => <span className="font-medium">{c.row.original.name}</span>,
+      meta: { filter: { kind: "text" }, fixed: true },
+    },
+    {
+      accessorKey: "description",
+      header: "Description",
+      cell: (c) => <span className="text-ink-secondary">{(c.getValue() as string | null) ?? "—"}</span>,
+      meta: { filter: { kind: "text" } },
+    },
+    {
+      id: "status",
+      accessorFn: (e) => (e.archived ? "archived" : "active"),
+      header: "Status",
+      cell: (c) =>
+        c.row.original.archived ? (
+          <Tag tone="neutral">Archived · not selectable for new cycles</Tag>
+        ) : (
+          <Tag>Active</Tag>
+        ),
+      meta: {
+        filter: {
+          kind: "select",
+          options: [
+            { value: "active", label: "Active" },
+            { value: "archived", label: "Archived" },
+          ],
+        },
+        width: "w-80",
+      },
+    },
+    ...(editable
+      ? [
+          {
+            id: "actions",
+            header: () => <span className="sr-only">Actions</span>,
+            enableSorting: false,
+            cell: (c) => (
+              <Button variant="ghost" size="xs" onClick={() => void toggle(c.row.original)}>
+                {c.row.original.archived ? "Restore" : "Archive"}
+              </Button>
+            ),
+            meta: { align: "right", width: "w-28", fixed: true, label: "Actions" },
+          } satisfies ColumnDef<Environment>,
+        ]
+      : []),
+  ];
+
   if (envs.isError) return <ErrorState error={envs.error} />;
   return (
-    <div className="flex max-w-2xl flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <FormError message={error} />
-      {editable ? (
-        <form
-          className="flex items-end gap-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void act(
-              () =>
-                api.POST("/api/v1/projects/{project_id}/environments", {
-                  params: { path: { project_id: project.id } },
-                  body: { name },
-                }),
-              "Environment added",
-            ).then(() => {
-              setName("");
-            });
-          }}
-        >
-          <div className="w-64">
-            <Field label="New environment">
-              {(p) => (
-                <Input
-                  {...p}
-                  value={name}
-                  maxLength={50}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                  }}
-                />
-              )}
-            </Field>
-          </div>
-          <Button type="submit" disabled={!name.trim()}>
-            Add
-          </Button>
-        </form>
-      ) : null}
-      <ul className="divide-y divide-border rounded-card border border-border bg-surface">
-        {envs.data.map((e) => (
-          <li key={e.id} className="flex h-10 items-center justify-between px-4 text-sm">
-            <span className={e.archived ? "text-ink-muted" : "text-ink"}>
-              {e.name}
-              {e.archived ? (
-                <span className="ml-2 text-xs">archived · not selectable for new cycles</span>
-              ) : null}
-            </span>
-            {editable ? (
-              <Button variant="ghost" size="sm" onClick={() => void toggle(e)}>
-                {e.archived ? "Restore" : "Archive"}
+      <DataTable
+        label="Environments"
+        columns={columns}
+        data={envs.data ?? []}
+        loading={envs.isPending}
+        getRowId={(e) => e.id}
+        noun={["environment", "environments"]}
+        initialSorting={[{ id: "name", desc: false }]}
+        toolbar={
+          editable ? (
+            <form
+              className="flex items-center gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void act(
+                  () =>
+                    api.POST("/api/v1/projects/{project_id}/environments", {
+                      params: { path: { project_id: project.id } },
+                      body: { name },
+                    }),
+                  "Environment added",
+                ).then(() => {
+                  setName("");
+                });
+              }}
+            >
+              <Input
+                aria-label="New environment"
+                placeholder="New environment name"
+                className="h-8 w-64 text-[13px]"
+                value={name}
+                maxLength={50}
+                onChange={(e) => {
+                  setName(e.target.value);
+                }}
+              />
+              <Button type="submit" size="sm" disabled={!name.trim()}>
+                <Plus aria-hidden="true" className="size-4" />
+                Add
               </Button>
-            ) : null}
-          </li>
-        ))}
-      </ul>
+            </form>
+          ) : undefined
+        }
+      />
     </div>
   );
 }
@@ -510,8 +650,9 @@ const RELEASE_LABEL: Record<string, string> = {
   released: "Released",
   archived: "Archived",
 };
+const RELEASE_OPTIONS = Object.entries(RELEASE_LABEL).map(([value, label]) => ({ value, label }));
 
-function ReleaseRow({
+function ReleaseStatus({
   release,
   editable,
   onChanged,
@@ -521,50 +662,161 @@ function ReleaseRow({
   onChanged: (msg: string) => void;
 }) {
   const [error, setError] = useState<string | null>(null);
+  if (!editable || release.allowed_transitions.length === 0) {
+    return (
+      <Tag tone={release.status === "active" ? "accent" : "neutral"}>{RELEASE_LABEL[release.status]}</Tag>
+    );
+  }
   return (
-    <tr className="h-10 border-t border-border">
-      <td className={td}>{release.name}</td>
-      <td className={`${td} text-ink-secondary`}>
-        {release.start_date ?? "—"} → {release.target_date ?? "—"}
-      </td>
-      <td className={td}>
-        {editable && release.allowed_transitions.length > 0 ? (
-          <Select
-            aria-label={`Status of ${release.name}`}
-            className="h-8 w-40"
-            value={release.status}
-            onChange={(e) => {
-              setError(null);
-              api
-                .PATCH("/api/v1/releases/{release_id}", {
-                  params: { path: { release_id: release.id } },
-                  body: { status: e.target.value as Release["status"], row_version: release.row_version },
-                })
-                .then(() => {
-                  onChanged(`${release.name} is now ${RELEASE_LABEL[e.target.value] ?? e.target.value}`);
-                })
-                .catch((err: unknown) => {
-                  setError(errorMessage(err));
-                });
+    <span className="inline-flex items-center gap-2">
+      <Select
+        aria-label={`Status of ${release.name}`}
+        className="h-8 w-36"
+        value={release.status}
+        onChange={(e) => {
+          setError(null);
+          api
+            .PATCH("/api/v1/releases/{release_id}", {
+              params: { path: { release_id: release.id } },
+              body: { status: e.target.value as Release["status"], row_version: release.row_version },
+            })
+            .then(() => {
+              onChanged(`${release.name} is now ${RELEASE_LABEL[e.target.value] ?? e.target.value}`);
+            })
+            .catch((err: unknown) => {
+              setError(errorMessage(err));
+            });
+        }}
+      >
+        <option value={release.status}>{RELEASE_LABEL[release.status]}</option>
+        {release.allowed_transitions.map((s) => (
+          <option key={s} value={s}>
+            {RELEASE_LABEL[s]}
+          </option>
+        ))}
+      </Select>
+      {error ? (
+        <span role="alert" className="text-xs text-danger">
+          {error}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+function NewReleaseDialog({
+  project,
+  open,
+  onOpenChange,
+  onCreated,
+}: {
+  project: Project;
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  onCreated: (msg: string) => void;
+}) {
+  const [form, setForm] = useState({ name: "", start_date: "", target_date: "", description: "" });
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="New release"
+      footer={
+        <>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              onOpenChange(false);
             }}
           >
-            <option value={release.status}>{RELEASE_LABEL[release.status]}</option>
-            {release.allowed_transitions.map((s) => (
-              <option key={s} value={s}>
-                {RELEASE_LABEL[s]}
-              </option>
-            ))}
-          </Select>
-        ) : (
-          RELEASE_LABEL[release.status]
-        )}
-        {error ? (
-          <span role="alert" className="ml-2 text-xs text-[var(--status-fail-fg)]">
-            {error}
-          </span>
-        ) : null}
-      </td>
-    </tr>
+            Cancel
+          </Button>
+          <Button type="submit" form="new-release" disabled={!form.name.trim()}>
+            Create release
+          </Button>
+        </>
+      }
+    >
+      <form
+        id="new-release"
+        className="flex flex-col gap-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setError(null);
+          api
+            .POST("/api/v1/projects/{project_id}/releases", {
+              params: { path: { project_id: project.id } },
+              body: {
+                name: form.name,
+                description: form.description || null,
+                start_date: form.start_date || null,
+                target_date: form.target_date || null,
+              },
+            })
+            .then(() => {
+              setForm({ name: "", start_date: "", target_date: "", description: "" });
+              onOpenChange(false);
+              onCreated("Release added");
+            })
+            .catch((err: unknown) => {
+              setError(errorMessage(err));
+            });
+        }}
+      >
+        <FormError message={error} />
+        <Field label="Name" required>
+          {(p) => (
+            <Input
+              {...p}
+              value={form.name}
+              maxLength={50}
+              onChange={(e) => {
+                setForm({ ...form, name: e.target.value });
+              }}
+            />
+          )}
+        </Field>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Start">
+            {(p) => (
+              <Input
+                {...p}
+                type="date"
+                value={form.start_date}
+                onChange={(e) => {
+                  setForm({ ...form, start_date: e.target.value });
+                }}
+              />
+            )}
+          </Field>
+          <Field label="Target">
+            {(p) => (
+              <Input
+                {...p}
+                type="date"
+                value={form.target_date}
+                onChange={(e) => {
+                  setForm({ ...form, target_date: e.target.value });
+                }}
+              />
+            )}
+          </Field>
+        </div>
+        <Field label="Description">
+          {(p) => (
+            <Textarea
+              {...p}
+              rows={3}
+              value={form.description}
+              onChange={(e) => {
+                setForm({ ...form, description: e.target.value });
+              }}
+            />
+          )}
+        </Field>
+      </form>
+    </Dialog>
   );
 }
 
@@ -572,113 +824,71 @@ function Releases({ project, editable }: { project: Project; editable: boolean }
   const qc = useQueryClient();
   const toast = useToast();
   const releases = useReleases(project.id);
-  const [form, setForm] = useState({ name: "", start_date: "", target_date: "" });
-  const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
   const changed = (msg: string) => {
     void qc.invalidateQueries({ queryKey: keys.releases(project.id) });
     toast(msg);
   };
-  if (releases.isPending) return <Skeleton />;
+  const columns: ColumnDef<Release>[] = [
+    {
+      accessorKey: "name",
+      header: "Release",
+      cell: (c) => (
+        <div className="min-w-0">
+          <p className="font-medium">{c.row.original.name}</p>
+          {c.row.original.description ? (
+            <p className="truncate text-xs text-ink-secondary">{c.row.original.description}</p>
+          ) : null}
+        </div>
+      ),
+      meta: { filter: { kind: "text" }, fixed: true },
+    },
+    {
+      accessorKey: "start_date",
+      header: "Start",
+      cell: (c) => <span className="text-ink-secondary">{formatDate(c.getValue() as string | null)}</span>,
+      meta: { filter: { kind: "daterange" }, width: "w-44" },
+    },
+    {
+      accessorKey: "target_date",
+      header: "Target",
+      cell: (c) => <span className="text-ink-secondary">{formatDate(c.getValue() as string | null)}</span>,
+      meta: { filter: { kind: "daterange" }, width: "w-44" },
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: (c) => <ReleaseStatus release={c.row.original} editable={editable} onChanged={changed} />,
+      meta: { filter: { kind: "select", options: RELEASE_OPTIONS }, width: "w-56" },
+    },
+  ];
   if (releases.isError) return <ErrorState error={releases.error} />;
   return (
-    <div className="flex flex-col gap-4">
-      <FormError message={error} />
-      {editable ? (
-        <form
-          className="flex flex-wrap items-end gap-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setError(null);
-            api
-              .POST("/api/v1/projects/{project_id}/releases", {
-                params: { path: { project_id: project.id } },
-                body: {
-                  name: form.name,
-                  start_date: form.start_date || null,
-                  target_date: form.target_date || null,
-                },
-              })
-              .then(() => {
-                setForm({ name: "", start_date: "", target_date: "" });
-                changed("Release added");
-              })
-              .catch((err: unknown) => {
-                setError(errorMessage(err));
-              });
-          }}
-        >
-          <div className="w-56">
-            <Field label="New release">
-              {(p) => (
-                <Input
-                  {...p}
-                  value={form.name}
-                  maxLength={50}
-                  onChange={(e) => {
-                    setForm({ ...form, name: e.target.value });
-                  }}
-                />
-              )}
-            </Field>
-          </div>
-          <div className="w-40">
-            <Field label="Start">
-              {(p) => (
-                <Input
-                  {...p}
-                  type="date"
-                  value={form.start_date}
-                  onChange={(e) => {
-                    setForm({ ...form, start_date: e.target.value });
-                  }}
-                />
-              )}
-            </Field>
-          </div>
-          <div className="w-40">
-            <Field label="Target">
-              {(p) => (
-                <Input
-                  {...p}
-                  type="date"
-                  value={form.target_date}
-                  onChange={(e) => {
-                    setForm({ ...form, target_date: e.target.value });
-                  }}
-                />
-              )}
-            </Field>
-          </div>
-          <Button type="submit" disabled={!form.name.trim()}>
-            Add
-          </Button>
-        </form>
-      ) : null}
-      {releases.data.length === 0 ? (
-        <EmptyState text="No releases yet." />
-      ) : (
-        <table className="w-full rounded-card border border-border bg-surface">
-          <thead className="bg-ground">
-            <tr className="h-9">
-              <th scope="col" className={th}>
-                Release
-              </th>
-              <th scope="col" className={th}>
-                Dates
-              </th>
-              <th scope="col" className={th}>
-                Status
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {releases.data.map((r) => (
-              <ReleaseRow key={r.id} release={r} editable={editable} onChanged={changed} />
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
+    <>
+      <DataTable
+        label="Releases"
+        columns={columns}
+        data={releases.data ?? []}
+        loading={releases.isPending}
+        getRowId={(r) => r.id}
+        noun={["release", "releases"]}
+        emptyText="No releases match these filters."
+        toolbar={
+          editable ? (
+            <Button
+              size="sm"
+              onClick={() => {
+                setOpen(true);
+              }}
+            >
+              <Plus aria-hidden="true" className="size-4" />
+              New release
+            </Button>
+          ) : undefined
+        }
+      />
+      <NewReleaseDialog project={project} open={open} onOpenChange={setOpen} onCreated={changed} />
+    </>
   );
 }
 
@@ -698,9 +908,10 @@ function DangerZone({ project }: { project: Project }) {
     ]);
   if (project.status === "archived") {
     return (
-      <div className="flex max-w-xl flex-col gap-3 text-sm">
-        <p>This project is archived: it is read-only and still appears in reports.</p>
-        <div>
+      <Card
+        title="Restore project"
+        description="This project is archived: it is read-only and still appears in reports."
+        footer={
           <Button
             variant="secondary"
             onClick={() =>
@@ -719,26 +930,38 @@ function DangerZone({ project }: { project: Project }) {
           >
             Restore project
           </Button>
-        </div>
+        }
+      >
         <FormError message={error} />
-      </div>
+        <p className="text-[13px] text-ink-secondary">
+          Restoring makes the project editable again for its members.
+        </p>
+      </Card>
     );
   }
   return (
-    <div className="flex max-w-xl flex-col gap-3 text-sm">
-      <p>
-        Archiving makes the project read-only for everyone. Reports keep working; you can restore it later.
-      </p>
-      <div>
-        <Button
-          variant="destructive"
-          onClick={() => {
-            setOpen(true);
-          }}
-        >
-          Archive project
-        </Button>
-      </div>
+    <div className="grid gap-5 lg:grid-cols-2">
+      <Card
+        tone="danger"
+        title="Archive project"
+        description="Archiving makes the project read-only for everyone."
+        footer={
+          <Button
+            variant="destructive"
+            onClick={() => {
+              setOpen(true);
+            }}
+          >
+            Archive project
+          </Button>
+        }
+      >
+        <ul className="list-disc space-y-1 pl-5 text-[13px] text-ink-secondary">
+          <li>Cases, cycles and results stay visible; nothing is deleted.</li>
+          <li>Reports keep working and include the project.</li>
+          <li>A QA Manager can restore it later.</li>
+        </ul>
+      </Card>
       <Dialog
         open={open}
         onOpenChange={setOpen}
@@ -837,17 +1060,23 @@ export function SettingsPage({
       : []),
   ];
   return (
-    <div className="mx-auto max-w-5xl">
-      <PageHeader
-        title={`${project.name} · Settings`}
-        subtitle={writable ? undefined : "This project is archived and read-only."}
-      />
+    <Page
+      title="Settings"
+      eyebrow={project.name}
+      subtitle={
+        writable
+          ? "Project details, options, people, environments and releases."
+          : "This project is archived and read-only."
+      }
+      width="full"
+    >
       <Tabs
         label="Project settings"
         value={items.some((i) => i.value === tab) ? tab : "general"}
         onValueChange={onTab}
         items={items}
+        contentClassName="pt-5"
       />
-    </div>
+    </Page>
   );
 }

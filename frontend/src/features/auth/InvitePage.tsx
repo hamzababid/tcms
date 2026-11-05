@@ -64,18 +64,42 @@ export function InvitePage({ token }: { token: string }) {
       title={`Join ${inv.organization.name}`}
       subtitle={`${inv.inviter ?? "An administrator"} invited ${inv.email}${inv.project ? ` to ${inv.project.name}` : ""}.`}
     >
-      <form className="flex flex-col gap-4" onSubmit={(e) => void onSubmit(e)} noValidate>
+      <form className="flex flex-col gap-[18px]" onSubmit={(e) => void onSubmit(e)} noValidate>
         <FormError message={error} />
         <Field label="Your name" required error={form.formState.errors.display_name?.message}>
-          {(p) => <Input {...p} autoComplete="name" autoFocus {...form.register("display_name")} />}
+          {(p) => (
+            <Input
+              {...p}
+              className="h-10 px-3"
+              autoComplete="name"
+              autoFocus
+              {...form.register("display_name")}
+            />
+          )}
         </Field>
         <Field label="Password" required hint={PASSWORD_HINT} error={form.formState.errors.password?.message}>
-          {(p) => <Input {...p} type="password" autoComplete="new-password" {...form.register("password")} />}
+          {(p) => (
+            <Input
+              {...p}
+              className="h-10 px-3"
+              type="password"
+              autoComplete="new-password"
+              {...form.register("password")}
+            />
+          )}
         </Field>
         <Field label="Confirm password" required error={form.formState.errors.confirm?.message}>
-          {(p) => <Input {...p} type="password" autoComplete="new-password" {...form.register("confirm")} />}
+          {(p) => (
+            <Input
+              {...p}
+              className="h-10 px-3"
+              type="password"
+              autoComplete="new-password"
+              {...form.register("confirm")}
+            />
+          )}
         </Field>
-        <Button type="submit" disabled={form.formState.isSubmitting}>
+        <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
           Accept and continue
         </Button>
       </form>

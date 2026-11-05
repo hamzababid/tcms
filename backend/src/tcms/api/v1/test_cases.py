@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date, datetime
 from typing import Any, Literal
 from uuid import UUID
 
@@ -334,6 +335,8 @@ def list_cases(
     reviewer_id: UUID | None = None,
     tag: str | None = None,
     automation_status: str | None = None,
+    updated_at__gte: datetime | None = None,
+    updated_at__lte: datetime | None = None,
     ctx: AccessContext = Depends(project_context),
     uow: UnitOfWork = Depends(get_read_uow),
 ) -> Page[s.CaseListItem]:
@@ -663,10 +666,15 @@ def history(
     case_id: UUID,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=50, ge=1, le=200),
+    actor_id: UUID | None = None,
+    action: str | None = Query(default=None, max_length=100),
+    occurred_at__gte: date | None = None,
+    occurred_at__lte: date | None = None,
+    q: str | None = Query(default=None, max_length=200),
     ctx: AccessContext = CaseCtx,
     uow: UnitOfWork = Depends(get_read_uow),
 ) -> Page[ws.ActivityItem]:
-    """FR-AUD-002 for a case."""
+    """FR-AUD-002 for a case; filters as audit events (docs/06 §4.12) plus `q`."""
     ctx.require("project.view")
     rows, total = audit_queries.entity_history(
         uow.session,
@@ -674,6 +682,13 @@ def history(
         "test_case",
         case_id,
         PageParams(page=page, page_size=page_size),
+        filters=audit_queries.AuditFilter(
+            actor_id=actor_id,
+            action=action,
+            occurred_from=occurred_at__gte,
+            occurred_to=occurred_at__lte,
+            q=q,
+        ),
     )
     return Page[ws.ActivityItem](
         items=[ws.ActivityItem.model_validate(vars(r)) for r in rows],

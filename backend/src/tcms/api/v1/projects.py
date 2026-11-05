@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Any
 from uuid import UUID
 
@@ -150,10 +151,14 @@ def activity(
     page_size: int = Query(default=50, ge=1, le=200),
     entity_type: str | None = Query(default=None, max_length=50),
     actor_id: UUID | None = None,
+    action: str | None = Query(default=None, max_length=100),
+    occurred_at__gte: date | None = None,
+    occurred_at__lte: date | None = None,
+    q: str | None = Query(default=None, max_length=200),
     ctx: AccessContext = Depends(project_context),
     uow: UnitOfWork = Depends(get_read_uow),
 ) -> Page[ws.ActivityItem]:
-    """US-028 / FR-WS-007: rendered audit summaries, filter by entity type and user."""
+    """US-028 / FR-WS-007: rendered audit summaries; filters as audit events (docs/06 §4.12) plus `q`."""
     ctx.require("project.view")
     params = PageParams(page=page, page_size=page_size)
     rows, total = audit_queries.project_activity(
@@ -161,8 +166,14 @@ def activity(
         ctx.principal.organization_id,
         ctx.pid,
         params,
-        entity_type=entity_type,
-        actor_id=actor_id,
+        filters=audit_queries.AuditFilter(
+            entity_type=entity_type,
+            actor_id=actor_id,
+            action=action,
+            occurred_from=occurred_at__gte,
+            occurred_to=occurred_at__lte,
+            q=q,
+        ),
     )
     return Page[ws.ActivityItem](
         items=[ws.ActivityItem.model_validate(vars(r)) for r in rows],

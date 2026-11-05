@@ -8,89 +8,214 @@
   --font-sans: var(--font-ui);
   --font-mono: var(--font-mono);
   --color-ink: var(--ink);
+  --color-ink-strong: var(--ink-strong);
+  --color-ink-body: var(--ink-body);
   --color-ink-secondary: var(--ink-secondary);
   --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
   --color-border: var(--border);
+  --color-border-control: var(--border-control);
+  --color-rule: var(--rule);
   --color-ground: var(--ground);
   --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
+  --color-accent-active: var(--accent-active);
   --color-accent-tint: var(--accent-tint);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-border: var(--accent-border);
+  --color-accent-border-strong: var(--accent-border-strong);
+  --color-accent-soft: var(--accent-soft);
+  --color-avatar: var(--avatar-bg);
+  --color-link: var(--link);
+  --color-danger: var(--danger);
+  --color-danger-ink: var(--danger-ink);
+  --color-danger-surface: var(--danger-surface);
+  --color-danger-border: var(--danger-border);
   --color-sidebar: var(--sidebar-bg);
+  --color-sidebar-raised: var(--sidebar-raised);
+  --color-sidebar-line: var(--sidebar-line);
   --color-sidebar-active: var(--sidebar-active);
   --color-sidebar-ink: var(--sidebar-ink);
+  --color-sidebar-ink-strong: var(--sidebar-ink-strong);
+  --color-sidebar-label: var(--sidebar-label);
+  --shadow-popover: var(--shadow-popover);
+  --shadow-dialog: var(--shadow-dialog);
   --radius-control: var(--radius-control);
   --radius-card: var(--radius-card);
 }
 
-html,
-body,
-#root {
-  height: 100%;
-}
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
 
-body {
-  margin: 0;
-  font-family: var(--font-ui);
-  font-size: 14px;
-  line-height: 1.45;
-  color: var(--ink);
-  background: var(--ground);
-}
+  body {
+    margin: 0;
+    font-family: var(--font-ui);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--ink);
+    background: var(--ground);
+    /* Inter as specified: crisp rendering, disambiguated glyphs (I/l/1), proportional text */
+    font-feature-settings:
+      "cv08",
+      "calt" 0; /* calt would render digit-x-digit as × */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
 
-:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
-}
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.011em;
+  }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
+  /* Numbers that line up: counts, tables, metrics */
+  .tabular,
+  table,
+  [data-numeric] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  a {
+    color: var(--link);
+    text-decoration: none;
+  }
+  a:hover {
+    color: var(--link-hover);
+  }
+
+  kbd {
+    font-family: var(--font-mono);
+  }
+
+  ::selection {
+    background: var(--accent-border);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--accent);
+    width: 15px;
+    height: 15px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
-/* Rendered Markdown (MarkdownView) */
-.md > * + * {
-  margin-top: 0.5em;
-}
-.md ul {
-  list-style: disc;
-  padding-left: 1.25em;
-}
-.md ol {
-  list-style: decimal;
-  padding-left: 1.25em;
-}
-.md code {
-  font-family: var(--font-mono);
-  font-size: 0.9em;
-  background: var(--ground);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 0 4px;
-}
-.md pre {
-  background: var(--ground);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 8px 12px;
-  overflow-x: auto;
-}
-.md pre code {
-  border: 0;
-  padding: 0;
-}
-.md table {
-  border-collapse: collapse;
-}
-.md th,
-.md td {
-  border: 1px solid var(--border);
-  padding: 2px 8px;
-}
-.md img {
-  max-width: 100%;
+@layer components {
+  /* Rendered Markdown (MarkdownView) */
+  .md > * + * {
+    margin-top: 0.5em;
+  }
+  .md ul {
+    list-style: disc;
+    padding-left: 1.25em;
+  }
+  .md ol {
+    list-style: decimal;
+    padding-left: 1.25em;
+  }
+  .md code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--surface-muted);
+    border-radius: 3px;
+    padding: 1px 4px;
+  }
+  .md pre {
+    background: var(--ground);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    overflow-x: auto;
+  }
+  .md pre code {
+    border: 0;
+    padding: 0;
+  }
+  .md table {
+    border-collapse: collapse;
+  }
+  .md th,
+  .md td {
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+  }
+  .md img {
+    max-width: 100%;
+  }
+
+  /* Data table anatomy (docs/design/Main.dc.html): header 36 px on ground, rows 40 px, light row
+   rules, hover ground, no zebra. Framed as a card. */
+  .data-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    background: var(--surface);
+    overflow: hidden;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .data-table thead th {
+    height: 36px;
+    padding: 0 16px;
+    background: var(--ground);
+    color: var(--ink-secondary);
+    font-weight: 500;
+    text-align: left;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+  }
+  .data-table tbody td {
+    height: 40px;
+    padding: 6px 16px;
+    border-top: 1px solid var(--rule);
+    color: var(--ink);
+  }
+  .data-table tbody tr:first-child td {
+    border-top: 0;
+  }
+  .data-table tbody tr:hover td {
+    background: var(--ground);
+  }
+
+  /* Bordered list (activity, sessions, invitations) */
+  .data-list {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .data-list > li + li {
+    border-top: 1px solid var(--rule);
+  }
+
+  /* Native select with the design's chevron */
+  .select-chevron {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 14px;
+  }
 }

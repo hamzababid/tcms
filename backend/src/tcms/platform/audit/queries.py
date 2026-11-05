@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, date, datetime, time, timedelta
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import Select, func, or_, select
 from sqlalchemy.orm import Session
 
 from tcms.core.pagination import PageParams
@@ -47,20 +47,52 @@ def _row(e: AuditEvent) -> EventRow:
     )
 
 
+@dataclass(frozen=True)
+class AuditFilter:
+    """Audit list filters (docs/06 §4.12: actor_id, action, entity_type, occurred_at__gte/lte; q)."""
+
+    entity_type: str | None = None
+    actor_id: UUID | None = None
+    action: str | None = None
+    occurred_from: date | None = None
+    occurred_to: date | None = None
+    q: str | None = None
+
+
+def _filtered(stmt: Select[AuditEvent], f: AuditFilter) -> Select[AuditEvent]:
+    if f.entity_type:
+        stmt = stmt.where(AuditEvent.entity_type == f.entity_type)
+    if f.actor_id:
+        stmt = stmt.where(AuditEvent.actor_id == f.actor_id)
+    if f.action:
+        stmt = stmt.where(AuditEvent.action == f.action)
+    if f.occurred_from:
+        stmt = stmt.where(AuditEvent.occurred_at >= datetime.combine(f.occurred_from, time.min, tzinfo=UTC))
+    if f.occurred_to:
+        end = datetime.combine(f.occurred_to + timedelta(days=1), time.min, tzinfo=UTC)
+        stmt = stmt.where(AuditEvent.occurred_at < end)
+    if f.q and f.q.strip():
+        needle = f.q.strip()
+        stmt = stmt.where(
+            or_(
+                AuditEvent.summary.icontains(needle, autoescape=True),
+                AuditEvent.entity_key.icontains(needle, autoescape=True),
+                AuditEvent.actor_display.icontains(needle, autoescape=True),
+            )
+        )
+    return stmt
+
+
 def project_activity(
     s: Session,
     org_id: UUID,
     project_id: UUID,
     page: PageParams,
     *,
-    entity_type: str | None = None,
-    actor_id: UUID | None = None,
+    filters: AuditFilter = AuditFilter(),
 ) -> tuple[list[EventRow], int]:
     stmt = select(AuditEvent).where(AuditEvent.organization_id == org_id, AuditEvent.project_id == project_id)
-    if entity_type:
-        stmt = stmt.where(AuditEvent.entity_type == entity_type)
-    if actor_id:
-        stmt = stmt.where(AuditEvent.actor_id == actor_id)
+    stmt = _filtered(stmt, filters)
     # Sign-in noise and admin access markers are not part of the project feed.
     stmt = stmt.where(~AuditEvent.action.in_(("project.admin_accessed",)))
     total = int(s.execute(select(func.count()).select_from(stmt.subquery())).scalar_one())
@@ -73,13 +105,20 @@ def project_activity(
 
 
 def entity_history(
-    s: Session, org_id: UUID, entity_type: str, entity_id: UUID, page: PageParams
+    s: Session,
+    org_id: UUID,
+    entity_type: str,
+    entity_id: UUID,
+    page: PageParams,
+    *,
+    filters: AuditFilter = AuditFilter(),
 ) -> tuple[list[EventRow], int]:
     stmt = select(AuditEvent).where(
         AuditEvent.organization_id == org_id,
         AuditEvent.entity_type == entity_type,
         AuditEvent.entity_id == entity_id,
     )
+    stmt = _filtered(stmt, filters)
     total = int(s.execute(select(func.count()).select_from(stmt.subquery())).scalar_one())
     rows = s.execute(
         stmt.order_by(AuditEvent.occurred_at.desc(), AuditEvent.id.desc())

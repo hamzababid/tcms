@@ -89,6 +89,19 @@ Also: `project.admin_accessed` audited once per session (`test_org_admin_sees_ev
 
 Also: `GET /projects/{id}/resolve` and `Idempotency-Key` on creates (`test_resolve_key_and_search`, `test_idempotency_key_replays_create`; L10/L11 resolved); authz matrix covers every new route (76 probes); non-member/other-org 404 (`test_non_member_gets_404`). Seed: SPARK repository (docs/ops/local-setup.md). Deferred items: known-limitations L14–L19.
 
+## Design system pass (branch `feat/design-system`)
+
+| Item | Status | Verified by |
+| --- | --- | --- |
+| Tokens for every value in docs/design (neutrals, control border, row rule, accent tints, danger, sidebar, elevation) | ✅ | `frontend/src/styles/tokens.css` |
+| Inter / JetBrains Mono per Main.dc.html (type scale 24/20/16/14/13/12, antialiased; contextual "×" substitution off) | ✅ | Screenshots of every screen |
+| Shell: dark sidebar with project switcher, 34 px nav items, chevron breadcrumbs, avatar menu | ✅ | E2E TCMS-001 (switcher, nav), axe on every screen |
+| Page frame: white header bar + full-bleed panes (repository) or padded content | ✅ | Screenshots; E2E 15/15 |
+| Components: buttons (primary/secondary/ghost/outline destructive/tint, 36/32/28), fields, select chevron, menus, dialogs, tabs with counts, tags, keycaps, status badges, data tables | ✅ | `make lint`, Vitest, E2E with axe |
+| One `DataTable` for every table (repository cases, activity, case versions/executions/history, projects, members, environments, releases, invitations, sessions, API tokens): column filters, sorting, Columns menu, rows per page, pagination | ✅ | `DataTable.test.tsx`; screenshots of every screen and tab; E2E 15/15 |
+| Full-width layouts: settings, profile and security policy as card grids with summary cards; create forms (invitation, API token, release) in dialogs; full-page case with a Properties side card | ✅ | Screenshots at 1440 px |
+| Audit filters for Activity and case History (`action`, `occurred_at__gte/lte`, `q`; docs/06) | ✅ | `test_activity_and_history_filters` |
+
 ## Brand assets (branch `feat/brand-assets`)
 
 | Item | Status | Verified by |

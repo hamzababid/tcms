@@ -1,22 +1,28 @@
 import * as Menu from "@radix-ui/react-dropdown-menu";
 import { useMutation } from "@tanstack/react-query";
+import type { ColumnDef } from "@tanstack/react-table";
 import { Link } from "@tanstack/react-router";
 import { ExternalLink, MoreHorizontal, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import { api, ApiError } from "@/api/client";
 import type { Me, Project, ProjectMember } from "@/api/queries";
+import { DataTable } from "@/components/common/DataTable";
 import { ConfirmDialog, PromptDialog } from "@/components/common/dialogs";
-import { EmptyState, ErrorState, Skeleton, errorMessage, useToast } from "@/components/common/feedback";
+import { Card, EmptyState, ErrorState, Skeleton, errorMessage, useToast } from "@/components/common/feedback";
 import { MarkdownView } from "@/components/common/Markdown";
 import { PriorityIcon } from "@/components/common/PriorityIcon";
+import { EXECUTION_STATUS } from "@/components/common/status";
 import { StatusBadge } from "@/components/common/StatusBadge";
+import { Tag } from "@/components/common/Tag";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Tabs } from "@/components/ui/tabs";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { can } from "@/lib/permissions";
+import { MenuContent, MenuItem } from "@/components/ui/menu";
+import { AuditTable, useAuditState } from "@/features/projects/AuditTable";
 import { cn } from "@/lib/utils";
 
 import {
@@ -27,6 +33,8 @@ import {
   useReviewers,
   useVersions,
   type CaseRead,
+  type Execution,
+  type VersionListItem,
 } from "./api";
 import { AttachmentList } from "./AttachmentList";
 import { CommentThread } from "./CommentThread";
@@ -73,12 +81,17 @@ export function CaseDetail({
   const editable = writable && can(perms, "testcase.edit") && c.status !== "archived";
 
   return (
-    <div className="flex min-h-0 flex-col">
-      <header className={cn("border-b border-border pb-3", variant === "panel" && "px-4 pt-4")}>
+    <div className="flex h-full min-h-0 flex-col">
+      <header
+        className={cn(
+          "flex flex-col gap-2 border-b border-border",
+          variant === "panel" ? "px-5 py-4" : "pb-4",
+        )}
+      >
         <div className="flex items-center gap-2">
-          <span className="font-mono text-xs text-ink-secondary">{c.key}</span>
+          <span className="font-mono text-[13px] font-medium text-ink-secondary">{c.key}</span>
           <StatusBadge kind="case" status={c.status} />
-          <span className="text-xs text-ink-secondary">v{c.latest_version_no}</span>
+          <Tag tone="neutral">v{c.latest_version_no}</Tag>
           <span className="flex-1" />
           {editable ? (
             <Button asChild size="sm">
@@ -114,18 +127,18 @@ export function CaseDetail({
             </>
           ) : null}
         </div>
-        <h2 className={cn("mt-2 font-semibold text-ink", variant === "page" ? "text-2xl" : "text-lg")}>
+        <h2
+          className={cn(
+            "font-semibold leading-snug text-ink",
+            variant === "page" ? "text-2xl" : "text-[17px]",
+          )}
+        >
           {c.title}
         </h2>
         {c.tags.length ? (
-          <div className="mt-2 flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1.5">
             {c.tags.map((t) => (
-              <span
-                key={t}
-                className="rounded-full border border-border bg-ground px-2 py-0.5 text-xs text-ink-secondary"
-              >
-                {t}
-              </span>
+              <Tag key={t}>{t}</Tag>
             ))}
           </div>
         ) : null}
@@ -134,7 +147,7 @@ export function CaseDetail({
       {c.status === "archived" ? (
         <p
           role="status"
-          className="mx-4 mt-3 rounded-control border border-border bg-ground px-3 py-2 text-sm text-ink-secondary"
+          className="mx-5 mt-3 rounded-control border border-border bg-ground px-3 py-2 text-[13px] text-ink-secondary"
         >
           This case is archived. Restore it to edit or use it in plans and cycles.
         </p>
@@ -142,7 +155,7 @@ export function CaseDetail({
       {viewVersion && viewVersion !== c.latest_version_no ? (
         <p
           role="status"
-          className="mx-4 mt-3 flex items-center justify-between rounded-control border border-[var(--status-progress-border)] bg-[var(--status-progress-bg)] px-3 py-2 text-sm text-[var(--status-progress-fg)]"
+          className="mx-5 mt-3 flex items-center justify-between rounded-control border border-[var(--status-progress-border)] bg-[var(--status-progress-bg)] px-3 py-2 text-[13px] text-[var(--status-progress-fg)]"
         >
           Viewing v{viewVersion}. The latest version is v{c.latest_version_no}.
           <Button
@@ -156,11 +169,14 @@ export function CaseDetail({
           </Button>
         </p>
       ) : null}
-      <div className={cn("min-h-0 flex-1 overflow-y-auto pt-4", variant === "panel" && "px-4")}>
+      <div className="flex min-h-0 flex-1 flex-col">
         <Tabs
           label="Case sections"
           value={tab}
           onValueChange={setTab}
+          className="flex min-h-0 flex-1 flex-col"
+          listClassName={variant === "panel" ? "px-3" : ""}
+          contentClassName={cn("min-h-0 flex-1 overflow-y-auto", variant === "panel" ? "px-5 py-4" : "py-5")}
           items={[
             {
               value: "details",
@@ -172,12 +188,14 @@ export function CaseDetail({
                   perms={perms}
                   editable={editable && !viewVersion}
                   onChanged={refresh}
+                  layout={variant}
                 />
               ),
             },
             {
               value: "versions",
-              label: `Versions (${c.latest_version_no})`,
+              label: "Versions",
+              count: c.latest_version_no,
               content: (
                 <Versions
                   c={c}
@@ -191,10 +209,11 @@ export function CaseDetail({
               ),
             },
             { value: "executions", label: "Executions", content: <Executions caseId={c.id} /> },
-            { value: "history", label: "History", content: <History caseId={c.id} /> },
+            { value: "history", label: "History", content: <History caseId={c.id} members={members} /> },
             {
               value: "comments",
-              label: `Comments (${c.counts.comments})`,
+              label: "Comments",
+              count: c.counts.comments,
               content: (
                 <CommentThread
                   entityType="test_case"
@@ -216,8 +235,8 @@ export function CaseDetail({
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="mb-5">
-      <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-muted">{title}</h3>
+    <section className="mb-5 text-[13px]">
+      <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-[0.04em] text-ink-secondary">{title}</h3>
       {children}
     </section>
   );
@@ -229,134 +248,159 @@ function Details({
   perms,
   editable,
   onChanged,
+  layout,
 }: {
   project: Project;
   c: CaseRead;
   perms: Set<string>;
   editable: boolean;
   onChanged: () => void;
+  layout: "panel" | "page";
 }) {
   const v = c.version;
   const maxMb = project.settings.attachment_max_mb;
-  return (
-    <div>
-      <dl className="mb-5 grid grid-cols-[120px_1fr] gap-x-4 gap-y-2 text-sm">
-        <dt className="text-ink-muted">Folder</dt>
-        <dd className="text-ink">{c.folder.path_names.join(" › ")}</dd>
-        <dt className="text-ink-muted">Type</dt>
-        <dd className="text-ink">
-          {label(CASE_TYPES, c.type)}
-          {c.design_technique ? ` · ${label(TECHNIQUES, c.design_technique)}` : ""}
-        </dd>
-        <dt className="text-ink-muted">Priority</dt>
-        <dd>
-          <PriorityIcon priority={c.priority} />
-        </dd>
-        <dt className="text-ink-muted">Owner</dt>
-        <dd className="text-ink">{c.owner?.display_name ?? "—"}</dd>
-        <dt className="text-ink-muted">Reviewer</dt>
-        <dd className="text-ink">{c.reviewer?.display_name ?? "—"}</dd>
-        <dt className="text-ink-muted">Automation</dt>
-        <dd className="text-ink">
-          {label(AUTOMATION, c.automation_status)}
-          {c.automation_keys.length ? (
-            <span className="ml-2 font-mono text-xs text-ink-secondary">{c.automation_keys.join(", ")}</span>
-          ) : null}
-        </dd>
-        <dt className="text-ink-muted">Estimate</dt>
-        <dd className="text-ink">{c.estimated_minutes !== null ? `${c.estimated_minutes} min` : "—"}</dd>
-        <dt className="text-ink-muted">Approved</dt>
-        <dd className="text-ink">{c.approved_version_no ? `v${c.approved_version_no}` : "Not yet"}</dd>
-        <dt className="text-ink-muted">Version</dt>
-        <dd className="text-ink">
-          v{v.version_no} · {v.created_by?.display_name ?? "—"} · {formatDateTime(v.created_at)}
-          {v.change_note ? <span className="block text-xs text-ink-secondary">{v.change_note}</span> : null}
-        </dd>
-      </dl>
-      {v.description ? (
-        <Section title="Description">
-          <MarkdownView text={v.description} />
-        </Section>
-      ) : null}
-      {v.preconditions ? (
-        <Section title="Preconditions">
-          <MarkdownView text={v.preconditions} />
-        </Section>
-      ) : null}
-      {v.test_data ? (
-        <Section title="Test data">
-          <MarkdownView text={v.test_data} />
-        </Section>
-      ) : null}
-      {v.format === "steps" ? (
-        <Section title={`Steps (${v.steps.length})`}>
-          <ol className="flex flex-col gap-2">
-            {v.steps.map((s) => (
-              <li
-                key={s.id}
-                className="grid grid-cols-[28px_1fr_1fr] gap-3 rounded-control border border-border px-3 py-2 text-sm"
-              >
-                <span className="font-mono text-xs text-ink-muted">{s.position}</span>
-                <div>
-                  <MarkdownView text={s.action} />
-                  {s.data ? <MarkdownView text={s.data} className="mt-1 text-xs text-ink-secondary" /> : null}
-                </div>
-                <div className="text-ink-secondary">
-                  <MarkdownView text={s.expected_result} />
-                  {s.attachments.length ? (
-                    <div className="mt-2">
-                      <AttachmentList
-                        attachments={s.attachments}
-                        entityType="test_case_step"
-                        entityId={s.id}
-                        canUpload={false}
-                        canRemove={() => false}
-                        maxMb={maxMb}
-                        onChanged={onChanged}
-                      />
-                    </div>
-                  ) : null}
-                </div>
-              </li>
-            ))}
-          </ol>
-        </Section>
-      ) : (
-        <Section title="Procedure">
-          <MarkdownView text={v.text_body} />
-        </Section>
+  const properties = (
+    <dl
+      className={cn(
+        "grid grid-cols-[110px_minmax(0,1fr)] gap-x-3 gap-y-2 text-[13px]",
+        layout === "panel" && "mb-5",
       )}
-      {v.expected_result ? (
-        <Section title="Overall expected result">
-          <MarkdownView text={v.expected_result} />
-        </Section>
-      ) : null}
-      {v.postconditions ? (
-        <Section title="Postconditions">
-          <MarkdownView text={v.postconditions} />
-        </Section>
-      ) : null}
-      <Section title={`Attachments (${c.attachments.length})`}>
-        {c.attachments.length || editable ? (
-          <AttachmentList
-            attachments={c.attachments}
-            entityType="test_case"
-            entityId={c.id}
-            canUpload={editable}
-            canRemove={() => editable}
-            maxMb={maxMb}
-            onChanged={onChanged}
-          />
+    >
+      <dt className="text-ink-secondary">Folder</dt>
+      <dd className="text-ink">{c.folder.path_names.join(" › ")}</dd>
+      <dt className="text-ink-secondary">Type</dt>
+      <dd className="text-ink">
+        {label(CASE_TYPES, c.type)}
+        {c.design_technique ? ` · ${label(TECHNIQUES, c.design_technique)}` : ""}
+      </dd>
+      <dt className="text-ink-secondary">Priority</dt>
+      <dd>
+        <PriorityIcon priority={c.priority} />
+      </dd>
+      <dt className="text-ink-secondary">Owner</dt>
+      <dd className="text-ink">{c.owner?.display_name ?? "—"}</dd>
+      <dt className="text-ink-secondary">Reviewer</dt>
+      <dd className="text-ink">{c.reviewer?.display_name ?? "—"}</dd>
+      <dt className="text-ink-secondary">Automation</dt>
+      <dd className="text-ink">
+        {label(AUTOMATION, c.automation_status)}
+        {c.automation_keys.length ? (
+          <span className="ml-2 font-mono text-xs text-ink-secondary">{c.automation_keys.join(", ")}</span>
+        ) : null}
+      </dd>
+      <dt className="text-ink-secondary">Estimate</dt>
+      <dd className="text-ink">{c.estimated_minutes !== null ? `${c.estimated_minutes} min` : "—"}</dd>
+      <dt className="text-ink-secondary">Approved</dt>
+      <dd className="text-ink">{c.approved_version_no ? `v${c.approved_version_no}` : "Not yet"}</dd>
+      <dt className="text-ink-secondary">Version</dt>
+      <dd className="text-ink">
+        v{v.version_no} · {v.created_by?.display_name ?? "—"} · {formatDateTime(v.created_at)}
+        {v.change_note ? <span className="block text-xs text-ink-secondary">{v.change_note}</span> : null}
+      </dd>
+    </dl>
+  );
+  return (
+    <div
+      className={cn(
+        "[&_.md]:text-[13px]",
+        layout === "page" && "grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]",
+      )}
+    >
+      {layout === "page" ? (
+        <aside className="xl:order-2">
+          <Card title="Properties">{properties}</Card>
+        </aside>
+      ) : (
+        properties
+      )}
+      <div className="min-w-0 xl:order-1">
+        {v.description ? (
+          <Section title="Description">
+            <MarkdownView text={v.description} />
+          </Section>
+        ) : null}
+        {v.preconditions ? (
+          <Section title="Preconditions">
+            <MarkdownView text={v.preconditions} />
+          </Section>
+        ) : null}
+        {v.test_data ? (
+          <Section title="Test data">
+            <MarkdownView text={v.test_data} />
+          </Section>
+        ) : null}
+        {v.format === "steps" ? (
+          <Section title={`Steps (${v.steps.length})`}>
+            <ol className="overflow-hidden rounded-control border border-border">
+              {v.steps.map((s) => (
+                <li
+                  key={s.id}
+                  className="grid grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)] gap-2.5 border-t border-rule px-3 py-2.5 first:border-t-0"
+                >
+                  <span className="tabular font-semibold text-ink-muted">{s.position}</span>
+                  <div>
+                    <MarkdownView text={s.action} />
+                    {s.data ? (
+                      <MarkdownView text={s.data} className="mt-1 text-xs text-ink-secondary" />
+                    ) : null}
+                  </div>
+                  <div className="text-ink-secondary">
+                    <MarkdownView text={s.expected_result} />
+                    {s.attachments.length ? (
+                      <div className="mt-2">
+                        <AttachmentList
+                          attachments={s.attachments}
+                          entityType="test_case_step"
+                          entityId={s.id}
+                          canUpload={false}
+                          canRemove={() => false}
+                          maxMb={maxMb}
+                          onChanged={onChanged}
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </Section>
         ) : (
-          <p className="text-sm text-ink-muted">None</p>
+          <Section title="Procedure">
+            <MarkdownView text={v.text_body} />
+          </Section>
         )}
-      </Section>
-      <RelatedCases
-        project={project}
-        c={c}
-        editable={editable && can(perms, "testcase.edit")}
-        onChanged={onChanged}
-      />
+        {v.expected_result ? (
+          <Section title="Overall expected result">
+            <MarkdownView text={v.expected_result} />
+          </Section>
+        ) : null}
+        {v.postconditions ? (
+          <Section title="Postconditions">
+            <MarkdownView text={v.postconditions} />
+          </Section>
+        ) : null}
+        <Section title={`Attachments (${c.attachments.length})`}>
+          {c.attachments.length || editable ? (
+            <AttachmentList
+              attachments={c.attachments}
+              entityType="test_case"
+              entityId={c.id}
+              canUpload={editable}
+              canRemove={() => editable}
+              maxMb={maxMb}
+              onChanged={onChanged}
+            />
+          ) : (
+            <p className="text-[13px] text-ink-muted">None</p>
+          )}
+        </Section>
+        <RelatedCases
+          project={project}
+          c={c}
+          editable={editable && can(perms, "testcase.edit")}
+          onChanged={onChanged}
+        />
+      </div>
     </div>
   );
 }
@@ -401,14 +445,14 @@ function RelatedCases({
   return (
     <Section title={`Related cases (${c.links.length})`}>
       {c.links.length ? (
-        <ul className="mb-2 flex flex-col gap-1 text-sm">
+        <ul className="mb-2 flex flex-col gap-1 text-[13px]">
           {c.links.map((lk) => (
             <li key={`${lk.case_id}-${lk.direction}`} className="flex items-center gap-2">
               <span className="text-xs text-ink-muted">{dirLabel[lk.direction]}</span>
               <Link
                 to="/p/$projectKey/cases/$caseKey"
                 params={{ projectKey: project.key, caseKey: lk.key }}
-                className="font-mono text-xs text-accent hover:underline"
+                className="font-mono text-xs text-link hover:underline"
               >
                 {lk.key}
               </Link>
@@ -451,7 +495,7 @@ function RelatedCases({
             Link case
           </Button>
           {add.error ? (
-            <span role="alert" className="self-center text-xs text-[var(--status-fail-fg)]">
+            <span role="alert" className="self-center text-xs text-danger">
               {add.error instanceof ApiError && add.error.status === 404
                 ? "No case with that key"
                 : errorMessage(add.error)}
@@ -459,7 +503,7 @@ function RelatedCases({
           ) : null}
         </form>
       ) : c.links.length === 0 ? (
-        <p className="text-sm text-ink-muted">None</p>
+        <p className="text-[13px] text-ink-muted">None</p>
       ) : null}
     </Section>
   );
@@ -494,101 +538,168 @@ function Versions({
       void versions.refetch();
     },
   });
-  if (versions.isPending) return <Skeleton rows={3} />;
   if (versions.isError) return <ErrorState error={versions.error} />;
   const sorted = [...pick].sort((a, b) => a - b);
+  const approvalOf = (v: VersionListItem) =>
+    v.approval ? (v.approval.mode === "auto" ? "auto" : "manual") : v.submission ? "review" : "none";
+  const APPROVAL_LABEL: Record<string, string> = {
+    auto: "Auto",
+    manual: "Approved",
+    review: "In review",
+    none: "Not approved",
+  };
+  const authors = [...new Set((versions.data ?? []).map((v) => v.created_by?.display_name ?? "—"))];
+  const columns: ColumnDef<VersionListItem>[] = [
+    {
+      id: "pick",
+      header: () => <span className="sr-only">Compare</span>,
+      enableSorting: false,
+      cell: (x) => {
+        const v = x.row.original;
+        return (
+          <input
+            type="checkbox"
+            aria-label={`Compare v${v.version_no}`}
+            checked={pick.includes(v.version_no)}
+            onChange={(e) => {
+              setPick((p) =>
+                e.target.checked
+                  ? [...p.filter((n) => n !== v.version_no), v.version_no].slice(-2)
+                  : p.filter((n) => n !== v.version_no),
+              );
+            }}
+          />
+        );
+      },
+      meta: { width: "w-10", fixed: true, label: "Compare" },
+    },
+    {
+      id: "version_no",
+      accessorKey: "version_no",
+      header: "Ver",
+      cell: (x) => (
+        <span className="whitespace-nowrap font-medium">
+          v{x.row.original.version_no}
+          {x.row.original.is_latest ? (
+            <Tag tone="neutral" className="ml-1.5">
+              latest
+            </Tag>
+          ) : null}
+        </span>
+      ),
+      meta: { width: "w-24", fixed: true },
+    },
+    {
+      accessorKey: "created_at",
+      header: "Date",
+      cell: (x) => (
+        <span className="whitespace-nowrap text-ink-secondary">{formatDate(x.row.original.created_at)}</span>
+      ),
+      meta: { filter: { kind: "daterange" }, width: "w-44" },
+    },
+    {
+      id: "author",
+      accessorFn: (v) => v.created_by?.display_name ?? "—",
+      header: "Author",
+      cell: (x) => <span className="whitespace-nowrap">{x.getValue() as string}</span>,
+      meta: {
+        filter: { kind: "select", options: authors.map((a) => ({ value: a, label: a })) },
+        width: "w-36",
+      },
+    },
+    {
+      id: "note",
+      accessorFn: (v) => v.change_note ?? "",
+      header: "Note",
+      cell: (x) => (
+        <span className="block max-w-[260px] truncate text-ink-secondary" title={x.getValue() as string}>
+          {(x.getValue() as string) || "—"}
+        </span>
+      ),
+      meta: { filter: { kind: "text" } },
+    },
+    {
+      id: "approval",
+      accessorFn: approvalOf,
+      header: "Approval",
+      cell: (x) => {
+        const v = x.row.original;
+        return (
+          <span className="whitespace-nowrap text-ink-secondary">
+            {APPROVAL_LABEL[approvalOf(v)]}
+            {v.approval?.mode === "manual" && v.approval.approved_by
+              ? ` · ${v.approval.approved_by.display_name}`
+              : ""}
+          </span>
+        );
+      },
+      meta: {
+        filter: {
+          kind: "select",
+          options: Object.entries(APPROVAL_LABEL).map(([value, label]) => ({ value, label })),
+        },
+        width: "w-40",
+      },
+    },
+    {
+      id: "actions",
+      header: () => <span className="sr-only">Actions</span>,
+      enableSorting: false,
+      cell: (x) => {
+        const v = x.row.original;
+        return (
+          <span className="flex justify-end gap-1">
+            <Button
+              variant="ghost"
+              size="xs"
+              onClick={() => {
+                onView(v.version_no);
+              }}
+            >
+              View
+            </Button>
+            {canRestore && !v.is_latest ? (
+              <Button
+                variant="ghost"
+                size="xs"
+                onClick={() => {
+                  setRestore(v.version_no);
+                }}
+              >
+                Restore
+              </Button>
+            ) : null}
+          </span>
+        );
+      },
+      meta: { align: "right", width: "w-36", fixed: true, label: "Actions" },
+    },
+  ];
   return (
     <div className="flex flex-col gap-4">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="text-left text-xs text-ink-secondary">
-            <th scope="col" className="w-8 py-1">
-              <span className="sr-only">Compare</span>
-            </th>
-            <th scope="col">Ver</th>
-            <th scope="col">Date</th>
-            <th scope="col">Author</th>
-            <th scope="col">Note</th>
-            <th scope="col">Approval</th>
-            <th scope="col">
-              <span className="sr-only">Actions</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {versions.data.map((v) => (
-            <tr key={v.version_no} className="border-t border-border">
-              <td className="py-2">
-                <input
-                  type="checkbox"
-                  aria-label={`Compare v${v.version_no}`}
-                  checked={pick.includes(v.version_no)}
-                  onChange={(e) => {
-                    setPick((p) =>
-                      e.target.checked
-                        ? [...p.filter((x) => x !== v.version_no), v.version_no].slice(-2)
-                        : p.filter((x) => x !== v.version_no),
-                    );
-                  }}
-                />
-              </td>
-              <td className="font-medium">
-                v{v.version_no}
-                {v.is_latest ? <span className="ml-1 text-xs text-ink-muted">latest</span> : null}
-              </td>
-              <td className="text-ink-secondary">{formatDate(v.created_at)}</td>
-              <td className="text-ink-secondary">{v.created_by?.display_name ?? "—"}</td>
-              <td className="max-w-48 truncate text-ink-secondary" title={v.change_note ?? undefined}>
-                {v.change_note ?? ""}
-              </td>
-              <td className="text-ink-secondary">
-                {v.approval
-                  ? v.approval.mode === "auto"
-                    ? "Auto"
-                    : `Approved · ${v.approval.approved_by?.display_name ?? ""}`
-                  : v.submission
-                    ? "In review"
-                    : "—"}
-              </td>
-              <td className="whitespace-nowrap text-right">
-                <Button
-                  variant="link"
-                  size="sm"
-                  onClick={() => {
-                    onView(v.version_no);
-                  }}
-                >
-                  View
-                </Button>
-                {canRestore && !v.is_latest ? (
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="ml-2"
-                    onClick={() => {
-                      setRestore(v.version_no);
-                    }}
-                  >
-                    Restore
-                  </Button>
-                ) : null}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div>
-        <Button
-          variant="secondary"
-          size="sm"
-          disabled={sorted.length !== 2}
-          onClick={() => {
-            setCompare([sorted[0] as number, sorted[1] as number]);
-          }}
-        >
-          {sorted.length === 2 ? `Compare v${sorted[0]} ↔ v${sorted[1]}` : "Select two versions to compare"}
-        </Button>
-      </div>
+      <DataTable
+        label="Versions"
+        columns={columns}
+        data={versions.data ?? []}
+        loading={versions.isPending}
+        getRowId={(v) => String(v.version_no)}
+        noun={["version", "versions"]}
+        initialPageSize={10}
+        dense
+        initialHidden={["note", "created_at", "author"]}
+        toolbar={
+          <Button
+            variant="secondary"
+            size="xs"
+            disabled={sorted.length !== 2}
+            onClick={() => {
+              setCompare([sorted[0] as number, sorted[1] as number]);
+            }}
+          >
+            {sorted.length === 2 ? `Compare v${sorted[0]} ↔ v${sorted[1]}` : "Select two versions to compare"}
+          </Button>
+        }
+      />
       {compare ? <DiffView caseId={c.id} from={compare[0]} to={compare[1]} /> : null}
       <ConfirmDialog
         open={restore !== null}
@@ -612,82 +723,91 @@ function Versions({
 
 function Executions({ caseId }: { caseId: string }) {
   const runs = useExecutions(caseId);
-  if (runs.isPending) return <Skeleton rows={3} />;
+  const people = [...new Set((runs.data ?? []).map((r) => r.executed_by?.display_name ?? "—"))];
+  const columns: ColumnDef<Execution>[] = [
+    {
+      id: "cycle",
+      accessorFn: (r) => `${r.cycle_key} ${r.cycle_name}`,
+      header: "Cycle",
+      cell: (x) => (
+        <span className="whitespace-nowrap">
+          <span className="font-mono text-[12.5px] font-medium">{x.row.original.cycle_key}</span>{" "}
+          {x.row.original.cycle_name}
+        </span>
+      ),
+      meta: { filter: { kind: "text" }, fixed: true },
+    },
+    {
+      accessorKey: "version_no",
+      header: "Version",
+      cell: (x) => `v${x.row.original.version_no}`,
+      meta: { width: "w-24" },
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: (x) => <StatusBadge kind="execution" status={x.row.original.status} />,
+      meta: {
+        filter: {
+          kind: "select",
+          options: Object.entries(EXECUTION_STATUS).map(([value, s]) => ({ value, label: s.label })),
+        },
+        width: "w-40",
+      },
+    },
+    {
+      id: "executed_by",
+      accessorFn: (r) => r.executed_by?.display_name ?? "—",
+      header: "Executed by",
+      meta: {
+        filter: { kind: "select", options: people.map((p) => ({ value: p, label: p })) },
+        width: "w-40",
+      },
+    },
+    {
+      accessorKey: "finished_at",
+      header: "Date",
+      cell: (x) => (
+        <span className="whitespace-nowrap text-ink-secondary">
+          {formatDateTime(x.row.original.finished_at)}
+        </span>
+      ),
+      meta: { filter: { kind: "daterange" }, width: "w-44" },
+    },
+  ];
   if (runs.isError) return <ErrorState error={runs.error} />;
-  if (runs.data.length === 0) return <EmptyState text="This case has not been in a cycle yet." />;
   return (
-    <table className="w-full text-sm">
-      <thead>
-        <tr className="text-left text-xs text-ink-secondary">
-          <th scope="col">Cycle</th>
-          <th scope="col">Version</th>
-          <th scope="col">Status</th>
-          <th scope="col">Executed by</th>
-          <th scope="col">Date</th>
-        </tr>
-      </thead>
-      <tbody>
-        {runs.data.map((r) => (
-          <tr key={r.run_id} className="border-t border-border">
-            <td className="py-2">
-              <span className="font-mono text-xs text-ink-secondary">{r.cycle_key}</span> {r.cycle_name}
-            </td>
-            <td>v{r.version_no}</td>
-            <td>
-              <StatusBadge kind="execution" status={r.status} />
-            </td>
-            <td className="text-ink-secondary">{r.executed_by?.display_name ?? "—"}</td>
-            <td className="text-ink-secondary">{formatDateTime(r.finished_at)}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <DataTable
+      label="Executions"
+      columns={columns}
+      data={runs.data ?? []}
+      loading={runs.isPending}
+      getRowId={(r) => r.run_id}
+      noun={["run", "runs"]}
+      initialPageSize={10}
+      dense
+      initialHidden={["executed_by"]}
+      empty={<EmptyState text="This case has not been in a cycle yet." />}
+    />
   );
 }
 
-function History({ caseId }: { caseId: string }) {
-  const [page, setPage] = useState(1);
-  const history = useCaseHistory(caseId, page);
-  if (history.isPending) return <Skeleton rows={4} />;
-  if (history.isError) return <ErrorState error={history.error} />;
-  const pages = Math.max(1, Math.ceil(history.data.total / history.data.page_size));
+function History({ caseId, members }: { caseId: string; members: ProjectMember[] }) {
+  const state = useAuditState(10);
+  const history = useCaseHistory(caseId, state.query);
   return (
-    <div>
-      <ol className="divide-y divide-border rounded-card border border-border">
-        {history.data.items.map((e) => (
-          <li key={e.id} className="flex items-baseline justify-between gap-4 px-3 py-2 text-sm">
-            <span className="text-ink">{e.summary ?? e.action}</span>
-            <time dateTime={e.occurred_at} className="shrink-0 text-xs text-ink-muted">
-              {formatDateTime(e.occurred_at)}
-            </time>
-          </li>
-        ))}
-      </ol>
-      {pages > 1 ? (
-        <div className="mt-2 flex justify-end gap-2 text-sm">
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={page <= 1}
-            onClick={() => {
-              setPage((p) => p - 1);
-            }}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={page >= pages}
-            onClick={() => {
-              setPage((p) => p + 1);
-            }}
-          >
-            Next
-          </Button>
-        </div>
-      ) : null}
-    </div>
+    <AuditTable
+      label="Case history"
+      rows={history.data?.items ?? []}
+      total={history.data?.total ?? 0}
+      loading={history.isPending}
+      error={history.error}
+      onRetry={() => void history.refetch()}
+      members={members}
+      state={state}
+      showType={false}
+      dense
+    />
   );
 }
 
@@ -766,7 +886,7 @@ function ReviewBar({
   const blocked = selfApprovalBlocked(project, c, me);
   return (
     <div className="border-b border-border bg-[var(--status-progress-bg)] px-4 py-2">
-      <div className="flex items-center gap-2 text-sm text-[var(--status-progress-fg)]">
+      <div className="flex items-center gap-2 text-[13px] text-[var(--status-progress-fg)]">
         <span className="flex-1">
           v{c.latest_version_no} is waiting for review
           {c.version.submission?.submitted_by
@@ -885,8 +1005,6 @@ function CaseActions({
   }
   if (can(perms, "testcase.delete")) items.push(["delete", "Delete…"]);
   if (items.length === 0) return null;
-  const item =
-    "cursor-pointer rounded-control px-3 py-2 text-sm text-ink outline-none data-[highlighted]:bg-ground";
   return (
     <>
       <Menu.Root>
@@ -895,26 +1013,21 @@ function CaseActions({
             <MoreHorizontal className="size-4" />
           </Button>
         </Menu.Trigger>
-        <Menu.Portal>
-          <Menu.Content
-            align="end"
-            className="z-50 min-w-48 rounded-card border border-border bg-surface p-1 shadow-md"
-          >
-            {items.map(([a, l]) => (
-              <Menu.Item
-                key={a}
-                className={cn(item, a === "delete" && "text-[var(--status-fail-fg)]")}
-                onSelect={() => {
-                  if (a === "approve" || a === "duplicate" || a === "deprecate" || a === "restore")
-                    act.mutate({ action: a });
-                  else setDialog(a);
-                }}
-              >
-                {l}
-              </Menu.Item>
-            ))}
-          </Menu.Content>
-        </Menu.Portal>
+        <MenuContent align="end">
+          {items.map(([a, l]) => (
+            <MenuItem
+              key={a}
+              danger={a === "delete"}
+              onSelect={() => {
+                if (a === "approve" || a === "duplicate" || a === "deprecate" || a === "restore")
+                  act.mutate({ action: a });
+                else setDialog(a);
+              }}
+            >
+              {l}
+            </MenuItem>
+          ))}
+        </MenuContent>
       </Menu.Root>
       <Dialog
         open={dialog === "submit"}
@@ -974,7 +1087,7 @@ function CaseActions({
                 onChange={(e) => {
                   setNote(e.target.value);
                 }}
-                className="w-full rounded-control border border-border bg-surface px-3 py-2 text-sm"
+                className="w-full rounded-control border border-border bg-surface px-3 py-2 text-[13px]"
               />
             )}
           </Field>

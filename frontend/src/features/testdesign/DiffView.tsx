@@ -92,7 +92,7 @@ export function DiffBody({ diff }: { diff: CompareRead }) {
   const hiddenSteps = diff.steps.length - steps.length;
   return (
     <div
-      className="flex flex-col gap-4 text-sm"
+      className="flex flex-col gap-4 text-[13px]"
       aria-label={`Changes from v${diff.from_version} to v${diff.to_version}`}
     >
       <div className="flex items-center justify-between">

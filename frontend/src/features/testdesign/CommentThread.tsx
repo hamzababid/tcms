@@ -130,7 +130,7 @@ function CommentItem({
         ) : null}
       </div>
       {comment.deleted ? (
-        <p className="text-sm italic text-ink-muted">Comment deleted</p>
+        <p className="text-[13px] italic text-ink-muted">Comment deleted</p>
       ) : editing ? (
         <Composer
           members={members}
@@ -241,7 +241,7 @@ function Composer({
             <div key={m.user.id} role="option" aria-selected={false}>
               <button
                 type="button"
-                className="w-full rounded-control px-2 py-1.5 text-left text-sm hover:bg-ground"
+                className="w-full rounded-control px-2 py-1.5 text-left text-[13px] hover:bg-ground"
                 onMouseDown={(e) => {
                   e.preventDefault();
                   insert(m);
@@ -254,7 +254,7 @@ function Composer({
         </div>
       ) : null}
       {error ? (
-        <p role="alert" className="text-sm text-[var(--status-fail-fg)]">
+        <p role="alert" className="text-[13px] text-danger">
           {errorMessage(error)}
         </p>
       ) : null}

@@ -72,23 +72,25 @@ export function BulkBar({
     <div
       role="region"
       aria-label="Bulk actions"
-      className="flex flex-wrap items-center gap-2 border-b border-border bg-accent-tint px-3 py-2 text-sm"
+      className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-accent-border bg-accent-tint px-4 py-2 text-[13px]"
     >
-      <span className="font-medium text-ink">{selection.count.toLocaleString()} selected</span>
+      <span className="tabular font-semibold text-accent-ink">
+        {selection.count.toLocaleString()} selected
+      </span>
       {selection.filter === null && total > selection.ids.length ? (
-        <Button variant="link" size="sm" onClick={onSelectAll}>
+        <Button variant="link" size="xs" onClick={onSelectAll}>
           Select all {total.toLocaleString()} matching
         </Button>
       ) : null}
-      <Button variant="link" size="sm" onClick={onClear}>
+      <Button variant="link" size="xs" onClick={onClear}>
         Clear
       </Button>
       <span className="flex-1" />
       {available.map(([a, s]) => (
         <Button
           key={a}
-          variant="secondary"
-          size="sm"
+          variant="tint"
+          size="xs"
           onClick={() => {
             setAction(a);
           }}
@@ -224,7 +226,7 @@ function BulkDialog({
     >
       {spec.input === "tags" ? (
         <fieldset className="flex flex-wrap gap-2">
-          <legend className="mb-2 text-xs font-medium text-ink-secondary">Tags</legend>
+          <legend className="mb-2 text-[13px] font-medium text-ink">Tags</legend>
           {tags.map((t) => (
             <label
               key={t.id}
@@ -266,7 +268,7 @@ function BulkDialog({
         </p>
       )}
       {run.error ? (
-        <p role="alert" className="mt-3 text-sm text-[var(--status-fail-fg)]">
+        <p role="alert" className="mt-3 text-[13px] text-danger">
           {errorMessage(run.error)}
         </p>
       ) : null}

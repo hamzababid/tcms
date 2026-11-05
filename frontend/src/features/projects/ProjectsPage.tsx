@@ -1,17 +1,22 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
+import type { ColumnDef } from "@tanstack/react-table";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { Plus } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { api, ApiError } from "@/api/client";
-import { keys, useMe, useProjects } from "@/api/queries";
-import { EmptyState, ErrorState, PageHeader, Skeleton } from "@/components/common/feedback";
+import { keys, useMe, useProjects, type Project } from "@/api/queries";
+import { DataTable } from "@/components/common/DataTable";
+import { Tag } from "@/components/common/Tag";
+import { EmptyState, ErrorState, Page, Skeleton } from "@/components/common/feedback";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/field";
 import { FormError } from "@/features/auth/AuthCard";
+import { formatDate, formatDateTime } from "@/lib/format";
 
 const schema = z.object({
   key: z
@@ -91,27 +96,92 @@ function CreateProjectDialog({ open, onOpenChange }: { open: boolean; onOpenChan
   );
 }
 
+const projectColumns: ColumnDef<Project>[] = [
+  {
+    accessorKey: "key",
+    header: "Key",
+    cell: (c) => (
+      <Link
+        to="/p/$projectKey/activity"
+        params={{ projectKey: c.row.original.key }}
+        className="font-mono text-[13px] font-medium text-link hover:underline"
+      >
+        {c.row.original.key}
+      </Link>
+    ),
+    meta: { filter: { kind: "text" }, width: "w-44", fixed: true },
+  },
+  {
+    accessorKey: "name",
+    header: "Name",
+    cell: (c) => (
+      <div className="min-w-0">
+        <p className="truncate font-medium">{c.row.original.name}</p>
+        {c.row.original.description ? (
+          <p className="truncate text-xs text-ink-secondary">{c.row.original.description}</p>
+        ) : null}
+      </div>
+    ),
+    meta: { filter: { kind: "text" }, fixed: true },
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+    cell: (c) =>
+      c.row.original.status === "archived" ? (
+        <Tag tone="neutral">Archived · read-only</Tag>
+      ) : (
+        <Tag>Active</Tag>
+      ),
+    meta: {
+      filter: {
+        kind: "select",
+        options: [
+          { value: "active", label: "Active" },
+          { value: "archived", label: "Archived" },
+        ],
+      },
+      width: "w-48",
+    },
+  },
+  {
+    accessorKey: "created_at",
+    header: "Created",
+    cell: (c) => <span className="text-ink-secondary">{formatDate(c.row.original.created_at)}</span>,
+    meta: { filter: { kind: "daterange" }, width: "w-44" },
+  },
+  {
+    accessorKey: "updated_at",
+    header: "Last changed",
+    cell: (c) => <span className="text-ink-secondary">{formatDateTime(c.row.original.updated_at)}</span>,
+    meta: { filter: { kind: "daterange" }, width: "w-44" },
+  },
+];
+
 export function ProjectsPage() {
   const me = useMe().data;
   const projects = useProjects();
   const [open, setOpen] = useState(false);
   const canCreate = Boolean(me?.org_permissions.includes("project.create"));
   return (
-    <div className="mx-auto max-w-5xl">
-      <PageHeader
-        title="Projects"
-        actions={
-          canCreate ? (
-            <Button
-              onClick={() => {
-                setOpen(true);
-              }}
-            >
-              New project
-            </Button>
-          ) : null
-        }
-      />
+    <Page
+      title="Projects"
+      subtitle="Projects you are a member of. Organization admins see every project."
+      width="full"
+      actions={
+        canCreate ? (
+          <Button
+            size="sm"
+            onClick={() => {
+              setOpen(true);
+            }}
+          >
+            <Plus aria-hidden="true" className="size-4" />
+            New project
+          </Button>
+        ) : null
+      }
+    >
       {projects.isPending ? (
         <Skeleton />
       ) : projects.isError ? (
@@ -136,42 +206,16 @@ export function ProjectsPage() {
           }
         />
       ) : (
-        <table className="w-full overflow-hidden rounded-card border border-border bg-surface text-[13px]">
-          <thead className="bg-ground text-left text-xs font-medium text-ink-secondary">
-            <tr className="h-9">
-              <th scope="col" className="px-4">
-                Key
-              </th>
-              <th scope="col" className="px-4">
-                Name
-              </th>
-              <th scope="col" className="px-4">
-                Status
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {projects.data.map((p) => (
-              <tr key={p.id} className="h-10 border-t border-border hover:bg-ground">
-                <td className="px-4 font-mono text-xs">
-                  <Link
-                    to="/p/$projectKey/activity"
-                    params={{ projectKey: p.key }}
-                    className="text-accent hover:underline"
-                  >
-                    {p.key}
-                  </Link>
-                </td>
-                <td className="px-4 text-ink">{p.name}</td>
-                <td className="px-4 text-ink-secondary">
-                  {p.status === "archived" ? "Archived (read-only)" : "Active"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <DataTable
+          label="Projects"
+          columns={projectColumns}
+          data={projects.data}
+          getRowId={(p) => p.id}
+          noun={["project", "projects"]}
+          initialSorting={[{ id: "key", desc: false }]}
+        />
       )}
       <CreateProjectDialog open={open} onOpenChange={setOpen} />
-    </div>
+    </Page>
   );
 }

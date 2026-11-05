@@ -6,26 +6,60 @@
   --font-ui: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
 
+  /* Neutrals (docs/design/Main.dc.html) */
   --ink: #0f172a;
+  --ink-strong: #1e293b; /* tree and dense lists */
+  --ink-body: #334155; /* ghost buttons, icons */
   --ink-secondary: #475569;
   --ink-muted: #64748b;
-  --border: #e2e8f0;
-  --ground: #f8fafc;
+  --ink-faint: #94a3b8; /* chevrons, carets */
+  --border: #e2e8f0; /* card and pane lines */
+  --border-control: #cbd5e1; /* inputs, secondary buttons */
+  --rule: #f1f5f9; /* row separators */
+  --ground: #f8fafc; /* page, table header, hover */
   --surface: #ffffff;
+  --surface-muted: #f1f5f9; /* disabled, inline code */
 
+  /* Accent: one indigo for actions and selection */
   --accent: #4f46e5;
   --accent-hover: #4338ca;
+  --accent-active: #3730a3;
   --accent-tint: #eef2ff;
-  --focus-ring: #6366f1;
+  --accent-ink: #3730a3; /* text on tint */
+  --accent-border: #c7d2fe;
+  --accent-border-strong: #a5b4fc;
+  --accent-soft: #6366f1; /* kbd inside primary buttons */
+  --avatar-bg: #e0e7ff;
+  --link: #4338ca;
+  --link-hover: #3730a3;
+  --focus-ring: #4f46e5;
 
+  /* Danger surfaces (alerts, destructive outline) */
+  --danger: #b91c1c;
+  --danger-ink: #991b1b;
+  --danger-surface: #fef2f2;
+  --danger-border: #fecaca;
+
+  /* Navigation (docs/design/Sidebar.dc.html) */
   --sidebar-bg: #111827;
+  --sidebar-raised: #1f2937;
+  --sidebar-line: #374151;
   --sidebar-active: #312e81;
   --sidebar-ink: #d1d5db;
+  --sidebar-ink-strong: #f9fafb;
+  --sidebar-label: #9ca3af;
+
+  /* Elevation: flat UI, shadows only for floating layers */
+  --shadow-popover: 0 8px 24px -6px rgb(15 23 42 / 0.16), 0 2px 6px rgb(15 23 42 / 0.06);
+  --shadow-dialog: 0 24px 48px -12px rgb(15 23 42 / 0.28);
 
   --radius-control: 6px;
   --radius-card: 8px;
+  --radius-auth: 10px;
   --row-height: 40px;
   --header-height: 36px;
+  --topbar-height: 60px;
+  --sidebar-width: 240px;
 
   /* Status: text · background · border · bar (docs/design/README.md) */
   --status-pass-fg: #166534;

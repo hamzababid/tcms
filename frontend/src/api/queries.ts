@@ -1,7 +1,7 @@
 /**
  * Server state through TanStack Query only (docs/04 §11.2). Query keys are built here.
  */
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { api } from "./client";
 import type { components } from "./schema";
@@ -26,8 +26,7 @@ export const keys = {
   members: (id: string) => ["projects", id, "members"] as const,
   environments: (id: string) => ["projects", id, "environments"] as const,
   releases: (id: string) => ["projects", id, "releases"] as const,
-  activity: (id: string, page: number, entityType: string | null) =>
-    ["projects", id, "activity", page, entityType] as const,
+  activity: (id: string, query: object) => ["projects", id, "activity", query] as const,
   organization: ["organization"] as const,
   orgMembers: ["organization", "members"] as const,
   invitations: ["organization", "invitations"] as const,
@@ -91,17 +90,26 @@ export const useReleases = (id: string) =>
       ),
   });
 
-export const useActivity = (id: string, page: number, entityType: string | null) =>
+export interface AuditQuery {
+  page: number;
+  page_size: number;
+  entity_type?: string;
+  actor_id?: string;
+  action?: string;
+  occurred_at__gte?: string;
+  occurred_at__lte?: string;
+  q?: string;
+}
+
+export const useActivity = (id: string, query: AuditQuery) =>
   useQuery({
-    queryKey: keys.activity(id, page, entityType),
+    queryKey: keys.activity(id, query),
+    placeholderData: keepPreviousData,
     queryFn: async () =>
       must(
         (
           await api.GET("/api/v1/projects/{project_id}/activity", {
-            params: {
-              path: { project_id: id },
-              query: { page, page_size: 50, ...(entityType ? { entity_type: entityType } : {}) },
-            },
+            params: { path: { project_id: id }, query },
           })
         ).data,
       ),

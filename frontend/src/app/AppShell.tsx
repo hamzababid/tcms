@@ -1,11 +1,12 @@
-import * as Menu from "@radix-ui/react-dropdown-menu";
+import * as M from "@radix-ui/react-dropdown-menu";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import {
   Activity,
-  ChevronDown,
+  ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  ChevronsUpDown,
   FolderKanban,
   FolderTree,
   Settings,
@@ -17,6 +18,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { api } from "@/api/client";
 import { useMe, useProjects, type Me, type Project } from "@/api/queries";
+import { MenuContent, MenuItem, MenuSeparator, MenuShortcut } from "@/components/ui/menu";
 import { can, projectPermissions } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
@@ -39,18 +41,48 @@ interface NavItem {
   icon: LucideIcon;
 }
 
+/** Sidebar item (docs/design/Sidebar.dc.html): 34 px, 13.5/500, 18 px icon, active #312E81. */
 function NavLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
   return (
     <Link
       to={item.to}
       params={item.params}
-      className="flex h-[34px] items-center gap-2.5 rounded-control px-2.5 text-[13.5px] font-medium text-sidebar-ink hover:bg-white/5"
-      activeProps={{ className: "bg-sidebar-active text-white" }}
+      className={cn(
+        "flex h-[34px] items-center gap-2.5 rounded-control px-2.5 text-[13.5px] font-medium text-sidebar-ink transition-colors hover:bg-sidebar-raised hover:text-sidebar-ink-strong",
+        collapsed && "justify-center px-0",
+      )}
+      activeProps={{ className: "!bg-sidebar-active !text-white" }}
       title={collapsed ? item.label : undefined}
     >
-      <item.icon aria-hidden="true" className="size-4 shrink-0" />
-      <span className={collapsed ? "sr-only" : ""}>{item.label}</span>
+      <item.icon aria-hidden="true" className="size-[18px] shrink-0" strokeWidth={2} />
+      <span className={collapsed ? "sr-only" : "truncate"}>{item.label}</span>
     </Link>
+  );
+}
+
+function NavSection({
+  label,
+  collapsed,
+  children,
+}: {
+  label?: string;
+  collapsed: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      {label ? (
+        <p
+          className={cn(
+            "px-2.5 pb-1.5 text-[11.5px] font-semibold uppercase tracking-[0.06em] text-sidebar-label",
+            collapsed && "sr-only",
+          )}
+        >
+          {label}
+        </p>
+      ) : null}
+      {children}
+    </div>
   );
 }
 
@@ -59,7 +91,16 @@ function useCurrentProject(projects: Project[] | undefined): Project | undefined
   return projects?.find((p) => p.key === params.projectKey);
 }
 
-function ProjectSwitcher({ projects, current }: { projects: Project[]; current: Project | undefined }) {
+/** Project switcher in the sidebar (docs/design/Sidebar.dc.html); `G` then `P` opens it. */
+function ProjectSwitcher({
+  projects,
+  current,
+  collapsed,
+}: {
+  projects: Project[];
+  current: Project | undefined;
+  collapsed: boolean;
+}) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -87,75 +128,136 @@ function ProjectSwitcher({ projects, current }: { projects: Project[]; current: 
     };
   }, [current, navigate]);
   return (
-    <Menu.Root open={open} onOpenChange={setOpen}>
-      <Menu.Trigger className="flex h-8 items-center gap-1.5 rounded-control border border-border px-2.5 text-sm font-medium text-ink hover:bg-ground">
-        <span className="font-mono">{current?.key ?? "Projects"}</span>
-        <ChevronDown aria-hidden="true" className="size-4 text-ink-muted" />
+    <M.Root open={open} onOpenChange={setOpen}>
+      <M.Trigger
+        className={cn(
+          "flex h-9 w-full items-center gap-2 rounded-control border border-sidebar-line bg-sidebar-raised px-2.5 text-left text-[13px] font-semibold text-sidebar-ink-strong transition-colors hover:border-[#4b5563] data-[state=open]:border-[#4b5563]",
+          collapsed && "justify-center px-0",
+        )}
+        title={collapsed ? (current?.name ?? "Select a project") : undefined}
+      >
+        <span className="shrink-0 rounded bg-sidebar-line px-1.5 font-mono text-[11.5px] font-medium leading-[18px] text-[#e5e7eb]">
+          {current?.key ?? (collapsed ? "—" : "Project")}
+        </span>
+        {collapsed ? null : (
+          <>
+            <span className="min-w-0 flex-1 truncate">{current?.name ?? "Select a project"}</span>
+            <ChevronsUpDown aria-hidden="true" className="size-3.5 shrink-0 text-sidebar-label" />
+          </>
+        )}
         <span className="sr-only">Switch project</span>
-      </Menu.Trigger>
-      <Menu.Portal>
-        <Menu.Content
-          align="start"
-          sideOffset={4}
-          className="z-50 min-w-64 rounded-card border border-border bg-surface p-1 shadow-md"
-        >
-          {projects.length === 0 ? (
-            <p className="px-3 py-2 text-sm text-ink-muted">No projects yet</p>
-          ) : (
-            projects.map((p) => (
-              <Menu.Item
-                key={p.id}
-                onSelect={() =>
-                  void navigate({ to: "/p/$projectKey/activity", params: { projectKey: p.key } })
-                }
-                className="flex cursor-pointer items-center gap-3 rounded-control px-3 py-2 text-sm text-ink outline-none data-[highlighted]:bg-ground"
-              >
-                <span className="w-16 font-mono text-xs text-ink-secondary">{p.key}</span>
-                <span className="truncate">{p.name}</span>
-                {p.status === "archived" ? (
-                  <span className="ml-auto text-xs text-ink-muted">archived</span>
-                ) : null}
-              </Menu.Item>
-            ))
-          )}
-          <Menu.Separator className="my-1 h-px bg-border" />
-          <Menu.Item
-            onSelect={() => void navigate({ to: "/projects" })}
-            className="cursor-pointer rounded-control px-3 py-2 text-sm text-accent outline-none data-[highlighted]:bg-ground"
-          >
-            All projects
-          </Menu.Item>
-        </Menu.Content>
-      </Menu.Portal>
-    </Menu.Root>
+      </M.Trigger>
+      <MenuContent align="start" className="w-[264px]">
+        <p className="px-2.5 pb-1 pt-1.5 text-[11.5px] font-semibold uppercase tracking-[0.06em] text-ink-muted">
+          Projects
+        </p>
+        {projects.length === 0 ? (
+          <p className="px-2.5 py-2 text-ink-muted">No projects yet</p>
+        ) : (
+          projects.map((p) => (
+            <MenuItem
+              key={p.id}
+              onSelect={() => void navigate({ to: "/p/$projectKey/activity", params: { projectKey: p.key } })}
+              className={cn(p.id === current?.id && "bg-accent-tint text-accent-ink")}
+            >
+              <span className="w-[72px] shrink-0 truncate font-mono text-xs font-medium text-ink-secondary">
+                {p.key}
+              </span>
+              <span className="truncate">{p.name}</span>
+              {p.status === "archived" ? (
+                <span className="ml-auto text-xs text-ink-muted">archived</span>
+              ) : null}
+            </MenuItem>
+          ))
+        )}
+        <MenuSeparator />
+        <MenuItem onSelect={() => void navigate({ to: "/projects" })} className="text-link">
+          All projects
+          <MenuShortcut>G P</MenuShortcut>
+        </MenuItem>
+      </MenuContent>
+    </M.Root>
   );
 }
 
-function Breadcrumbs({ project }: { project: Project | undefined }) {
+interface Crumb {
+  label: string;
+  to?: string;
+  params?: Record<string, string>;
+  mono?: boolean;
+}
+
+function useCrumbs(project: Project | undefined): Crumb[] {
   const path = useRouterState({ select: (s) => s.location.pathname });
-  const crumbs: string[] = [];
+  const crumbs: Crumb[] = [];
   if (project) {
-    crumbs.push(project.key);
-    if (path.endsWith("/activity")) crumbs.push("Activity");
-    if (path.includes("/repository") || path.includes("/cases/")) crumbs.push("Repository");
+    const params = { projectKey: project.key };
+    crumbs.push({ label: project.key, to: "/p/$projectKey", params, mono: true });
+    if (path.endsWith("/activity")) crumbs.push({ label: "Activity" });
+    if (path.includes("/settings")) crumbs.push({ label: "Settings" });
+    if (path.includes("/repository") || path.includes("/cases/")) {
+      crumbs.push({ label: "Repository", to: "/p/$projectKey/repository", params });
+    }
     const caseKey = /\/cases\/([^/]+)/.exec(path)?.[1];
-    if (caseKey === "new") crumbs.push("New case");
-    else if (caseKey) crumbs.push(decodeURIComponent(caseKey));
-    if (caseKey && path.endsWith("/edit")) crumbs.push("Edit");
-    if (path.includes("/settings")) crumbs.push("Settings");
-  } else if (path.startsWith("/projects")) crumbs.push("Projects");
-  else if (path.startsWith("/profile")) crumbs.push("Profile");
-  else if (path.startsWith("/admin")) crumbs.push("Administration");
+    if (caseKey === "new") crumbs.push({ label: "New case" });
+    else if (caseKey) {
+      const key = decodeURIComponent(caseKey);
+      crumbs.push(
+        path.endsWith("/edit")
+          ? {
+              label: key,
+              to: "/p/$projectKey/cases/$caseKey",
+              params: { ...params, caseKey: key },
+              mono: true,
+            }
+          : { label: key, mono: true },
+      );
+      if (path.endsWith("/edit")) crumbs.push({ label: "Edit" });
+    }
+  } else if (path.startsWith("/projects")) crumbs.push({ label: "Projects" });
+  else if (path.startsWith("/profile")) crumbs.push({ label: "Your account" });
+  else if (path.startsWith("/admin")) {
+    crumbs.push({ label: "Administration" });
+    crumbs.push({ label: path.includes("security") ? "Security policy" : "Invitations" });
+  }
+  // The last crumb is the current page.
+  const last = crumbs.at(-1);
+  if (last) delete last.to;
+  return crumbs;
+}
+
+/** Breadcrumbs (docs/design/Topbar.dc.html): 13.5 px, chevron separators, current page in ink. */
+function Breadcrumbs({ project }: { project: Project | undefined }) {
+  const crumbs = useCrumbs(project);
   return (
-    <nav aria-label="Breadcrumb">
-      <ol className="flex items-center gap-2 text-sm text-ink-secondary">
+    <nav aria-label="Breadcrumb" className="min-w-0 flex-1">
+      <ol className="flex min-w-0 items-center gap-2 text-[13.5px] text-ink-secondary">
         {crumbs.map((c, i) => (
-          <li
-            key={c}
-            className={cn("flex items-center gap-2", i === crumbs.length - 1 && "font-semibold text-ink")}
-          >
-            {i > 0 ? <span aria-hidden="true">›</span> : null}
-            {c}
+          <li key={`${c.label}-${i}`} className="flex min-w-0 items-center gap-2">
+            {i > 0 ? <ChevronRight aria-hidden="true" className="size-3.5 shrink-0 text-ink-faint" /> : null}
+            {c.to ? (
+              <Link
+                to={c.to}
+                params={c.params}
+                className={cn(
+                  "truncate text-ink-secondary hover:text-ink",
+                  c.mono && "font-mono text-[13px]",
+                )}
+              >
+                {c.label}
+              </Link>
+            ) : (
+              <span
+                aria-current={i === crumbs.length - 1 ? "page" : undefined}
+                className={cn(
+                  "truncate",
+                  i === crumbs.length - 1 && "font-medium text-ink",
+                  c.mono && "font-mono text-[13px]",
+                )}
+              >
+                {c.label}
+              </span>
+            )}
           </li>
         ))}
       </ol>
@@ -175,62 +277,54 @@ function initials(name: string): string {
 function UserMenu({ me }: { me: Me }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const item =
-    "cursor-pointer rounded-control px-3 py-2 text-sm text-ink outline-none data-[highlighted]:bg-ground";
   return (
-    <Menu.Root>
-      <Menu.Trigger className="flex size-8 items-center justify-center rounded-full bg-accent-tint text-xs font-semibold text-accent">
+    <M.Root>
+      <M.Trigger className="flex size-8 items-center justify-center rounded-full bg-avatar text-[12.5px] font-semibold text-accent-ink ring-offset-2 transition-shadow hover:ring-2 hover:ring-accent-border data-[state=open]:ring-2 data-[state=open]:ring-accent-border">
         {initials(me.user.display_name)}
         <span className="sr-only"> Account menu for {me.user.display_name}</span>
-      </Menu.Trigger>
-      <Menu.Portal>
-        <Menu.Content
-          align="end"
-          sideOffset={4}
-          className="z-50 min-w-56 rounded-card border border-border bg-surface p-1 shadow-md"
-        >
-          <div className="px-3 py-2">
-            <p className="text-sm font-medium text-ink">{me.user.display_name}</p>
-            <p className="text-xs text-ink-muted">{me.user.email}</p>
+      </M.Trigger>
+      <MenuContent align="end" className="w-60">
+        <div className="flex items-center gap-2.5 px-2.5 py-2">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-avatar text-[12.5px] font-semibold text-accent-ink">
+            {initials(me.user.display_name)}
+          </span>
+          <div className="min-w-0">
+            <p className="truncate font-medium text-ink">{me.user.display_name}</p>
+            <p className="truncate text-xs text-ink-muted">{me.user.email}</p>
           </div>
-          <Menu.Separator className="my-1 h-px bg-border" />
-          {(
-            [
-              ["profile", "Profile"],
-              ["sessions", "Sessions"],
-              ["tokens", "API tokens"],
-              ["security", "Two-step verification"],
-            ] as const
-          ).map(([tab, label]) => (
-            <Menu.Item
-              key={tab}
-              className={item}
-              onSelect={() => void navigate({ to: "/profile", search: { tab } })}
-            >
-              {label}
-            </Menu.Item>
-          ))}
-          <Menu.Separator className="my-1 h-px bg-border" />
-          <Menu.Item
-            className={item}
-            onSelect={() =>
-              void api.POST("/api/v1/auth/logout").finally(() => {
-                qc.clear();
-                void navigate({ to: "/login" });
-              })
-            }
-          >
-            Sign out
-          </Menu.Item>
-        </Menu.Content>
-      </Menu.Portal>
-    </Menu.Root>
+        </div>
+        <MenuSeparator />
+        {(
+          [
+            ["profile", "Profile"],
+            ["sessions", "Sessions"],
+            ["tokens", "API tokens"],
+            ["security", "Two-step verification"],
+          ] as const
+        ).map(([tab, label]) => (
+          <MenuItem key={tab} onSelect={() => void navigate({ to: "/profile", search: { tab } })}>
+            {label}
+          </MenuItem>
+        ))}
+        <MenuSeparator />
+        <MenuItem
+          onSelect={() =>
+            void api.POST("/api/v1/auth/logout").finally(() => {
+              qc.clear();
+              void navigate({ to: "/login" });
+            })
+          }
+        >
+          Sign out
+        </MenuItem>
+      </MenuContent>
+    </M.Root>
   );
 }
 
 /**
- * Application shell (docs/07 §3). Only features that exist are shown in the navigation; later
- * milestones add their items here.
+ * Application shell (docs/07 §3, docs/design/Sidebar + Topbar). Only features that exist are shown
+ * in the navigation; later milestones add their items here.
  */
 export function AppShell({ children }: { children: ReactNode }) {
   const me = useMe().data;
@@ -292,8 +386,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <nav
         aria-label="Primary"
         className={cn(
-          "flex shrink-0 flex-col gap-6 bg-sidebar px-3 py-4 text-sidebar-ink",
-          collapsed ? "w-16" : "w-60",
+          "flex shrink-0 flex-col gap-5 bg-sidebar px-3 py-4 text-sidebar-ink transition-[width] duration-150",
+          collapsed ? "w-16" : "w-[var(--sidebar-width)]",
         )}
       >
         <Link to="/" className={cn("flex h-8 items-center px-2", collapsed && "justify-center px-0")}>
@@ -303,65 +397,55 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Logo variant="dark" className="h-7 w-auto" />
           )}
         </Link>
-        <div className="flex flex-col gap-1">
-          <NavLink item={{ to: "/projects", label: "Projects", icon: FolderKanban }} collapsed={collapsed} />
-        </div>
-        {current ? (
-          <div className="flex flex-col gap-1">
-            <p
-              className={cn(
-                "px-2.5 text-[11px] font-semibold uppercase tracking-wide text-sidebar-ink/60",
-                collapsed && "sr-only",
-              )}
-            >
-              {current.key}
-            </p>
+        {projects ? (
+          <NavSection collapsed={collapsed}>
+            <ProjectSwitcher projects={projects} current={current} collapsed={collapsed} />
+            {projectItems.length ? <div className="h-2" /> : null}
             {projectItems.map((i) => (
               <NavLink key={i.label} item={i} collapsed={collapsed} />
             ))}
-          </div>
+          </NavSection>
         ) : null}
-        {isAdmin ? (
-          <div className="flex flex-col gap-1">
-            <p
-              className={cn(
-                "px-2.5 text-[11px] font-semibold uppercase tracking-wide text-sidebar-ink/60",
-                collapsed && "sr-only",
-              )}
-            >
-              Organization
-            </p>
-            <NavLink
-              item={{ to: "/admin/invitations", label: "Invitations", icon: UserPlus }}
-              collapsed={collapsed}
-            />
-            <NavLink
-              item={{ to: "/admin/security", label: "Security policy", icon: Shield }}
-              collapsed={collapsed}
-            />
-          </div>
-        ) : null}
-        <button
-          type="button"
-          onClick={toggle}
-          className="mt-auto flex h-8 items-center gap-2 rounded-control px-2.5 text-xs text-sidebar-ink hover:bg-white/5"
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {collapsed ? (
-            <ChevronsRight aria-hidden="true" className="size-4" />
-          ) : (
-            <ChevronsLeft aria-hidden="true" className="size-4" />
-          )}
-          {collapsed ? null : "Collapse"}
-        </button>
+        <NavSection label="Organization" collapsed={collapsed}>
+          <NavLink item={{ to: "/projects", label: "Projects", icon: FolderKanban }} collapsed={collapsed} />
+          {isAdmin ? (
+            <>
+              <NavLink
+                item={{ to: "/admin/invitations", label: "Invitations", icon: UserPlus }}
+                collapsed={collapsed}
+              />
+              <NavLink
+                item={{ to: "/admin/security", label: "Security policy", icon: Shield }}
+                collapsed={collapsed}
+              />
+            </>
+          ) : null}
+        </NavSection>
+        <div className="mt-auto border-t border-sidebar-raised pt-2">
+          <button
+            type="button"
+            onClick={toggle}
+            className={cn(
+              "flex h-8 w-full items-center gap-2 rounded-control px-2.5 text-xs text-sidebar-label transition-colors hover:bg-sidebar-raised hover:text-sidebar-ink",
+              collapsed && "justify-center px-0",
+            )}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? (
+              <ChevronsRight aria-hidden="true" className="size-4" />
+            ) : (
+              <ChevronsLeft aria-hidden="true" className="size-4" />
+            )}
+            {collapsed ? null : "Collapse"}
+          </button>
+        </div>
       </nav>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border bg-surface px-6">
-          {projects ? <ProjectSwitcher projects={projects} current={current} /> : null}
+        <header className="flex h-[var(--topbar-height)] shrink-0 items-center gap-4 border-b border-border bg-surface px-6">
           <Breadcrumbs project={current} />
-          <div className="ml-auto">{me ? <UserMenu me={me} /> : null}</div>
+          {me ? <UserMenu me={me} /> : null}
         </header>
-        <main id="main" className="min-h-0 flex-1 overflow-auto p-6">
+        <main id="main" className="min-h-0 flex-1 overflow-auto">
           {children}
         </main>
       </div>

@@ -30,13 +30,13 @@ export function ForgotPage() {
       {sent ? (
         <div className="flex flex-col gap-4 text-sm text-ink-secondary">
           <p role="status">If an account exists for {email}, a reset link is on its way.</p>
-          <Link to="/login" className="text-accent hover:underline">
+          <Link to="/login" className="text-link hover:underline">
             Back to sign in
           </Link>
         </div>
       ) : (
         <form
-          className="flex flex-col gap-4"
+          className="flex flex-col gap-[18px]"
           onSubmit={(e) => {
             e.preventDefault();
             void api
@@ -54,6 +54,7 @@ export function ForgotPage() {
             {(p) => (
               <Input
                 {...p}
+                className="h-10 px-3"
                 type="email"
                 required
                 autoFocus
@@ -64,7 +65,7 @@ export function ForgotPage() {
               />
             )}
           </Field>
-          <Button type="submit" disabled={!email}>
+          <Button type="submit" size="lg" disabled={!email}>
             Send reset link
           </Button>
         </form>
@@ -96,16 +97,32 @@ export function ResetPage({ token }: { token: string }) {
   });
   return (
     <AuthCard title="Choose a new password" subtitle="All your sessions will be signed out.">
-      <form className="flex flex-col gap-4" onSubmit={(e) => void onSubmit(e)} noValidate>
+      <form className="flex flex-col gap-[18px]" onSubmit={(e) => void onSubmit(e)} noValidate>
         <FormError message={error} />
         <Field label="New password" hint={PASSWORD_HINT} error={form.formState.errors.password?.message}>
-          {(p) => <Input {...p} type="password" autoComplete="new-password" {...form.register("password")} />}
+          {(p) => (
+            <Input
+              {...p}
+              className="h-10 px-3"
+              type="password"
+              autoComplete="new-password"
+              {...form.register("password")}
+            />
+          )}
         </Field>
         <Field label="Confirm password" error={form.formState.errors.confirm?.message}>
-          {(p) => <Input {...p} type="password" autoComplete="new-password" {...form.register("confirm")} />}
+          {(p) => (
+            <Input
+              {...p}
+              className="h-10 px-3"
+              type="password"
+              autoComplete="new-password"
+              {...form.register("confirm")}
+            />
+          )}
         </Field>
         <Checkbox label="Also revoke my API tokens" {...form.register("revoke")} />
-        <Button type="submit" disabled={form.formState.isSubmitting}>
+        <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
           Set password
         </Button>
       </form>

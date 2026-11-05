@@ -80,7 +80,7 @@ export function ConfirmDialog({
         </Field>
       ) : null}
       {error ? (
-        <p role="alert" className="mt-3 text-sm text-[var(--status-fail-fg)]">
+        <p role="alert" className="mt-3 text-[13px] text-danger">
           {errorMessage(error)}
         </p>
       ) : null}

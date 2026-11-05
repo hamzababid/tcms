@@ -22,7 +22,12 @@ export const Route = createFileRoute("/_app/p/$projectKey/repository")({
     const me = useMe();
     const search = Route.useSearch();
     const navigate = Route.useNavigate();
-    if (!me.data) return <Skeleton />;
+    if (!me.data)
+      return (
+        <div className="p-6">
+          <Skeleton />
+        </div>
+      );
     return (
       <RepositoryPage
         project={project}

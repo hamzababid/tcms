@@ -18,10 +18,25 @@ export const Route = createFileRoute("/_app/p/$projectKey/cases/new")({
     const folders = useFolders(project.id, false);
     const members = useMembers(project.id);
     const tags = useTags(project.id);
-    if (!me.data || folders.isPending || members.isPending) return <Skeleton rows={8} />;
-    if (folders.isError) return <ErrorState error={folders.error} />;
+    if (!me.data || folders.isPending || members.isPending)
+      return (
+        <div className="p-6">
+          <Skeleton rows={8} />
+        </div>
+      );
+    if (folders.isError)
+      return (
+        <div className="p-6">
+          <ErrorState error={folders.error} />
+        </div>
+      );
     const start = folders.data.find((f) => f.id === folder) ?? folders.data[0];
-    if (!start) return <EmptyState text="Create a folder in the repository before adding cases." />;
+    if (!start)
+      return (
+        <div className="p-6">
+          <EmptyState text="Create a folder in the repository before adding cases." />
+        </div>
+      );
     return (
       <CaseEditor
         key={folder ?? "new"}

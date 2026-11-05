@@ -1,3 +1,4 @@
+import { LockKeyhole } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
@@ -37,6 +38,7 @@ export function MfaPage({ returnTo }: { returnTo: string | undefined }) {
 
   return (
     <AuthCard
+      icon={<LockKeyhole aria-hidden="true" className="size-5" />}
       title="Two-step verification"
       subtitle={
         useRecovery
@@ -45,7 +47,7 @@ export function MfaPage({ returnTo }: { returnTo: string | undefined }) {
       }
     >
       <form
-        className="flex flex-col gap-4"
+        className="flex flex-col gap-[18px]"
         onSubmit={(e) => {
           e.preventDefault();
           void submit(value.trim());
@@ -60,7 +62,7 @@ export function MfaPage({ returnTo }: { returnTo: string | undefined }) {
               autoComplete="one-time-code"
               inputMode={useRecovery ? "text" : "numeric"}
               maxLength={useRecovery ? 20 : 6}
-              className="font-mono tracking-widest"
+              className="h-10 px-3 font-mono text-base tracking-[0.3em]"
               value={value}
               onChange={(e) => {
                 const v = useRecovery ? e.target.value : e.target.value.replace(/\D/g, "");
@@ -70,7 +72,7 @@ export function MfaPage({ returnTo }: { returnTo: string | undefined }) {
             />
           )}
         </Field>
-        <Button type="submit" disabled={busy || value.length === 0}>
+        <Button type="submit" size="lg" disabled={busy || value.length === 0}>
           Verify
         </Button>
         <Button
@@ -83,7 +85,7 @@ export function MfaPage({ returnTo }: { returnTo: string | undefined }) {
           {useRecovery ? "Use the authenticator code" : "Use a recovery code"}
         </Button>
         {error?.includes("Sign in again") ? (
-          <Link to="/login" className="text-center text-sm text-accent hover:underline">
+          <Link to="/login" className="text-center text-[13px] text-link hover:underline">
             Back to sign in
           </Link>
         ) : null}

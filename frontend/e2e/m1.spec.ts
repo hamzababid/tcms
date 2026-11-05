@@ -56,7 +56,8 @@ test("TCMS-001: a member signs in and lands on their project (review K5)", async
   // With one project she lands on it; with several (and none remembered) on the project list.
   await expect(page).toHaveURL(/\/(p\/SPARK\/activity|projects)$/);
   await page.goto("/p/SPARK/activity");
-  await expect(page.getByRole("heading", { name: /SPARK Platform · Activity/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Activity", level: 1 })).toBeVisible();
+  await expect(page.getByRole("button", { name: /SPARK Platform/ })).toBeVisible(); // sidebar project switcher
   const nav = page.getByRole("navigation", { name: "Primary" });
   await expect(nav.getByRole("img", { name: "Assay" })).toBeVisible(); // on-dark logo (docs/brand)
   await expect(nav.getByRole("link", { name: "Settings" })).toHaveCount(0);
@@ -134,8 +135,8 @@ test("TCMS-020: a QA Manager creates a project and becomes its QA Manager", asyn
   await page.goto("/projects");
   await expectAccessible(page);
   await page.getByRole("button", { name: "New project" }).click();
-  await page.getByLabel("Key").fill(key.toLowerCase());
-  await page.getByLabel("Name").fill(`E2E ${run}`);
+  await page.getByRole("dialog").getByLabel("Key").fill(key.toLowerCase());
+  await page.getByRole("dialog").getByLabel("Name").fill(`E2E ${run}`);
   await page.getByRole("button", { name: "Create project" }).click();
   await expect(page).toHaveURL(new RegExp(`/p/${key}/settings$`));
   await expectAccessible(page);
