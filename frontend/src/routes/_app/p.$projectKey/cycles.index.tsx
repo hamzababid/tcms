@@ -2,13 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { useMe } from "@/api/queries";
 import { Skeleton } from "@/components/common/feedback";
-import { PlansPage } from "@/features/planning/PlansPage";
+import { CyclesPage } from "@/features/execution/CyclesPage";
 import { can, projectPermissions } from "@/lib/permissions";
 
 import { useRouteProject } from "../p.$projectKey";
 
-export const Route = createFileRoute("/_app/p/$projectKey/plans")({
-  component: function Plans() {
+export const Route = createFileRoute("/_app/p/$projectKey/cycles/")({
+  component: function Cycles() {
     const project = useRouteProject();
     const me = useMe();
     if (!me.data)
@@ -18,7 +18,10 @@ export const Route = createFileRoute("/_app/p/$projectKey/plans")({
         </div>
       );
     return (
-      <PlansPage project={project} canManage={can(projectPermissions(me.data, project.id), "plan.manage")} />
+      <CyclesPage
+        project={project}
+        canManage={can(projectPermissions(me.data, project.id), "cycle.manage")}
+      />
     );
   },
 });

@@ -106,7 +106,7 @@ function ProjectSwitcher({
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   useEffect(() => {
-    // `G` then `P` opens the switcher, `G` then `R` goes to the repository (docs/07 §10).
+    // `G` then `P` opens the switcher, `G R` the repository, `G C` the cycles (docs/07 §10).
     let armed = false;
     let timer = 0;
     const onKey = (e: KeyboardEvent) => {
@@ -122,11 +122,17 @@ function ProjectSwitcher({
       } else if (armed && e.key.toLowerCase() === "r" && current) {
         armed = false;
         void navigate({ to: "/p/$projectKey/repository", params: { projectKey: current.key } });
+      } else if (armed && e.key.toLowerCase() === "c" && current) {
+        armed = false;
+        // Consumed here so page shortcuts (C = new case in the repository) do not also fire.
+        e.preventDefault();
+        void navigate({ to: "/p/$projectKey/cycles", params: { projectKey: current.key } });
       }
     };
-    window.addEventListener("keydown", onKey);
+    // Capture phase: runs before page-level shortcut listeners on window.
+    window.addEventListener("keydown", onKey, true);
     return () => {
-      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keydown", onKey, true);
     };
   }, [current, navigate]);
   return (

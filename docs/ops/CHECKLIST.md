@@ -122,15 +122,39 @@ eslint/tsc/prettier) ✅, brand + API-client drift ✅.
 (`5b58cd8`) still contains only M0 + M1 + the 2026-11-04 spec update; M2/brand/design were not
 fast-forwarded onto it. Settle this (HANDOFF §5 D1) before branching M3.
 
-### M3–M9 — not started
+## M3 — Plans and cycles (branch `milestone/m3-plans-cycles`)
 
-Confirmed from code: `planning`, `execution`, `defects`, `requirements`, `reporting` contain only
-`models.py` (M0 baseline ORM); no service/rules/router/screens. Frontend has only auth, profile,
-projects, admin and testdesign features.
+Built by Kiro; reviewed against docs/ and reworked (`.kiro/specs/m3-plans-cycles/review.md`). Backend
+tests in `backend/tests/api/test_planning.py` and `test_execution.py`; E2E in `frontend/e2e/m3.spec.ts`
+(axe on every visited screen).
+
+| Story | Status | Verified by | Notes |
+| --- | --- | --- | --- |
+| US-070 Create / edit a plan | ✅ | TCMS-050 `test_us_070_create_plan_with_exit_rules_and_risks`, `test_us_070_validation`, `test_us_070_exit_rules_are_validated_against_the_rule_types`, `test_us_070_status_lifecycle`; E2E TCMS-050 | Status machine draft → active → completed (docs/02 §6.1 lists no transitions; mirrors releases) |
+| US-071 Add / remove plan cases | ✅ | TCMS-051 / BR-13 `test_br_13_us_071_add_cases_reports_exclusions`, `test_us_071_add_by_folder_and_remove`; E2E TCMS-051 | Saved views → 422 until M6 (L25) |
+| US-072 Link requirements | ✅ (API) | `test_us_072_link_and_unlink_requirements` | Requirements tab in M6 (L25) |
+| US-073 Clone a plan | ✅ | `test_us_073_clone_copies_everything_except_cycles` | — |
+| US-074 Plan cases with results | ✅ | `test_us_074_plan_cases_list`, `test_us_074_plan_cases_show_results_of_the_plans_cycles_only`; E2E TCMS-053 (plan › Cycles) | — |
+| US-080 Create a cycle | ✅ | AC-PLN-01 / TCMS-052 `test_br_03_br_12_ac_pln_01_create_cycle_from_plan`, `test_br_03_pins_the_approved_version_when_approval_is_enforced`, `test_selection_narrows_plan_cases_and_filters_priority`, TCMS-054 `test_tcms_054_…`, TCMS-025b `test_tcms_025b_…`; E2E AC-PLN-01 | Result shows skipped reasons after creating (L24) |
+| US-081 Add / remove runs | ✅ | TCMS-057 `test_tcms_057_remove_run_with_results_refused`; E2E repository "Add to cycle" | — |
+| US-082 Assign / claim | ✅ | TCMS-055 `test_tcms_055_bulk_assign_by_folder_notifies_the_assignee`, TCMS-056 `test_tcms_056_claim_a_pool_run`; E2E TCMS-055 + 056 | — |
+| US-083 Cycle progress | ✅ | `test_us_083_summary_is_the_execution_summary_with_progress_groups`, BR-24 `test_empty_cycle_rates_are_undefined`, `test_runs_list_filters_and_sorts`, `unit/test_metrics.py`; E2E seeded demo (By assignee) | ExecutionSummary from `reporting/metrics.py` |
+| US-084 Lifecycle: start, close, reopen, clone, archive | ✅ | TCMS-058 `test_tcms_058_…`, TCMS-059 `test_tcms_059_…`, BR-11 `test_br_11_closed_cycle_blocks_changes`, TCMS-060 `test_tcms_060_…`, `test_archive_needs_a_closed_cycle`; E2E TCMS-058 + 059 + 060 | Close with live drafts: API only until M4 (L22); BR-30 auto-start M4 (L23) |
+| US-085 Sync from plan | ✅ | BR-31 / AC-PLN-02 `test_br_31_ac_pln_02_sync_from_plan`; E2E TCMS-053 | — |
+| US-086 Newer versions: update / replace | ✅ | BR-04 `test_br_04_update_to_latest_only_without_attempts`, `test_us_086_…` (2), BR-05 `test_br_05_replace_run_supersedes`, `test_get_run_includes`; E2E BR-04 (run panel) | Replace E2E deferred to M4 (L21, decision Q5) |
+| US-087 Reorder runs | ✅ | `test_us_087_reorder_runs` | Sort by folder / priority in the UI; no drag (L27) |
+| US-029 tail: archive needs closed cycles | ✅ | `test_us_029_archive_project_needs_closed_cycles` | Dialog offers to close them |
+
+Also: audit names per docs/02 §13.1 (`test_audit_actions_follow_docs_02_13_1`; `cycle.archived` added
+to §13.1); `/resolve` maps PL/CY keys (`test_resolve_plan_and_cycle_keys`); authz matrix covers every
+M3 route; `br_manifest.COMPLETED` includes M3. Seed: SPARK-PL-1 and SPARK-CY-1. No migration (tables
+existed). Deferred items: known-limitations L21–L27.
+
+### M4–M9 — not started
 
 | Milestone | Epics | Status | Notes |
 | --- | --- | --- | --- |
-| M3 Plans & cycles | E07, E08 | ⬜ not started | Next milestone. US-070…074, US-080…087; TCMS-025b, 050…060; BR-03/04/05/11/12/31 |
+| M3 Plans & cycles | E07, E08 | ✅ done (awaiting review) | See the M3 section above |
 | M4 Execution runner | E09 | ⬜ not started | US-090…100; roll-up (BR-06…10/30/32); confirm K2 before starting |
 | M5 Defects | E10 | ⬜ not started | US-110…117; BR-19…22; AC-DEF-01 ordering (K17j) |
 | M6 Requirements, RTM, search | E11, E12 | ⬜ not started | US-120…123, US-130…133; BR-23 |

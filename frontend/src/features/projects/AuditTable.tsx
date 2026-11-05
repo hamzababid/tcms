@@ -14,6 +14,9 @@ export const ENTITY_TYPES: FilterOption[] = [
   { value: "folder", label: "Folder" },
   { value: "test_case", label: "Test case" },
   { value: "tag", label: "Tag" },
+  { value: "test_plan", label: "Test plan" },
+  { value: "test_cycle", label: "Test cycle" },
+  { value: "test_run", label: "Test run" },
   { value: "comment", label: "Comment" },
   { value: "attachment", label: "Attachment" },
 ];

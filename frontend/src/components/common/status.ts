@@ -6,6 +6,7 @@ import {
   Archive,
   ArchiveX,
   Ban,
+  CalendarClock,
   Check,
   CheckCircle2,
   Circle,
@@ -16,8 +17,10 @@ import {
   Contrast,
   Hourglass,
   ListChecks,
+  Lock,
   Octagon,
   Pencil,
+  PlayCircle,
   RotateCw,
   SkipForward,
   Wrench,
@@ -81,11 +84,28 @@ export const REQUIREMENT_RELEASE_STATUS = {
   not_covered: { label: "Not covered", tone: "skip", icon: CircleDashed, dashed: true },
 } as const satisfies Record<string, StatusSpec>;
 
+/** Test cycle lifecycle (docs/02 §7.1). */
+export const CYCLE_STATUS = {
+  planned: { label: "Planned", tone: "notrun", icon: CalendarClock },
+  active: { label: "Active", tone: "progress", icon: PlayCircle },
+  closed: { label: "Closed", tone: "na", icon: Lock },
+} as const satisfies Record<string, StatusSpec>;
+
+/** Test plan lifecycle (docs/02 §6.1). */
+export const PLAN_STATUS = {
+  draft: { label: "Draft", tone: "skip", icon: Pencil },
+  active: { label: "Active", tone: "progress", icon: PlayCircle },
+  completed: { label: "Completed", tone: "pass", icon: CheckCircle2 },
+  archived: { label: "Archived", tone: "na", icon: Archive },
+} as const satisfies Record<string, StatusSpec>;
+
 export const STATUS_KINDS = {
   execution: EXECUTION_STATUS,
   case: CASE_STATUS,
   defect: DEFECT_STATUS,
   requirement: REQUIREMENT_RELEASE_STATUS,
+  cycle: CYCLE_STATUS,
+  plan: PLAN_STATUS,
 } as const;
 
 export type StatusKind = keyof typeof STATUS_KINDS;

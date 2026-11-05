@@ -1,26 +1,47 @@
 import { useNavigate } from "@tanstack/react-router";
+import type { ColumnDef, ColumnFiltersState, PaginationState, SortingState } from "@tanstack/react-table";
 import { PlayCircle, Plus } from "lucide-react";
 import { useState } from "react";
 
-import { ApiError } from "@/api/client";
-import { useEnvironments, type Project } from "@/api/queries";
-import { DataTable, type ServerState } from "@/components/common/DataTable";
-import { EmptyState, Page, useToast } from "@/components/common/feedback";
+import { useEnvironments, useReleases, type Project } from "@/api/queries";
+import { DataTable, filterValue, sortParam } from "@/components/common/DataTable";
+import { EmptyState, Page } from "@/components/common/feedback";
+import { ProgressBar } from "@/components/common/ProgressBar";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { Dialog } from "@/components/ui/dialog";
-import { Field, Input, Select } from "@/components/ui/field";
-import type { ColumnDef } from "@tanstack/react-table";
+import { Checkbox } from "@/components/ui/field";
+import { formatDate, formatRate } from "@/lib/format";
 
-import { usePlans } from "@/features/planning/api";
+import { useCycles, type CycleListItem, type CycleQuery } from "./api";
+import { CreateCycleDialog } from "./CreateCycleDialog";
+import { CYCLE_STATUS_OPTIONS } from "./labels";
 
-import { useCycles, useCreateCycle, type CycleListItem, type CycleQuery } from "./api";
-import { CYCLE_STATUS_LABEL, CYCLE_STATUS_OPTIONS } from "./labels";
-
-/** Test cycles list (docs/07 §5.7; US-080). */
+/** Test cycles list (docs/07 §5.8; US-080, US-083). */
 export function CyclesPage({ project, canManage }: { project: Project; canManage: boolean }) {
   const navigate = useNavigate();
-  const [query, setQuery] = useState<CycleQuery>({ page: 1, page_size: 25 });
+  const environments = useEnvironments(project.id);
+  const releases = useReleases(project.id);
+  const [filters, setFilters] = useState<ColumnFiltersState>([]);
+  const [sorting, setSorting] = useState<SortingState>([{ id: "key", desc: true }]);
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 25 });
+  const [showArchived, setShowArchived] = useState(false);
   const [creating, setCreating] = useState(false);
+  const writable = canManage && project.status !== "archived";
+
+  const q = filterValue(filters, "name");
+  const status = filterValue(filters, "status");
+  const env = filterValue(filters, "environment");
+  const release = filterValue(filters, "release");
+  const query: CycleQuery = {
+    page: pagination.pageIndex + 1,
+    page_size: pagination.pageSize,
+    sort: sortParam(sorting) ?? "-key",
+    ...(q ? { q } : {}),
+    ...(status ? { status } : {}),
+    ...(env ? { environment_id: env } : {}),
+    ...(release ? { release_id: release } : {}),
+    ...(showArchived ? { include_archived: true } : {}),
+  };
   const cycles = useCycles(project.id, query);
 
   const columns: ColumnDef<CycleListItem>[] = [
@@ -28,54 +49,115 @@ export function CyclesPage({ project, canManage }: { project: Project; canManage
       id: "key",
       header: "Key",
       accessorKey: "key",
-      cell: (c) => <span className="font-mono text-[12.5px] text-ink-secondary">{c.row.original.key}</span>,
-      meta: { width: "w-32" },
+      cell: (c) => (
+        <span className="whitespace-nowrap font-mono text-[12.5px] font-medium">{c.row.original.key}</span>
+      ),
+      meta: { width: "w-32", fixed: true },
     },
-    { id: "name", header: "Name", accessorKey: "name" },
+    {
+      id: "name",
+      header: "Name",
+      accessorKey: "name",
+      cell: (c) => {
+        const r = c.row.original;
+        return (
+          <span className="block min-w-0">
+            <span className="block truncate" title={r.name}>
+              {r.name}
+              {r.archived ? <span className="ml-2 text-xs text-ink-muted">(archived)</span> : null}
+            </span>
+            {r.plan ? (
+              <span className="block truncate text-xs text-ink-muted">
+                from plan <span className="font-mono">{r.plan.key}</span>
+              </span>
+            ) : null}
+          </span>
+        );
+      },
+      meta: {
+        filter: { kind: "text", placeholder: "Key or name" },
+        fixed: true,
+        cellClassName: "max-w-0 min-w-[200px]",
+      },
+    },
     {
       id: "status",
       header: "Status",
       accessorFn: (r) => r.status,
-      cell: (c) => CYCLE_STATUS_LABEL[c.row.original.status],
+      cell: (c) => <StatusBadge kind="cycle" status={c.row.original.status} />,
       meta: { width: "w-32", filter: { kind: "select", options: CYCLE_STATUS_OPTIONS } },
     },
     {
       id: "progress",
-      header: "Runs",
+      header: "Progress",
+      enableSorting: false,
       cell: (c) => {
         const s = c.row.original.summary;
         return (
-          <span className="tabular text-[12.5px] text-ink-secondary">
-            {s.total} {s.total === 1 ? "run" : "runs"}
+          <span className="flex min-w-[180px] flex-col gap-1">
+            <ProgressBar counts={s} />
+            <span className="tabular whitespace-nowrap text-xs text-ink-secondary">
+              {c.row.original.runs_pending
+                ? "Creating runs…"
+                : s.total === 0
+                  ? "No runs"
+                  : `Executed ${formatRate(s.execution_progress)}`}
+            </span>
           </span>
         );
       },
-      meta: { width: "w-24", align: "right" },
+      meta: { width: "w-60" },
+    },
+    {
+      id: "environment",
+      header: "Environment",
+      enableSorting: false,
+      accessorFn: (r) => r.environment.name,
+      meta: {
+        width: "w-36",
+        filter: {
+          kind: "select",
+          options: (environments.data ?? []).map((e) => ({ value: e.id, label: e.name })),
+        },
+      },
+    },
+    {
+      id: "release",
+      header: "Release",
+      enableSorting: false,
+      accessorFn: (r) => r.release?.name ?? "—",
+      meta: {
+        width: "w-36",
+        filter: {
+          kind: "select",
+          options: (releases.data ?? []).map((r) => ({ value: r.id, label: r.name })),
+        },
+      },
+    },
+    {
+      id: "due_date",
+      header: "Due",
+      accessorKey: "due_date",
+      cell: (c) => (
+        <span className="whitespace-nowrap text-ink-secondary">{formatDate(c.row.original.due_date)}</span>
+      ),
+      meta: { width: "w-32" },
     },
   ];
 
-  const server: ServerState = {
-    total: cycles.data?.total ?? 0,
-    pagination: { pageIndex: query.page - 1, pageSize: query.page_size },
-    onPaginationChange: (p) => {
-      setQuery((q) => ({ ...q, page: p.pageIndex + 1, page_size: p.pageSize }));
-    },
-    sorting: [],
-    onSortingChange: () => undefined,
-    filters: query.status ? [{ id: "status", value: query.status }] : [],
-    onFiltersChange: (f) => {
-      const status = f.find((x) => x.id === "status")?.value;
-      setQuery((q) => ({ ...q, status: typeof status === "string" ? status : undefined, page: 1 }));
-    },
-  };
+  const open = (r: CycleListItem) =>
+    void navigate({
+      to: "/p/$projectKey/cycles/$cycleKey",
+      params: { projectKey: project.key, cycleKey: r.key },
+    });
 
   return (
     <Page
       title="Test cycles"
-      subtitle="Execute a plan or a slice of the repository, assign testers and track progress."
+      subtitle="Run a plan or a slice of the repository against a build, assign testers and track progress."
       width="full"
       actions={
-        canManage ? (
+        writable ? (
           <Button
             onClick={() => {
               setCreating(true);
@@ -91,37 +173,69 @@ export function CyclesPage({ project, canManage }: { project: Project; canManage
         label="Test cycles"
         columns={columns}
         data={cycles.data?.items ?? []}
-        server={server}
         loading={cycles.isPending}
         error={cycles.error}
+        onRetry={() => void cycles.refetch()}
         noun={["cycle", "cycles"]}
         getRowId={(r) => r.id}
-        rowProps={(r) => ({
-          className: "cursor-pointer",
-          onClick: () =>
-            void navigate({
-              to: "/p/$projectKey/cycles/$cycleKey",
-              params: { projectKey: project.key, cycleKey: r.key },
-            }),
-        })}
-        empty={
-          <EmptyState
-            icon={<PlayCircle className="size-5" />}
-            text="No cycles yet. Create one from a plan or the repository."
-            action={
-              canManage ? (
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setCreating(true);
-                  }}
-                >
-                  New cycle
-                </Button>
-              ) : undefined
-            }
+        initialHidden={["release"]}
+        emptyText="No cycles match these filters."
+        toolbar={
+          <Checkbox
+            label="Show archived"
+            checked={showArchived}
+            onChange={(e) => {
+              setShowArchived(e.target.checked);
+              setPagination((p) => ({ ...p, pageIndex: 0 }));
+            }}
           />
         }
+        {...(filters.length || showArchived
+          ? {}
+          : {
+              empty: (
+                <EmptyState
+                  icon={<PlayCircle className="size-5" />}
+                  text="No cycles yet. Create one from a plan or straight from the repository."
+                  {...(writable
+                    ? {
+                        action: (
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              setCreating(true);
+                            }}
+                          >
+                            New cycle
+                          </Button>
+                        ),
+                      }
+                    : {})}
+                />
+              ),
+            })}
+        rowProps={(r) => ({
+          tabIndex: 0,
+          className: "cursor-pointer focus-visible:bg-accent-tint focus-visible:outline-none",
+          onClick: () => {
+            open(r);
+          },
+          onKeyDown: (e) => {
+            if (e.key === "Enter" && e.target === e.currentTarget) open(r);
+          },
+        })}
+        server={{
+          total: cycles.data?.total ?? 0,
+          pagination,
+          onPaginationChange: setPagination,
+          sorting,
+          onSortingChange: setSorting,
+          filters,
+          onFiltersChange: (f) => {
+            setFilters(f);
+            setPagination((p) => ({ ...p, pageIndex: 0 }));
+          },
+        }}
       />
       {creating ? (
         <CreateCycleDialog
@@ -129,7 +243,7 @@ export function CyclesPage({ project, canManage }: { project: Project; canManage
           onClose={() => {
             setCreating(false);
           }}
-          onCreated={(key) => {
+          onOpen={(key) => {
             setCreating(false);
             void navigate({
               to: "/p/$projectKey/cycles/$cycleKey",
@@ -139,129 +253,5 @@ export function CyclesPage({ project, canManage }: { project: Project; canManage
         />
       ) : null}
     </Page>
-  );
-}
-
-function CreateCycleDialog({
-  project,
-  onClose,
-  onCreated,
-}: {
-  project: Project;
-  onClose: () => void;
-  onCreated: (key: string) => void;
-}) {
-  const toast = useToast();
-  const create = useCreateCycle(project.id);
-  const environments = useEnvironments(project.id);
-  const plans = usePlans(project.id, { page: 1, page_size: 100, status: "active" });
-  const [name, setName] = useState("");
-  const [environmentId, setEnvironmentId] = useState("");
-  const [planId, setPlanId] = useState("");
-  const [error, setError] = useState<string | null>(null);
-
-  const activeEnvs = (environments.data ?? []).filter((e) => !e.archived);
-
-  const submit = async () => {
-    setError(null);
-    try {
-      const result = await create.mutateAsync({
-        name: name.trim(),
-        environment_id: environmentId,
-        ...(planId ? { plan_id: planId } : {}),
-        selection: { from_plan: Boolean(planId) },
-      });
-      toast(
-        result.runs_pending ? "Cycle created; runs are being added" : `Cycle created (${result.added} runs)`,
-      );
-      onCreated(result.key);
-    } catch (e) {
-      setError(
-        e instanceof ApiError ? (e.errors[0]?.message ?? e.detail ?? e.code) : "Could not create cycle",
-      );
-    }
-  };
-
-  return (
-    <Dialog
-      open
-      onOpenChange={(o) => {
-        if (!o) onClose();
-      }}
-      title="New test cycle"
-      description="Pick an environment and, optionally, a plan to pull cases from."
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            form="create-cycle"
-            type="submit"
-            disabled={create.isPending || name.trim().length < 3 || !environmentId}
-          >
-            Create
-          </Button>
-        </>
-      }
-    >
-      <form
-        id="create-cycle"
-        className="grid gap-4"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void submit();
-        }}
-      >
-        <Field label="Name" required error={error ?? undefined}>
-          {(p) => (
-            <Input
-              {...p}
-              value={name}
-              placeholder="e.g. Regression Cycle 1"
-              onChange={(e) => {
-                setName(e.target.value);
-              }}
-            />
-          )}
-        </Field>
-        <Field label="Environment" required>
-          {(p) => (
-            <Select
-              {...p}
-              value={environmentId}
-              onChange={(e) => {
-                setEnvironmentId(e.target.value);
-              }}
-            >
-              <option value="">Select an environment…</option>
-              {activeEnvs.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.name}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
-        <Field label="From plan" hint="Leave empty to add cases later from the repository.">
-          {(p) => (
-            <Select
-              {...p}
-              value={planId}
-              onChange={(e) => {
-                setPlanId(e.target.value);
-              }}
-            >
-              <option value="">No plan</option>
-              {(plans.data?.items ?? []).map((pl) => (
-                <option key={pl.id} value={pl.id}>
-                  {pl.key} — {pl.name}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
-      </form>
-    </Dialog>
   );
 }

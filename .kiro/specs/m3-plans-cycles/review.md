@@ -52,3 +52,14 @@ in the rework tasks (tasks.md §8) unless marked otherwise.
 ## 4. Out of scope for M3 (unchanged)
 
 Recording/finalizing attempts, the runner, "Start testing", BR-30 auto-start, My Work (M4); defects column (M5); requirements tab and saved views (M6); readiness evaluation of exit rules (M7); export (M8).
+
+## 5. Frontend findings fixed in the rework
+
+| # | Problem | Fix |
+| --- | --- | --- |
+| F1 | `routes/…/plans.tsx` and `cycles.tsx` were layout routes without an `<Outlet/>`, so `/plans/SPARK-PL-1` and `/cycles/SPARK-CY-1` rendered the **list** again: plan and cycle detail were unreachable | Renamed to `plans.index.tsx` / `cycles.index.tsx` (index routes, like `cases.$caseKey.index.tsx`) |
+| F2 | Status of plans and cycles shown as text | `status.ts` has `plan` and `cycle` kinds; `StatusBadge` everywhere |
+| F3 | Mutations without error handling | Every mutation reports errors (toast or inline in the dialog); 409 `stale_row_version` opens `ConflictDialog` |
+| F4 | Project archive dialog ignored the new 409 `open_cycles` | Lists the open cycles and offers "Close cycles and archive" (`close_open_cycles: true`) |
+| F5 | Repository bulk "Add to plan" / "Add to cycle" (docs/07 §5.4, L19 "M3") missing | Added to `BulkBar` for selected cases |
+| F6 | No `G C` shortcut (docs/07 §10) | Added; the `C` of the sequence no longer also triggers "new case" in the repository |

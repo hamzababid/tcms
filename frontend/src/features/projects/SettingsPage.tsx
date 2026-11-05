@@ -901,6 +901,8 @@ function DangerZone({ project }: { project: Project }) {
   const [open, setOpen] = useState(false);
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
+  // 409 invalid_status lists planned/active cycles; archiving then offers to close them (docs/02 §4.2).
+  const [openCycles, setOpenCycles] = useState<{ key: string; name: string }[]>([]);
   const refresh = () =>
     Promise.all([
       qc.invalidateQueries({ queryKey: keys.projects }),
@@ -984,7 +986,7 @@ function DangerZone({ project }: { project: Project }) {
                 void api
                   .POST("/api/v1/projects/{project_id}/archive", {
                     params: { path: { project_id: project.id } },
-                    body: { confirm_key: confirm },
+                    body: { confirm_key: confirm, close_open_cycles: openCycles.length > 0 },
                   })
                   .then(refresh)
                   .then(() => {
@@ -993,16 +995,35 @@ function DangerZone({ project }: { project: Project }) {
                     void navigate({ to: "/projects" });
                   })
                   .catch((e: unknown) => {
-                    setError(errorMessage(e));
+                    const listed = e instanceof ApiError ? e.body.open_cycles : undefined;
+                    if (Array.isArray(listed) && listed.length > 0) {
+                      setError(null);
+                      setOpenCycles(listed as { key: string; name: string }[]);
+                    } else setError(errorMessage(e));
                   })
               }
             >
-              Archive
+              {openCycles.length > 0 ? "Close cycles and archive" : "Archive"}
             </Button>
           </>
         }
       >
         <FormError message={error} />
+        {openCycles.length > 0 ? (
+          <div role="alert" className="mb-4 text-[13px] text-ink-secondary">
+            <p className="mb-1.5 font-medium text-ink">
+              {openCycles.length === 1 ? "1 cycle is" : `${openCycles.length} cycles are`} still open.
+              Archiving closes {openCycles.length === 1 ? "it" : "them"} and discards unsaved draft results.
+            </p>
+            <ul className="list-disc pl-5">
+              {openCycles.map((c) => (
+                <li key={c.key}>
+                  <span className="font-mono">{c.key}</span> {c.name}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         <Field label="Project key">
           {(p) => (
             <Input

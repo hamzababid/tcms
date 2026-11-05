@@ -1,79 +1,149 @@
 import { useNavigate } from "@tanstack/react-router";
+import type { ColumnDef, ColumnFiltersState, PaginationState, SortingState } from "@tanstack/react-table";
 import { ClipboardList, Plus } from "lucide-react";
 import { useState } from "react";
 
-import { ApiError } from "@/api/client";
-import type { Project } from "@/api/queries";
-import { DataTable, sortParam, type ServerState } from "@/components/common/DataTable";
-import { EmptyState, Page, useToast } from "@/components/common/feedback";
+import { useMembers, useReleases, type Project } from "@/api/queries";
+import { DataTable, filterValue, sortParam } from "@/components/common/DataTable";
+import { EmptyState, Page } from "@/components/common/feedback";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { Dialog } from "@/components/ui/dialog";
-import { Field, Input, Select } from "@/components/ui/field";
-import type { ColumnDef } from "@tanstack/react-table";
+import { Checkbox } from "@/components/ui/field";
+import { formatDate } from "@/lib/format";
 
-import { usePlans, useCreatePlan, type PlanListItem, type PlanQuery, type PlanType } from "./api";
-import { PLAN_STATUS_LABEL, PLAN_TYPES } from "./labels";
+import { usePlans, type PlanListItem, type PlanQuery } from "./api";
+import { PlanForm } from "./PlanForm";
+import { PLAN_STATUS_OPTIONS, PLAN_TYPE_LABEL, PLAN_TYPES } from "./labels";
 
-/** Test plans list (docs/07; US-070). */
+/** Test plans list (docs/07 §5.7; US-070). */
 export function PlansPage({ project, canManage }: { project: Project; canManage: boolean }) {
   const navigate = useNavigate();
-  const [query, setQuery] = useState<PlanQuery>({ page: 1, page_size: 25 });
+  const members = useMembers(project.id);
+  const releases = useReleases(project.id);
+  const [filters, setFilters] = useState<ColumnFiltersState>([]);
+  const [sorting, setSorting] = useState<SortingState>([{ id: "key", desc: true }]);
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 25 });
+  const [showArchived, setShowArchived] = useState(false);
   const [creating, setCreating] = useState(false);
+  const writable = canManage && project.status !== "archived";
+
+  const q = filterValue(filters, "name");
+  const status = filterValue(filters, "status");
+  const type = filterValue(filters, "type");
+  const owner = filterValue(filters, "owner");
+  const query: PlanQuery = {
+    page: pagination.pageIndex + 1,
+    page_size: pagination.pageSize,
+    sort: sortParam(sorting) ?? "-key",
+    ...(q ? { q } : {}),
+    ...(status ? { status } : {}),
+    ...(type ? { type } : {}),
+    ...(owner ? { owner_id: owner } : {}),
+    ...(showArchived ? { include_archived: true } : {}),
+  };
   const plans = usePlans(project.id, query);
+  const releaseName = (id: string | null) =>
+    id ? (releases.data?.find((r) => r.id === id)?.name ?? "—") : "—";
 
   const columns: ColumnDef<PlanListItem>[] = [
     {
       id: "key",
       header: "Key",
       accessorKey: "key",
-      cell: (c) => <span className="font-mono text-[12.5px] text-ink-secondary">{c.row.original.key}</span>,
-      meta: { width: "w-32" },
+      cell: (c) => (
+        <span className="whitespace-nowrap font-mono text-[12.5px] font-medium">{c.row.original.key}</span>
+      ),
+      meta: { width: "w-32", fixed: true },
     },
-    { id: "name", header: "Name", accessorKey: "name", cell: (c) => c.row.original.name },
+    {
+      id: "name",
+      header: "Name",
+      accessorKey: "name",
+      cell: (c) => (
+        <span className="block truncate" title={c.row.original.name}>
+          {c.row.original.name}
+          {c.row.original.archived ? <span className="ml-2 text-xs text-ink-muted">(archived)</span> : null}
+        </span>
+      ),
+      meta: {
+        filter: { kind: "text", placeholder: "Key or name" },
+        fixed: true,
+        cellClassName: "max-w-0 min-w-[200px]",
+      },
+    },
     {
       id: "type",
       header: "Type",
+      enableSorting: false,
       accessorFn: (r) => r.type,
-      cell: (c) => <span className="capitalize">{c.row.original.type.replace(/_/g, " ")}</span>,
+      cell: (c) => <span className="whitespace-nowrap">{PLAN_TYPE_LABEL[c.row.original.type]}</span>,
       meta: { width: "w-40", filter: { kind: "select", options: PLAN_TYPES } },
     },
     {
       id: "status",
       header: "Status",
       accessorFn: (r) => r.status,
-      cell: (c) => PLAN_STATUS_LABEL[c.row.original.status],
-      meta: { width: "w-32" },
+      cell: (c) => <StatusBadge kind="plan" status={c.row.original.status} />,
+      meta: { width: "w-36", filter: { kind: "select", options: PLAN_STATUS_OPTIONS } },
+    },
+    {
+      id: "release",
+      header: "Release",
+      enableSorting: false,
+      accessorFn: (r) => releaseName(r.release_id),
+      meta: { width: "w-36" },
+    },
+    {
+      id: "owner",
+      header: "Owner",
+      enableSorting: false,
+      accessorFn: (r) => r.owner?.display_name ?? "—",
+      cell: (c) => <span className="whitespace-nowrap">{c.row.original.owner?.display_name ?? "—"}</span>,
+      meta: {
+        width: "w-40",
+        filter: {
+          kind: "select",
+          options: (members.data ?? []).map((m) => ({ value: m.user.id, label: m.user.display_name })),
+        },
+      },
+    },
+    {
+      id: "dates",
+      header: "Dates",
+      enableSorting: false,
+      cell: (c) => {
+        const r = c.row.original;
+        return (
+          <span className="whitespace-nowrap text-ink-secondary">
+            {r.start_date || r.end_date ? `${formatDate(r.start_date)} → ${formatDate(r.end_date)}` : "—"}
+          </span>
+        );
+      },
+      meta: { width: "w-56" },
     },
     {
       id: "case_count",
       header: "Cases",
+      enableSorting: false,
       accessorFn: (r) => r.case_count,
-      cell: (c) => <span className="tabular">{c.row.original.case_count}</span>,
+      cell: (c) => <span className="tabular">{c.row.original.case_count.toLocaleString()}</span>,
       meta: { width: "w-20", align: "right" },
     },
   ];
 
-  const server: ServerState = {
-    total: plans.data?.total ?? 0,
-    pagination: { pageIndex: query.page - 1, pageSize: query.page_size },
-    onPaginationChange: (p) => {
-      setQuery((q) => ({ ...q, page: p.pageIndex + 1, page_size: p.pageSize }));
-    },
-    sorting: [],
-    onSortingChange: (s) => {
-      setQuery((q) => ({ ...q, sort: sortParam(s, {}) ?? undefined, page: 1 }));
-    },
-    filters: [],
-    onFiltersChange: () => undefined,
-  };
+  const open = (r: PlanListItem) =>
+    void navigate({
+      to: "/p/$projectKey/plans/$planKey",
+      params: { projectKey: project.key, planKey: r.key },
+    });
 
   return (
     <Page
       title="Test plans"
-      subtitle="Group cases into a reusable plan, then generate cycles from it."
+      subtitle="Group cases into a plan for a release or test effort, then run cycles from it."
       width="full"
       actions={
-        canManage ? (
+        writable ? (
           <Button
             onClick={() => {
               setCreating(true);
@@ -89,141 +159,86 @@ export function PlansPage({ project, canManage }: { project: Project; canManage:
         label="Test plans"
         columns={columns}
         data={plans.data?.items ?? []}
-        server={server}
         loading={plans.isPending}
         error={plans.error}
+        onRetry={() => void plans.refetch()}
         noun={["plan", "plans"]}
         getRowId={(r) => r.id}
-        rowProps={(r) => ({
-          className: "cursor-pointer",
-          onClick: () =>
-            void navigate({
-              to: "/p/$projectKey/plans/$planKey",
-              params: { projectKey: project.key, planKey: r.key },
-            }),
-        })}
-        empty={
-          <EmptyState
-            icon={<ClipboardList className="size-5" />}
-            text="No test plans yet. Create one to organise a test effort."
-            action={
-              canManage ? (
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setCreating(true);
-                  }}
-                >
-                  New plan
-                </Button>
-              ) : undefined
-            }
+        initialHidden={["release", "dates"]}
+        emptyText="No plans match these filters."
+        toolbar={
+          <Checkbox
+            label="Show archived"
+            checked={showArchived}
+            onChange={(e) => {
+              setShowArchived(e.target.checked);
+              setPagination((p) => ({ ...p, pageIndex: 0 }));
+            }}
           />
         }
+        {...(filters.length || showArchived
+          ? {}
+          : {
+              empty: (
+                <EmptyState
+                  icon={<ClipboardList className="size-5" />}
+                  text="No test plans yet. A plan groups the cases, scope and exit criteria of a test effort."
+                  {...(writable
+                    ? {
+                        action: (
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              setCreating(true);
+                            }}
+                          >
+                            New plan
+                          </Button>
+                        ),
+                      }
+                    : {})}
+                />
+              ),
+            })}
+        rowProps={(r) => ({
+          tabIndex: 0,
+          className: "cursor-pointer focus-visible:bg-accent-tint focus-visible:outline-none",
+          onClick: () => {
+            open(r);
+          },
+          onKeyDown: (e) => {
+            if (e.key === "Enter" && e.target === e.currentTarget) open(r);
+          },
+        })}
+        server={{
+          total: plans.data?.total ?? 0,
+          pagination,
+          onPaginationChange: setPagination,
+          sorting,
+          onSortingChange: setSorting,
+          filters,
+          onFiltersChange: (f) => {
+            setFilters(f);
+            setPagination((p) => ({ ...p, pageIndex: 0 }));
+          },
+        }}
       />
       {creating ? (
-        <CreatePlanDialog
-          projectId={project.id}
+        <PlanForm
+          project={project}
+          plan={null}
           onClose={() => {
             setCreating(false);
           }}
-          onCreated={(key) => {
+          onSaved={(plan) => {
             setCreating(false);
             void navigate({
               to: "/p/$projectKey/plans/$planKey",
-              params: { projectKey: project.key, planKey: key },
+              params: { projectKey: project.key, planKey: plan.key },
             });
           }}
         />
       ) : null}
     </Page>
-  );
-}
-
-function CreatePlanDialog({
-  projectId,
-  onClose,
-  onCreated,
-}: {
-  projectId: string;
-  onClose: () => void;
-  onCreated: (key: string) => void;
-}) {
-  const toast = useToast();
-  const create = useCreatePlan(projectId);
-  const [name, setName] = useState("");
-  const [type, setType] = useState<PlanType>("regression");
-  const [error, setError] = useState<string | null>(null);
-
-  const submit = async () => {
-    setError(null);
-    try {
-      const plan = await create.mutateAsync({ name: name.trim(), type });
-      toast("Plan created");
-      onCreated(plan.key);
-    } catch (e) {
-      setError(
-        e instanceof ApiError ? (e.errors[0]?.message ?? e.detail ?? e.code) : "Could not create plan",
-      );
-    }
-  };
-
-  return (
-    <Dialog
-      open
-      onOpenChange={(o) => {
-        if (!o) onClose();
-      }}
-      title="New test plan"
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button form="create-plan" type="submit" disabled={create.isPending || name.trim().length < 3}>
-            Create
-          </Button>
-        </>
-      }
-    >
-      <form
-        id="create-plan"
-        className="grid gap-4"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void submit();
-        }}
-      >
-        <Field label="Name" required error={error ?? undefined}>
-          {(p) => (
-            <Input
-              {...p}
-              value={name}
-              placeholder="e.g. SPARK v2.5 regression"
-              onChange={(e) => {
-                setName(e.target.value);
-              }}
-            />
-          )}
-        </Field>
-        <Field label="Type" required>
-          {(p) => (
-            <Select
-              {...p}
-              value={type}
-              onChange={(e) => {
-                setType(e.target.value as PlanType);
-              }}
-            >
-              {PLAN_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
-      </form>
-    </Dialog>
   );
 }

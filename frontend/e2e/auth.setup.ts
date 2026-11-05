@@ -4,7 +4,8 @@ import { expect, test as setup } from "@playwright/test";
 // suite stays under the public auth rate limit (RATE_LIMIT_AUTH_PER_MIN, docs/ops/environment.md).
 const PASSWORD = "Passw0rd!Passw0rd"; // documented seed credential (docs/ops/local-setup.md)
 
-for (const user of ["bilal", "sana"]) {
+// Ayesha (QA Manager) is needed for cycle reopen (cycle.reopen, M3).
+for (const user of ["ayesha", "bilal", "sana"]) {
   setup(`sign in ${user}`, async ({ page }) => {
     await page.goto("/login");
     await page.getByLabel("Email").fill(`${user}@acme.test`);
