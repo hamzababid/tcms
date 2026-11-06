@@ -332,17 +332,17 @@ Level: **U** unit, **I** integration, **A** API, **E** end-to-end, **P** perform
 
 | ID | Title | Lvl | Pri | Refs | Expected |
 | --- | --- | --- | --- | --- | --- |
-| TCMS-110 | Link requirements and cases many-to-many | A | H | FR-REQ-002 | Links visible both sides |
-| TCMS-111 | Coverage status rules | U/I | H | BR-23, AC-REQ-01..04 | Matches oracle |
-| TCMS-112 | RTM for release shows uncovered | E | H | FR-REQ-004 | Filters correct |
+| TCMS-110 | Link requirement references and cases from either side and in bulk | A/E | H | FR-REQ-002 | Links visible both sides |
+| TCMS-111 | Coverage status rules and scope (SQL vs Python oracle, property test) | U/I | H | BR-23, AC-REQ-01..05 | Matches oracle |
+| TCMS-112 | RTM for release shows uncovered and filters | A/E | H | FR-REQ-004 | Filters correct |
 | TCMS-113 | Execution summary rates and undefined denominators | U/A | H | BR-24 | Matches oracle; null for 0 |
 | TCMS-114 | Superseded runs excluded from metrics | A | H | BR-24 | Counts exclude |
 | TCMS-115 | Manager dashboard widgets consistent with reports | E | M | FR-RPT-001 | Same numbers |
 | TCMS-116 | Readiness rules evaluate and decision stored immutable | A | H | FR-RPT-006 | Snapshot stored; append-only |
 | TCMS-117 | Export cycle report XLSX with formula-injection protection | A | M | FR-RPT-005, A03 | Cells prefixed |
 | TCMS-118 | Global search by exact key | E | M | FR-SRCH-001 | Jumps to item |
-| TCMS-119 | Fuzzy title search within project only | A | M | FR-SRCH-001 | Scoped results |
-| TCMS-120 | Saved view shared within project | E | L | FR-SRCH-003 | Visible to members |
+| TCMS-119 | Text search grouped by type, scoped to my projects, < 500 ms p95 | A | M | FR-SRCH-001 | Scoped results |
+| TCMS-120 | Saved views private/shared and defaults | A/E | L | FR-SRCH-003 | Visible to members; default opens the list |
 
 ### 15.8 Audit, import/export, platform
 

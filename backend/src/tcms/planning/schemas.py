@@ -97,7 +97,7 @@ class AddCasesRequest(_Model):
     folder_ids: list[UUID] | None = None
     include_subfolders: bool = True
     tags: list[str] | None = None
-    saved_view_id: UUID | None = None  # Q2: accepted but rejected (422) until M6
+    saved_view_id: UUID | None = Field(default=None, description="A repository saved view (M6)")
 
 
 class CaseIdsRequest(_Model):
@@ -105,7 +105,15 @@ class CaseIdsRequest(_Model):
 
 
 class RequirementIdsRequest(_Model):
-    requirement_ids: list[UUID] = Field(min_length=1)
+    requirement_ids: list[UUID] = Field(min_length=1, description="Requirement reference ids (ADR-024)")
+
+
+class RequirementRefsRequest(_Model):
+    references: str = Field(
+        min_length=1,
+        max_length=20000,
+        description="Requirement references, e.g. 'SPK-120, SPK-121' (ADR-024)",
+    )
 
 
 class CloneRequest(_Model):

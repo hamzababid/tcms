@@ -1,6 +1,6 @@
 # Known limitations
 
-Current as of M3 (2026-11-05). Remove entries when resolved.
+Current as of M6 (2026-11-06). Remove entries when resolved.
 
 | # | Limitation | Impact | Plan |
 | --- | --- | --- | --- |
@@ -15,10 +15,10 @@ Current as of M3 (2026-11-05). Remove entries when resolved.
 | L15 | Bulk actions over 200 cases run as a job, but the UI does not report completion; the list refreshes on the next load | User refreshes to see the result | M7 notification bell / job progress |
 | L16 | Notifications (review requested, returned, approved, mentions) are stored but there is no notification bell yet | Not visible in the UI | M7 |
 | L18 | Attachments and pasted images need a saved case (the upload targets its ID); the new-case editor says so | One extra step for new cases | — |
-| L19 | Requirement filters (`requirement_id`, `has_requirements`) and the export bulk action are not built. "Add to plan" / "Add to cycle" work on selected cases, not on "Select all matching" | — | M6 (requirements), M8 (export) |
-| L20 | The design's topbar search, notification bell and "Keyboard shortcuts" footer (docs/design/Topbar, Sidebar) are not rendered until those features exist (no dummy controls) | — | Global search and shortcut help: M8; notifications: M7 |
+| L19 | The export bulk action is not built. "Add to plan" / "Add to cycle" work on selected cases, not on "Select all matching" (the requirement filters arrived in M6) | — | M8 (export) |
+| L20 | The design's notification bell and "Keyboard shortcuts" footer (docs/design/Topbar, Sidebar) are not rendered until those features exist (no dummy controls); global search arrived in M6 | — | Shortcut help: M8; notifications: M7 |
 | L24 | The new-cycle dialog shows "added N · skipped M" with reasons **after** creating, not the "will add N, skip M" preview of docs/07 §5.8 (docs/06 has no dry-run endpoint) | One extra look after creating | Add a dry-run to docs/06 if the preview is wanted |
-| L25 | Plan detail has no **Requirements** tab and the "Add cases" dialog has no **Saved view** tab (`saved_view_id` → 422); the plan Overview lists exit rules but not their readiness | — | M6 (requirements, saved views), M7 (readiness) |
+| L25 | The plan Overview lists exit rules but not their readiness (the Requirements tab and the "Add cases › Saved view" tab arrived in M6) | — | M7 (readiness) |
 | L26 | Cycle runs have no export (the Bugs column arrived in M5) | — | M8 (export) |
 | L27 | Runs are reordered with "Sort runs by folder / priority"; drag-and-drop reordering (`run_ids_in_order` is supported by the API) is not in the UI | — | When asked for |
 | L29 | Evidence attaches to a step (`test_step_result`) only; attempt-level attachments (`test_result`) are not offered in the runner | Text-format cases have no evidence upload | When asked for |
@@ -26,6 +26,11 @@ Current as of M3 (2026-11-05). Remove entries when resolved.
 | L31 | The 50-tester save target (AC-EXE-09) is checked by a timing test, not a load test on the TM-4 seed | — | M8 (k6) |
 | L32 | Assay does not read bug status from the tracker (ADR-023): "Ready for retest" is a manual action by a QA Lead or Manager, and the readiness rule counts failed runs, not open bugs | A fixed bug needs one click in Assay to flag its runs | Phase 2 tracker connector (FR-DEF-007) |
 | L33 | Bug links have no notifications (a linked run being flagged for retest does not notify the tester yet) | Testers see ⟳ in My Work and the cycle | M7 notification bell |
-| L34 | Requirement-level bug links are derived from case links only; the Traceability view that shows them arrives with requirements | — | M6 |
 | L35 | The unused baseline defect tables (`defects`, `defect_links`, `defect_status_history`, `defect_watchers`) and the `defect.transition.*` permissions stay in the schema | No effect on users | Drop or reuse with the tracker connector |
 | L36 | Two simultaneous project creations with the same name return 500 instead of `409 name_taken` (race between the name check and the insert) | Rare; seen only in parallel E2E | Map the unique violation to 409 |
+| L37 | Assay does not read requirement titles or status from the team's tool (ADR-024); the title is a label typed or pasted in Assay | A renamed story keeps its old title until edited | Phase 2 requirements connector |
+| L38 | The traceability matrix and the requirements, bugs and other lists have no export | — | M8 (export) |
+| L39 | The filter operators "is not" and "is empty" (docs/02 §12) are not offered on every list | Some negative filters need a saved view or the API | When asked for |
+| L40 | Saved views store filters, sort and screen state, not column visibility (which stays per browser) | Shared views open with the reader's own columns | When asked for |
+| L41 | Cycle "Add cases" has no Saved view tab (`saved_view_id` works for plans only) | Use the folder or filter tab | When asked for |
+| L42 | Global search covers the projects the user is a member of; an Org Admin sees other projects only when searching inside one | — | — |

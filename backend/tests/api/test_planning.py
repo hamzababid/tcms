@@ -11,7 +11,6 @@ from uuid import UUID, uuid4
 import pytest
 from sqlalchemy import text
 
-from tcms.core import clock, ids
 from tests.world import ApiClient, OrgHandle, World
 
 pytestmark = pytest.mark.integration
@@ -38,41 +37,6 @@ class Space:
         r = self.admin.post(self.url("/test-plans"), json=body)
         assert r.status_code == 201, r.text
         return r.json()
-
-
-def _insert_requirement(world: World, pid: UUID, org_id: UUID) -> UUID:
-    """A minimal requirement row (the requirements module/API arrives in M6)."""
-    rid = ids.new_id()
-    now = clock.now()
-    with world.factory() as s:
-        # key_num via the shared sequence helper keeps BR-16 honest even for this fixture.
-        num = s.execute(
-            text(
-                "INSERT INTO key_sequences (project_id, entity, next_value) VALUES (:p, 'requirement', 2) "
-                "ON CONFLICT (project_id, entity) DO UPDATE SET next_value = key_sequences.next_value + 1 "
-                "RETURNING next_value - 1"
-            ),
-            {"p": str(pid)},
-        ).scalar_one()
-        key = s.execute(text("SELECT key FROM projects WHERE id = :p"), {"p": str(pid)}).scalar_one()
-        s.execute(
-            text(
-                "INSERT INTO requirements (id, organization_id, project_id, key_num, key, title, type, "
-                "status, priority, created_at, created_by, updated_at, updated_by, row_version) VALUES "
-                "(:id, :org, :p, :num, :key, 'A requirement', 'functional', 'draft', 'medium', :now, NULL, "
-                ":now, NULL, 1)"
-            ),
-            {
-                "id": str(rid),
-                "org": str(org_id),
-                "p": str(pid),
-                "num": num,
-                "key": f"{key}-R-{num}",
-                "now": now,
-            },
-        )
-        s.commit()
-    return rid
 
 
 # -- TCMS-050: create with exit rules and risks (FR-PLN-001/005) ----------------------------------
@@ -241,29 +205,7 @@ def test_us_071_saved_view_rejected_until_m6(world: World) -> None:
     assert r.status_code == 422, r.text
 
 
-# -- US-072: requirement links (FR-PLN-003) -------------------------------------------------------
-
-
-def test_us_072_link_and_unlink_requirements(world: World) -> None:
-    sp = Space(world)
-    plan = sp.create_plan(name="Req plan")
-    rid = _insert_requirement(world, sp.pid, sp.org.id)
-    linked = sp.admin.post(
-        f"/api/v1/test-plans/{plan['id']}/requirements", json={"requirement_ids": [str(rid)]}
-    )
-    assert linked.status_code == 200, linked.text
-    assert linked.json()["count"] == 1
-    assert sp.admin.get(f"/api/v1/test-plans/{plan['id']}").json()["requirement_count"] == 1
-    # unknown requirement rejected
-    bad = sp.admin.post(
-        f"/api/v1/test-plans/{plan['id']}/requirements", json={"requirement_ids": [str(uuid4())]}
-    )
-    assert bad.status_code == 422
-    # unlink
-    rem = sp.admin.request(
-        "DELETE", f"/api/v1/test-plans/{plan['id']}/requirements", json={"requirement_ids": [str(rid)]}
-    ).json()
-    assert rem["count"] == 1
+# US-072 (plan requirement references, ADR-024): tests/api/test_requirements.py::test_us_072_plan_requirements_link_and_unlink
 
 
 # -- US-073: clone (FR-PLN-006) -------------------------------------------------------------------

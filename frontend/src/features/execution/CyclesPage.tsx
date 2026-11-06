@@ -10,6 +10,7 @@ import { ProgressBar } from "@/components/common/ProgressBar";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/field";
+import { SavedViewsMenu, useSavedViews } from "@/features/views/SavedViews";
 import { formatDate, formatRate } from "@/lib/format";
 
 import { useCycles, type CycleListItem, type CycleQuery } from "./api";
@@ -23,6 +24,7 @@ export function CyclesPage({ project, canManage }: { project: Project; canManage
   const releases = useReleases(project.id);
   const [filters, setFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([{ id: "key", desc: true }]);
+  const views = useSavedViews(project.id, "test_cycle", { filters, setFilters, sorting, setSorting });
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 25 });
   const [showArchived, setShowArchived] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -181,14 +183,17 @@ export function CyclesPage({ project, canManage }: { project: Project; canManage
         initialHidden={["release"]}
         emptyText="No cycles match these filters."
         toolbar={
-          <Checkbox
-            label="Show archived"
-            checked={showArchived}
-            onChange={(e) => {
-              setShowArchived(e.target.checked);
-              setPagination((p) => ({ ...p, pageIndex: 0 }));
-            }}
-          />
+          <span className="flex items-center gap-3">
+            <SavedViewsMenu views={views} canShare={canManage} />
+            <Checkbox
+              label="Show archived"
+              checked={showArchived}
+              onChange={(e) => {
+                setShowArchived(e.target.checked);
+                setPagination((p) => ({ ...p, pageIndex: 0 }));
+              }}
+            />
+          </span>
         }
         {...(filters.length || showArchived
           ? {}

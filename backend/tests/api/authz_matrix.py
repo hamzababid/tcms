@@ -218,6 +218,23 @@ def _bug_link(f: Fixture, reference: str | None = None) -> tuple[UUID, str, UUID
         return row.id, ref, result_id
 
 
+def _requirement(f: Fixture, *, linked: bool = False) -> UUID:
+    """A requirement reference made by the Org Admin (optionally linked to the fixture case)."""
+    from tcms.core.permissions import PROJECT_PERMISSIONS
+    from tcms.core.uow import unit_of_work
+    from tcms.requirements import service as requirements
+
+    with unit_of_work(f.world.factory) as uow:
+        ctx = f.world.ctx(
+            f.org.id, f.org.admin.id, is_admin=True, project_id=f.project_id, perms=PROJECT_PERMISSIONS
+        )
+        ref = requirements.ensure_refs(uow, ctx, [f"REQ-{uuid.uuid4().hex[:8]}"]).refs[0]
+        if linked:
+            requirements.link(uow, ctx, [ref], [_as_uuid(f.case_id)])
+        return ref.id
+
+
+RQ = "/api/v1/requirements/{ref_id}"
 P = "/api/v1/projects/{project_id}"
 TC = "/api/v1/test-cases/{case_id}"
 PL = "/api/v1/test-plans/{plan_id}"
@@ -541,7 +558,7 @@ MATRIX: dict[tuple[str, str], Entry] = {
         lambda f: (
             "POST",
             PL.format(plan_id=_plan(f)) + "/requirements",
-            {"requirement_ids": [str(uuid.uuid4())]},
+            {"references": f"PRB-{uuid.uuid4().hex[:6]}"},
         ),
     ),
     ("DELETE", PL + "/requirements"): Entry(
@@ -655,6 +672,76 @@ MATRIX: dict[tuple[str, str], Entry] = {
     ("POST", RS + "/finalize"): Entry(
         "project:cycle.manage", lambda f: ("POST", RS.format(result_id=_draft(f)[0]) + "/finalize", {})
     ),
+    # requirement references, coverage, traceability (M6 / E11, ADR-024)
+    ("GET", P + "/requirements"): Entry(
+        "project:project.view", lambda f: ("GET", _p(f, "/requirements"), None)
+    ),
+    ("POST", P + "/requirements"): Entry(
+        "project:requirement.manage",
+        lambda f: ("POST", _p(f, "/requirements"), {"references": f"NEW-{uuid.uuid4().hex[:6]}"}),
+    ),
+    ("POST", P + "/requirements/link-cases"): Entry(
+        "project:requirement.link",
+        lambda f: (
+            "POST",
+            _p(f, "/requirements/link-cases"),
+            {"references": f"LNK-{uuid.uuid4().hex[:6]}", "test_case_ids": [str(f.case_id)]},
+        ),
+    ),
+    ("GET", RQ): Entry("project:project.view", lambda f: ("GET", RQ.format(ref_id=_requirement(f)), None)),
+    ("PATCH", RQ): Entry(
+        "project:requirement.manage",
+        lambda f: ("PATCH", RQ.format(ref_id=_requirement(f)), {"title": "Probe"}),
+    ),
+    ("POST", RQ + "/archive"): Entry(
+        "project:requirement.manage", lambda f: ("POST", RQ.format(ref_id=_requirement(f)) + "/archive", None)
+    ),
+    ("POST", RQ + "/restore"): Entry(
+        "project:requirement.manage", lambda f: ("POST", RQ.format(ref_id=_requirement(f)) + "/restore", None)
+    ),
+    ("POST", RQ + "/test-cases"): Entry(
+        "project:requirement.link",
+        lambda f: (
+            "POST",
+            RQ.format(ref_id=_requirement(f)) + "/test-cases",
+            {"test_case_ids": [str(f.case_id)]},
+        ),
+    ),
+    ("DELETE", RQ + "/test-cases/{case_id}"): Entry(
+        "project:requirement.link",
+        lambda f: (
+            "DELETE",
+            RQ.format(ref_id=_requirement(f, linked=True)) + f"/test-cases/{f.case_id}",
+            None,
+        ),
+    ),
+    ("GET", TC + "/requirements"): Entry(
+        "project:project.view", lambda f: ("GET", _tc(f, "/requirements"), None)
+    ),
+    ("POST", TC + "/requirements"): Entry(
+        "project:requirement.link",
+        lambda f: ("POST", _tc(f, "/requirements"), {"references": f"CSE-{uuid.uuid4().hex[:6]}"}),
+    ),
+    ("GET", P + "/coverage"): Entry("project:project.view", lambda f: ("GET", _p(f, "/coverage"), None)),
+    ("GET", P + "/traceability"): Entry(
+        "project:project.view", lambda f: ("GET", _p(f, "/traceability"), None)
+    ),
+    # search and saved views (M6 / E12)
+    ("GET", "/api/v1/search"): Entry("auth", lambda f: ("GET", "/api/v1/search?q=probe", None)),
+    ("GET", P + "/saved-views"): Entry(
+        "project:project.view", lambda f: ("GET", _p(f, "/saved-views"), None)
+    ),
+    ("POST", P + "/saved-views"): Entry(
+        "project:project.view",
+        lambda f: (
+            "POST",
+            _p(f, "/saved-views"),
+            {"entity_type": "test_case", "name": f"V {uuid.uuid4().hex[:8]}", "definition": {"filters": {}}},
+        ),
+    ),
+    # Owner-only (any member may own views): covered by test_tcms_120_saved_views_private_shared_and_defaults.
+    ("PATCH", "/api/v1/saved-views/{view_id}"): Entry("project:project.view"),
+    ("DELETE", "/api/v1/saved-views/{view_id}"): Entry("project:project.view"),
     # bug links (M5 / E10, ADR-023)
     ("POST", RS + "/bug-links"): Entry(
         "project:defect.create",

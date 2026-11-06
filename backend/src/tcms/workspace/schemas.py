@@ -56,6 +56,9 @@ class ProjectSettings(BaseModel):
     require_bug_link_for_failure: bool
     bug_tracker_name: str = Field(description="Shown on buttons, e.g. 'Open in Jira' (docs/02 §8.1)")
     bug_url_template: str | None = Field(description="http(s) URL with {ref}; builds bug link URLs")
+    requirement_url_template: str | None = Field(
+        description="http(s) URL with {ref} for requirement references; empty uses bug_url_template"
+    )
 
 
 class ProjectSettingsPatch(_Model):
@@ -67,6 +70,7 @@ class ProjectSettingsPatch(_Model):
     require_bug_link_for_failure: bool | None = None
     bug_tracker_name: str | None = Field(default=None, max_length=40)
     bug_url_template: str | None = Field(default=None, max_length=500, description="Empty string clears it")
+    requirement_url_template: str | None = Field(default=None, max_length=500, description="Empty clears it")
 
 
 class ProjectCounts(BaseModel):

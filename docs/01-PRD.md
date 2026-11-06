@@ -99,7 +99,7 @@ Full step-by-step workflows are in [02 Functional Spec §14](02-Functional-Speci
 | UJ-4 | Plan release SPARK v2.5 and create Regression Cycle 01 (250 cases) with assignments | Ayesha, Bilal | Testers see their work |
 | UJ-5 | Execute assigned runs, record step results and evidence | Sana | Results recorded |
 | UJ-6 | Link the tracker bug to a failed step; developer fixes it in the tracker; lead marks it ready for retest; tester retests | Sana → Omar → Bilal → Sana | Failure, bug reference and passing retest connected in TCMS |
-| UJ-7 | Review requirement coverage for a release | Hira | Gap list of untested requirements |
+| UJ-7 | Review requirement coverage for a release (requirements referenced from the team's tool, ADR-024) | Hira | Gap list of untested requirements |
 | UJ-8 | Assess release readiness and record go/no-go | Ayesha → Faisal | Auditable release decision |
 | UJ-9 | Quarterly access review export | Zain | Evidence file for auditor |
 | UJ-10 (P2) | CI uploads JUnit XML; results appear against linked cases | QA Automation | Automated results visible beside manual |
@@ -214,12 +214,12 @@ Priority: **M** = Must (MVP), **S** = Should (Phase 2), **C** = Could (Phase 3).
 
 | ID | Requirement | Pri |
 | --- | --- | --- |
-| FR-REQ-001 | Create and edit requirements with type, priority, acceptance criteria, owner, status, target release, optional parent. | M |
-| FR-REQ-002 | Link requirements and cases many-to-many. | M |
-| FR-REQ-003 | Import requirements from CSV/Excel. | M |
+| FR-REQ-001 | Requirement references to the team's tool: reference, optional URL (project template) and title; add many at once; archive (ADR-024). | M |
+| FR-REQ-002 | Link requirement references and cases many-to-many, from either side and in bulk; list references on test plans. | M |
+| FR-REQ-003 | Add many references at once by pasting them (replaces CSV import of requirement text). | M |
 | FR-REQ-004 | Traceability matrix per release: requirement → cases → latest results → linked bugs. | M |
 | FR-REQ-005 | Coverage metrics (BR-23). | M |
-| FR-REQ-006 | Import Jira issues as read-only mirrored requirements. | S |
+| FR-REQ-006 | Show the tool's title and status for a reference (tracker connector). | S |
 | FR-REQ-007 | Advanced RTM: historical coverage per release, export to PDF. | S |
 | FR-REQ-008 | AI-assisted coverage gap analysis. | C |
 
@@ -318,7 +318,7 @@ These rules are normative. The functional specification expands each one; the da
 | BR-30 | Executing a run in a Planned cycle moves the cycle to Active. |
 | BR-31 | Cycles created from a plan snapshot the plan's case list at that moment; later plan changes affect the cycle only via "Sync from plan", which adds new cases and never removes runs with results. |
 | BR-32 | When a run is executed by someone other than its assignee, `executed_by` records the actual user; if the project enables "only assignee executes", others are blocked unless they hold `cycle.manage`. |
-| BR-33 | The source of truth for each entity is fixed (HLD §8.3): TCMS owns cases, plans, cycles, results; for Jira-linked projects Jira owns mirrored requirements; bug status always lives in the team's tracker (ADR-023). |
+| BR-33 | The source of truth for each entity is fixed (HLD §8.3): TCMS owns cases, plans, cycles, results; requirements and bugs live in the team's tool and TCMS keeps references (ADR-023, ADR-024). |
 
 ## 8. Non-functional requirements
 
@@ -423,7 +423,7 @@ These rules are normative. The functional specification expands each one; the da
 | --- | --- | --- |
 | AS-01 | Jira Cloud (not Data Center). | Connector auth/API layer changes; core unaffected. |
 | AS-02 | The narrow Jira connector starts Phase 2. | Bugs are logged in the tracker and linked in Assay by reference until then. |
-| AS-03 | For Jira-linked projects Jira is the source of truth for stories/requirements; TCMS-authored requirements elsewhere. | Requirement ownership rules (BR-33) change. |
+| AS-03 | Requirements always live in the team's tool; TCMS keeps references to them (ADR-024). | — |
 | AS-04 | Data-validation case format is Phase 2. | SPARK telemetry tests use Steps format in MVP. |
 | AS-05 | Results retained indefinitely; attachment retention configurable, default indefinite. | Add retention jobs earlier. |
 | AS-06 | JUnit XML covers SPARK automation frameworks. | Add specific parsers in Phase 2. |

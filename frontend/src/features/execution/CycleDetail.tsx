@@ -14,6 +14,7 @@ import { ProgressBar } from "@/components/common/ProgressBar";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/field";
+import { SavedViewsMenu, useSavedViews } from "@/features/views/SavedViews";
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
 import { Tabs } from "@/components/ui/tabs";
 import { useCycleBugLinks, type BugLink } from "@/features/bugs/api";
@@ -602,6 +603,7 @@ function RunsSection({
   const [view, setView] = useState<View>("all");
   const [filters, setFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
+  const views = useSavedViews(project.id, "test_run", { filters, setFilters, sorting, setSorting });
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
   const [needsRetest, setNeedsRetest] = useState(false);
   const [showSuperseded, setShowSuperseded] = useState(false);
@@ -963,6 +965,7 @@ function RunsSection({
           }
           toolbar={
             <>
+              <SavedViewsMenu views={views} canShare={canManage} />
               <Checkbox
                 label="Needs retest"
                 checked={needsRetest}

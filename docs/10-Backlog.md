@@ -171,14 +171,14 @@ Every story also meets the Definition of Done in [09 §7](09-Implementation-Road
 | US-116 | As a user, I see a project Bugs list grouped by reference | M | M | FR-DEF-006 | TCMS-105 |
 | US-117 | As a QA Manager, I can require a bug link on every failed result | M | S | FR-DEF-004 | AC-BUG-04, TCMS-106 |
 
-## E11 — Requirements and traceability (M6)
+## E11 — Requirement references and traceability (M6; ADR-024)
 
 | ID | Story | Pri | Size | Refs | Acceptance |
 | --- | --- | --- | --- | --- | --- |
-| US-120 | As a PM, I create requirements with hierarchy and acceptance criteria | M | M | FR-REQ-001 | Parent depth ≤ 5; no cycles |
-| US-121 | As a PM or QA, I link requirements and cases from either side and in bulk | M | M | FR-REQ-002 | TCMS-110 |
-| US-122 | As a PM, I see coverage and status per release | M | L | FR-REQ-005, BR-23 | AC-REQ-01..04; property test |
-| US-123 | As a PM, I use the traceability matrix with filters and export | M | L | FR-REQ-004 | TCMS-112 |
+| US-120 | As a PM, I add references to the requirements in our tool (paste many) | M | S | FR-REQ-001/003 | AC-REQ-06 |
+| US-121 | As a PM or QA, I link references and cases from either side and in bulk | M | M | FR-REQ-002 | TCMS-110 |
+| US-122 | As a PM, I see coverage and status per release | M | L | FR-REQ-005, BR-23 | AC-REQ-01..05; property test |
+| US-123 | As a PM, I use the traceability matrix with filters | M | M | FR-REQ-004 | TCMS-112 |
 
 ## E12 — Search, filters, saved views (M6)
 

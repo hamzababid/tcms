@@ -27,7 +27,9 @@ import { Route as AppPProjectKeyIndexRouteImport } from './routes/_app/p.$projec
 import { Route as AppPProjectKeyActivityRouteImport } from './routes/_app/p.$projectKey/activity'
 import { Route as AppPProjectKeyBugsRouteImport } from './routes/_app/p.$projectKey/bugs'
 import { Route as AppPProjectKeyRepositoryRouteImport } from './routes/_app/p.$projectKey/repository'
+import { Route as AppPProjectKeyRequirementsRouteImport } from './routes/_app/p.$projectKey/requirements'
 import { Route as AppPProjectKeySettingsRouteImport } from './routes/_app/p.$projectKey/settings'
+import { Route as AppPProjectKeyTraceabilityRouteImport } from './routes/_app/p.$projectKey/traceability'
 import { Route as AppPProjectKeyCasesNewRouteImport } from './routes/_app/p.$projectKey/cases.new'
 import { Route as AppPProjectKeyCyclesIndexRouteImport } from './routes/_app/p.$projectKey/cycles.index'
 import { Route as AppPProjectKeyCyclesCycleKeyRouteImport } from './routes/_app/p.$projectKey/cycles.$cycleKey'
@@ -127,11 +129,23 @@ const AppPProjectKeyRepositoryRoute =
     path: '/repository',
     getParentRoute: () => AppPProjectKeyRoute,
   } as any)
+const AppPProjectKeyRequirementsRoute =
+  AppPProjectKeyRequirementsRouteImport.update({
+    id: '/requirements',
+    path: '/requirements',
+    getParentRoute: () => AppPProjectKeyRoute,
+  } as any)
 const AppPProjectKeySettingsRoute = AppPProjectKeySettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
   getParentRoute: () => AppPProjectKeyRoute,
 } as any)
+const AppPProjectKeyTraceabilityRoute =
+  AppPProjectKeyTraceabilityRouteImport.update({
+    id: '/traceability',
+    path: '/traceability',
+    getParentRoute: () => AppPProjectKeyRoute,
+  } as any)
 const AppPProjectKeyCasesNewRoute = AppPProjectKeyCasesNewRouteImport.update({
   id: '/cases/new',
   path: '/cases/new',
@@ -197,7 +211,9 @@ export interface FileRoutesByFullPath {
   '/p/$projectKey/activity': typeof AppPProjectKeyActivityRoute
   '/p/$projectKey/bugs': typeof AppPProjectKeyBugsRoute
   '/p/$projectKey/repository': typeof AppPProjectKeyRepositoryRoute
+  '/p/$projectKey/requirements': typeof AppPProjectKeyRequirementsRoute
   '/p/$projectKey/settings': typeof AppPProjectKeySettingsRoute
+  '/p/$projectKey/traceability': typeof AppPProjectKeyTraceabilityRoute
   '/p/$projectKey/': typeof AppPProjectKeyIndexRoute
   '/p/$projectKey/cases/new': typeof AppPProjectKeyCasesNewRoute
   '/p/$projectKey/cycles/$cycleKey': typeof AppPProjectKeyCyclesCycleKeyRoute
@@ -224,7 +240,9 @@ export interface FileRoutesByTo {
   '/p/$projectKey/activity': typeof AppPProjectKeyActivityRoute
   '/p/$projectKey/bugs': typeof AppPProjectKeyBugsRoute
   '/p/$projectKey/repository': typeof AppPProjectKeyRepositoryRoute
+  '/p/$projectKey/requirements': typeof AppPProjectKeyRequirementsRoute
   '/p/$projectKey/settings': typeof AppPProjectKeySettingsRoute
+  '/p/$projectKey/traceability': typeof AppPProjectKeyTraceabilityRoute
   '/p/$projectKey': typeof AppPProjectKeyIndexRoute
   '/p/$projectKey/cases/new': typeof AppPProjectKeyCasesNewRoute
   '/p/$projectKey/cycles/$cycleKey': typeof AppPProjectKeyCyclesCycleKeyRoute
@@ -254,7 +272,9 @@ export interface FileRoutesById {
   '/_app/p/$projectKey/activity': typeof AppPProjectKeyActivityRoute
   '/_app/p/$projectKey/bugs': typeof AppPProjectKeyBugsRoute
   '/_app/p/$projectKey/repository': typeof AppPProjectKeyRepositoryRoute
+  '/_app/p/$projectKey/requirements': typeof AppPProjectKeyRequirementsRoute
   '/_app/p/$projectKey/settings': typeof AppPProjectKeySettingsRoute
+  '/_app/p/$projectKey/traceability': typeof AppPProjectKeyTraceabilityRoute
   '/_app/p/$projectKey/': typeof AppPProjectKeyIndexRoute
   '/_app/p/$projectKey/cases/new': typeof AppPProjectKeyCasesNewRoute
   '/_app/p/$projectKey/cycles/$cycleKey': typeof AppPProjectKeyCyclesCycleKeyRoute
@@ -284,7 +304,9 @@ export interface FileRouteTypes {
     | '/p/$projectKey/activity'
     | '/p/$projectKey/bugs'
     | '/p/$projectKey/repository'
+    | '/p/$projectKey/requirements'
     | '/p/$projectKey/settings'
+    | '/p/$projectKey/traceability'
     | '/p/$projectKey/'
     | '/p/$projectKey/cases/new'
     | '/p/$projectKey/cycles/$cycleKey'
@@ -311,7 +333,9 @@ export interface FileRouteTypes {
     | '/p/$projectKey/activity'
     | '/p/$projectKey/bugs'
     | '/p/$projectKey/repository'
+    | '/p/$projectKey/requirements'
     | '/p/$projectKey/settings'
+    | '/p/$projectKey/traceability'
     | '/p/$projectKey'
     | '/p/$projectKey/cases/new'
     | '/p/$projectKey/cycles/$cycleKey'
@@ -340,7 +364,9 @@ export interface FileRouteTypes {
     | '/_app/p/$projectKey/activity'
     | '/_app/p/$projectKey/bugs'
     | '/_app/p/$projectKey/repository'
+    | '/_app/p/$projectKey/requirements'
     | '/_app/p/$projectKey/settings'
+    | '/_app/p/$projectKey/traceability'
     | '/_app/p/$projectKey/'
     | '/_app/p/$projectKey/cases/new'
     | '/_app/p/$projectKey/cycles/$cycleKey'
@@ -490,11 +516,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPProjectKeyRepositoryRouteImport
       parentRoute: typeof AppPProjectKeyRoute
     }
+    '/_app/p/$projectKey/requirements': {
+      id: '/_app/p/$projectKey/requirements'
+      path: '/requirements'
+      fullPath: '/p/$projectKey/requirements'
+      preLoaderRoute: typeof AppPProjectKeyRequirementsRouteImport
+      parentRoute: typeof AppPProjectKeyRoute
+    }
     '/_app/p/$projectKey/settings': {
       id: '/_app/p/$projectKey/settings'
       path: '/settings'
       fullPath: '/p/$projectKey/settings'
       preLoaderRoute: typeof AppPProjectKeySettingsRouteImport
+      parentRoute: typeof AppPProjectKeyRoute
+    }
+    '/_app/p/$projectKey/traceability': {
+      id: '/_app/p/$projectKey/traceability'
+      path: '/traceability'
+      fullPath: '/p/$projectKey/traceability'
+      preLoaderRoute: typeof AppPProjectKeyTraceabilityRouteImport
       parentRoute: typeof AppPProjectKeyRoute
     }
     '/_app/p/$projectKey/cases/new': {
@@ -560,7 +600,9 @@ interface AppPProjectKeyRouteChildren {
   AppPProjectKeyActivityRoute: typeof AppPProjectKeyActivityRoute
   AppPProjectKeyBugsRoute: typeof AppPProjectKeyBugsRoute
   AppPProjectKeyRepositoryRoute: typeof AppPProjectKeyRepositoryRoute
+  AppPProjectKeyRequirementsRoute: typeof AppPProjectKeyRequirementsRoute
   AppPProjectKeySettingsRoute: typeof AppPProjectKeySettingsRoute
+  AppPProjectKeyTraceabilityRoute: typeof AppPProjectKeyTraceabilityRoute
   AppPProjectKeyIndexRoute: typeof AppPProjectKeyIndexRoute
   AppPProjectKeyCasesNewRoute: typeof AppPProjectKeyCasesNewRoute
   AppPProjectKeyCyclesCycleKeyRoute: typeof AppPProjectKeyCyclesCycleKeyRoute
@@ -576,7 +618,9 @@ const AppPProjectKeyRouteChildren: AppPProjectKeyRouteChildren = {
   AppPProjectKeyActivityRoute: AppPProjectKeyActivityRoute,
   AppPProjectKeyBugsRoute: AppPProjectKeyBugsRoute,
   AppPProjectKeyRepositoryRoute: AppPProjectKeyRepositoryRoute,
+  AppPProjectKeyRequirementsRoute: AppPProjectKeyRequirementsRoute,
   AppPProjectKeySettingsRoute: AppPProjectKeySettingsRoute,
+  AppPProjectKeyTraceabilityRoute: AppPProjectKeyTraceabilityRoute,
   AppPProjectKeyIndexRoute: AppPProjectKeyIndexRoute,
   AppPProjectKeyCasesNewRoute: AppPProjectKeyCasesNewRoute,
   AppPProjectKeyCyclesCycleKeyRoute: AppPProjectKeyCyclesCycleKeyRoute,

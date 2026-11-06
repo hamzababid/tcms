@@ -511,7 +511,34 @@ Indexes: `ux_defects__project_id_key_num`, `ix_defects__project_status_severity`
 
 **defect_watchers**: `defect_id`, `user_id`, PK both.
 
-### 3.7 Requirements
+### 3.7 Requirement references (M6, ADR-024; `docs/schema/05_m6_requirement_refs.sql`)
+
+Requirements live in each team's tool; Assay stores references to them, links them to cases and plans, and computes coverage (docs/04 §7).
+
+**requirement_refs**
+
+| Column | Type | Null | Notes |
+| --- | --- | --- | --- |
+| id | uuid | no | PK; unique `(project_id, id)` for composite FKs |
+| organization_id, project_id | uuid | no | composite FK to projects |
+| reference | text | no | 1–100, trimmed (`SPK-120`) |
+| reference_norm | text | no | `upper(reference)`; duplicate check and search |
+| url | text | yes | ≤ 2,000, `^https?://`; when null the UI builds one from `requirement_url_template` (falls back to `bug_url_template`) |
+| title | text | yes | ≤ 255; a label only, not synced |
+| archived_at | timestamptz | yes | archived references keep their links but leave coverage |
+| std | | | |
+
+Indexes: `ux_requirement_refs__project_reference (project_id, reference_norm)`, trigram `ix_requirement_refs__reference_trgm`, `ix_requirement_refs__title_trgm`.
+
+**requirement_ref_cases**: `ref_id`, `test_case_id`, `organization_id`, `project_id`, `created_at`, `created_by`; PK `(ref_id, test_case_id)`; composite FKs `(project_id, ref_id)` and `(project_id, test_case_id)`, both ON DELETE CASCADE; index `ix_requirement_ref_cases__test_case_id`.
+
+**plan_requirement_refs**: `plan_id`, `ref_id`, `organization_id`, `project_id`, `created_at`, `created_by`; PK `(plan_id, ref_id)`; composite FKs ON DELETE CASCADE; index `ix_plan_requirement_refs__ref_id`. A reference is in scope for release R when a plan of R lists it or a linked case ran in a cycle of R.
+
+The same migration adds trigram indexes for global search: `ix_bug_links__reference_trgm`, `ix_test_cycles__name_trgm`, `ix_test_plans__name_trgm`.
+
+### 3.7b Requirements (unused since ADR-024; reserved for a requirements connector)
+
+The baseline tables below (and `test_plan_requirements`) exist but hold no data.
 
 **requirements**
 

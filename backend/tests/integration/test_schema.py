@@ -54,7 +54,13 @@ def test_migrated_schema_matches_docs_baseline(database: Database) -> None:
     """pg_dump of the Alembic-migrated DB equals a DB built directly from docs/schema/0[1-9]_*.sql."""
     database.psql("-q", "-c", "DROP DATABASE IF EXISTS tcms_reference")
     database.psql("-q", "-c", "CREATE DATABASE tcms_reference OWNER tcms_owner")
-    for name in ("01_baseline.sql", "02_seed_system.sql", "03_m1_additions.sql", "04_m5_bug_links.sql"):
+    for name in (
+        "01_baseline.sql",
+        "02_seed_system.sql",
+        "03_m1_additions.sql",
+        "04_m5_bug_links.sql",
+        "05_m6_requirement_refs.sql",
+    ):
         database.psql(
             "-q", "-f", f"/schema/{name}", user="tcms_owner", db="tcms_reference", password=OWNER_PASSWORD
         )
@@ -88,7 +94,7 @@ def test_app_role_privileges(app_engine: Engine) -> None:
             .scalars()
             .all()
         )
-        assert len(tables) == 52  # docs/schema/01_baseline.sql + 03_m1_additions.sql + 04_m5_bug_links.sql
+        assert len(tables) == 55  # docs/schema/01_baseline.sql + 03_m1_additions.sql + 04/05 milestone files
         for table in tables:
             privs = {
                 p: conn.execute(

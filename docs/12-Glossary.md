@@ -5,7 +5,7 @@
 | Organization | Tenant; contains users, projects and settings. |
 | Project | Testing context with its own key (e.g. `SPARK`), repository, plans, cycles, bug links, requirements and reports. |
 | Project key | 2–10 character uppercase identifier used in human keys; immutable. |
-| Human key | Readable identifier `PROJECT-PREFIX-n` (`SPARK-TC-12`). Prefixes: TC case, PL plan, CY cycle, R requirement (D reserved). |
+| Human key | Readable identifier `PROJECT-PREFIX-n` (`SPARK-TC-12`). Prefixes: TC case, PL plan, CY cycle (D and R reserved; bugs and requirements use the team's own keys). |
 | Release | A version or milestone of the product under test (e.g. SPARK v2.5); anchors plans, cycles, readiness and coverage. |
 | Environment | Where testing happens (QA, Staging, UAT). Each cycle runs in exactly one environment (MVP). |
 | Repository | The project's library of test cases organized in folders. |
@@ -27,10 +27,10 @@
 | Needs retest | Flag on runs linked to a bug reference marked Ready for retest. |
 | Pool | Unassigned runs in a cycle that any tester can claim. |
 | Bug link | A reference (with optional URL and title) to a bug in the team's tracker, attached to an attempt or a case (ADR-023). |
-| Requirement | Something the product must do (epic, feature, story, functional/non-functional, business). |
-| Coverage | A requirement is covered when at least one active case is linked. |
+| Requirement reference | The team's identifier for a requirement or story in its own tool (`SPK-120`), with an optional link and title; linked to cases and plans (ADR-024). |
+| Coverage | A requirement reference is covered when at least one active case is linked. |
 | Status in release | Requirement status computed from the latest results of its linked cases in a release. |
-| RTM | Requirements Traceability Matrix: requirement → cases → latest results → linked bugs. |
+| RTM | Requirements Traceability Matrix: requirement reference → cases → latest results → linked bugs. |
 | Execution progress | (Passed + Failed + Blocked) ÷ (all runs − Not applicable). |
 | Pass rate | Passed ÷ (Passed + Failed + Blocked). |
 | Readiness rule | A structured exit criterion evaluated for a release (e.g. no failed runs). |

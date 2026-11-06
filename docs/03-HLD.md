@@ -122,7 +122,7 @@ flowchart TB
 | `execution` | test_cycles, test_runs, test_results, test_step_results | `testdesign`, `planning`, `workspace`, `platform` |
 | `bugs` | bug_links (ADR-023) | `execution`, `testdesign`, `workspace`, `platform` |
 | `defects` | defects, defect_links, defect_status_history, defect_watchers (unused since ADR-023) | — |
-| `requirements` | requirements, requirement_case_links | `testdesign`, `workspace`, `platform` |
+| `requirements` | requirement_refs, requirement_ref_cases (ADR-024; baseline requirements tables unused) | `testdesign`, `workspace`, `platform` |
 | `reporting` | metric_snapshots, (read access to all via SQL views) | read-only queries over all; `platform` |
 | `integrations` | integration_connections, external_links, automation_imports (P2) | calls other modules' services |
 | `platform` | audit_events, jobs, attachments, attachment_links, comments, notifications, saved_views, data_transfers, idempotency_keys | none (leaf) |

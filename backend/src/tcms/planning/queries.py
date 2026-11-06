@@ -150,3 +150,26 @@ def owning_project_of_plan(s: Session, plan_id: UUID) -> tuple[UUID, UUID] | Non
         select(TestPlan.organization_id, TestPlan.project_id).where(TestPlan.id == plan_id)
     ).first()
     return (row[0], row[1]) if row else None
+
+
+def plans_with_ref(s: Session, ctx: AccessContext, ref_id: UUID) -> list[TestPlan]:
+    """Plans that list the requirement reference (ADR-024, R-122)."""
+    ids = repo.plan_ids_with_ref(s, ctx, ref_id)
+    return [p for p in (repo.plan(s, ctx, i) for i in ids) if p is not None]
+
+
+def search_plans(s: Session, ctx: AccessContext, q: str, limit: int) -> list[TestPlan]:
+    """Global search (US-130): exact key (`SPARK-PL-3`, `PL-3`) or name contains."""
+    import re
+
+    q = q.strip()
+    base = repo.plan_list_stmt(ctx).where(TestPlan.archived_at.is_(None))
+    m = re.match(r"^(?:[A-Z][A-Z0-9]{1,9}-)?PL-(\d+)$", q, re.I)
+    if m:
+        hit = s.execute(base.where(TestPlan.key_num == int(m.group(1)))).scalars().first()
+        if hit is not None:
+            return [hit]
+    stmt = (
+        base.where(TestPlan.name.icontains(q, autoescape=True)).order_by(TestPlan.key_num.desc()).limit(limit)
+    )
+    return list(s.execute(stmt).scalars())

@@ -2,76 +2,41 @@
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
-from typing import Final
-from urllib.parse import quote, urlsplit
 
 from tcms.core.errors import FieldError
+from tcms.core.references import (
+    REFERENCE_MAX,
+    TITLE_MAX,
+    URL_MAX,
+    build_url,
+    clean_title,
+    link_url,
+    normalize_reference,
+    reference_norm,
+    reference_problem,
+    title_problem,
+    url_problem,
+)
 
-REFERENCE_MAX: Final = 100
-URL_MAX: Final = 2000
-TITLE_MAX: Final = 255
-_REFERENCE_RE: Final = re.compile(r"^\S{1,100}$")
-_CONTROL_RE: Final = re.compile(r"[\x00-\x1f\x7f]")
-
-
-def normalize_reference(raw: str) -> str:
-    """What the team writes (`SPK-431`, `#1287`, `AB#5521`), trimmed. Compared upper-cased."""
-    return raw.strip()
-
-
-def reference_norm(reference: str) -> str:
-    return normalize_reference(reference).upper()
-
-
-def reference_problem(reference: str) -> FieldError | None:
-    ref = normalize_reference(reference)
-    if not ref:
-        return FieldError("reference", "field_required", "Enter the bug's reference, e.g. SPK-431")
-    if len(ref) > REFERENCE_MAX or not _REFERENCE_RE.match(ref) or _CONTROL_RE.search(ref):
-        return FieldError("reference", "invalid_format", f"Up to {REFERENCE_MAX} characters, no spaces")
-    return None
-
-
-def url_problem(url: str | None) -> FieldError | None:
-    """AC-BUG-05: only http(s) addresses with a host are stored and rendered."""
-    if url is None or url == "":
-        return None
-    msg = "Use an address starting with http:// or https://"
-    if len(url) > URL_MAX or _CONTROL_RE.search(url) or any(c.isspace() for c in url):
-        return FieldError("url", "invalid_format", msg)
-    parts = urlsplit(url)
-    if parts.scheme.lower() not in ("http", "https") or not parts.netloc:
-        return FieldError("url", "invalid_format", msg)
-    return None
-
-
-def title_problem(title: str | None) -> FieldError | None:
-    if title is not None and len(title.strip()) > TITLE_MAX:
-        return FieldError("title", "invalid_length", f"At most {TITLE_MAX} characters")
-    return None
+__all__ = [
+    "REFERENCE_MAX",
+    "TITLE_MAX",
+    "URL_MAX",
+    "build_url",
+    "clean_title",
+    "link_problems",
+    "link_url",
+    "normalize_reference",
+    "reference_norm",
+    "reference_problem",
+    "title_problem",
+    "url_problem",
+]
 
 
 def link_problems(reference: str, url: str | None, title: str | None) -> list[FieldError]:
     return [p for p in (reference_problem(reference), url_problem(url), title_problem(title)) if p]
-
-
-def build_url(template: str | None, reference: str) -> str | None:
-    """AC-BUG-02: `{ref}` in the project template, URL-encoded (`#1287` → `%231287`)."""
-    if not template:
-        return None
-    return template.replace("{ref}", quote(normalize_reference(reference), safe="-._~"))
-
-
-def link_url(given: str | None, template: str | None, reference: str) -> str | None:
-    """A given URL is kept as given; otherwise the template builds one (stored, not recomputed)."""
-    given = (given or "").strip()
-    return given or build_url(template, reference)
-
-
-def clean_title(title: str | None) -> str | None:
-    return (title or "").strip() or None
 
 
 # -- "Copy bug details" (docs/02 §8.2) ------------------------------------------------------------

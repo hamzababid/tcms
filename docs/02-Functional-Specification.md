@@ -226,6 +226,7 @@ Fields: `name` (1–100), `slug` (immutable), security policy (`mfa_required_for
 | settings.require_bug_link_for_failure | bool, default false | If true, finalizing a Failed attempt requires a bug link on that attempt (§8) |
 | settings.bug_tracker_name | text 1–40, default `tracker` | Shown on buttons ("Open in Jira") |
 | settings.bug_url_template | `http(s)` URL with one `{ref}`, optional | Builds the URL of a bug link from its reference |
+| settings.requirement_url_template | `http(s)` URL with one `{ref}`, optional | Builds requirement reference URLs; empty uses `bug_url_template` (ADR-024) |
 
 Creating a project: creator becomes QA Manager; default environments `QA` and `Staging` created; root folder is implicit (folders with `parent_id = null` are top-level).
 
@@ -611,52 +612,49 @@ One row per reference in the project: reference (opens the URL), title (latest n
 
 Project feed shows recent audit events rendered as sentences ("Sana finalized SPARK-CY-12 / SPARK-TC-1042 as Failed"), filterable by entity type and user.
 
-## 10. Requirements and traceability (REQ)
+## 10. Requirement references and traceability (REQ)
 
-### 10.1 Requirement fields
+Requirements and stories live in each team's tool (Jira, Azure DevOps, …). Assay keeps **references** to them, links them to test cases and plans, and computes coverage per release (ADR-024). Assay stores no requirement text, type, owner, status or hierarchy.
+
+### 10.1 Requirement reference fields
 
 | Field | Rules |
 | --- | --- |
-| key | `SPARK-R-n`; for Jira-mirrored (P2) also `external_key` (e.g. `SPK-431`) |
-| title | 3–255 |
-| description | Markdown |
-| type | `epic`, `feature`, `user_story`, `functional`, `non_functional`, `business` |
-| priority | `critical`, `high`, `medium`, `low` |
-| acceptance_criteria | Markdown (task-list syntax encouraged; each criterion can be referenced in P2) |
-| owner_id | project member |
-| status | `draft`, `approved`, `implemented`, `obsolete` |
-| target_release_id | optional |
-| parent_id | optional; same project; no cycles; depth ≤ 5 |
-| source | `internal` (P2: `jira`) — `jira` requirements are read-only except links |
-| archived_at | |
+| reference | 1–100, no spaces, trimmed (`SPK-120`, `AB#4410`); unique per project, compared case-insensitively |
+| url | Optional, `http(s)` only, ≤ 2,000. When empty, built from the project's `requirement_url_template` (or the `bug_url_template` when that is empty) with `{ref}` |
+| title | Optional, ≤ 255 |
+| archived_at | Archived references leave every scope and the matrix; links are kept |
+
+"Paste many": one request takes up to 500 references separated by commas, semicolons, spaces or new lines; existing ones are reused (an archived one is restored). Adding and editing need `requirement.manage`. Linking an unknown reference to a case or plan registers it (`requirement.link` or `plan.manage`).
 
 ### 10.2 Links
 
-- Many-to-many requirement ↔ test case (FR-REQ-002); created from either side; bulk link from case list ("Link selected to requirement…").
-- Requirement ↔ bug: derived only (bug links on the requirement's cases and their results).
-- Links are not versioned; adding/removing is audited.
+- Many-to-many reference ↔ test case: from the case (Requirements tab), from the reference (Link cases: ids, folders with subfolders, tags) and in bulk from the repository ("Link to requirement"). `requirement.link`. Audited `requirement.linked` / `requirement.unlinked`.
+- Reference ↔ plan: the requirements a plan must cover (plan › Requirements). `plan.manage`.
+- Reference ↔ bug: derived (bug links on the reference's cases and their results, §8).
+- Repository filters: `requirement` (cases linked to a reference) and `has_requirements` (true/false).
 
-### 10.3 Release scope for a requirement
+### 10.3 Release scope for a reference
 
-A requirement is **in scope for release R** if `target_release_id = R` or it is linked to a test plan whose `release_id = R`.
+A reference is **in scope for release R** if a test plan with `release_id = R` lists it, or any of its linked cases has a run in a cycle with `release_id = R`. Without a release, every non-archived reference of the project is in scope.
 
 ### 10.4 Traceability matrix (RTM)
 
-Rows: requirements in scope for the selected release (or all non-archived requirements when no release selected), hierarchical by parent. Columns:
+Rows: references in scope for the selected release (or all), natural order (SPK-2 before SPK-10), no hierarchy. Columns:
 
 | Column | Content |
 | --- | --- |
-| Requirement | key, title, type, priority |
-| Coverage | number of linked active cases |
-| Cases | expandable list: case key/title, latest result in release (status badge, cycle, date), link |
+| Requirement | reference (opens the team's tool), title |
+| Cases | number of linked active cases; expandable list with the latest result in the release (status, cycle, date, executed by) |
 | Status in release | §10.5 |
-| Bugs | bug references linked to the requirement's cases or their results in the release (expandable) |
+| Latest results | one mark per linked case |
+| Bugs | bug references linked to the reference's cases (direct case links and attempt links of runs in the release) |
 
-Filters: release, status in release, uncovered only, priority, type, owner. Export CSV/XLSX (one row per requirement–case pair).
+Filters: release, status in release, uncovered only, text. "Link cases" on uncovered rows. Export → M8.
 
 ### 10.5 Coverage computation (BR-23)
 
-For release R and requirement Q:
+For release R and reference Q (in scope per §10.3):
 
 - `linked_cases(Q)` = cases linked to Q whose status ≠ `archived`.
 - **Covered** ⇔ `|linked_cases(Q)| ≥ 1`.
@@ -673,7 +671,7 @@ Coverage metrics (per release):
 
 | Metric | Definition |
 | --- | --- |
-| Total requirements | in-scope, non-archived, status ≠ obsolete |
+| Total requirements | references in scope, not archived |
 | Covered | status ≠ not_covered |
 | Not covered | status = not_covered |
 | Passed / Failed / Blocked / Not run | count by status in release |
@@ -686,6 +684,8 @@ Coverage metrics (per release):
 - AC-REQ-02: Given A passed and B failed, then status = failed.
 - AC-REQ-03: Given Q linked only to an archived case, then Q is not_covered.
 - AC-REQ-04: Given A failed in cycle 1 and passed in a later retest in cycle 2 of the same release, then A counts as passed.
+- AC-REQ-05: Given `SPK-120` listed on a plan of release R with no linked case, then the matrix for R shows it as Not covered (the gap list).
+- AC-REQ-06: Given the requirement address `https://acme.atlassian.net/browse/{ref}`, when `SPK-120` is added without a URL, then its URL is built from it; adding `spk-120` again returns the existing reference.
 
 ## 11. Dashboards and reporting (RPT)
 
@@ -788,9 +788,10 @@ Exports ≤ 10,000 rows are synchronous; larger exports run as background jobs (
 
 ## 12. Search, filters, saved views (SRCH)
 
-- **Global search** (header, `/` shortcut): scoped to current project by default with "all projects" toggle. Matches: exact key (`SPARK-TC-12`, also `TC-12`, `12` within project), external keys (P2), titles (prefix + trigram fuzzy), folder names, cycle/plan names, requirement titles and descriptions (full text), bug references and titles. Results grouped by type, top 5 each, "see all" → filtered list.
+- **Global search** (header, `/` shortcut): scoped to current project by default with "all projects" toggle. Matches: exact key (`SPARK-TC-12`, also `TC-12`, `12` within project), external keys (P2), titles (prefix + trigram fuzzy), folder names, cycle/plan keys and names, requirement references and titles, bug references and titles. Results grouped by type, top 5 each, "see all" → filtered list.
 - **Filters**: each list defines filterable fields; operators: `is`, `is not`, `in`, `contains`, `before/after/between` (dates), `is empty`. Combined with AND; multi-value fields with OR within a field.
-- **Saved views**: name, entity type, filters, columns, sort; visibility `private` or `project` (shared requires `cycle.manage` or `plan.manage` or `project.configure`). Users can set a default view per list.
+- **Saved views**: name, list (`test_case`, `test_run`, `test_plan`, `test_cycle`, `bug`, `requirement`), filters (the list's query parameters plus the screen's own state in `_ui`), sort; visibility `private` or `project` (shared requires `cycle.manage` or `plan.manage` or `project.configure`). Default: a private view marked default opens the list for its owner; a shared one marked default opens it for everyone without a private default. A repository view can be used in a plan's Add cases dialog.
+- **Command palette**: `>` in the search box lists actions (Go to …, New test case).
 
 ## 13. Audit and activity (AUD)
 
@@ -806,6 +807,8 @@ Every audit event: `id`, `occurred_at`, `organization_id`, `project_id` (nullabl
 | Test design | `folder.*`, `test_case.created`, `test_case.version_created`, `test_case.updated` (metadata), `test_case.submitted/approved/returned/deprecated/archived/restored/deleted`, `test_case.moved`, link changes |
 | Planning/execution | `plan.*`, `cycle.created/updated/started/closed/reopened/archived`, `run.added/removed/assigned/version_updated/replaced` (one event per run; bulk actions share `bulk_operation_id`; claiming is `run.assigned` with `claimed: true`), `result.started/discarded/finalized/corrected`, `result.draft_taken_over` |
 | Bug links | `bug.linked/updated/unlinked/retest_requested` |
+| Requirement references | `requirement.created/updated/archived/restored/linked/unlinked`; `plan.requirements_linked/unlinked` |
+| Saved views | `saved_view.created/updated/deleted` |
 | Requirements | `requirement.*`, `requirement.linked/unlinked` |
 | Data | `import.committed`, `export.created`, `attachment.uploaded/deleted` |
 

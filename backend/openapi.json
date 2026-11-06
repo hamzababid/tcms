@@ -1075,6 +1075,31 @@
         "title": "BugLinkRead",
         "type": "object"
       },
+      "BugRef": {
+        "properties": {
+          "reference": {
+            "title": "Reference",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "reference",
+          "url"
+        ],
+        "title": "BugRef",
+        "type": "object"
+      },
       "BugReportRead": {
         "properties": {
           "text": {
@@ -1487,25 +1512,6 @@
         ],
         "title": "CaseFormat",
         "type": "string"
-      },
-      "CaseIdsRequest": {
-        "additionalProperties": false,
-        "properties": {
-          "case_ids": {
-            "items": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "minItems": 1,
-            "title": "Case Ids",
-            "type": "array"
-          }
-        },
-        "required": [
-          "case_ids"
-        ],
-        "title": "CaseIdsRequest",
-        "type": "object"
       },
       "CaseLinkRead": {
         "properties": {
@@ -2361,6 +2367,58 @@
           "count"
         ],
         "title": "CountResponse",
+        "type": "object"
+      },
+      "CoverageRead": {
+        "description": "docs/02 \u00a710.5 metrics; rates are null when there is nothing in scope (BR-24).",
+        "properties": {
+          "blocked": {
+            "title": "Blocked",
+            "type": "integer"
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/Rate"
+          },
+          "covered": {
+            "title": "Covered",
+            "type": "integer"
+          },
+          "failed": {
+            "title": "Failed",
+            "type": "integer"
+          },
+          "not_covered": {
+            "title": "Not Covered",
+            "type": "integer"
+          },
+          "not_run": {
+            "title": "Not Run",
+            "type": "integer"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "verified": {
+            "$ref": "#/components/schemas/Rate"
+          }
+        },
+        "required": [
+          "total",
+          "covered",
+          "not_covered",
+          "passed",
+          "failed",
+          "blocked",
+          "not_run",
+          "coverage",
+          "verified"
+        ],
+        "title": "CoverageRead",
         "type": "object"
       },
       "CycleCreate": {
@@ -4032,6 +4090,47 @@
         "title": "KeyRef",
         "type": "object"
       },
+      "LatestResult": {
+        "properties": {
+          "cycle_key": {
+            "title": "Cycle Key",
+            "type": "string"
+          },
+          "executed_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "finished_at": {
+            "format": "date-time",
+            "title": "Finished At",
+            "type": "string"
+          },
+          "run_id": {
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "finished_at",
+          "executed_by",
+          "run_id",
+          "cycle_key"
+        ],
+        "title": "LatestResult",
+        "type": "object"
+      },
       "LifecycleRequest": {
         "additionalProperties": false,
         "properties": {
@@ -4049,6 +4148,52 @@
           }
         },
         "title": "LifecycleRequest",
+        "type": "object"
+      },
+      "LinkCasesRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "references": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "References",
+            "type": "string"
+          },
+          "test_case_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 1000,
+            "minItems": 1,
+            "title": "Test Case Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "references",
+          "test_case_ids"
+        ],
+        "title": "LinkCasesRequest",
+        "type": "object"
+      },
+      "LinkCount": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "created": {
+            "default": 0,
+            "description": "References registered by this request",
+            "title": "Created",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "count"
+        ],
+        "title": "LinkCount",
         "type": "object"
       },
       "LinkRequest": {
@@ -5031,6 +5176,37 @@
           "total"
         ],
         "title": "Page[PlanListItem]",
+        "type": "object"
+      },
+      "Page_RequirementRefRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RequirementRefRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "title": "Page[RequirementRefRead]",
         "type": "object"
       },
       "Page_RunListItem_": {
@@ -6022,6 +6198,30 @@
         "title": "PlanRead",
         "type": "object"
       },
+      "PlanRef": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "name"
+        ],
+        "title": "PlanRef",
+        "type": "object"
+      },
       "PlanStatus": {
         "enum": [
           "draft",
@@ -6491,6 +6691,18 @@
           "require_bug_link_for_failure": {
             "title": "Require Bug Link For Failure",
             "type": "boolean"
+          },
+          "requirement_url_template": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "http(s) URL with {ref} for requirement references; empty uses bug_url_template",
+            "title": "Requirement Url Template"
           }
         },
         "required": [
@@ -6501,7 +6713,8 @@
           "attachment_max_mb",
           "require_bug_link_for_failure",
           "bug_tracker_name",
-          "bug_url_template"
+          "bug_url_template",
+          "requirement_url_template"
         ],
         "title": "ProjectSettings",
         "type": "object"
@@ -6599,6 +6812,19 @@
               }
             ],
             "title": "Require Bug Link For Failure"
+          },
+          "requirement_url_template": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Empty clears it",
+            "title": "Requirement Url Template"
           }
         },
         "title": "ProjectSettingsPatch",
@@ -6672,6 +6898,36 @@
           "next_run_id"
         ],
         "title": "QueueRead",
+        "type": "object"
+      },
+      "Rate": {
+        "properties": {
+          "denominator": {
+            "title": "Denominator",
+            "type": "integer"
+          },
+          "numerator": {
+            "title": "Numerator",
+            "type": "integer"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "numerator",
+          "denominator",
+          "value"
+        ],
+        "title": "Rate",
         "type": "object"
       },
       "RateRead": {
@@ -6762,6 +7018,43 @@
           "name"
         ],
         "title": "Ref",
+        "type": "object"
+      },
+      "ReferencesRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "references": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "References",
+            "type": "string"
+          }
+        },
+        "required": [
+          "references"
+        ],
+        "title": "ReferencesRequest",
+        "type": "object"
+      },
+      "RefsCreated": {
+        "properties": {
+          "created": {
+            "title": "Created",
+            "type": "integer"
+          },
+          "references": {
+            "items": {
+              "$ref": "#/components/schemas/RequirementRefRead"
+            },
+            "title": "References",
+            "type": "array"
+          }
+        },
+        "required": [
+          "created",
+          "references"
+        ],
+        "title": "RefsCreated",
         "type": "object"
       },
       "ReleaseCreate": {
@@ -7049,10 +7342,116 @@
         "title": "ReorderRequest",
         "type": "object"
       },
+      "RequirementDetail": {
+        "properties": {
+          "archived": {
+            "title": "Archived",
+            "type": "boolean"
+          },
+          "case_count": {
+            "title": "Case Count",
+            "type": "integer"
+          },
+          "cases": {
+            "items": {
+              "$ref": "#/components/schemas/TraceCase"
+            },
+            "title": "Cases",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "plans": {
+            "items": {
+              "$ref": "#/components/schemas/PlanRef"
+            },
+            "title": "Plans",
+            "type": "array"
+          },
+          "reference": {
+            "title": "Reference",
+            "type": "string"
+          },
+          "row_version": {
+            "title": "Row Version",
+            "type": "integer"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "not_covered",
+                  "failed",
+                  "blocked",
+                  "not_run",
+                  "passed"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Status in the requested release (or across all cycles); docs/02 \u00a710.5",
+            "title": "Status"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "id",
+          "reference",
+          "url",
+          "title",
+          "archived",
+          "case_count",
+          "created_at",
+          "updated_at",
+          "row_version",
+          "cases",
+          "plans"
+        ],
+        "title": "RequirementDetail",
+        "type": "object"
+      },
       "RequirementIdsRequest": {
         "additionalProperties": false,
         "properties": {
           "requirement_ids": {
+            "description": "Requirement reference ids (ADR-024)",
             "items": {
               "format": "uuid",
               "type": "string"
@@ -7066,6 +7465,187 @@
           "requirement_ids"
         ],
         "title": "RequirementIdsRequest",
+        "type": "object"
+      },
+      "RequirementRefPatch": {
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Empty or null clears it",
+            "title": "Url"
+          }
+        },
+        "title": "RequirementRefPatch",
+        "type": "object"
+      },
+      "RequirementRefRead": {
+        "properties": {
+          "archived": {
+            "title": "Archived",
+            "type": "boolean"
+          },
+          "case_count": {
+            "title": "Case Count",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "reference": {
+            "title": "Reference",
+            "type": "string"
+          },
+          "row_version": {
+            "title": "Row Version",
+            "type": "integer"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "not_covered",
+                  "failed",
+                  "blocked",
+                  "not_run",
+                  "passed"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Status in the requested release (or across all cycles); docs/02 \u00a710.5",
+            "title": "Status"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "id",
+          "reference",
+          "url",
+          "title",
+          "archived",
+          "case_count",
+          "created_at",
+          "updated_at",
+          "row_version"
+        ],
+        "title": "RequirementRefRead",
+        "type": "object"
+      },
+      "RequirementRefsCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "references": {
+            "description": "One or many: 'SPK-120, SPK-121' or one per line (\u2264 500)",
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "References",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Only for a single reference",
+            "title": "Title"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Only for a single reference",
+            "title": "Url"
+          }
+        },
+        "required": [
+          "references"
+        ],
+        "title": "RequirementRefsCreate",
+        "type": "object"
+      },
+      "RequirementRefsRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "references": {
+            "description": "Requirement references, e.g. 'SPK-120, SPK-121' (ADR-024)",
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "References",
+            "type": "string"
+          }
+        },
+        "required": [
+          "references"
+        ],
+        "title": "RequirementRefsRequest",
         "type": "object"
       },
       "ResetMfaRequest": {
@@ -7873,6 +8453,275 @@
         "title": "SaveResponse",
         "type": "object"
       },
+      "SavedViewCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "definition": {
+            "$ref": "#/components/schemas/ViewDefinition"
+          },
+          "entity_type": {
+            "description": "test_case, test_run, test_plan, test_cycle, bug, requirement",
+            "title": "Entity Type",
+            "type": "string"
+          },
+          "is_default": {
+            "default": false,
+            "title": "Is Default",
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "visibility": {
+            "$ref": "#/components/schemas/ViewVisibility",
+            "default": "private"
+          }
+        },
+        "required": [
+          "entity_type",
+          "name",
+          "definition"
+        ],
+        "title": "SavedViewCreate",
+        "type": "object"
+      },
+      "SavedViewPatch": {
+        "additionalProperties": false,
+        "properties": {
+          "definition": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ViewDefinition"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "is_default": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Default"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "visibility": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ViewVisibility"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "SavedViewPatch",
+        "type": "object"
+      },
+      "SavedViewRead": {
+        "properties": {
+          "definition": {
+            "$ref": "#/components/schemas/ViewDefinition"
+          },
+          "entity_type": {
+            "title": "Entity Type",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_default": {
+            "title": "Is Default",
+            "type": "boolean"
+          },
+          "mine": {
+            "title": "Mine",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "row_version": {
+            "title": "Row Version",
+            "type": "integer"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "visibility": {
+            "$ref": "#/components/schemas/ViewVisibility"
+          }
+        },
+        "required": [
+          "id",
+          "entity_type",
+          "name",
+          "visibility",
+          "definition",
+          "is_default",
+          "mine",
+          "updated_at",
+          "row_version"
+        ],
+        "title": "SavedViewRead",
+        "type": "object"
+      },
+      "SearchGroup": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SearchItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "type": {
+            "enum": [
+              "test_case",
+              "folder",
+              "plan",
+              "cycle",
+              "requirement",
+              "bug"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "items"
+        ],
+        "title": "SearchGroup",
+        "type": "object"
+      },
+      "SearchItem": {
+        "properties": {
+          "id": {
+            "description": "Record id, or the reference for bugs",
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "description": "Key, reference or folder name",
+            "title": "Key",
+            "type": "string"
+          },
+          "project": {
+            "$ref": "#/components/schemas/SearchProject"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "type": {
+            "enum": [
+              "test_case",
+              "folder",
+              "plan",
+              "cycle",
+              "requirement",
+              "bug"
+            ],
+            "title": "Type",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tracker URL (requirements, bugs)",
+            "title": "Url"
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "key",
+          "title",
+          "project"
+        ],
+        "title": "SearchItem",
+        "type": "object"
+      },
+      "SearchProject": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "key"
+        ],
+        "title": "SearchProject",
+        "type": "object"
+      },
+      "SearchRead": {
+        "properties": {
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/SearchGroup"
+            },
+            "title": "Groups",
+            "type": "array"
+          },
+          "q": {
+            "title": "Q",
+            "type": "string"
+          }
+        },
+        "required": [
+          "q",
+          "groups"
+        ],
+        "title": "SearchRead",
+        "type": "object"
+      },
       "SelectionIn": {
         "additionalProperties": false,
         "properties": {
@@ -8429,6 +9278,128 @@
         "title": "TagRead",
         "type": "object"
       },
+      "TraceCase": {
+        "properties": {
+          "bugs": {
+            "items": {
+              "$ref": "#/components/schemas/BugRef"
+            },
+            "title": "Bugs",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "latest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LatestResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "title",
+          "latest",
+          "bugs"
+        ],
+        "title": "TraceCase",
+        "type": "object"
+      },
+      "TraceRow": {
+        "description": "docs/06 \u00a75.8 (ADR-024: a reference, no hierarchy).",
+        "properties": {
+          "bugs": {
+            "items": {
+              "$ref": "#/components/schemas/BugRef"
+            },
+            "title": "Bugs",
+            "type": "array"
+          },
+          "cases": {
+            "items": {
+              "$ref": "#/components/schemas/TraceCase"
+            },
+            "title": "Cases",
+            "type": "array"
+          },
+          "linked_cases": {
+            "title": "Linked Cases",
+            "type": "integer"
+          },
+          "requirement": {
+            "$ref": "#/components/schemas/RequirementRefRead"
+          },
+          "status_in_release": {
+            "enum": [
+              "not_covered",
+              "failed",
+              "blocked",
+              "not_run",
+              "passed"
+            ],
+            "title": "Status In Release",
+            "type": "string"
+          }
+        },
+        "required": [
+          "requirement",
+          "linked_cases",
+          "status_in_release",
+          "cases",
+          "bugs"
+        ],
+        "title": "TraceRow",
+        "type": "object"
+      },
+      "TraceabilityRead": {
+        "properties": {
+          "release_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Id"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/TraceRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/CoverageRead"
+          }
+        },
+        "required": [
+          "release_id",
+          "summary",
+          "rows"
+        ],
+        "title": "TraceabilityRead",
+        "type": "object"
+      },
       "UserRef": {
         "properties": {
           "display_name": {
@@ -8696,6 +9667,55 @@
         "title": "VersionRead",
         "type": "object"
       },
+      "ViewDefinition": {
+        "additionalProperties": false,
+        "properties": {
+          "columns": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Visible column ids, in order",
+            "title": "Columns"
+          },
+          "filters": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "The list's query parameters",
+            "title": "Filters",
+            "type": "object"
+          },
+          "sort": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort"
+          }
+        },
+        "title": "ViewDefinition",
+        "type": "object"
+      },
+      "ViewVisibility": {
+        "enum": [
+          "private",
+          "project"
+        ],
+        "title": "ViewVisibility",
+        "type": "string"
+      },
       "tcms__execution__schemas__AddCasesRequest": {
         "additionalProperties": false,
         "properties": {
@@ -8810,6 +9830,7 @@
                 "type": "null"
               }
             ],
+            "description": "A repository saved view (M6)",
             "title": "Saved View Id"
           },
           "tags": {
@@ -8830,6 +9851,25 @@
         "title": "AddCasesRequest",
         "type": "object"
       },
+      "tcms__planning__schemas__CaseIdsRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "case_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Case Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "case_ids"
+        ],
+        "title": "CaseIdsRequest",
+        "type": "object"
+      },
       "tcms__planning__schemas__CloneRequest": {
         "additionalProperties": false,
         "properties": {
@@ -8848,6 +9888,40 @@
           }
         },
         "title": "CloneRequest",
+        "type": "object"
+      },
+      "tcms__requirements__schemas__CaseIdsRequest": {
+        "additionalProperties": false,
+        "description": "Cases to link: ids and/or every case of folders (with subfolders) and tags (the Add cases picker).",
+        "properties": {
+          "folder_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 200,
+            "title": "Folder Ids",
+            "type": "array"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Tags",
+            "type": "array"
+          },
+          "test_case_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 1000,
+            "title": "Test Case Ids",
+            "type": "array"
+          }
+        },
+        "title": "CaseIdsRequest",
         "type": "object"
       }
     }
@@ -14349,6 +15423,87 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/coverage": {
+      "get": {
+        "description": "FR-REQ-005 / BR-23: coverage metrics for the release (or across all cycles).",
+        "operationId": "get_coverage_api_v1_projects__project_id__coverage_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "release_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Release Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoverageRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Get Coverage",
+        "tags": [
+          "requirements"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}/cycles": {
       "get": {
         "description": "US-080 / FR-EXE-001: each item has its ExecutionSummary.",
@@ -15435,6 +16590,322 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/requirements": {
+      "get": {
+        "description": "R-120: natural order (SPK-2 before SPK-10); each item carries its status (release or all cycles).",
+        "operationId": "list_requirements_api_v1_projects__project_id__requirements_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "description": "true: with linked cases; false: without",
+            "in": "query",
+            "name": "linked",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "true: with linked cases; false: without",
+              "title": "Linked"
+            }
+          },
+          {
+            "description": "Only the references a plan lists",
+            "in": "query",
+            "name": "plan_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only the references a plan lists",
+              "title": "Plan Id"
+            }
+          },
+          {
+            "description": "Only references in scope; status in it",
+            "in": "query",
+            "name": "release_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only references in scope; status in it",
+              "title": "Release Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_archived",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Archived",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_RequirementRefRead_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "List Requirements",
+        "tags": [
+          "requirements"
+        ]
+      },
+      "post": {
+        "description": "R-120 / AC-REQ-06: add one or many references; existing ones are returned, not duplicated.",
+        "operationId": "add_requirements_api_v1_projects__project_id__requirements_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequirementRefsCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefsCreated"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Add Requirements",
+        "tags": [
+          "requirements"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/requirements/link-cases": {
+      "post": {
+        "description": "Repository bulk action \"Link selected to requirement\u2026\" (TCMS-110).",
+        "operationId": "bulk_link_api_v1_projects__project_id__requirements_link_cases_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkCasesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkCount"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Bulk Link",
+        "tags": [
+          "requirements"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}/resolve": {
       "get": {
         "description": "`SPARK-TC-12`, `TC-12`, `12` \u2192 case; `SPARK-PL-3` / `PL-3` \u2192 plan; `SPARK-CY-1` / `CY-1` \u2192 cycle\n(docs/04 \u00a711.1). A bare number is a test case. More entity types arrive with their milestones.",
@@ -15570,6 +17041,162 @@
         "summary": "Restore Project",
         "tags": [
           "projects"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/saved-views": {
+      "get": {
+        "description": "Mine and shared; the first `is_default` entry is the view to open the list with.",
+        "operationId": "list_saved_views_api_v1_projects__project_id__saved_views_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "entity_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 40,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Entity Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SavedViewRead"
+                  },
+                  "title": "Response List Saved Views Api V1 Projects  Project Id  Saved Views Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "List Saved Views",
+        "tags": [
+          "saved-views"
+        ]
+      },
+      "post": {
+        "operationId": "create_saved_view_api_v1_projects__project_id__saved_views_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavedViewCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedViewRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Create Saved View",
+        "tags": [
+          "saved-views"
         ]
       }
     },
@@ -15966,6 +17593,43 @@
                 }
               ],
               "title": "Updated At  Lte"
+            }
+          },
+          {
+            "description": "Linked to this reference",
+            "in": "query",
+            "name": "requirement",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Linked to this reference",
+              "title": "Requirement"
+            }
+          },
+          {
+            "description": "With (true) or without (false) references",
+            "in": "query",
+            "name": "has_requirements",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "With (true) or without (false) references",
+              "title": "Has Requirements"
             }
           }
         ],
@@ -16441,6 +18105,132 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/traceability": {
+      "get": {
+        "description": "FR-REQ-004 / TCMS-112 (docs/02 \u00a710.4): the summary covers every reference in scope; the rows follow\nthe filters.",
+        "operationId": "traceability_api_v1_projects__project_id__traceability_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "release_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Release Id"
+            }
+          },
+          {
+            "description": "Comma list of statuses",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Comma list of statuses",
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "uncovered",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Uncovered",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TraceabilityRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Traceability",
+        "tags": [
+          "requirements"
+        ]
+      }
+    },
     "/api/v1/releases/{release_id}": {
       "get": {
         "operationId": "get_release_api_v1_releases__release_id__get",
@@ -16589,6 +18379,424 @@
         "summary": "Patch Release",
         "tags": [
           "projects"
+        ]
+      }
+    },
+    "/api/v1/requirements/{ref_id}": {
+      "get": {
+        "description": "The reference with its cases (latest result in the release) and the plans that list it.",
+        "operationId": "get_requirement_api_v1_requirements__ref_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ref_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ref Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "release_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Release Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequirementDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Get Requirement",
+        "tags": [
+          "requirements"
+        ]
+      },
+      "patch": {
+        "operationId": "patch_requirement_api_v1_requirements__ref_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ref_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ref Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequirementRefPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequirementRefRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Patch Requirement",
+        "tags": [
+          "requirements"
+        ]
+      }
+    },
+    "/api/v1/requirements/{ref_id}/archive": {
+      "post": {
+        "operationId": "archive_requirement_api_v1_requirements__ref_id__archive_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ref_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ref Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequirementRefRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Archive Requirement",
+        "tags": [
+          "requirements"
+        ]
+      }
+    },
+    "/api/v1/requirements/{ref_id}/restore": {
+      "post": {
+        "operationId": "restore_requirement_api_v1_requirements__ref_id__restore_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ref_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ref Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequirementRefRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Restore Requirement",
+        "tags": [
+          "requirements"
+        ]
+      }
+    },
+    "/api/v1/requirements/{ref_id}/test-cases": {
+      "post": {
+        "description": "R-121 / TCMS-110: link cases to the reference (idempotent); folders and tags expand to their cases.",
+        "operationId": "link_cases_api_v1_requirements__ref_id__test_cases_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ref_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ref Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/tcms__requirements__schemas__CaseIdsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkCount"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Link Cases",
+        "tags": [
+          "requirements"
+        ]
+      }
+    },
+    "/api/v1/requirements/{ref_id}/test-cases/{case_id}": {
+      "delete": {
+        "operationId": "unlink_case_api_v1_requirements__ref_id__test_cases__case_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ref_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ref Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Unlink Case",
+        "tags": [
+          "requirements"
         ]
       }
     },
@@ -17615,6 +19823,247 @@
         "summary": "Update Run Version",
         "tags": [
           "cycles"
+        ]
+      }
+    },
+    "/api/v1/saved-views/{view_id}": {
+      "delete": {
+        "operationId": "delete_saved_view_api_v1_saved_views__view_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "view_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "View Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Delete Saved View",
+        "tags": [
+          "saved-views"
+        ]
+      },
+      "patch": {
+        "operationId": "patch_saved_view_api_v1_saved_views__view_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "view_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "View Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavedViewPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedViewRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Patch Saved View",
+        "tags": [
+          "saved-views"
+        ]
+      }
+    },
+    "/api/v1/search": {
+      "get": {
+        "description": "US-130 / TCMS-118/119: exact keys first, then text; grouped by type, `limit` per group.",
+        "operationId": "search_api_v1_search_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Omit to search all my projects",
+            "in": "query",
+            "name": "project_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Omit to search all my projects",
+              "title": "Project Id"
+            }
+          },
+          {
+            "description": "Comma list; default all",
+            "in": "query",
+            "name": "types",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Comma list; default all",
+              "title": "Types"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 5,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Search",
+        "tags": [
+          "search"
         ]
       }
     },
@@ -18909,6 +21358,163 @@
         ]
       }
     },
+    "/api/v1/test-cases/{case_id}/requirements": {
+      "get": {
+        "description": "Case page Requirements tab.",
+        "operationId": "case_requirements_api_v1_test_cases__case_id__requirements_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "release_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Release Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RequirementRefRead"
+                  },
+                  "title": "Response Case Requirements Api V1 Test Cases  Case Id  Requirements Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Case Requirements",
+        "tags": [
+          "requirements"
+        ]
+      },
+      "post": {
+        "description": "From the case: references by text; unknown ones are registered (D12).",
+        "operationId": "link_case_to_requirements_api_v1_test_cases__case_id__requirements_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReferencesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkCount"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Link Case To Requirements",
+        "tags": [
+          "requirements"
+        ]
+      }
+    },
     "/api/v1/test-cases/{case_id}/restore": {
       "post": {
         "description": "US-068 / FR-TD-007, BR-13.",
@@ -19612,7 +22218,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CaseIdsRequest"
+                "$ref": "#/components/schemas/tcms__planning__schemas__CaseIdsRequest"
               }
             }
           },
@@ -19970,7 +22576,7 @@
         ]
       },
       "post": {
-        "description": "FR-PLN-003 (the requirements screens arrive in M6).",
+        "description": "FR-PLN-003 / R-122 (ADR-024): requirement references the plan must cover; new ones are registered.",
         "operationId": "link_requirements_api_v1_test_plans__plan_id__requirements_post",
         "parameters": [
           {
@@ -19988,7 +22594,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RequirementIdsRequest"
+                "$ref": "#/components/schemas/RequirementRefsRequest"
               }
             }
           },

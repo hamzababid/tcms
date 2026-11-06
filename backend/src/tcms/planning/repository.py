@@ -10,7 +10,7 @@ from sqlalchemy import Select, delete, select
 from sqlalchemy.orm import Session
 
 from tcms.core.context import AccessContext
-from tcms.planning.models import TestPlan, TestPlanCase, TestPlanEnvironment, TestPlanRequirement
+from tcms.planning.models import PlanRequirementRef, TestPlan, TestPlanCase, TestPlanEnvironment
 
 
 def _scope(stmt: Any, model: Any, ctx: AccessContext) -> Any:
@@ -86,10 +86,9 @@ def remove_cases(s: Session, plan_id: UUID, case_ids: Sequence[UUID]) -> int:
 
 
 def requirement_ids(s: Session, plan_id: UUID) -> list[UUID]:
+    """Requirement references of the plan (ADR-024)."""
     return list(
-        s.execute(
-            select(TestPlanRequirement.requirement_id).where(TestPlanRequirement.plan_id == plan_id)
-        ).scalars()
+        s.execute(select(PlanRequirementRef.ref_id).where(PlanRequirementRef.plan_id == plan_id)).scalars()
     )
 
 
@@ -97,13 +96,13 @@ def add_requirement(
     s: Session, ctx: AccessContext, plan_id: UUID, requirement_id: UUID, actor: UUID | None, now: Any
 ) -> None:
     s.add(
-        TestPlanRequirement(
+        PlanRequirementRef(
             plan_id=plan_id,
-            requirement_id=requirement_id,
+            ref_id=requirement_id,
             organization_id=ctx.principal.organization_id,
             project_id=ctx.pid,
-            added_at=now,
-            added_by=actor,
+            created_at=now,
+            created_by=actor,
         )
     )
 
@@ -111,22 +110,22 @@ def add_requirement(
 def remove_requirements(s: Session, plan_id: UUID, requirement_ids: Sequence[UUID]) -> int:
     if not requirement_ids:
         return 0
-    present = set(
+    res = s.execute(
+        delete(PlanRequirementRef).where(
+            PlanRequirementRef.plan_id == plan_id, PlanRequirementRef.ref_id.in_(list(requirement_ids))
+        )
+    )
+    return int(getattr(res, "rowcount", 0) or 0)
+
+
+def plan_ids_with_ref(s: Session, ctx: AccessContext, ref_id: UUID) -> list[UUID]:
+    return list(
         s.execute(
-            select(TestPlanRequirement.requirement_id).where(
-                TestPlanRequirement.plan_id == plan_id,
-                TestPlanRequirement.requirement_id.in_(requirement_ids),
+            select(PlanRequirementRef.plan_id).where(
+                PlanRequirementRef.project_id == ctx.pid, PlanRequirementRef.ref_id == ref_id
             )
         ).scalars()
     )
-    if present:
-        s.execute(
-            delete(TestPlanRequirement).where(
-                TestPlanRequirement.plan_id == plan_id,
-                TestPlanRequirement.requirement_id.in_(present),
-            )
-        )
-    return len(present)
 
 
 # -- plan environments ----------------------------------------------------------------------------

@@ -8,7 +8,9 @@ import { PriorityIcon } from "@/components/common/PriorityIcon";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Tag as TagPill } from "@/components/common/Tag";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/field";
+import { Checkbox, Input } from "@/components/ui/field";
+import { SavedViewsMenu, useSavedViews } from "@/features/views/SavedViews";
+import { can } from "@/lib/permissions";
 import { formatDateTime } from "@/lib/format";
 
 import { useCases, type CaseListItem, type CaseQuery, type Folder, type Tag } from "./api";
@@ -88,7 +90,26 @@ export function CaseList({
     setPage({ folder: folderId, p });
   };
 
-  const params = caseParams(folderId, includeSubfolders, filters);
+  // Requirement filter (L19, ADR-024): cases linked to a reference; saved with the view.
+  const [requirement, setRequirement] = useState("");
+  const params = {
+    ...caseParams(folderId, includeSubfolders, filters),
+    ...(requirement.trim() ? { requirement: requirement.trim() } : {}),
+  };
+  const views = useSavedViews(projectId, "test_case", {
+    filters,
+    setFilters,
+    sorting,
+    setSorting,
+    extra: { requirement },
+    setExtra: (e) => {
+      setRequirement(typeof e.requirement === "string" ? e.requirement : "");
+    },
+    params: {
+      ...caseParams(null, true, filters),
+      ...(requirement.trim() ? { requirement: requirement.trim() } : {}),
+    },
+  });
   const query = {
     ...params,
     ...(folderId ? { include_subfolders: includeSubfolders } : {}),
@@ -331,7 +352,22 @@ export function CaseList({
             })}
         toolbar={
           <>
+            <SavedViewsMenu
+              views={views}
+              canShare={
+                can(perms, "cycle.manage") || can(perms, "plan.manage") || can(perms, "project.configure")
+              }
+            />
             <span className="truncate text-[13px] font-medium text-ink">{folderName ?? "All cases"}</span>
+            <Input
+              aria-label="Requirement"
+              placeholder="Requirement, e.g. SPK-120"
+              className="h-7 w-48 text-[12.5px]"
+              value={requirement}
+              onChange={(e) => {
+                setRequirement(e.target.value);
+              }}
+            />
             {folderId ? (
               <Checkbox
                 label="Include subfolders"
