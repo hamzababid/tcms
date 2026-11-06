@@ -22,7 +22,10 @@ from tcms.planning import repository as repo
 from tcms.planning import rules
 from tcms.planning.errors import InvalidTransition, PlanArchived
 from tcms.planning.models import TestPlan
+from tcms.platform import saved_views
 from tcms.requirements import queries as requirement_queries
+from tcms.requirements import rules as requirement_rules
+from tcms.requirements import service as requirements
 from tcms.testdesign import queries as testdesign_queries
 from tcms.workspace import queries as workspace_queries
 from tcms.workspace import service as workspace
@@ -303,9 +306,9 @@ def _resolve_selection(
     tags: list[str] | None,
     saved_view_id: UUID | None,
 ) -> list[UUID]:
-    if saved_view_id is not None:
-        raise ValidationFailed("Saved views are not available until M6 (saved_view_id)")
     resolved: list[UUID] = []
+    if saved_view_id is not None:
+        resolved.extend(_saved_view_case_ids(uow, ctx, saved_view_id))
     if case_ids:
         resolved.extend(case_ids)
     if folder_ids:
@@ -317,6 +320,29 @@ def _resolve_selection(
     if tags:
         resolved.extend(testdesign_queries.case_ids_with_tags(uow.session, ctx, tags))
     return _dedup(resolved)
+
+
+SAVED_VIEW_MAX = 5000
+
+
+def _saved_view_case_ids(uow: UnitOfWork, ctx: AccessContext, view_id: UUID) -> list[UUID]:
+    """The cases a repository saved view matches now (L25, US-132): mine or shared, list `test_case`."""
+    view = saved_views.visible_view(uow, ctx, view_id, entity_type="test_case")
+    if view is None:
+        raise ValidationFailed(
+            "Unknown saved view", errors=[FieldError("saved_view_id", "not_found", "Unknown saved view")]
+        )
+    params = {k: str(v) for k, v in (view.definition.get("filters") or {}).items() if not k.startswith("_")}
+    restrict: testdesign_queries.Restrict | None = None
+    ref = params.get("requirement", "").strip()
+    if ref:
+        restrict = (requirement_queries.case_ids_with_reference(uow.session, ctx, ref), True)
+    elif params.get("has_requirements") in ("true", "false"):
+        restrict = (requirement_queries.linked_case_ids_stmt(ctx), params["has_requirements"] == "true")
+    ids_ = testdesign_queries.matching_case_ids(uow.session, ctx, params, SAVED_VIEW_MAX, restrict=restrict)
+    if len(ids_) > SAVED_VIEW_MAX:
+        raise ValidationFailed(f"The saved view matches more than {SAVED_VIEW_MAX} cases")
+    return ids_
 
 
 @dataclass(frozen=True)
@@ -394,28 +420,25 @@ def remove_cases(uow: UnitOfWork, ctx: AccessContext, plan_id: UUID, *, case_ids
 # -- requirement links (FR-PLN-003) ---------------------------------------------------------------
 
 
-def link_requirements(
-    uow: UnitOfWork, ctx: AccessContext, plan_id: UUID, *, requirement_ids: list[UUID]
-) -> int:
+def link_requirements(uow: UnitOfWork, ctx: AccessContext, plan_id: UUID, *, references: str) -> int:
+    """R-122 (ADR-024): the requirement references the plan must cover, pasted as text (`SPK-120, SPK-121`);
+    unknown references are registered (requirements.service.ensure_refs)."""
     ctx.require("plan.manage")
     s = uow.session
     plan = _plan(uow, ctx, plan_id)
     _require_active(plan)
-    valid = requirement_queries.existing_ids(s, ctx, requirement_ids)
-    unknown = [r for r in requirement_ids if r not in valid]
-    if unknown:
-        raise ValidationFailed(
-            "Unknown requirement",
-            errors=[FieldError("requirement_ids", "not_found", "Unknown requirement")],
-        )
+    refs, problems = requirement_rules.paste_problems(references)
+    if problems:
+        raise ValidationFailed("Check the references", errors=problems)
+    ensured = requirements.ensure_refs(uow, ctx, refs)
     existing = set(repo.requirement_ids(s, plan_id))
     now = clock.now()
     added = 0
-    for rid in requirement_ids:
-        if rid in existing:
+    for ref in ensured.refs:
+        if ref.id in existing:
             continue
-        repo.add_requirement(s, ctx, plan_id, rid, ctx.principal.user_id, now)
-        existing.add(rid)
+        repo.add_requirement(s, ctx, plan_id, ref.id, ctx.principal.user_id, now)
+        existing.add(ref.id)
         added += 1
     if added:
         uow.audit(ctx, "plan.requirements_linked", plan, summary=f"{added} requirement(s) linked")

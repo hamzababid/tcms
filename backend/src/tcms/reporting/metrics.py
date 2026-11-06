@@ -69,3 +69,34 @@ class ExecutionSummary:
             blocked_rate=Rate.of(n["blocked"], applicable),
             needs_retest=needs_retest,
         )
+
+
+@dataclass(frozen=True)
+class RequirementCoverage:
+    """docs/02 §10.5 coverage metrics over the requirement references in scope (BR-23, ADR-024)."""
+
+    total: int
+    covered: int
+    not_covered: int
+    passed: int
+    failed: int
+    blocked: int
+    not_run: int
+    coverage: Rate
+    verified: Rate
+
+    @classmethod
+    def from_counts(
+        cls, *, total: int, covered: int, passed: int, failed: int, blocked: int, not_run: int
+    ) -> RequirementCoverage:
+        return cls(
+            total=total,
+            covered=covered,
+            not_covered=total - covered,
+            passed=passed,
+            failed=failed,
+            blocked=blocked,
+            not_run=not_run,
+            coverage=Rate.of(covered, total),
+            verified=Rate.of(passed, total),
+        )

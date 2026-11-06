@@ -1,4 +1,7 @@
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+
+import { api } from "@/api/client";
 
 import { Skeleton, errorMessage } from "@/components/common/feedback";
 import { PriorityIcon } from "@/components/common/PriorityIcon";
@@ -15,11 +18,14 @@ export interface CaseSelection {
   case_ids: string[];
   folder_ids: string[];
   tags: string[];
+  /** A repository saved view (plans only, L25): the cases it matches when added. */
+  saved_view_id?: string | null;
 }
 
 export const emptySelection: CaseSelection = { case_ids: [], folder_ids: [], tags: [] };
 
-export const selectionSize = (s: CaseSelection) => s.case_ids.length + s.folder_ids.length + s.tags.length;
+export const selectionSize = (s: CaseSelection) =>
+  s.case_ids.length + s.folder_ids.length + s.tags.length + (s.saved_view_id ? 1 : 0);
 
 export function selectionText(s: CaseSelection): string {
   const parts: string[] = [];
@@ -27,23 +33,36 @@ export function selectionText(s: CaseSelection): string {
   if (s.folder_ids.length) parts.push(n(s.folder_ids.length, "folder", "folders"));
   if (s.tags.length) parts.push(n(s.tags.length, "tag", "tags"));
   if (s.case_ids.length) parts.push(n(s.case_ids.length, "case", "cases"));
+  if (s.saved_view_id) parts.push("1 saved view");
   return parts.length ? parts.join(", ") : "Nothing selected";
 }
 
 /**
  * Pick cases from the repository by Folder / Tag / Search ("Add cases" dialog, docs/07 §5.7). Saved
- * views arrive with M6. Archived, deprecated and unapproved cases are skipped by the server, which
+ * views (plans only). Archived, deprecated and unapproved cases are skipped by the server, which
  * reports them back.
  */
 export function CaseSelector({
   projectId,
   value,
   onChange,
+  savedViews = false,
 }: {
   projectId: string;
   value: CaseSelection;
   onChange: (s: CaseSelection) => void;
+  savedViews?: boolean;
 }) {
+  const views = useQuery({
+    queryKey: ["saved-views", projectId, "test_case"],
+    enabled: savedViews,
+    queryFn: async () =>
+      (
+        await api.GET("/api/v1/projects/{project_id}/saved-views", {
+          params: { path: { project_id: projectId }, query: { entity_type: "test_case" } },
+        })
+      ).data ?? [],
+  });
   const [tab, setTab] = useState("folder");
   const folders = useFolders(projectId, false);
   const tags = useTags(projectId);
@@ -119,6 +138,42 @@ export function CaseSelector({
               </div>
             ),
           },
+          ...(savedViews
+            ? [
+                {
+                  value: "view",
+                  label: "Saved view",
+                  ...(value.saved_view_id ? { count: 1 } : {}),
+                  content:
+                    (views.data ?? []).length === 0 ? (
+                      <p className="text-[13px] text-ink-muted">
+                        No saved views yet. Save one from the repository list (Views ▾).
+                      </p>
+                    ) : (
+                      <ul className="max-h-64 overflow-y-auto rounded-control border border-border p-2 text-[13px]">
+                        {(views.data ?? []).map((v) => (
+                          <li key={v.id}>
+                            <label className="flex h-7 cursor-pointer items-center gap-2 rounded px-1.5 hover:bg-surface-muted">
+                              <input
+                                type="radio"
+                                name="saved-view"
+                                checked={value.saved_view_id === v.id}
+                                onChange={() => {
+                                  onChange({ ...value, saved_view_id: v.id });
+                                }}
+                              />
+                              <span className="flex-1">{v.name}</span>
+                              <span className="text-xs text-ink-muted">
+                                {v.visibility === "project" ? "shared" : "private"}
+                              </span>
+                            </label>
+                          </li>
+                        ))}
+                      </ul>
+                    ),
+                },
+              ]
+            : []),
           {
             value: "search",
             label: "Search",
@@ -269,6 +324,7 @@ export function AddCasesDialog({
   onAdd,
   onClose,
   noun = "cases",
+  savedViews = false,
 }: {
   title: string;
   projectId: string;
@@ -277,6 +333,7 @@ export function AddCasesDialog({
   onAdd: (s: CaseSelection) => Promise<AddOutcome>;
   onClose: () => void;
   noun?: string;
+  savedViews?: boolean;
 }) {
   const [selection, setSelection] = useState<CaseSelection>(emptySelection);
   const [result, setResult] = useState<AddOutcome | null>(null);
@@ -312,7 +369,12 @@ export function AddCasesDialog({
         <AddResult added={result.added} skipped={result.skipped} noun={noun} />
       ) : (
         <>
-          <CaseSelector projectId={projectId} value={selection} onChange={setSelection} />
+          <CaseSelector
+            projectId={projectId}
+            value={selection}
+            onChange={setSelection}
+            savedViews={savedViews}
+          />
           {error ? (
             <p role="alert" className="mt-3 text-[13px] text-danger">
               {errorMessage(error)}

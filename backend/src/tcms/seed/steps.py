@@ -641,3 +641,66 @@ def seed_bug_links(profile: str) -> str:
                 uow, sana, other_case, reference="SPK-440", url=None, title="Copy typo on login page"
             )
     return "Jira tracker settings, SPK-431 on the failed SPARK-CY-1 result, SPK-440 on a case"
+
+
+@step("SPARK requirement references", profiles=("dev",))
+def seed_requirement_refs(profile: str) -> str:
+    """ADR-024: SPARK's stories live in Jira; Assay links SPK-101…104 to cases and lists SPK-105 on
+    SPARK-PL-1 with no case, so the Traceability page shows covered, failing and not covered requirements."""
+    from tcms.core.pagination import PageParams
+    from tcms.core.permissions import PROJECT_PERMISSIONS
+    from tcms.planning import queries as plan_queries
+    from tcms.planning import service as planning
+    from tcms.requirements import queries as req_queries
+    from tcms.requirements import service as requirements
+    from tcms.testdesign import queries as td_queries
+
+    del profile
+    factory = session_factory(app_engine(get_settings()))
+    with factory() as s:
+        org = workspace_queries.organization_by_slug(s, ORG_SLUG)
+        spark = (
+            next(
+                (p for p in workspace_queries.projects(s, org.id, ids=None, status=None) if p.key == "SPARK"),
+                None,
+            )
+            if org
+            else None
+        )
+        if org is None or spark is None:
+            return "no SPARK project"
+        members = {m.user.email: m.user.id for m in identity_queries.project_members(s, org.id, spark.id)}
+    manager = members.get("ayesha@acme.test")
+    if manager is None:
+        return "Ayesha is not a SPARK member"
+    ctx = AccessContext.for_principal(
+        Principal(manager, org.id, False, display_name="Ayesha Raza"),
+        META,
+        project_id=spark.id,
+        permissions=PROJECT_PERMISSIONS,
+    )
+    with factory() as s:
+        if req_queries.list_refs(s, ctx, q=None, linked=None, ref_ids=None, include_archived=True):
+            return "SPARK already has requirement references — nothing to do"
+        cases, _ = td_queries.list_cases(s, ctx, {"sort": "key"}, PageParams(page=1, page_size=12))
+        plan = plan_queries.plan_by_key(s, ctx, "SPARK-PL-1")
+    if len(cases) < 4:
+        return "SPARK has too few cases — run the repository step first"
+    titles = {
+        "SPK-101": "Sign in with email and password",
+        "SPK-102": "Reset a forgotten password",
+        "SPK-103": "Energy dashboard shows today's usage",
+        "SPK-104": "Meter readings import nightly",
+        "SPK-105": "Export usage to CSV",
+    }
+    plan_cases = {"SPK-101": cases[0:2], "SPK-102": cases[2:3], "SPK-103": cases[3:5], "SPK-104": cases[5:7]}
+    with unit_of_work(factory) as uow:
+        # No requirement address: links fall back to the bug tracker address set by the bug links step.
+        for ref, title in titles.items():
+            row = requirements.ensure_refs(uow, ctx, [ref], title=title).refs[0]
+            linked = [c.id for c in plan_cases.get(ref, [])]
+            if linked:
+                requirements.link(uow, ctx, [row], linked)
+        if plan is not None:
+            planning.link_requirements(uow, ctx, plan.id, references=" ".join(titles))
+    return "SPK-101…105 linked to SPARK cases; all listed on SPARK-PL-1 (SPK-105 has no case)"

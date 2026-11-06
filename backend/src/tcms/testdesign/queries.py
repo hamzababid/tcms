@@ -107,13 +107,28 @@ CASE_SORTS: Mapping[str, ColumnElement[Any]] = {
     "updated_at": TestCase.updated_at,  # type: ignore[dict-item]
     "created_at": TestCase.created_at,  # type: ignore[dict-item]
 }
-SPECIAL_PARAMS = ("folder_id", "include_subfolders", "tag", "include_archived")
+SPECIAL_PARAMS = (
+    "folder_id",
+    "include_subfolders",
+    "tag",
+    "include_archived",
+    "requirement",  # resolved by the API layer (requirements sit above testdesign), L19
+    "has_requirements",
+)
 KEY_RE = re.compile(r"^(?:([A-Z][A-Z0-9]{1,9})-TC-|TC-)?(\d+)$", re.I)
+# (case ids or a select of ids, include) from a module above testdesign (requirement filters, L19).
+Restrict = tuple[Any, bool]
 
 
-def case_list_query(s: Session, ctx: AccessContext, params: Mapping[str, str]) -> Select[Any]:
-    """Filters of docs/06 §4.4 (operators per §2.6). Archived cases are hidden unless asked for."""
+def case_list_query(
+    s: Session, ctx: AccessContext, params: Mapping[str, str], *, restrict: Restrict | None = None
+) -> Select[Any]:
+    """Filters of docs/06 §4.4 (operators per §2.6). Archived cases are hidden unless asked for.
+    `restrict` = (case ids or a subquery of ids, include?) from modules above (requirement filters)."""
     stmt = repo.case_list_stmt(ctx)
+    if restrict is not None:
+        ids_, include = restrict
+        stmt = stmt.where(TestCase.id.in_(ids_) if include else TestCase.id.not_in(ids_))
     conditions = parse_filters(params, CASE_FILTERS, extra_allowed=SPECIAL_PARAMS)
     if conditions:
         stmt = stmt.where(*conditions)
@@ -220,18 +235,25 @@ def summaries(s: Session, cases: list[TestCase]) -> list[CaseSummary]:
 
 
 def list_cases(
-    s: Session, ctx: AccessContext, params: Mapping[str, str], page: PageParams
+    s: Session,
+    ctx: AccessContext,
+    params: Mapping[str, str],
+    page: PageParams,
+    *,
+    restrict: Restrict | None = None,
 ) -> tuple[list[CaseSummary], int]:
-    stmt = case_list_query(s, ctx, params).order_by(
+    stmt = case_list_query(s, ctx, params, restrict=restrict).order_by(
         *parse_sort(params.get("sort"), CASE_SORTS, default="key")
     )
     rows, total = paginate(s, stmt, page)
     return summaries(s, [r[0] for r in rows]), total
 
 
-def matching_case_ids(s: Session, ctx: AccessContext, params: Mapping[str, str], limit: int) -> list[UUID]:
+def matching_case_ids(
+    s: Session, ctx: AccessContext, params: Mapping[str, str], limit: int, *, restrict: Restrict | None = None
+) -> list[UUID]:
     stmt = (
-        case_list_query(s, ctx, params)
+        case_list_query(s, ctx, params, restrict=restrict)
         .with_only_columns(TestCase.id)
         .order_by(TestCase.key_num)
         .limit(limit + 1)
@@ -664,3 +686,50 @@ def step_positions(s: Session, ctx: AccessContext, step_ids: list[UUID]) -> dict
         )
     ).all()
     return {r[0]: r[1] for r in rows}
+
+
+# -- global search (docs/02 §12, US-130) -------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class SearchHit:
+    id: UUID
+    key: str
+    title: str
+
+
+def search_cases(s: Session, ctx: AccessContext, q: str, limit: int) -> list[SearchHit]:
+    """Exact key first (`SPARK-TC-12`, `TC-12`, `12`), then titles (contains, trigram similarity order)."""
+    q = q.strip()
+    base = repo.case_list_stmt(ctx).where(TestCase.status != CaseStatus.archived)
+    m = KEY_RE.match(q)
+    if m and (m.group(1) is None or m.group(1).upper() == _project_key(s, ctx)):
+        exact = s.execute(base.where(TestCase.key_num == int(m.group(2)))).scalars().first()
+        if exact is not None:
+            return [SearchHit(exact.id, exact.key, exact.title)]
+    stmt = (
+        base.where(
+            or_(TestCase.title.icontains(q, autoescape=True), TestCase.key.icontains(q, autoescape=True))
+        )
+        .order_by(func.similarity(TestCase.title, q).desc(), TestCase.key_num)
+        .limit(limit)
+    )
+    return [SearchHit(c.id, c.key, c.title) for c in s.execute(stmt).scalars()]
+
+
+def search_folders(s: Session, ctx: AccessContext, q: str, limit: int) -> list[SearchHit]:
+    stmt = (
+        select(Folder)
+        .where(
+            Folder.organization_id == ctx.principal.organization_id,
+            Folder.project_id == ctx.pid,
+            Folder.archived_at.is_(None),
+            Folder.name.icontains(q.strip(), autoescape=True),
+        )
+        .order_by(func.lower(Folder.name))
+        .limit(limit)
+    )
+    return [
+        SearchHit(f.id, f.name, " / ".join(folder_path_names(s, ctx, f.id)))
+        for f in s.execute(stmt).scalars()
+    ]

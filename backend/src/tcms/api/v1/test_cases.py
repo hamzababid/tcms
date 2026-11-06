@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import date, datetime
 from typing import Any, Literal
 from uuid import UUID
@@ -33,6 +34,23 @@ from tcms.testdesign import rules, service
 from tcms.testdesign import schemas as s
 from tcms.testdesign.jobs import job_payload
 from tcms.workspace import schemas as ws
+
+
+def requirement_restrict(
+    uow: UnitOfWork, ctx: AccessContext, params: Mapping[str, Any]
+) -> tq.Restrict | None:
+    """Repository filters `requirement` and `has_requirements` (L19, ADR-024), resolved here because the
+    requirements module sits above testdesign."""
+    from tcms.requirements import queries as rq
+
+    ref = str(params.get("requirement") or "").strip()
+    if ref:
+        return (rq.case_ids_with_reference(uow.session, ctx, ref), True)
+    has = str(params.get("has_requirements") or "").lower()
+    if has in ("true", "false"):
+        return (rq.linked_case_ids_stmt(ctx), has == "true")
+    return None
+
 
 router = APIRouter(prefix="/api/v1", tags=["test-cases"])
 
@@ -337,13 +355,23 @@ def list_cases(
     automation_status: str | None = None,
     updated_at__gte: datetime | None = None,
     updated_at__lte: datetime | None = None,
+    requirement: str | None = Query(default=None, max_length=100, description="Linked to this reference"),
+    has_requirements: bool | None = Query(
+        default=None, description="With (true) or without (false) references"
+    ),
     ctx: AccessContext = Depends(project_context),
     uow: UnitOfWork = Depends(get_read_uow),
 ) -> Page[s.CaseListItem]:
     """US-043 / FR-SRCH-002: filters and sorts of docs/06 §4.4 (operators per §2.6)."""
     ctx.require("project.view")
     params = dict(request.query_params)
-    rows, total = tq.list_cases(uow.session, ctx, params, PageParams(page=page, page_size=page_size))
+    rows, total = tq.list_cases(
+        uow.session,
+        ctx,
+        params,
+        PageParams(page=page, page_size=page_size),
+        restrict=requirement_restrict(uow, ctx, params),
+    )
     refs = _refs(uow, {r.owner_id for r in rows})
     return Page[s.CaseListItem](
         items=[
@@ -732,7 +760,13 @@ def bulk(
     case_ids = (
         body.case_ids
         if body.case_ids is not None
-        else tq.matching_case_ids(uow.session, ctx, body.filter or {}, service.BULK_MAX + 1)
+        else tq.matching_case_ids(
+            uow.session,
+            ctx,
+            body.filter or {},
+            service.BULK_MAX + 1,
+            restrict=requirement_restrict(uow, ctx, body.filter or {}),
+        )
     )
     if len(case_ids) > service.BULK_MAX:
         raise ValidationFailed(f"At most {service.BULK_MAX} cases per bulk action")

@@ -9,6 +9,9 @@ import { Dialog } from "@/components/ui/dialog";
 import { Field, Select } from "@/components/ui/field";
 import { can } from "@/lib/permissions";
 
+import { bulkLink } from "@/features/requirements/api";
+import { LinkRequirementsDialog } from "@/features/requirements/components";
+
 import { useInvalidateCase, useReviewers, type BulkRequest, type Folder, type Tag } from "./api";
 import { AddResult } from "./CaseSelector";
 import { AUTOMATION, CASE_TYPES, PRIORITY_LABELS } from "./labels";
@@ -66,6 +69,7 @@ export function BulkBar({
 }) {
   const [action, setAction] = useState<Action | null>(null);
   const [addTo, setAddTo] = useState<"plan" | "cycle" | null>(null);
+  const [linking, setLinking] = useState(false);
   const available = (Object.entries(ACTIONS) as [Action, ActionSpec][]).filter(([, s]) =>
     can(perms, s.permission),
   );
@@ -104,6 +108,19 @@ export function BulkBar({
             Add to {t}
           </Button>
         ))}
+      {can(perms, "requirement.link") ? (
+        <Button
+          variant="tint"
+          size="xs"
+          disabled={selection.filter !== null}
+          title={selection.filter !== null ? "Select cases on the page to link them" : undefined}
+          onClick={() => {
+            setLinking(true);
+          }}
+        >
+          Link to requirement
+        </Button>
+      ) : null}
       {available.map(([a, s]) => (
         <Button
           key={a}
@@ -131,6 +148,16 @@ export function BulkBar({
           }}
           onCancel={() => {
             setAction(null);
+          }}
+        />
+      ) : null}
+      {linking ? (
+        <LinkRequirementsDialog
+          label={`Link ${selection.ids.length.toLocaleString()} selected ${selection.ids.length === 1 ? "case" : "cases"}`}
+          onSubmit={(text) => bulkLink(projectId, text, selection.ids)}
+          onClose={() => {
+            setLinking(false);
+            onClear();
           }}
         />
       ) : null}

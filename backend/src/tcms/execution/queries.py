@@ -747,3 +747,36 @@ def attempt_brief(
         )
     ).all()
     return {r[0]: (r[1], r[2].value, r[3].value if r[3] else None) for r in rows}
+
+
+def run_ids_in_release(s: Session, ctx: AccessContext, release_id: UUID) -> set[UUID]:
+    """Runs of cycles in the release (traceability bug filter, docs/02 §10.4)."""
+    rows = s.execute(
+        select(TestRun.id)
+        .join(TestCycle, TestCycle.id == TestRun.cycle_id)
+        .where(
+            TestRun.organization_id == ctx.principal.organization_id,
+            TestRun.project_id == ctx.pid,
+            TestCycle.release_id == release_id,
+        )
+    ).scalars()
+    return set(rows)
+
+
+def search_cycles(s: Session, ctx: AccessContext, q: str, limit: int) -> list[TestCycle]:
+    """Global search (US-130): exact key (`SPARK-CY-4`, `CY-4`) or name contains."""
+    q = q.strip()
+    base = exec_repo.cycle_list_stmt(ctx).where(TestCycle.archived_at.is_(None))
+    import re
+
+    m = re.match(r"^(?:[A-Z][A-Z0-9]{1,9}-)?CY-(\d+)$", q, re.I)
+    if m:
+        hit = s.execute(base.where(TestCycle.key_num == int(m.group(1)))).scalars().first()
+        if hit is not None:
+            return [hit]
+    stmt = (
+        base.where(TestCycle.name.icontains(q, autoescape=True))
+        .order_by(TestCycle.key_num.desc())
+        .limit(limit)
+    )
+    return list(s.execute(stmt).scalars())

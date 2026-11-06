@@ -10,6 +10,7 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/field";
+import { SavedViewsMenu, useSavedViews } from "@/features/views/SavedViews";
 import { formatDateTime } from "@/lib/format";
 
 import { safeUrl, useBugs, useReferenceLinks, type BugQuery, type BugSummary } from "./api";
@@ -20,6 +21,7 @@ export function BugsPage({ project, canRetest }: { project: Project; canRetest: 
   const tracker = trackerOf(project);
   const [filters, setFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
+  const views = useSavedViews(project.id, "bug", { filters, setFilters, sorting, setSorting });
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
   const [failing, setFailing] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
@@ -159,14 +161,17 @@ export function BugsPage({ project, canRetest }: { project: Project; canRetest: 
         noun={["bug", "bugs"]}
         getRowId={(b) => b.reference}
         toolbar={
-          <Checkbox
-            label="Linked to failing runs"
-            checked={failing}
-            onChange={(e) => {
-              setFailing(e.target.checked);
-              setPagination((p) => ({ ...p, pageIndex: 0 }));
-            }}
-          />
+          <span className="flex items-center gap-3">
+            <SavedViewsMenu views={views} canShare={canRetest} />
+            <Checkbox
+              label="Linked to failing runs"
+              checked={failing}
+              onChange={(e) => {
+                setFailing(e.target.checked);
+                setPagination((p) => ({ ...p, pageIndex: 0 }));
+              }}
+            />
+          </span>
         }
         {...(filters.length || failing
           ? {}

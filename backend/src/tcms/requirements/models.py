@@ -73,3 +73,49 @@ class RequirementCaseLink(Base):
     project_id: Mapped[UUID] = mapped_column(UUIDT, nullable=False)
     created_at: Mapped[datetime] = created_ts()
     created_by: Mapped[UUID | None] = mapped_column(UUIDT)
+
+
+# -- requirement references (M6, ADR-024; docs/schema/05_m6_requirement_refs.sql) ------------------
+
+
+class RequirementRef(StdColumns, Base):
+    """A reference to a requirement or story in the team's tool. Trigram indexes are SQL-only."""
+
+    __tablename__ = "requirement_refs"
+    __audit_type__ = "requirement_ref"
+    __table_args__ = (
+        UniqueConstraint("project_id", "id"),
+        ForeignKeyConstraint(["organization_id", "project_id"], ["projects.organization_id", "projects.id"]),
+        Index("ux_requirement_refs__project_reference", "project_id", "reference_norm", unique=True),
+    )
+
+    id: Mapped[UUID] = pk()
+    organization_id: Mapped[UUID] = mapped_column(UUIDT, nullable=False)
+    project_id: Mapped[UUID] = mapped_column(UUIDT, nullable=False)
+    reference: Mapped[str] = mapped_column(Text, nullable=False)
+    reference_norm: Mapped[str] = mapped_column(Text, nullable=False)
+    url: Mapped[str | None] = mapped_column(Text)
+    title: Mapped[str | None] = mapped_column(Text)
+    archived_at: Mapped[datetime | None] = mapped_column(TS)
+
+
+class RequirementRefCase(Base):
+    __tablename__ = "requirement_ref_cases"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["project_id", "ref_id"],
+            ["requirement_refs.project_id", "requirement_refs.id"],
+            ondelete="CASCADE",
+        ),
+        ForeignKeyConstraint(
+            ["project_id", "test_case_id"], ["test_cases.project_id", "test_cases.id"], ondelete="CASCADE"
+        ),
+        Index("ix_requirement_ref_cases__test_case_id", "test_case_id"),
+    )
+
+    ref_id: Mapped[UUID] = mapped_column(UUIDT, primary_key=True)
+    test_case_id: Mapped[UUID] = mapped_column(UUIDT, primary_key=True)
+    organization_id: Mapped[UUID] = mapped_column(UUIDT, nullable=False)
+    project_id: Mapped[UUID] = mapped_column(UUIDT, nullable=False)
+    created_at: Mapped[datetime] = created_ts()
+    created_by: Mapped[UUID | None] = mapped_column(UUIDT)

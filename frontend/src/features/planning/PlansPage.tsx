@@ -9,6 +9,7 @@ import { EmptyState, Page } from "@/components/common/feedback";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/field";
+import { SavedViewsMenu, useSavedViews } from "@/features/views/SavedViews";
 import { formatDate } from "@/lib/format";
 
 import { usePlans, type PlanListItem, type PlanQuery } from "./api";
@@ -26,6 +27,7 @@ export function PlansPage({ project, canManage }: { project: Project; canManage:
   const [showArchived, setShowArchived] = useState(false);
   const [creating, setCreating] = useState(false);
   const writable = canManage && project.status !== "archived";
+  const views = useSavedViews(project.id, "test_plan", { filters, setFilters, sorting, setSorting });
 
   const q = filterValue(filters, "name");
   const status = filterValue(filters, "status");
@@ -167,14 +169,17 @@ export function PlansPage({ project, canManage }: { project: Project; canManage:
         initialHidden={["release", "dates"]}
         emptyText="No plans match these filters."
         toolbar={
-          <Checkbox
-            label="Show archived"
-            checked={showArchived}
-            onChange={(e) => {
-              setShowArchived(e.target.checked);
-              setPagination((p) => ({ ...p, pageIndex: 0 }));
-            }}
-          />
+          <span className="flex items-center gap-3">
+            <SavedViewsMenu views={views} canShare={canManage} />
+            <Checkbox
+              label="Show archived"
+              checked={showArchived}
+              onChange={(e) => {
+                setShowArchived(e.target.checked);
+                setPagination((p) => ({ ...p, pageIndex: 0 }));
+              }}
+            />
+          </span>
         }
         {...(filters.length || showArchived
           ? {}

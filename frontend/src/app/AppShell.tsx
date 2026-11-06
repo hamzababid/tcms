@@ -9,6 +9,8 @@ import {
   ChevronsRight,
   ChevronsUpDown,
   ClipboardList,
+  FileText,
+  GitCompare,
   FolderKanban,
   FolderTree,
   ListTodo,
@@ -25,6 +27,8 @@ import { useMe, useProjects, type Me, type Project } from "@/api/queries";
 import { MenuContent, MenuItem, MenuSeparator, MenuShortcut } from "@/components/ui/menu";
 import { can, projectPermissions } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
+
+import { GlobalSearch } from "@/features/search/GlobalSearch";
 
 import { Logo } from "./Logo";
 
@@ -129,6 +133,16 @@ function ProjectSwitcher({
         // Consumed here so page shortcuts (C = new case in the repository) do not also fire.
         e.preventDefault();
         void navigate({ to: "/p/$projectKey/cycles", params: { projectKey: current.key } });
+      } else if (armed && (e.key.toLowerCase() === "q" || e.key.toLowerCase() === "t") && current) {
+        armed = false;
+        e.preventDefault();
+        const to =
+          e.key.toLowerCase() === "q" ? "/p/$projectKey/requirements" : "/p/$projectKey/traceability";
+        void navigate({ to, params: { projectKey: current.key } });
+      } else if (armed && e.key.toLowerCase() === "w") {
+        armed = false;
+        e.preventDefault();
+        void navigate({ to: "/my-work" });
       } else if (armed && e.key.toLowerCase() === "d" && current) {
         armed = false;
         e.preventDefault(); // the runner's D (link a bug) checks defaultPrevented
@@ -209,6 +223,8 @@ function useCrumbs(project: Project | undefined): Crumb[] {
     crumbs.push({ label: project.key, to: "/p/$projectKey", params, mono: true });
     if (path.endsWith("/activity")) crumbs.push({ label: "Activity" });
     if (path.endsWith("/bugs")) crumbs.push({ label: "Bugs" });
+    if (path.endsWith("/requirements")) crumbs.push({ label: "Requirements" });
+    if (path.endsWith("/traceability")) crumbs.push({ label: "Traceability" });
     if (path.includes("/plans")) {
       crumbs.push({ label: "Plans", to: "/p/$projectKey/plans", params });
       const planKey = /\/plans\/([^/]+)/.exec(path)?.[1];
@@ -410,6 +426,18 @@ export function AppShell({ children }: { children: ReactNode }) {
           icon: Bug,
         },
         {
+          to: "/p/$projectKey/requirements",
+          params: { projectKey: current.key },
+          label: "Requirements",
+          icon: FileText,
+        },
+        {
+          to: "/p/$projectKey/traceability",
+          params: { projectKey: current.key },
+          label: "Traceability",
+          icon: GitCompare,
+        },
+        {
           to: "/p/$projectKey/activity",
           params: { projectKey: current.key },
           label: "Activity",
@@ -499,6 +527,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-[var(--topbar-height)] shrink-0 items-center gap-4 border-b border-border bg-surface px-6">
           <Breadcrumbs project={current} />
+          <GlobalSearch project={current} />
           {me ? <UserMenu me={me} /> : null}
         </header>
         <main id="main" className="min-h-0 flex-1 overflow-auto">

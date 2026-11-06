@@ -18,7 +18,10 @@ from tcms.api.v1 import (
     plans,
     projects,
     records,
+    requirements,
     results,
+    saved_views,
+    search,
     test_cases,
 )
 from tcms.core.config import Settings, get_settings
@@ -70,6 +73,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         cycles,
         results,
         bugs,
+        requirements,
+        search,
+        saved_views,
         records,
     ):
         app.include_router(module.router, responses=PROBLEM_RESPONSES)

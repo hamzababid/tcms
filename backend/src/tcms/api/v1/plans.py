@@ -294,14 +294,12 @@ def list_plan_cases(
 @router.post("/test-plans/{plan_id}/requirements", response_model=s.CountResponse)
 def link_requirements(
     plan_id: UUID,
-    body: s.RequirementIdsRequest,
+    body: s.RequirementRefsRequest,
     ctx: AccessContext = PlanCtx,
     uow: UnitOfWork = Depends(get_uow),
 ) -> s.CountResponse:
-    """FR-PLN-003 (the requirements screens arrive in M6)."""
-    return s.CountResponse(
-        count=service.link_requirements(uow, ctx, plan_id, requirement_ids=body.requirement_ids)
-    )
+    """FR-PLN-003 / R-122 (ADR-024): requirement references the plan must cover; new ones are registered."""
+    return s.CountResponse(count=service.link_requirements(uow, ctx, plan_id, references=body.references))
 
 
 @router.delete("/test-plans/{plan_id}/requirements", response_model=s.CountResponse)

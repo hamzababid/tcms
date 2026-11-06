@@ -1250,6 +1250,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/projects/{project_id}/coverage": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Coverage
+     * @description FR-REQ-005 / BR-23: coverage metrics for the release (or across all cycles).
+     */
+    get: operations["get_coverage_api_v1_projects__project_id__coverage_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/projects/{project_id}/cycles": {
     parameters: {
       query?: never;
@@ -1393,6 +1413,50 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/projects/{project_id}/requirements": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Requirements
+     * @description R-120: natural order (SPK-2 before SPK-10); each item carries its status (release or all cycles).
+     */
+    get: operations["list_requirements_api_v1_projects__project_id__requirements_get"];
+    put?: never;
+    /**
+     * Add Requirements
+     * @description R-120 / AC-REQ-06: add one or many references; existing ones are returned, not duplicated.
+     */
+    post: operations["add_requirements_api_v1_projects__project_id__requirements_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/projects/{project_id}/requirements/link-cases": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Bulk Link
+     * @description Repository bulk action "Link selected to requirement…" (TCMS-110).
+     */
+    post: operations["bulk_link_api_v1_projects__project_id__requirements_link_cases_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/projects/{project_id}/resolve": {
     parameters: {
       query?: never;
@@ -1425,6 +1489,27 @@ export interface paths {
     put?: never;
     /** Restore Project */
     post: operations["restore_project_api_v1_projects__project_id__restore_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/projects/{project_id}/saved-views": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Saved Views
+     * @description Mine and shared; the first `is_default` entry is the view to open the list with.
+     */
+    get: operations["list_saved_views_api_v1_projects__project_id__saved_views_get"];
+    put?: never;
+    /** Create Saved View */
+    post: operations["create_saved_view_api_v1_projects__project_id__saved_views_post"];
     delete?: never;
     options?: never;
     head?: never;
@@ -1520,6 +1605,27 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/projects/{project_id}/traceability": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Traceability
+     * @description FR-REQ-004 / TCMS-112 (docs/02 §10.4): the summary covers every reference in scope; the rows follow
+     *     the filters.
+     */
+    get: operations["traceability_api_v1_projects__project_id__traceability_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/releases/{release_id}": {
     parameters: {
       query?: never;
@@ -1539,6 +1645,98 @@ export interface paths {
      * @description US-026 / TCMS-024: status changes follow the transition table (docs/02 §4.4).
      */
     patch: operations["patch_release_api_v1_releases__release_id__patch"];
+    trace?: never;
+  };
+  "/api/v1/requirements/{ref_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Requirement
+     * @description The reference with its cases (latest result in the release) and the plans that list it.
+     */
+    get: operations["get_requirement_api_v1_requirements__ref_id__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Patch Requirement */
+    patch: operations["patch_requirement_api_v1_requirements__ref_id__patch"];
+    trace?: never;
+  };
+  "/api/v1/requirements/{ref_id}/archive": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Archive Requirement */
+    post: operations["archive_requirement_api_v1_requirements__ref_id__archive_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/requirements/{ref_id}/restore": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Restore Requirement */
+    post: operations["restore_requirement_api_v1_requirements__ref_id__restore_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/requirements/{ref_id}/test-cases": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Link Cases
+     * @description R-121 / TCMS-110: link cases to the reference (idempotent); folders and tags expand to their cases.
+     */
+    post: operations["link_cases_api_v1_requirements__ref_id__test_cases_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/requirements/{ref_id}/test-cases/{case_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Unlink Case */
+    delete: operations["unlink_case_api_v1_requirements__ref_id__test_cases__case_id__delete"];
+    options?: never;
+    head?: never;
+    patch?: never;
     trace?: never;
   };
   "/api/v1/results/{result_id}": {
@@ -1778,6 +1976,44 @@ export interface paths {
      * @description US-086 / BR-04.
      */
     post: operations["update_run_version_api_v1_runs__run_id__update_version_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/saved-views/{view_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete Saved View */
+    delete: operations["delete_saved_view_api_v1_saved_views__view_id__delete"];
+    options?: never;
+    head?: never;
+    /** Patch Saved View */
+    patch: operations["patch_saved_view_api_v1_saved_views__view_id__patch"];
+    trace?: never;
+  };
+  "/api/v1/search": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Search
+     * @description US-130 / TCMS-118/119: exact keys first, then text; grouped by type, `limit` per group.
+     */
+    get: operations["search_api_v1_search_get"];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -2034,6 +2270,30 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/test-cases/{case_id}/requirements": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Case Requirements
+     * @description Case page Requirements tab.
+     */
+    get: operations["case_requirements_api_v1_test_cases__case_id__requirements_get"];
+    put?: never;
+    /**
+     * Link Case To Requirements
+     * @description From the case: references by text; unknown ones are registered (D12).
+     */
+    post: operations["link_case_to_requirements_api_v1_test_cases__case_id__requirements_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/test-cases/{case_id}/restore": {
     parameters: {
       query?: never;
@@ -2248,7 +2508,7 @@ export interface paths {
     put?: never;
     /**
      * Link Requirements
-     * @description FR-PLN-003 (the requirements screens arrive in M6).
+     * @description FR-PLN-003 / R-122 (ADR-024): requirement references the plan must cover; new ones are registered.
      */
     post: operations["link_requirements_api_v1_test_plans__plan_id__requirements_post"];
     /** Unlink Requirements */
@@ -2632,6 +2892,13 @@ export interface components {
       /** Url */
       url: string | null;
     };
+    /** BugRef */
+    BugRef: {
+      /** Reference */
+      reference: string;
+      /** Url */
+      url: string | null;
+    };
     /** BugReportRead */
     BugReportRead: {
       /**
@@ -2798,11 +3065,6 @@ export interface components {
      * @enum {string}
      */
     CaseFormat: "steps" | "text";
-    /** CaseIdsRequest */
-    CaseIdsRequest: {
-      /** Case Ids */
-      case_ids: string[];
-    };
     /** CaseLinkRead */
     CaseLinkRead: {
       /**
@@ -3080,6 +3342,28 @@ export interface components {
     CountResponse: {
       /** Count */
       count: number;
+    };
+    /**
+     * CoverageRead
+     * @description docs/02 §10.5 metrics; rates are null when there is nothing in scope (BR-24).
+     */
+    CoverageRead: {
+      /** Blocked */
+      blocked: number;
+      coverage: components["schemas"]["Rate"];
+      /** Covered */
+      covered: number;
+      /** Failed */
+      failed: number;
+      /** Not Covered */
+      not_covered: number;
+      /** Not Run */
+      not_run: number;
+      /** Passed */
+      passed: number;
+      /** Total */
+      total: number;
+      verified: components["schemas"]["Rate"];
     };
     /** CycleCreate */
     CycleCreate: {
@@ -3598,10 +3882,46 @@ export interface components {
       /** Title */
       title: string;
     };
+    /** LatestResult */
+    LatestResult: {
+      /** Cycle Key */
+      cycle_key: string;
+      executed_by: components["schemas"]["UserRef"] | null;
+      /**
+       * Finished At
+       * Format: date-time
+       */
+      finished_at: string;
+      /**
+       * Run Id
+       * Format: uuid
+       */
+      run_id: string;
+      /** Status */
+      status: string;
+    };
     /** LifecycleRequest */
     LifecycleRequest: {
       /** Reason */
       reason?: string | null;
+    };
+    /** LinkCasesRequest */
+    LinkCasesRequest: {
+      /** References */
+      references: string;
+      /** Test Case Ids */
+      test_case_ids: string[];
+    };
+    /** LinkCount */
+    LinkCount: {
+      /** Count */
+      count: number;
+      /**
+       * Created
+       * @description References registered by this request
+       * @default 0
+       */
+      created: number;
     };
     /** LinkRequest */
     LinkRequest: {
@@ -3950,6 +4270,17 @@ export interface components {
       /** Total */
       total: number;
     };
+    /** Page[RequirementRefRead] */
+    Page_RequirementRefRead_: {
+      /** Items */
+      items: components["schemas"]["RequirementRefRead"][];
+      /** Page */
+      page: number;
+      /** Page Size */
+      page_size: number;
+      /** Total */
+      total: number;
+    };
     /** Page[RunListItem] */
     Page_RunListItem_: {
       /** Items */
@@ -4225,6 +4556,18 @@ export interface components {
        */
       updated_at: string;
     };
+    /** PlanRef */
+    PlanRef: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Key */
+      key: string;
+      /** Name */
+      name: string;
+    };
     /**
      * PlanStatus
      * @enum {string}
@@ -4407,6 +4750,11 @@ export interface components {
       report_module_depth: number;
       /** Require Bug Link For Failure */
       require_bug_link_for_failure: boolean;
+      /**
+       * Requirement Url Template
+       * @description http(s) URL with {ref} for requirement references; empty uses bug_url_template
+       */
+      requirement_url_template: string | null;
     };
     /** ProjectSettingsPatch */
     ProjectSettingsPatch: {
@@ -4429,6 +4777,11 @@ export interface components {
       report_module_depth?: number | null;
       /** Require Bug Link For Failure */
       require_bug_link_for_failure?: boolean | null;
+      /**
+       * Requirement Url Template
+       * @description Empty clears it
+       */
+      requirement_url_template?: string | null;
     };
     /**
      * ProjectStatus
@@ -4450,6 +4803,15 @@ export interface components {
       previous_run_id: string | null;
       /** Total */
       total: number;
+    };
+    /** Rate */
+    Rate: {
+      /** Denominator */
+      denominator: number;
+      /** Numerator */
+      numerator: number;
+      /** Value */
+      value: number | null;
     };
     /** RateRead */
     RateRead: {
@@ -4486,6 +4848,18 @@ export interface components {
       id: string;
       /** Name */
       name: string;
+    };
+    /** ReferencesRequest */
+    ReferencesRequest: {
+      /** References */
+      references: string;
+    };
+    /** RefsCreated */
+    RefsCreated: {
+      /** Created */
+      created: number;
+      /** References */
+      references: components["schemas"]["RequirementRefRead"][];
     };
     /** ReleaseCreate */
     ReleaseCreate: {
@@ -4560,10 +4934,123 @@ export interface components {
       /** Sort By */
       sort_by?: ("folder" | "priority") | null;
     };
+    /** RequirementDetail */
+    RequirementDetail: {
+      /** Archived */
+      archived: boolean;
+      /** Case Count */
+      case_count: number;
+      /** Cases */
+      cases: components["schemas"]["TraceCase"][];
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Plans */
+      plans: components["schemas"]["PlanRef"][];
+      /** Reference */
+      reference: string;
+      /** Row Version */
+      row_version: number;
+      /**
+       * Status
+       * @description Status in the requested release (or across all cycles); docs/02 §10.5
+       */
+      status?: ("not_covered" | "failed" | "blocked" | "not_run" | "passed") | null;
+      /** Title */
+      title: string | null;
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
+      /** Url */
+      url: string | null;
+    };
     /** RequirementIdsRequest */
     RequirementIdsRequest: {
-      /** Requirement Ids */
+      /**
+       * Requirement Ids
+       * @description Requirement reference ids (ADR-024)
+       */
       requirement_ids: string[];
+    };
+    /** RequirementRefPatch */
+    RequirementRefPatch: {
+      /** Title */
+      title?: string | null;
+      /**
+       * Url
+       * @description Empty or null clears it
+       */
+      url?: string | null;
+    };
+    /** RequirementRefRead */
+    RequirementRefRead: {
+      /** Archived */
+      archived: boolean;
+      /** Case Count */
+      case_count: number;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Reference */
+      reference: string;
+      /** Row Version */
+      row_version: number;
+      /**
+       * Status
+       * @description Status in the requested release (or across all cycles); docs/02 §10.5
+       */
+      status?: ("not_covered" | "failed" | "blocked" | "not_run" | "passed") | null;
+      /** Title */
+      title: string | null;
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
+      /** Url */
+      url: string | null;
+    };
+    /** RequirementRefsCreate */
+    RequirementRefsCreate: {
+      /**
+       * References
+       * @description One or many: 'SPK-120, SPK-121' or one per line (≤ 500)
+       */
+      references: string;
+      /**
+       * Title
+       * @description Only for a single reference
+       */
+      title?: string | null;
+      /**
+       * Url
+       * @description Only for a single reference
+       */
+      url?: string | null;
+    };
+    /** RequirementRefsRequest */
+    RequirementRefsRequest: {
+      /**
+       * References
+       * @description Requirement references, e.g. 'SPK-120, SPK-121' (ADR-024)
+       */
+      references: string;
     };
     /** ResetMfaRequest */
     ResetMfaRequest: {
@@ -4857,6 +5344,111 @@ export interface components {
       /** Version Created */
       version_created: boolean;
     };
+    /** SavedViewCreate */
+    SavedViewCreate: {
+      definition: components["schemas"]["ViewDefinition"];
+      /**
+       * Entity Type
+       * @description test_case, test_run, test_plan, test_cycle, bug, requirement
+       */
+      entity_type: string;
+      /**
+       * Is Default
+       * @default false
+       */
+      is_default: boolean;
+      /** Name */
+      name: string;
+      /** @default private */
+      visibility: components["schemas"]["ViewVisibility"];
+    };
+    /** SavedViewPatch */
+    SavedViewPatch: {
+      definition?: components["schemas"]["ViewDefinition"] | null;
+      /** Is Default */
+      is_default?: boolean | null;
+      /** Name */
+      name?: string | null;
+      visibility?: components["schemas"]["ViewVisibility"] | null;
+    };
+    /** SavedViewRead */
+    SavedViewRead: {
+      definition: components["schemas"]["ViewDefinition"];
+      /** Entity Type */
+      entity_type: string;
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Is Default */
+      is_default: boolean;
+      /** Mine */
+      mine: boolean;
+      /** Name */
+      name: string;
+      /** Row Version */
+      row_version: number;
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
+      visibility: components["schemas"]["ViewVisibility"];
+    };
+    /** SearchGroup */
+    SearchGroup: {
+      /** Items */
+      items: components["schemas"]["SearchItem"][];
+      /**
+       * Type
+       * @enum {string}
+       */
+      type: "test_case" | "folder" | "plan" | "cycle" | "requirement" | "bug";
+    };
+    /** SearchItem */
+    SearchItem: {
+      /**
+       * Id
+       * @description Record id, or the reference for bugs
+       */
+      id: string;
+      /**
+       * Key
+       * @description Key, reference or folder name
+       */
+      key: string;
+      project: components["schemas"]["SearchProject"];
+      /** Title */
+      title: string | null;
+      /**
+       * Type
+       * @enum {string}
+       */
+      type: "test_case" | "folder" | "plan" | "cycle" | "requirement" | "bug";
+      /**
+       * Url
+       * @description Tracker URL (requirements, bugs)
+       */
+      url?: string | null;
+    };
+    /** SearchProject */
+    SearchProject: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Key */
+      key: string;
+    };
+    /** SearchRead */
+    SearchRead: {
+      /** Groups */
+      groups: components["schemas"]["SearchGroup"][];
+      /** Q */
+      q: string;
+    };
     /** SelectionIn */
     SelectionIn: {
       /** Case Ids */
@@ -5046,6 +5638,47 @@ export interface components {
       /** Usage */
       usage: number;
     };
+    /** TraceCase */
+    TraceCase: {
+      /** Bugs */
+      bugs: components["schemas"]["BugRef"][];
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Key */
+      key: string;
+      latest: components["schemas"]["LatestResult"] | null;
+      /** Title */
+      title: string;
+    };
+    /**
+     * TraceRow
+     * @description docs/06 §5.8 (ADR-024: a reference, no hierarchy).
+     */
+    TraceRow: {
+      /** Bugs */
+      bugs: components["schemas"]["BugRef"][];
+      /** Cases */
+      cases: components["schemas"]["TraceCase"][];
+      /** Linked Cases */
+      linked_cases: number;
+      requirement: components["schemas"]["RequirementRefRead"];
+      /**
+       * Status In Release
+       * @enum {string}
+       */
+      status_in_release: "not_covered" | "failed" | "blocked" | "not_run" | "passed";
+    };
+    /** TraceabilityRead */
+    TraceabilityRead: {
+      /** Release Id */
+      release_id: string | null;
+      /** Rows */
+      rows: components["schemas"]["TraceRow"][];
+      summary: components["schemas"]["CoverageRead"];
+    };
     /** UserRef */
     UserRef: {
       /** Display Name */
@@ -5118,6 +5751,28 @@ export interface components {
       /** Version No */
       version_no: number;
     };
+    /** ViewDefinition */
+    ViewDefinition: {
+      /**
+       * Columns
+       * @description Visible column ids, in order
+       */
+      columns?: string[] | null;
+      /**
+       * Filters
+       * @description The list's query parameters
+       */
+      filters?: {
+        [key: string]: string;
+      };
+      /** Sort */
+      sort?: string | null;
+    };
+    /**
+     * ViewVisibility
+     * @enum {string}
+     */
+    ViewVisibility: "private" | "project";
     /** AddCasesRequest */
     tcms__execution__schemas__AddCasesRequest: {
       /** Case Ids */
@@ -5145,15 +5800,35 @@ export interface components {
        * @default true
        */
       include_subfolders: boolean;
-      /** Saved View Id */
+      /**
+       * Saved View Id
+       * @description A repository saved view (M6)
+       */
       saved_view_id?: string | null;
       /** Tags */
       tags?: string[] | null;
+    };
+    /** CaseIdsRequest */
+    tcms__planning__schemas__CaseIdsRequest: {
+      /** Case Ids */
+      case_ids: string[];
     };
     /** CloneRequest */
     tcms__planning__schemas__CloneRequest: {
       /** Name */
       name?: string | null;
+    };
+    /**
+     * CaseIdsRequest
+     * @description Cases to link: ids and/or every case of folders (with subfolders) and tags (the Add cases picker).
+     */
+    tcms__requirements__schemas__CaseIdsRequest: {
+      /** Folder Ids */
+      folder_ids?: string[];
+      /** Tags */
+      tags?: string[];
+      /** Test Case Ids */
+      test_case_ids?: string[];
     };
   };
   responses: never;
@@ -8603,6 +9278,50 @@ export interface operations {
       };
     };
   };
+  get_coverage_api_v1_projects__project_id__coverage_get: {
+    parameters: {
+      query?: {
+        release_id?: string | null;
+      };
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CoverageRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   list_cycles_api_v1_projects__project_id__cycles_get: {
     parameters: {
       query?: {
@@ -9197,6 +9916,151 @@ export interface operations {
       };
     };
   };
+  list_requirements_api_v1_projects__project_id__requirements_get: {
+    parameters: {
+      query?: {
+        page?: number;
+        page_size?: number;
+        q?: string | null;
+        /** @description true: with linked cases; false: without */
+        linked?: boolean | null;
+        /** @description Only the references a plan lists */
+        plan_id?: string | null;
+        /** @description Only references in scope; status in it */
+        release_id?: string | null;
+        include_archived?: boolean;
+      };
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Page_RequirementRefRead_"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  add_requirements_api_v1_projects__project_id__requirements_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RequirementRefsCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RefsCreated"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  bulk_link_api_v1_projects__project_id__requirements_link_cases_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["LinkCasesRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LinkCount"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   resolve_api_v1_projects__project_id__resolve_get: {
     parameters: {
       query: {
@@ -9259,6 +10123,96 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ProjectRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  list_saved_views_api_v1_projects__project_id__saved_views_get: {
+    parameters: {
+      query?: {
+        entity_type?: string | null;
+      };
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SavedViewRead"][];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  create_saved_view_api_v1_projects__project_id__saved_views_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SavedViewCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SavedViewRead"];
         };
       };
       /** @description Validation or business-rule error */
@@ -9390,6 +10344,10 @@ export interface operations {
         automation_status?: string | null;
         updated_at__gte?: string | null;
         updated_at__lte?: string | null;
+        /** @description Linked to this reference */
+        requirement?: string | null;
+        /** @description With (true) or without (false) references */
+        has_requirements?: boolean | null;
       };
       header?: never;
       path: {
@@ -9629,6 +10587,54 @@ export interface operations {
       };
     };
   };
+  traceability_api_v1_projects__project_id__traceability_get: {
+    parameters: {
+      query?: {
+        release_id?: string | null;
+        /** @description Comma list of statuses */
+        status?: string | null;
+        uncovered?: boolean;
+        q?: string | null;
+      };
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TraceabilityRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   get_release_api_v1_releases__release_id__get: {
     parameters: {
       query?: never;
@@ -9696,6 +10702,267 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["ReleaseRead"];
         };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  get_requirement_api_v1_requirements__ref_id__get: {
+    parameters: {
+      query?: {
+        release_id?: string | null;
+      };
+      header?: never;
+      path: {
+        ref_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RequirementDetail"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  patch_requirement_api_v1_requirements__ref_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ref_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RequirementRefPatch"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RequirementRefRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  archive_requirement_api_v1_requirements__ref_id__archive_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ref_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RequirementRefRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  restore_requirement_api_v1_requirements__ref_id__restore_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ref_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RequirementRefRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  link_cases_api_v1_requirements__ref_id__test_cases_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ref_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["tcms__requirements__schemas__CaseIdsRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LinkCount"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  unlink_case_api_v1_requirements__ref_id__test_cases__case_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ref_id: string;
+        case_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Validation or business-rule error */
       422: {
@@ -10321,6 +11588,139 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["RunRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  delete_saved_view_api_v1_saved_views__view_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        view_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  patch_saved_view_api_v1_saved_views__view_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        view_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SavedViewPatch"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SavedViewRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  search_api_v1_search_get: {
+    parameters: {
+      query: {
+        q: string;
+        /** @description Omit to search all my projects */
+        project_id?: string | null;
+        /** @description Comma list; default all */
+        types?: string | null;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SearchRead"];
         };
       };
       /** @description Validation or business-rule error */
@@ -11068,6 +12468,96 @@ export interface operations {
       };
     };
   };
+  case_requirements_api_v1_test_cases__case_id__requirements_get: {
+    parameters: {
+      query?: {
+        release_id?: string | null;
+      };
+      header?: never;
+      path: {
+        case_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RequirementRefRead"][];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  link_case_to_requirements_api_v1_test_cases__case_id__requirements_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        case_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ReferencesRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LinkCount"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   restore_case_api_v1_test_cases__case_id__restore_post: {
     parameters: {
       query?: never;
@@ -11575,7 +13065,7 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "application/json": components["schemas"]["CaseIdsRequest"];
+        "application/json": components["schemas"]["tcms__planning__schemas__CaseIdsRequest"];
       };
     };
     responses: {
@@ -11667,7 +13157,7 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "application/json": components["schemas"]["RequirementIdsRequest"];
+        "application/json": components["schemas"]["RequirementRefsRequest"];
       };
     };
     responses: {

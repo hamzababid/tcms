@@ -25,6 +25,7 @@ import { Tabs } from "@/components/ui/tabs";
 import { CreateCycleDialog } from "@/features/execution/CreateCycleDialog";
 import { nextCycleName } from "@/features/execution/labels";
 import { RecordHistory } from "@/features/projects/RecordHistory";
+import { PlanRequirements } from "@/features/requirements/components";
 import { AddCasesDialog } from "@/features/testdesign/CaseSelector";
 import { formatDate, formatPercent } from "@/lib/format";
 
@@ -51,11 +52,13 @@ export function PlanDetail({
   planId,
   canManage,
   canManageCycles,
+  canLinkRequirements,
 }: {
   project: Project;
   planId: string;
   canManage: boolean;
   canManageCycles: boolean;
+  canLinkRequirements: boolean;
 }) {
   const navigate = useNavigate();
   const toast = useToast();
@@ -185,6 +188,20 @@ export function PlanDetail({
             label: "Cases",
             count: p.case_count,
             content: <PlanCases project={project} plan={p} writable={writable} />,
+          },
+          {
+            value: "requirements",
+            label: "Requirements",
+            count: p.requirement_count,
+            content: (
+              <PlanRequirements
+                project={project}
+                planId={p.id}
+                releaseId={p.release_id}
+                canManage={writable}
+                canLink={canLinkRequirements && project.status !== "archived"}
+              />
+            ),
           },
           {
             value: "cycles",
@@ -607,6 +624,7 @@ function PlanCases({ project, plan, writable }: { project: Project; plan: PlanRe
           pending={addCases.isPending}
           error={addCases.error}
           onAdd={(sel) => addCases.mutateAsync({ ...sel, include_subfolders: true })}
+          savedViews
         />
       ) : null}
       <ConfirmDialog

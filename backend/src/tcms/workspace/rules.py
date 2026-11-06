@@ -31,6 +31,7 @@ DEFAULT_PROJECT_SETTINGS: Final[dict[str, Any]] = {
     "require_bug_link_for_failure": False,
     "bug_tracker_name": "tracker",
     "bug_url_template": None,
+    "requirement_url_template": None,
 }
 
 
@@ -122,7 +123,7 @@ def project_settings_problems(patch: dict[str, Any], policy: OrgPolicy) -> list[
         elif key == "bug_tracker_name":
             if not isinstance(value, str) or not 1 <= len(value.strip()) <= BUG_TRACKER_NAME_MAX:
                 problems.append(FieldError(field, "invalid_length", f"1–{BUG_TRACKER_NAME_MAX} characters"))
-        elif key == "bug_url_template":
+        elif key in ("bug_url_template", "requirement_url_template"):
             if (msg := bug_url_template_problem(value)) is not None:
                 problems.append(FieldError(field, "invalid_format", msg))
         elif key == "report_module_depth":
@@ -141,9 +142,14 @@ def default_project_settings(policy: OrgPolicy) -> dict[str, Any]:
     return {**DEFAULT_PROJECT_SETTINGS, "attachment_max_mb": policy.default_attachment_max_mb}
 
 
+def requirement_template(settings: dict[str, Any]) -> str | None:
+    """ADR-024 (Q2 = a): the requirement address, falling back to the bug tracker address."""
+    return settings.get("requirement_url_template") or settings.get("bug_url_template")
+
+
 def merged_project_settings(current: dict[str, Any], patch: dict[str, Any]) -> dict[str, Any]:
     merged = {**DEFAULT_PROJECT_SETTINGS, **current, **patch}
-    for key in ("bug_tracker_name", "bug_url_template"):
+    for key in ("bug_tracker_name", "bug_url_template", "requirement_url_template"):
         if isinstance(merged.get(key), str):
             merged[key] = merged[key].strip() or DEFAULT_PROJECT_SETTINGS[key]
     return merged

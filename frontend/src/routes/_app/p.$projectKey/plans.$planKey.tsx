@@ -33,6 +33,7 @@ export const Route = createFileRoute("/_app/p/$projectKey/plans/$planKey")({
         planId={resolved.data.id}
         canManage={can(perms, "plan.manage")}
         canManageCycles={can(perms, "cycle.manage")}
+        canLinkRequirements={can(perms, "requirement.link")}
       />
     );
   },

@@ -206,3 +206,17 @@ def bug_report(s: Session, ctx: AccessContext, result_id: UUID, step_id: UUID | 
 
 def owner_of_link(s: Session, link_id: UUID) -> tuple[UUID, UUID] | None:
     return repo.owner_of(s, link_id)
+
+
+def references_for_cases(
+    s: Session, ctx: AccessContext, case_ids: list[UUID], run_ids: set[UUID] | None
+) -> dict[UUID, list[tuple[str, str | None]]]:
+    """Distinct bug references per case (traceability, docs/02 §10.4). With `run_ids`, attempt links count
+    only when their run is in the set (the release's runs); direct case links always count."""
+    out: dict[UUID, dict[str, tuple[str, str | None]]] = {}
+    for case_id in case_ids:
+        for row in repo.links_of_case(s, ctx, case_id):
+            if run_ids is not None and row.run_id is not None and row.run_id not in run_ids:
+                continue
+            out.setdefault(case_id, {}).setdefault(row.reference_norm, (row.reference, row.url))
+    return {k: list(v.values()) for k, v in out.items()}

@@ -23,6 +23,7 @@ import { formatDate, formatDateTime } from "@/lib/format";
 import { can } from "@/lib/permissions";
 import { MenuContent, MenuItem } from "@/components/ui/menu";
 import { CaseBugs } from "@/features/bugs/components";
+import { CaseRequirements } from "@/features/requirements/components";
 import { AuditTable, useAuditState } from "@/features/projects/AuditTable";
 import { cn } from "@/lib/utils";
 
@@ -210,6 +211,17 @@ export function CaseDetail({
               ),
             },
             { value: "executions", label: "Executions", content: <Executions caseId={c.id} /> },
+            {
+              value: "requirements",
+              label: "Requirements",
+              content: (
+                <CaseRequirements
+                  caseId={c.id}
+                  caseKey={c.key}
+                  canLink={writable && can(perms, "requirement.link")}
+                />
+              ),
+            },
             {
               value: "bugs",
               label: "Bugs",

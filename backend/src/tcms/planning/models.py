@@ -98,3 +98,27 @@ class TestPlanEnvironment(Base):
         UUIDT, ForeignKey("test_plans.id", ondelete="CASCADE"), primary_key=True
     )
     environment_id: Mapped[UUID] = mapped_column(UUIDT, ForeignKey("environments.id"), primary_key=True)
+
+
+class PlanRequirementRef(Base):
+    """Requirement references a plan must cover (M6, ADR-024); replaces the unused test_plan_requirements."""
+
+    __tablename__ = "plan_requirement_refs"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["project_id", "plan_id"], ["test_plans.project_id", "test_plans.id"], ondelete="CASCADE"
+        ),
+        ForeignKeyConstraint(
+            ["project_id", "ref_id"],
+            ["requirement_refs.project_id", "requirement_refs.id"],
+            ondelete="CASCADE",
+        ),
+        Index("ix_plan_requirement_refs__ref_id", "ref_id"),
+    )
+
+    plan_id: Mapped[UUID] = mapped_column(UUIDT, primary_key=True)
+    ref_id: Mapped[UUID] = mapped_column(UUIDT, primary_key=True)
+    organization_id: Mapped[UUID] = mapped_column(UUIDT, nullable=False)
+    project_id: Mapped[UUID] = mapped_column(UUIDT, nullable=False)
+    created_at: Mapped[datetime] = created_ts()
+    created_by: Mapped[UUID | None] = mapped_column(UUIDT)

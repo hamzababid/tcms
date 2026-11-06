@@ -293,6 +293,24 @@ function Options({ project, editable }: { project: Project; editable: boolean })
                 />
               )}
             </Field>
+            <Field
+              label="Requirement address"
+              hint="Optional. Where requirement references point, with {ref}; empty uses the bug address."
+              error={errors["settings.requirement_url_template"]}
+            >
+              {(p) => (
+                <Input
+                  {...p}
+                  type="url"
+                  disabled={!editable}
+                  placeholder="https://tracker.example.com/stories/{ref}"
+                  value={settings.requirement_url_template ?? ""}
+                  onChange={(e) => {
+                    setSettings({ ...settings, requirement_url_template: e.target.value });
+                  }}
+                />
+              )}
+            </Field>
           </div>
         </Card>
         <Card title="Reporting" description="How folders roll up in reports.">

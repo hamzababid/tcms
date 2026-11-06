@@ -41,6 +41,11 @@ SQL_ONLY_INDEXES = frozenset(
         "ix_folders__project_id_path",
         "ux_defect_links__target",
         "ux_bug_links__target",
+        "ix_requirement_refs__reference_trgm",
+        "ix_requirement_refs__title_trgm",
+        "ix_bug_links__reference_trgm",
+        "ix_test_cycles__name_trgm",
+        "ix_test_plans__name_trgm",
         "ux_saved_views__owner_name",
         "ux_metric_snapshots__scope_day",
     }
