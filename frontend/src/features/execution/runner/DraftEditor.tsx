@@ -6,6 +6,9 @@ import { ConfirmDialog, PromptDialog } from "@/components/common/dialogs";
 import { errorMessage, useToast } from "@/components/common/feedback";
 import { MarkdownView } from "@/components/common/Markdown";
 import { Kbd } from "@/components/common/Tag";
+import type { Project } from "@/api/queries";
+import { getBugReport, useRunBugLinks } from "@/features/bugs/api";
+import { BugChips, LinkBugDialog, trackerOf, type LinkTarget } from "@/features/bugs/components";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { uploadAttachment, type Attachment } from "@/features/testdesign/api";
@@ -46,15 +49,21 @@ const TEXT_OUTCOMES: [Outcome, string][] = [
  * (Ctrl+Enter). The preview mirrors BR-09; the server decides and the reasons of BR-10 / K2 are asked for.
  */
 export function DraftEditor({
+  project,
   run,
   draft,
   editable,
+  canLinkBugs,
+  canRetest,
   onFinished,
   onHelp,
 }: {
+  project: Project;
   run: RunRead;
   draft: ResultRead;
   editable: boolean;
+  canLinkBugs: boolean;
+  canRetest: boolean;
   onFinished: (status: string) => void;
   onHelp: () => void;
 }) {
@@ -92,6 +101,32 @@ export function DraftEditor({
     const byId = new Map((version?.steps ?? []).map((s) => [s.id, s]));
     return draft.steps.map((d) => ({ draft: d, version: byId.get(d.step_id) }));
   }, [draft.steps, version?.steps]);
+  // Bug links (docs/02 §8.2): per step and on the attempt; a link required by the project re-tries Finish.
+  const tracker = trackerOf(project);
+  const runLinks = useRunBugLinks(run.id);
+  const attemptLinks = (runLinks.data ?? []).filter((l) => l.result_id === draft.id);
+  const [linkTarget, setLinkTarget] = useState<LinkTarget | null>(null);
+  const retryFinish = useRef<{ outcome: Outcome | null; reason: string | null } | null>(null);
+  const openLink = (stepId: string | null, position?: number) => {
+    setLinkTarget({
+      kind: "result",
+      resultId: draft.id,
+      stepId,
+      cycleId: run.cycle.id,
+      label: `${run.test_case.key}${position ? ` step ${String(position)}` : ""}`,
+    });
+  };
+  const copyReport = async () => {
+    const failedStep = steps.find((x) => saver.values[x.draft.step_id]?.status === "failed");
+    try {
+      await saver.flushAll();
+      const stepId = isText ? null : (steps[focus]?.draft.step_id ?? failedStep?.draft.step_id ?? null);
+      await navigator.clipboard.writeText(await getBugReport(draft.id, stepId));
+      toast(`Bug details copied – paste them into ${tracker.name}`);
+    } catch (e) {
+      toast(errorMessage(e), "error");
+    }
+  };
   const statuses: StepStatus[] = steps.map((s) => saver.values[s.draft.step_id]?.status ?? "not_run");
   const preview = previewOf(statuses);
   const correction = draft.corrects_result_id !== null;
@@ -154,7 +189,13 @@ export function DraftEditor({
     } catch (e) {
       if (e instanceof ApiError && e.code === "reason_required")
         setAsk({ outcome, title: correction ? "Why is this result corrected?" : "Reason for this result" });
-      else if (e instanceof ApiError && e.code === "actual_result_required") {
+      else if (e instanceof ApiError && e.code === "bug_link_required") {
+        // The project needs a bug link on failed results (AC-BUG-04): ask for it, then finish again.
+        retryFinish.current = { outcome, reason };
+        const failedAt = steps.find((x) => saver.values[x.draft.step_id]?.status === "failed");
+        toast(e.detail ?? "Link the bug before finishing", "error");
+        if (canLinkBugs) openLink(failedAt?.draft.step_id ?? null, failedAt?.draft.position);
+      } else if (e instanceof ApiError && e.code === "actual_result_required") {
         const first = /steps\[(\d+)\]/.exec(e.errors[0]?.field ?? "")?.[1];
         if (first !== undefined) {
           setFocus(Number(first));
@@ -215,6 +256,7 @@ export function DraftEditor({
   // Runner keys (docs/02 §7.4): P/F/B/S, J/K/↑/↓, A, Ctrl+Enter, ?; off while typing (except Esc, Ctrl+Enter).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return; // e.g. `G D` handled by the app shell
       const t = e.target as HTMLElement | null;
       const typing = !!t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable);
       if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
@@ -242,6 +284,10 @@ export function DraftEditor({
         const prev = Math.max(focus - 1, 0);
         setFocus(prev);
         rows.current[prev]?.focus();
+      } else if (canLinkBugs && key === "d" && !e.shiftKey) {
+        e.preventDefault();
+        const st = isText ? undefined : steps[focus];
+        openLink(st?.draft.step_id ?? null, st?.draft.position);
       } else if (!isText && editable && key === "a") {
         e.preventDefault();
         rows.current[focus]?.querySelector<HTMLInputElement>("input[data-attach]")?.click();
@@ -319,10 +365,57 @@ export function DraftEditor({
                 saver.update(s.draft.step_id, { [field]: v }, false);
               }}
               onAttach={(f) => void attach(s.draft.step_id, s.draft.id, f)}
+              bugSlot={
+                <>
+                  <BugChips
+                    links={attemptLinks.filter((l) => l.step_id === s.draft.step_id)}
+                    project={project}
+                    tracker={tracker}
+                    canRetest={canRetest}
+                  />
+                  {canLinkBugs ? (
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      aria-keyshortcuts="D"
+                      onClick={() => {
+                        setFocus(i);
+                        openLink(s.draft.step_id, s.draft.position);
+                      }}
+                    >
+                      Link bug (D)
+                    </Button>
+                  ) : null}
+                </>
+              }
             />
           ))}
         </ol>
       )}
+
+      <section aria-label="Bugs" className="flex flex-wrap items-center gap-2 text-[13px]">
+        <span className="text-ink-secondary">Bugs:</span>
+        {attemptLinks.length ? (
+          <BugChips links={attemptLinks} project={project} tracker={tracker} canRetest={canRetest} compact />
+        ) : (
+          <span className="text-ink-secondary">none linked</span>
+        )}
+        <span className="flex-1" />
+        {canLinkBugs && isText ? (
+          <Button
+            variant="secondary"
+            size="xs"
+            onClick={() => {
+              openLink(null);
+            }}
+          >
+            Link bug (D)
+          </Button>
+        ) : null}
+        <Button variant="ghost" size="xs" onClick={() => void copyReport()}>
+          Copy bug details
+        </Button>
+      </section>
 
       <section aria-label="Finish" className="grid gap-3 rounded-card border border-border bg-surface p-4">
         <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_200px]">
@@ -425,6 +518,18 @@ export function DraftEditor({
         pending={finishing}
         onSubmit={(reason) => {
           void finish(ask?.outcome ?? null, reason);
+        }}
+      />
+      <LinkBugDialog
+        target={linkTarget}
+        tracker={tracker}
+        onClose={() => {
+          setLinkTarget(null);
+        }}
+        onLinked={() => {
+          const again = retryFinish.current;
+          retryFinish.current = null;
+          if (again) void finish(again.outcome, again.reason);
         }}
       />
       <ConfirmDialog

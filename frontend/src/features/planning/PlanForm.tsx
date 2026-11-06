@@ -21,7 +21,7 @@ import {
   type PlanType,
   type Risk,
 } from "./api";
-import { PLAN_TYPES, RISK_IMPACTS, RULE_TYPES, SEVERITIES, type RuleType } from "./labels";
+import { PLAN_TYPES, RISK_IMPACTS, RULE_TYPES, type RuleType } from "./labels";
 
 interface Values {
   name: string;
@@ -99,8 +99,6 @@ function validate(v: Values): Record<string, string> {
       e[`exit_rules[${i}]`] = "Give a percentage between 0 and 100";
     if (kind === "count" && !(Number.isInteger(r.threshold) && r.threshold >= 0))
       e[`exit_rules[${i}]`] = "Give a whole number of 0 or more";
-    if (r.type === "max_open_defects" && !r.params?.severities?.length)
-      e[`exit_rules[${i}]`] = "Choose at least one severity";
     if (kind === "tag" && !r.params?.tag) e[`exit_rules[${i}]`] = "Choose a tag";
   });
   v.risks.forEach((r, i) => {
@@ -117,7 +115,6 @@ function fieldKey(field: string): string {
 }
 
 function newRule(type: RuleType): ExitRule {
-  if (type === "max_open_defects") return { type, threshold: 0, params: { severities: ["critical"] } };
   if (type === "tag_fully_executed") return { type, threshold: 1, params: { tag: "" } };
   if (RULE_TYPES[type].kind === "count") return { type, threshold: 0 };
   return { type, threshold: 1 };
@@ -658,32 +655,6 @@ function RuleRow({
           <Trash2 aria-hidden="true" className="size-4" />
         </Button>
       </div>
-      {rule.type === "max_open_defects" ? (
-        <fieldset className="mt-2 flex flex-wrap items-center gap-3 text-[13px]">
-          <legend className="sr-only">Rule {n} severities</legend>
-          <span className="text-ink-secondary">Severities</span>
-          {SEVERITIES.map((s) => {
-            const current = rule.params?.severities ?? [];
-            return (
-              <label key={s} className="flex items-center gap-1.5 capitalize">
-                <input
-                  type="checkbox"
-                  checked={current.includes(s)}
-                  onChange={(e) => {
-                    onChange({
-                      ...rule,
-                      params: {
-                        severities: e.target.checked ? [...current, s] : current.filter((x) => x !== s),
-                      },
-                    });
-                  }}
-                />
-                {s}
-              </label>
-            );
-          })}
-        </fieldset>
-      ) : null}
       {error ? <p className="mt-1 text-xs text-danger">{error}</p> : null}
     </li>
   );

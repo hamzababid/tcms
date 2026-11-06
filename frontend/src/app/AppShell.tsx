@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import {
   Activity,
+  Bug,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
@@ -107,7 +108,7 @@ function ProjectSwitcher({
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   useEffect(() => {
-    // `G` then `P` opens the switcher, `G R` the repository, `G C` the cycles (docs/07 §10).
+    // `G` then `P` opens the switcher, `G R` the repository, `G C` the cycles, `G D` the bugs (docs/07 §10).
     let armed = false;
     let timer = 0;
     const onKey = (e: KeyboardEvent) => {
@@ -128,6 +129,10 @@ function ProjectSwitcher({
         // Consumed here so page shortcuts (C = new case in the repository) do not also fire.
         e.preventDefault();
         void navigate({ to: "/p/$projectKey/cycles", params: { projectKey: current.key } });
+      } else if (armed && e.key.toLowerCase() === "d" && current) {
+        armed = false;
+        e.preventDefault(); // the runner's D (link a bug) checks defaultPrevented
+        void navigate({ to: "/p/$projectKey/bugs", params: { projectKey: current.key } });
       }
     };
     // Capture phase: runs before page-level shortcut listeners on window.
@@ -203,6 +208,7 @@ function useCrumbs(project: Project | undefined): Crumb[] {
     const params = { projectKey: project.key };
     crumbs.push({ label: project.key, to: "/p/$projectKey", params, mono: true });
     if (path.endsWith("/activity")) crumbs.push({ label: "Activity" });
+    if (path.endsWith("/bugs")) crumbs.push({ label: "Bugs" });
     if (path.includes("/plans")) {
       crumbs.push({ label: "Plans", to: "/p/$projectKey/plans", params });
       const planKey = /\/plans\/([^/]+)/.exec(path)?.[1];
@@ -396,6 +402,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           params: { projectKey: current.key },
           label: "Cycles",
           icon: PlayCircle,
+        },
+        {
+          to: "/p/$projectKey/bugs",
+          params: { projectKey: current.key },
+          label: "Bugs",
+          icon: Bug,
         },
         {
           to: "/p/$projectKey/activity",

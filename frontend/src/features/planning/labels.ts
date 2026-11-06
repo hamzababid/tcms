@@ -42,33 +42,29 @@ export type RuleType = ExitRule["type"];
 
 /**
  * Readiness rules (docs/02 §11.4, docs/06 §5.9): percentage rules store a fraction 0–1, count rules
- * a whole number; `max_open_defects` needs severities and `tag_fully_executed` a tag.
+ * a whole number; `tag_fully_executed` needs a tag. `max_failed` replaced `max_open_defects` (ADR-023).
  */
 export const RULE_TYPES: Record<RuleType, { label: string; kind: "percent" | "count" | "tag" }> = {
   min_execution_progress: { label: "Execution progress ≥", kind: "percent" },
   min_pass_rate: { label: "Pass rate ≥", kind: "percent" },
   min_pass_rate_applicable: { label: "Pass rate (applicable) ≥", kind: "percent" },
-  max_open_defects: { label: "Open defects ≤", kind: "count" },
+  max_failed: { label: "Failed runs ≤", kind: "count" },
   max_blocked: { label: "Blocked runs ≤", kind: "count" },
   min_requirement_coverage: { label: "Requirement coverage ≥", kind: "percent" },
   min_requirements_verified: { label: "Requirements verified ≥", kind: "percent" },
   tag_fully_executed: { label: "Every case tagged … executed", kind: "tag" },
 };
 
-export const SEVERITIES = ["critical", "high", "medium", "low"] as const;
-
 export const RISK_IMPACTS = { low: "Low", medium: "Medium", high: "High" } as const;
 
-/** "Execution progress ≥ 100%", "No open Critical, High defects", "Every case tagged smoke executed". */
+/** "Execution progress ≥ 100%", "No failed runs", "Every case tagged smoke executed". */
 export function ruleText(rule: ExitRule): string {
   // Unknown rule types are shown raw (docs/06 §2.11).
   const spec = (RULE_TYPES as Partial<Record<string, (typeof RULE_TYPES)[RuleType]>>)[rule.type];
   if (!spec) return `${rule.type} ${rule.threshold}`;
   if (spec.kind === "tag") return `Every case tagged ${rule.params?.tag ?? "?"} executed`;
   if (spec.kind === "percent") return `${spec.label} ${Math.round(rule.threshold * 100)}%`;
-  if (rule.type === "max_open_defects") {
-    const sev = (rule.params?.severities ?? []).map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(", ");
-    return rule.threshold === 0 ? `No open ${sev} defects` : `Open ${sev} defects ≤ ${rule.threshold}`;
-  }
+  if (rule.type === "max_failed")
+    return rule.threshold === 0 ? "No failed runs" : `Failed runs ≤ ${rule.threshold}`;
   return `${spec.label} ${rule.threshold}`;
 }

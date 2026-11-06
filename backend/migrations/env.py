@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))  # tcms_migrations help
 
 # The ORM metadata of every module: needed for `alembic check`. Importing models here (outside the
 # tcms package) keeps each module's models private to its own package (import-linter contracts).
+import tcms.bugs.models
 import tcms.defects.models
 import tcms.execution.models
 import tcms.identity.models
@@ -39,6 +40,7 @@ SQL_ONLY_INDEXES = frozenset(
         "ux_folders__project_parent_lower_name",
         "ix_folders__project_id_path",
         "ux_defect_links__target",
+        "ux_bug_links__target",
         "ux_saved_views__owner_name",
         "ux_metric_snapshots__scope_day",
     }

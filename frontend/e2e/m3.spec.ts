@@ -123,7 +123,7 @@ test("TCMS-050: create a plan with exit criteria and risks, then activate it", a
   await dialog.getByLabel("End date").fill("2026-11-14");
   await dialog.getByLabel("Objectives").fill("Verify the **v2.5** release");
   await dialog.getByLabel("Add exit rule").selectOption("min_execution_progress");
-  await dialog.getByLabel("Add exit rule").selectOption("max_open_defects");
+  await dialog.getByLabel("Add exit rule").selectOption("max_failed");
   await dialog.getByLabel("Rule 2 threshold").fill("0");
   await dialog.getByRole("button", { name: "Risk", exact: true }).click();
   await dialog.getByLabel("Risk 1 description").fill("Telemetry feed unstable");
@@ -135,7 +135,7 @@ test("TCMS-050: create a plan with exit criteria and risks, then activate it", a
   await expect(page.getByRole("heading", { name })).toBeVisible();
   await expect(page.locator("[data-status=draft]").first()).toBeVisible();
   await expect(page.getByText("Execution progress ≥ 100%")).toBeVisible();
-  await expect(page.getByText("No open Critical defects")).toBeVisible();
+  await expect(page.getByText("No failed runs")).toBeVisible();
   await expect(page.getByRole("cell", { name: "Telemetry feed unstable" })).toBeVisible();
   await expect(page.getByRole("cell", { name: "High" })).toBeVisible();
 

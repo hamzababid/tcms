@@ -36,6 +36,9 @@ import {
   type RunRead,
 } from "../api";
 import { NEWER_VERSION_REASON } from "../labels";
+import { useRunBugLinks } from "@/features/bugs/api";
+import { BugChips, LinkBugDialog, trackerOf, type LinkTarget } from "@/features/bugs/components";
+
 import { DraftEditor } from "./DraftEditor";
 
 const SHORTCUTS: [string, string][] = [
@@ -315,6 +318,12 @@ function RunBody({
   const writable = project.status !== "archived" && r.cycle.status !== "closed" && !r.superseded_by_run_id;
   const canExecute = writable && can(perms, "run.execute");
   const canManage = writable && can(perms, "cycle.manage");
+  // Bug links are not part of the attempt, so final attempts take them too (BR-20); not in archived projects.
+  const canLinkBugs = project.status !== "archived" && can(perms, "defect.create");
+  const canRetest = project.status !== "archived" && can(perms, "cycle.manage");
+  const tracker = trackerOf(project);
+  const bugLinks = useRunBugLinks(r.id).data ?? [];
+  const [linkTarget, setLinkTarget] = useState<LinkTarget | null>(null);
   const draft = r.draft ?? null;
   const mine = draft?.executed_by?.id === me.user.id;
   const editable = Boolean(draft) && (mine ? canExecute : canManage);
@@ -552,9 +561,12 @@ function RunBody({
             </p>
           ) : null}
           <DraftEditor
+            project={project}
             run={r}
             draft={draft}
             editable={editable}
+            canLinkBugs={canLinkBugs}
+            canRetest={canRetest}
             onHelp={onHelp}
             onFinished={(s) => void onFinished(s)}
           />
@@ -633,12 +645,43 @@ function RunBody({
                   {a.reason ? ` · ${a.reason}` : ""}
                 </span>
                 {a.corrected_by_result_id ? <span className="text-xs no-underline">(corrected)</span> : null}
+                <BugChips
+                  links={bugLinks.filter((l) => l.result_id === a.id)}
+                  project={project}
+                  tracker={tracker}
+                  canRetest={canRetest}
+                  compact
+                />
+                {canLinkBugs ? (
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    onClick={() => {
+                      setLinkTarget({
+                        kind: "result",
+                        resultId: a.id,
+                        stepId: null,
+                        cycleId: r.cycle.id,
+                        label: `${r.test_case.key} attempt ${String(a.attempt_no)}`,
+                      });
+                    }}
+                  >
+                    Link bug
+                  </Button>
+                ) : null}
               </li>
             ))}
           </ol>
         </section>
       ) : null}
 
+      <LinkBugDialog
+        target={linkTarget}
+        tracker={tracker}
+        onClose={() => {
+          setLinkTarget(null);
+        }}
+      />
       <ConfirmDialog
         open={confirmDiscard}
         onOpenChange={setConfirmDiscard}
