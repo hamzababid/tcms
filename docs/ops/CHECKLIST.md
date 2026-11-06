@@ -201,14 +201,40 @@ discard and close remove a draft's links (`test_discarding_a_draft_removes_its_l
 retired; `max_failed` replaces `max_open_defects` (migrated). Seed: SPARK tracker "Jira", `SPK-431` on the failed
 SPARK-CY-1 result, `SPK-440` on a case. L26 (Bugs column) and L28 are closed; deferred items: L32–L36.
 
-### M6–M9 — not started
+## M6 — Requirement references, traceability, search (branch `milestone/m6-requirements-search`)
+
+Re-scoped by the product owner on 2026-11-06 (ADR-024), like M5: requirements live in each team's tool; Assay stores
+references to them, links them to cases and plans, and computes coverage, the matrix and status per release.
+Spec: `.kiro/specs/m6-requirements-search/`. Backend tests in `backend/tests/api/test_requirements.py`,
+`tests/api/test_search_views.py`, `tests/unit/test_requirement_rules.py`, `tests/integration/test_coverage_oracle.py`;
+E2E in `frontend/e2e/m6.spec.ts` (axe on every visited screen). Migration `0004_m6_requirement_refs`
+(`docs/schema/05_m6_requirement_refs.sql`).
+
+| Story | Status | Verified by | Notes |
+| --- | --- | --- | --- |
+| US-120 Add references (paste many) | ✅ | AC-REQ-06 `test_ac_req_06_add_many_with_template_and_no_duplicates`, unit `test_paste_many`, `test_ref_problems`; E2E "Requirements page: paste many" | ≤ 500 per paste; replaces CSV import |
+| US-121 Link from either side and in bulk | ✅ | TCMS-110 `test_tcms_110_link_from_either_side_and_in_bulk`, `test_us_072_plan_requirements_link_and_unlink`; E2E UJ-7 | Unknown references are registered (D12) |
+| US-122 Coverage and status per release | ✅ | BR-23 / AC-REQ-01…05 / TCMS-111 `test_br_23_ac_req_01_to_05_tcms_111_status_per_release`, unit `test_br_23_status_in_release`, property test `test_br_23_coverage_sql_matches_the_python_oracle` | Scope rule Q1 = a |
+| US-123 Traceability matrix | ✅ | TCMS-112 (E2E UJ-7), `test_traceability_shows_bugs_of_the_release` | Flat list, natural order; export in M8 |
+| US-130 Global search | ✅ | AC-SRCH-01 / TCMS-118 `test_ac_srch_01_tcms_118_search_by_key`, TCMS-119 `test_tcms_119_search_by_text_grouped`, `test_tcms_119_search_is_fast` (timing); E2E TCMS-118 | Member projects only |
+| US-131 Consistent filters | ✅ (partial) | Requirement filter on the repository (L19) via `test_tcms_110_…`; existing list filters | "is not"/"is empty" operators not on every list |
+| US-132 Saved views and defaults | ✅ | TCMS-120 `test_tcms_120_saved_views_private_shared_and_defaults`, L25 `test_l25_add_plan_cases_from_a_saved_view`; E2E TCMS-120 | Column visibility not saved |
+| US-133 Command palette | ✅ | E2E "TCMS-118 + palette" | `>` lists actions |
+
+Also: edit/archive/restore and permissions `test_edit_archive_restore_and_permissions`; tenancy
+`test_requirements_are_project_scoped`; authz matrix covers every M6 route (saved-view PATCH/DELETE are owner-only,
+covered by TCMS-120); `br_manifest`: BR-23 in M6. Project setting "Requirement address" (`requirement_url_template`,
+falls back to the bug address). Seed: SPK-101…105 on SPARK-PL-1 (SPK-105 has no case). L19, L25 and L34 are closed;
+deferred items: L37–L42.
+
+### M7–M9 — not started
 
 | Milestone | Epics | Status | Notes |
 | --- | --- | --- | --- |
 | M3 Plans & cycles | E07, E08 | ✅ done (merged, PR #9) | See the M3 section above |
 | M4 Execution runner | E09 | ✅ done (merged, PR #10) | See the M4 section above |
-| M5 Bug links | E10 | ✅ done (awaiting review) | See the M5 section above (ADR-023) |
-| M6 Requirements, RTM, search | E11, E12 | ⬜ not started | US-120…123, US-130…133; BR-23 |
+| M5 Bug links | E10 | ✅ done (merged, PR #12) | See the M5 section above (ADR-023) |
+| M6 Requirements, RTM, search | E11, E12 | ✅ done (awaiting review) | See the M6 section above (ADR-024) |
 | M7 Reporting & readiness | E13, E16 | ⬜ not started | US-140…146, US-170…171; BR-24; `reporting/metrics.py` not yet created |
 | M8 Import/export, admin UI, hardening | E14, E15 (UI), E17 | ⬜ not started | US-150…154, US-162…166, US-180…184 |
 | M9 Pilot & go-live | — | ⬜ not started | US-185 |
