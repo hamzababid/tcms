@@ -4,6 +4,7 @@ import { AlertTriangle, ChevronDown, Lock, MoreHorizontal, Play, Plus } from "lu
 import { useState, type KeyboardEvent, type MouseEvent } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
+import { api } from "@/api/client";
 import { useMembers, type Me, type Project } from "@/api/queries";
 import { DataTable, filterValue, sortParam } from "@/components/common/DataTable";
 import { ConfirmDialog, PromptDialog } from "@/components/common/dialogs";
@@ -122,6 +123,7 @@ export function CycleDetail({
             cycle={c}
             canManage={canManage}
             canReopen={canReopen}
+            canExecute={canExecute}
             onDialog={setDialog}
           />
         }
@@ -297,15 +299,18 @@ function CycleActions({
   cycle: c,
   canManage,
   canReopen,
+  canExecute,
   onDialog,
 }: {
   project: Project;
   cycle: CycleRead;
   canManage: boolean;
   canReopen: boolean;
+  canExecute: boolean;
   onDialog: (d: Dialog) => void;
 }) {
   const toast = useToast();
+  const navigate = useNavigate();
   const start = useStartCycle(project.id, c.id);
   const sync = useSyncFromPlan(project.id, c.id);
   const sort = useSortRuns(project.id, c.id);
@@ -314,7 +319,37 @@ function CycleActions({
   const onError = (e: unknown) => {
     toast(errorMessage(e), "error");
   };
-  if (!canManage && !(closed && canReopen)) return null;
+  /** "Start testing" (docs/07 §5.8): my first open run, or the first open run when none is mine. */
+  const startTesting = async () => {
+    const open = { status: "not_run,in_progress", sort: "position", page: 1, page_size: 1 };
+    const pick = async (extra: Record<string, string>) =>
+      (
+        await api.GET("/api/v1/cycles/{cycle_id}/runs", {
+          params: { path: { cycle_id: c.id }, query: { ...open, ...extra } },
+        })
+      ).data?.items[0]?.id;
+    try {
+      const runId = (await pick({ assignee_id: "me" })) ?? (await pick({}));
+      if (!runId) {
+        toast("Every run of this cycle has a result");
+        return;
+      }
+      void navigate({
+        to: "/p/$projectKey/cycles/$cycleKey/run/$runId",
+        params: { projectKey: project.key, cycleKey: c.key, runId },
+      });
+    } catch (e) {
+      onError(e);
+    }
+  };
+  const testing =
+    canExecute && !closed && c.summary.total > 0 ? (
+      <Button onClick={() => void startTesting()}>
+        <Play aria-hidden="true" className="size-4" />
+        Start testing
+      </Button>
+    ) : null;
+  if (!canManage && !(closed && canReopen)) return testing;
   return (
     <>
       {canManage && !closed ? (
@@ -486,6 +521,7 @@ function CycleActions({
           </MenuContent>
         </Menu>
       ) : null}
+      {testing}
     </>
   );
 }

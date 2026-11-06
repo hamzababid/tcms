@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from tcms.core.enums import CycleStatus, RunStatus
 from tcms.execution.rules import BUILD_MAX, NAME_MAX, NAME_MIN
 from tcms.identity.schemas import UserRef
-from tcms.testdesign.schemas import VersionRead
+from tcms.testdesign.schemas import AttachmentRead, VersionRead
 
 CloneStatus = Literal["failed", "blocked", "not_run"]
 
@@ -250,6 +250,8 @@ class NewerVersionRead(BaseModel):
 
 
 class AttemptRead(BaseModel):
+    """An attempt in a run's history (docs/06 §5.4)."""
+
     id: UUID
     attempt_no: int
     state: str
@@ -257,8 +259,14 @@ class AttemptRead(BaseModel):
     executed_by: UserRef | None
     started_at: datetime
     finished_at: datetime | None
+    duration_seconds: int | None = None
+    reason: str | None = None
+    comment: str | None = None
     skipped_steps: int
     corrects_result_id: UUID | None
+    corrected_by_result_id: UUID | None = Field(
+        default=None, description="Set when a later attempt corrects this one (shown struck through)"
+    )
 
 
 class RunCycleRef(BaseModel):
@@ -288,6 +296,124 @@ class RunRead(BaseModel):
     superseded_by_run_id: UUID | None
     has_attempts: bool
     version: VersionRead | None = Field(default=None, description="The pinned version (include=version)")
-    draft: AttemptRead | None = None
+    draft: ResultRead | None = Field(
+        default=None, description="The open attempt with its steps (include=draft)"
+    )
     history: list[AttemptRead] | None = None
+    queue: QueueRead | None = Field(default=None, description="Runner queue neighbours (include=queue)")
     row_version: int
+
+
+# -- attempts (M4, docs/06 §4.7, §5.5) -------------------------------------------------------------
+
+StepStatusIn = Literal["not_run", "passed", "failed", "blocked", "skipped"]
+Outcome = Literal["passed", "failed", "blocked", "skipped", "not_applicable"]
+
+
+class StepResultRead(BaseModel):
+    id: UUID = Field(description="Step result id (attachments use entity_type=test_step_result)")
+    step_id: UUID
+    position: int
+    status: StepStatusIn
+    actual_result: str | None
+    comment: str | None
+    attachments: list[AttachmentRead]
+    updated_at: datetime
+
+
+class ResultRead(BaseModel):
+    id: UUID
+    run_id: UUID
+    attempt_no: int
+    state: Literal["draft", "final"]
+    status: Outcome | None
+    source: str
+    executed_by: UserRef | None
+    started_at: datetime
+    finished_at: datetime | None
+    duration_seconds: int | None
+    build: str | None
+    environment: Ref
+    comment: str | None
+    reason: str | None
+    skipped_steps: int
+    corrects_result_id: UUID | None
+    steps: list[StepResultRead]
+
+
+class StartAttemptRequest(_Model):
+    take_over: bool = False
+    corrects_result_id: UUID | None = None
+
+
+class AttemptPatch(_Model):
+    comment: str | None = Field(default=None, max_length=20_000)
+    build: str | None = Field(default=None, max_length=100)
+    duration_seconds: int | None = Field(default=None, ge=0, le=86_400)
+
+
+class StepPatch(_Model):
+    status: StepStatusIn | None = None
+    actual_result: str | None = Field(default=None, max_length=20_000)
+    comment: str | None = Field(default=None, max_length=20_000)
+
+
+class BulkStepsRequest(_Model):
+    status: Literal["passed"]
+    only_not_run: Literal[True]
+
+
+class FinalizeRequest(_Model):
+    outcome: Outcome | None = None
+    reason: str | None = Field(default=None, max_length=1000)
+    duration_seconds: int | None = Field(default=None, ge=0, le=86_400)
+
+
+class FinalizeResponse(BaseModel):
+    result: ResultRead
+    run: RunRead
+
+
+class QueueRead(BaseModel):
+    filter: Literal["mine_open", "mine", "open", "all"]
+    position: int | None
+    total: int
+    previous_run_id: UUID | None
+    next_run_id: UUID | None
+
+
+class ProjectRef(BaseModel):
+    id: UUID
+    key: str
+    name: str
+
+
+class MyWorkCycle(BaseModel):
+    project: ProjectRef
+    id: UUID
+    key: str
+    name: str
+    status: CycleStatus
+    due_date: date | None
+    summary: ExecutionSummaryRead
+    next_run_id: UUID | None = Field(description="My first run that is not finished (Start / Continue)")
+
+
+class MyWorkReview(BaseModel):
+    project: ProjectRef
+    id: UUID
+    key: str
+    title: str
+    updated_at: datetime
+
+
+class MyWorkRead(BaseModel):
+    """docs/06 §4.1 `GET /me/work` (docs/07 §5.14). Defects assigned to me arrive with M5."""
+
+    cycles: list[MyWorkCycle]
+    reviews: list[MyWorkReview]
+    week: ExecutionSummaryRead = Field(description="Attempts I finished in the last 7 days")
+
+
+RunRead.model_rebuild()
+FinalizeResponse.model_rebuild()

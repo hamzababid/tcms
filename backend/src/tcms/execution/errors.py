@@ -25,6 +25,12 @@ class InvalidStatus(Conflict):
     code, title = "invalid_status", "This action is not possible in the current status"
 
 
+class DraftExists(Conflict):
+    """BR-07 on start: another tester's draft (take-over needs cycle.manage)."""
+
+    code, title = "draft_exists", "Someone else is running this attempt"
+
+
 class DraftsExist(Conflict):
     code, title = "draft_exists", "Finalize or discard the draft attempts before closing"
 

@@ -273,3 +273,176 @@ def folder_counts(
         .group_by(case_cols.c.folder_id, TestRun.status)
     ).all()
     return [(f, st.value, int(n)) for f, st, n in rows]
+
+
+# -- attempt writes and reads (M4, docs/04 §5.3–5.5) ----------------------------------------------
+
+
+def result(s: Session, ctx: AccessContext, result_id: UUID, *, for_update: bool = False) -> TestResult | None:
+    stmt = _scope(select(TestResult), TestResult, ctx).where(TestResult.id == result_id)
+    if for_update:
+        stmt = stmt.with_for_update()
+    return s.execute(stmt).scalar_one_or_none()
+
+
+def draft_of(s: Session, run_id: UUID) -> TestResult | None:
+    return s.execute(
+        select(TestResult).where(TestResult.run_id == run_id, TestResult.state == ResultState.draft)
+    ).scalar_one_or_none()
+
+
+def latest_final(s: Session, run_id: UUID) -> TestResult | None:
+    return s.execute(
+        select(TestResult)
+        .where(TestResult.run_id == run_id, TestResult.state == ResultState.final)
+        .order_by(TestResult.attempt_no.desc())
+        .limit(1)
+    ).scalar_one_or_none()
+
+
+def next_attempt_no(s: Session, run_id: UUID) -> int:
+    n = s.execute(
+        select(func.coalesce(func.max(TestResult.attempt_no), 0)).where(TestResult.run_id == run_id)
+    ).scalar_one()
+    return int(n) + 1
+
+
+def add_result(s: Session, row: TestResult, steps: Sequence[TestStepResult]) -> None:
+    s.add(row)
+    s.flush()  # the step trigger reads the parent row
+    s.add_all(steps)
+    s.flush()
+
+
+def step_results(s: Session, result_id: UUID) -> list[TestStepResult]:
+    return list(
+        s.execute(
+            select(TestStepResult)
+            .where(TestStepResult.result_id == result_id)
+            .order_by(TestStepResult.position)
+        ).scalars()
+    )
+
+
+def step_results_of(s: Session, result_ids: Sequence[UUID]) -> dict[UUID, list[TestStepResult]]:
+    out: dict[UUID, list[TestStepResult]] = {r: [] for r in result_ids}
+    if not result_ids:
+        return out
+    rows = s.execute(
+        select(TestStepResult)
+        .where(TestStepResult.result_id.in_(result_ids))
+        .order_by(TestStepResult.result_id, TestStepResult.position)
+    ).scalars()
+    for row in rows:
+        out[row.result_id].append(row)
+    return out
+
+
+def step_result(s: Session, result_id: UUID, step_id: UUID) -> TestStepResult | None:
+    return s.execute(
+        select(TestStepResult).where(TestStepResult.result_id == result_id, TestStepResult.step_id == step_id)
+    ).scalar_one_or_none()
+
+
+def step_result_by_id(s: Session, ctx: AccessContext, step_result_id: UUID) -> TestStepResult | None:
+    return s.execute(
+        _scope(select(TestStepResult), TestStepResult, ctx).where(TestStepResult.id == step_result_id)
+    ).scalar_one_or_none()
+
+
+def queue_runs(
+    s: Session, ctx: AccessContext, cycle_id: UUID, *, assignee_id: UUID | None, open_only: bool
+) -> list[UUID]:
+    """Active runs of a cycle in position order, optionally mine and/or not finalized (docs/02 §7.4)."""
+    stmt = _scope(select(TestRun.id), TestRun, ctx).where(TestRun.cycle_id == cycle_id, _ACTIVE)
+    if assignee_id is not None:
+        stmt = stmt.where(TestRun.assignee_id == assignee_id)
+    if open_only:
+        stmt = stmt.where(TestRun.status.in_([RunStatus.not_run, RunStatus.in_progress]))
+    return list(s.execute(stmt.order_by(TestRun.position, TestRun.id)).scalars())
+
+
+# -- My Work (org-level, across the caller's projects; docs/02 §7.5) -------------------------------
+
+
+def my_run_counts(
+    s: Session, org_id: UUID, project_ids: Sequence[UUID], user_id: UUID
+) -> list[tuple[TestCycle, str, int, int]]:
+    """(cycle, run status, count, needs-retest count) of my active runs in planned/active cycles."""
+    if not project_ids:
+        return []
+    rows = s.execute(
+        select(
+            TestCycle,
+            TestRun.status,
+            func.count(),
+            func.count().filter(TestRun.needs_retest.is_(True)),
+        )
+        .join(TestCycle, TestCycle.id == TestRun.cycle_id)
+        .where(
+            TestRun.organization_id == org_id,
+            TestRun.project_id.in_(project_ids),
+            TestRun.assignee_id == user_id,
+            _ACTIVE,
+            TestCycle.status.in_([CycleStatus.planned, CycleStatus.active]),
+            TestCycle.archived_at.is_(None),
+        )
+        .group_by(TestCycle.id, TestRun.status)
+    ).all()
+    return [(c, st.value, int(n), int(rt)) for c, st, n, rt in rows]
+
+
+def my_next_runs(s: Session, org_id: UUID, cycle_ids: Sequence[UUID], user_id: UUID) -> dict[UUID, UUID]:
+    """First open run (by position) of mine per cycle: where "Continue / Start" goes."""
+    if not cycle_ids:
+        return {}
+    rows = s.execute(
+        select(TestRun.cycle_id, TestRun.id)
+        .where(
+            TestRun.organization_id == org_id,
+            TestRun.cycle_id.in_(cycle_ids),
+            TestRun.assignee_id == user_id,
+            _ACTIVE,
+            TestRun.status.in_([RunStatus.not_run, RunStatus.in_progress]),
+        )
+        .order_by(TestRun.cycle_id, TestRun.position, TestRun.id)
+    ).all()
+    out: dict[UUID, UUID] = {}
+    for c, r in rows:
+        out.setdefault(c, r)
+    return out
+
+
+def my_finished_counts(
+    s: Session, org_id: UUID, project_ids: Sequence[UUID], user_id: UUID, since: Any
+) -> dict[str, int]:
+    """Final attempts I recorded since `since`, by status ("My week")."""
+    if not project_ids:
+        return {}
+    rows = s.execute(
+        select(TestResult.status, func.count())
+        .where(
+            TestResult.organization_id == org_id,
+            TestResult.project_id.in_(project_ids),
+            TestResult.executed_by == user_id,
+            TestResult.state == ResultState.final,
+            TestResult.finished_at >= since,
+        )
+        .group_by(TestResult.status)
+    ).all()
+    return {st.value: int(n) for st, n in rows if st is not None}
+
+
+def all_runs_with_attempts(s: Session, ctx: AccessContext) -> list[tuple[TestRun, list[TestResult]]]:
+    """Every run of the project with its attempts (consistency check, docs/04 §5.6)."""
+    runs = list(s.execute(_scope(select(TestRun), TestRun, ctx)).scalars())
+    by_run: dict[UUID, list[TestResult]] = {r.id: [] for r in runs}
+    for res in s.execute(_scope(select(TestResult), TestResult, ctx)).scalars():
+        by_run.setdefault(res.run_id, []).append(res)
+    return [(r, by_run[r.id]) for r in runs]
+
+
+def projects_with_runs(s: Session) -> list[tuple[UUID, UUID]]:
+    """System job helper (no user context): each tenant is then read through its own scoped context."""
+    rows = s.execute(select(TestRun.organization_id, TestRun.project_id).distinct()).all()
+    return [(o, p) for o, p in rows]

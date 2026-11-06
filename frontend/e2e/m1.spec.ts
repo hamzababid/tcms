@@ -51,10 +51,10 @@ async function adminApi(request: APIRequestContext): Promise<void> {
   throw new Error("admin MFA verification failed");
 }
 
-test("TCMS-001: a member signs in and lands on their project (review K5)", async ({ page }) => {
+test("TCMS-001: a member signs in and lands on My Work (review K5)", async ({ page }) => {
   await signIn(page, "sana@acme.test");
-  // With one project she lands on it; with several (and none remembered) on the project list.
-  await expect(page).toHaveURL(/\/(p\/SPARK\/activity|projects)$/);
+  await expect(page).toHaveURL(/\/my-work$/);
+  await expect(page.getByRole("heading", { name: "My Work", level: 1 })).toBeVisible();
   await page.goto("/p/SPARK/activity");
   await expect(page.getByRole("heading", { name: "Activity", level: 1 })).toBeVisible();
   await expect(page.getByRole("button", { name: /SPARK Platform/ })).toBeVisible(); // sidebar project switcher
@@ -65,7 +65,7 @@ test("TCMS-001: a member signs in and lands on their project (review K5)", async
   await page.getByRole("button", { name: /Account menu/ }).click();
   await page.getByRole("menuitem", { name: "Sign out" }).click();
   await signIn(page, "sana@acme.test");
-  await expect(page).toHaveURL(/\/p\/SPARK\/activity$/); // the last project is remembered
+  await expect(page).toHaveURL(/\/my-work$/);
 });
 
 test("wrong password shows the generic message", async ({ page }) => {
@@ -112,7 +112,7 @@ test("TCMS-008 + TCMS-004 + TCMS-005: invited admin enrols MFA, then signs in wi
   await expect(page.getByRole("button", { name: "Continue" })).toBeDisabled();
   await page.getByLabel("I've saved these codes").check();
   await page.getByRole("button", { name: "Continue" }).click();
-  await expect(page).toHaveURL(/\/projects$/);
+  await expect(page).toHaveURL(/\/(projects|my-work)$/);
 
   // TCMS-005: sign out, sign in again with the authenticator code (next 30 s step to avoid replay).
   await page.getByRole("button", { name: /Account menu/ }).click();
@@ -123,7 +123,7 @@ test("TCMS-008 + TCMS-004 + TCMS-005: invited admin enrols MFA, then signs in wi
   await expect(page).toHaveURL(/\/login\/mfa/);
   await expectAccessible(page);
   await page.getByLabel("Verification code").fill(totp(secret)); // auto-submits on 6 digits
-  await expect(page).toHaveURL(/\/(projects|p\/)/);
+  await expect(page).toHaveURL(/\/(projects|my-work|p\/)/);
 });
 
 test("TCMS-020: a QA Manager creates a project and becomes its QA Manager", async ({ page }) => {

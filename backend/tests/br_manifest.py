@@ -5,7 +5,7 @@ test name (`test_br_XX_*`) or `@pytest.mark.br("BR-XX")` marker. Add a milestone
 when its acceptance criteria pass.
 """
 
-COMPLETED: frozenset[str] = frozenset({"M0", "M1", "M2", "M3"})
+COMPLETED: frozenset[str] = frozenset({"M0", "M1", "M2", "M3", "M4"})
 
 BR_MILESTONE: dict[str, str] = {
     "BR-01": "M2",

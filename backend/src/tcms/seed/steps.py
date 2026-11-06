@@ -472,3 +472,87 @@ def seed_plans_and_cycles(profile: str) -> str:
         execution.start_cycle(uow, ctx, cycle_id)
 
     return f"SPARK plan with {added} cases and a started cycle of {len(run_ids)} runs"
+
+
+# -- execution (M4) -------------------------------------------------------------------------------
+
+# Outcomes Sana records on the first runs of SPARK-CY-1, in position order: (step status for every step,
+# explicit outcome, reason). The last one stays a draft (in progress).
+EXECUTIONS: tuple[tuple[str, str | None, str | None], ...] = (
+    ("passed", None, None),
+    ("passed", None, None),
+    ("failed", None, None),
+    ("passed", None, None),
+    ("blocked", None, "Payment sandbox was down"),
+    ("passed", None, None),
+    ("skipped", "not_applicable", "Feature disabled for this tenant"),
+    ("draft", None, None),
+)
+
+
+@step("SPARK executed results", profiles=("dev",))
+def seed_results(profile: str) -> str:
+    """Real attempts on SPARK-CY-1 through the runner services (US-090…092), so cycles, plans and My Work
+    show progress."""
+    from tcms.core.pagination import PageParams
+    from tcms.core.permissions import PROJECT_PERMISSIONS
+    from tcms.execution import queries as exec_queries
+    from tcms.execution import service as execution
+
+    del profile
+    factory = session_factory(app_engine(get_settings()))
+    with factory() as s:
+        org = workspace_queries.organization_by_slug(s, ORG_SLUG)
+        spark = (
+            next(
+                (p for p in workspace_queries.projects(s, org.id, ids=None, status=None) if p.key == "SPARK"),
+                None,
+            )
+            if org
+            else None
+        )
+        if org is None or spark is None:
+            return "no SPARK project"
+        members = {m.user.email: m.user.id for m in identity_queries.project_members(s, org.id, spark.id)}
+    engineer = members.get("sana@acme.test")
+    if engineer is None:
+        return "Sana is not a SPARK member"
+    ctx = AccessContext.for_principal(
+        Principal(engineer, org.id, False, display_name="Sana Malik"),
+        META,
+        project_id=spark.id,
+        permissions=PROJECT_PERMISSIONS,
+    )
+    with factory() as s:
+        cycle = exec_queries.cycle_by_key(s, ctx, "SPARK-CY-1")
+        if cycle is None:
+            return "no SPARK-CY-1 — run the plan and cycle step first"
+        rows, _ = exec_queries.list_runs(s, ctx, cycle.id, {}, PageParams(page=1, page_size=200))
+        if any(r.run.status.value != "not_run" for r in rows):
+            return "SPARK-CY-1 already has results — nothing to do"
+        run_ids = [r.run.id for r in rows[: len(EXECUTIONS)]]
+    recorded = 0
+    for run_id, (status, outcome, reason) in zip(run_ids, EXECUTIONS, strict=False):
+        with unit_of_work(factory) as uow:
+            res = execution.start_attempt(uow, ctx, run_id).result
+            uow.session.flush()
+            steps = exec_queries.result_detail(uow.session, ctx, res.id).steps
+            for i, st in enumerate(steps):
+                if status == "draft":
+                    if i == 0:
+                        execution.record_step(uow, ctx, res.id, st.step_id, fields={"status": "passed"})
+                    continue
+                fields: dict[str, str] = {"status": status if i == len(steps) - 1 else "passed"}
+                if status == "skipped":
+                    fields["status"] = "skipped"
+                if fields["status"] == "failed":
+                    fields["actual_result"] = (
+                        "The dashboard took 9 s to load; a spinner was shown the whole time."
+                    )
+                execution.record_step(uow, ctx, res.id, st.step_id, fields=fields)
+            if status != "draft":
+                execution.finalize_attempt(
+                    uow, ctx, res.id, outcome=outcome, reason=reason, duration_seconds=None
+                )
+                recorded += 1
+    return f"{recorded} results and 1 draft on SPARK-CY-1"

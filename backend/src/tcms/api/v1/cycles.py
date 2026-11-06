@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 
 from tcms.api.deps import get_read_uow, get_uow, project_context, project_context_from, resolve_row_version
 from tcms.api.idempotency import Idempotency, idempotency
+from tcms.api.v1.records import attachment_read
 from tcms.api.v1.test_cases import version_read
 from tcms.core.context import AccessContext
 from tcms.core.errors import InvalidInclude, NotFound
@@ -23,6 +24,7 @@ from tcms.execution.service import CycleData, Selection
 from tcms.identity import queries as identity_queries
 from tcms.identity.schemas import UserRef
 from tcms.planning import queries as planning_queries
+from tcms.platform import attachments
 from tcms.reporting.metrics import ExecutionSummary
 from tcms.testdesign import queries as tq
 from tcms.workspace import queries as workspace_queries
@@ -31,7 +33,7 @@ router = APIRouter(prefix="/api/v1", tags=["cycles"])
 
 CycleCtx = Depends(project_context_from("test_cycle", "cycle_id"))
 RunCtx = Depends(project_context_from("test_run", "run_id"))
-RUN_INCLUDES = frozenset({"version", "draft", "history"})
+RUN_INCLUDES = frozenset({"version", "draft", "history", "queue"})
 
 
 def _etag(response: Response, rv: int) -> None:
@@ -442,11 +444,60 @@ def update_not_run_versions(
     return s.CountResponse(count=service.update_not_run_versions(uow, ctx, cycle_id))
 
 
-def run_read(uow: UnitOfWork, ctx: AccessContext, run_id: UUID, includes: frozenset[str]) -> s.RunRead:
+def result_read(uow: UnitOfWork, ctx: AccessContext, v: eq.ResultView) -> s.ResultRead:
+    """docs/06 §5.5: an attempt with its step rows and their evidence."""
+    org = ctx.principal.organization_id
+    envs = {
+        e.id: e.name for e in workspace_queries.environments(uow.session, org, ctx.pid, include_archived=True)
+    }
+    evidence = attachments.list_for(uow, org, "test_step_result", [x.id for x in v.steps])
+    people = {v.executed_by, *(a.uploaded_by for lst in evidence.values() for a in lst)}
+    users = _users(uow, set(people))
+    return s.ResultRead(
+        id=v.id,
+        run_id=v.run_id,
+        attempt_no=v.attempt_no,
+        state=v.state,
+        status=v.status,
+        source=v.source,
+        executed_by=users.get(v.executed_by) if v.executed_by else None,
+        started_at=v.started_at,
+        finished_at=v.finished_at,
+        duration_seconds=v.duration_seconds,
+        build=v.build,
+        environment=s.Ref(id=v.environment_id, name=envs.get(v.environment_id, "—")),
+        comment=v.comment,
+        reason=v.reason,
+        skipped_steps=v.skipped_steps,
+        corrects_result_id=v.corrects_result_id,
+        steps=[
+            s.StepResultRead(
+                id=x.id,
+                step_id=x.step_id,
+                position=x.position,
+                status=x.status,
+                actual_result=x.actual_result,
+                comment=x.comment,
+                attachments=[attachment_read(a, users) for a in evidence.get(x.id, [])],
+                updated_at=x.updated_at,
+            )
+            for x in v.steps
+        ],
+    )
+
+
+def run_read(
+    uow: UnitOfWork,
+    ctx: AccessContext,
+    run_id: UUID,
+    includes: frozenset[str],
+    queue_filter: str | None = None,
+) -> s.RunRead:
     d = eq.run_detail(uow.session, ctx, run_id)
     r = d.row
     attempts = [*d.history, *([d.draft] if d.draft else [])]
     users = _users(uow, {r.run.assignee_id, *(a.executed_by for a in attempts)})
+    corrected_by = {a.corrects_result_id: a.id for a in d.history if a.corrects_result_id}
 
     def attempt(a: eq.AttemptView) -> s.AttemptRead:
         return s.AttemptRead(
@@ -457,8 +508,12 @@ def run_read(uow: UnitOfWork, ctx: AccessContext, run_id: UUID, includes: frozen
             executed_by=users.get(a.executed_by) if a.executed_by else None,
             started_at=a.started_at,
             finished_at=a.finished_at,
+            duration_seconds=a.duration_seconds,
+            reason=a.reason,
+            comment=a.comment,
             skipped_steps=a.skipped_steps,
             corrects_result_id=a.corrects_result_id,
+            corrected_by_result_id=corrected_by.get(a.id),
         )
 
     version = None
@@ -472,6 +527,20 @@ def run_read(uow: UnitOfWork, ctx: AccessContext, run_id: UUID, includes: frozen
         number = tq.version_numbers(uow.session, [d.newer.version_id]).get(d.newer.version_id, 0)
         newer = s.NewerVersionRead(
             version_no=number, eligible=d.newer.eligible, can_update=d.newer.can_update, reason=d.newer.reason
+        )
+    draft = None
+    if "draft" in includes:
+        dv = eq.draft_detail(uow.session, r.run.id)
+        draft = result_read(uow, ctx, dv) if dv else None
+    queue = None
+    if "queue" in includes:
+        q = eq.queue(uow.session, ctx, r.run.id, queue_filter)
+        queue = s.QueueRead(
+            filter=q.filter,
+            position=q.position,
+            total=q.total,
+            previous_run_id=q.previous_run_id,
+            next_run_id=q.next_run_id,
         )
     return s.RunRead(
         id=r.run.id,
@@ -494,8 +563,9 @@ def run_read(uow: UnitOfWork, ctx: AccessContext, run_id: UUID, includes: frozen
         superseded_by_run_id=r.run.superseded_by_run_id,
         has_attempts=d.has_attempts,
         version=version,
-        draft=attempt(d.draft) if "draft" in includes and d.draft else None,
+        draft=draft,
         history=[attempt(a) for a in d.history] if "history" in includes else None,
+        queue=queue,
         row_version=r.run.row_version,
     )
 
@@ -513,12 +583,15 @@ def get_run(
     run_id: UUID,
     response: Response,
     include: str | None = Query(default=None, max_length=100),
+    queue_filter: str | None = Query(
+        default=None, description="Runner queue (include=queue): mine_open (default), mine, open, all"
+    ),
     ctx: AccessContext = RunCtx,
     uow: UnitOfWork = Depends(get_read_uow),
 ) -> s.RunRead:
-    """docs/06 §4.6 / §5.4: run, case summary, pinned version, newer version info, attempts."""
+    """docs/06 §4.6 / §5.4: run, case summary, pinned version, newer version, draft, attempts, queue."""
     ctx.require("project.view")
-    out = run_read(uow, ctx, run_id, _includes(include))
+    out = run_read(uow, ctx, run_id, _includes(include), queue_filter)
     _etag(response, out.row_version)
     return out
 

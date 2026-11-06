@@ -1,4 +1,5 @@
-import { ArrowUpCircle, X } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { ArrowUpCircle, Play, X } from "lucide-react";
 import type { ReactNode } from "react";
 
 import type { Project } from "@/api/queries";
@@ -108,6 +109,14 @@ function RunBody({
       <div>
         <h2 className="text-[15px] font-semibold leading-6 text-ink">{r.test_case.title}</h2>
         <p className="mt-0.5 text-xs text-ink-secondary">{r.test_case.folder_path.join(" / ")}</p>
+        <Link
+          to="/p/$projectKey/cycles/$cycleKey/run/$runId"
+          params={{ projectKey: project.key, cycleKey: r.cycle.key, runId: r.id }}
+          className="mt-3 inline-flex h-8 items-center gap-1.5 rounded-control bg-accent px-3 text-[13px] font-medium text-white hover:bg-accent-hover"
+        >
+          <Play aria-hidden="true" className="size-4" />
+          {r.history?.length ? "Open in runner" : "Execute"}
+        </Link>
       </div>
 
       {r.superseded_by_run_id ? (

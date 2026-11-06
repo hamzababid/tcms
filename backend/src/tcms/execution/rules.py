@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from typing import Final, Literal
 from uuid import UUID
 
 from tcms.core.enums import CycleStatus
-from tcms.core.errors import FieldError
+from tcms.core.errors import FieldError, RuleViolation
 from tcms.testdesign.queries import PRIORITY_RANK, CaseRef
 
 NAME_MIN: Final = 3
@@ -129,3 +129,128 @@ def can_transition(action: str, current: CycleStatus) -> bool:
 
 def next_status(action: str) -> CycleStatus:
     return _TRANSITIONS[action][1]
+
+
+# -- attempts (BR-06…10, BR-32; docs/02 §7.3; docs/04 §5.3–5.6) ----------------------------------
+
+EXPLICIT_OUTCOMES: Final = frozenset({"blocked", "skipped", "not_applicable"})
+TEXT_OUTCOMES: Final = frozenset({"passed", "failed", "blocked", "skipped", "not_applicable"})
+REASON_STATUSES: Final = EXPLICIT_OUTCOMES  # BR-10 / review K2: every final one needs a reason
+REASON_MAX: Final = 1000
+MAX_DURATION: Final = 86_400
+
+
+class IncompleteAttempt(RuleViolation):
+    code, title = "incomplete_attempt", "Attempt cannot be finalized"
+
+
+class OutcomeRequired(RuleViolation):
+    code, title = "outcome_required", "Choose the result of this run"
+
+
+class OutcomeConflictsWithSteps(RuleViolation):
+    code, title = "outcome_conflicts_with_steps", "The chosen result contradicts the step results"
+
+
+@dataclass(frozen=True)
+class FinalStatus:
+    status: str
+    skipped_steps: int
+
+
+def compute_final_status(fmt: str, steps: Sequence[str], explicit: str | None) -> FinalStatus:
+    """BR-09 roll-up with the docs/02 §7.3 precedence table (reviews K17h/i).
+
+    `steps` are the step statuses of a `steps` attempt (ignored for `text`); `explicit` is the run-level
+    outcome the tester sent, if any."""
+    skipped = sum(1 for s in steps if s == "skipped")
+    if fmt == "text":
+        if explicit is None:
+            raise OutcomeRequired("Choose Passed, Failed, Blocked, Skipped or Not applicable")
+        if explicit not in TEXT_OUTCOMES:
+            raise OutcomeConflictsWithSteps(f"Unknown result {explicit}")
+        return FinalStatus(explicit, 0)
+    if explicit is not None and explicit not in EXPLICIT_OUTCOMES:
+        # Passed and Failed come from the steps, never from the tester (K17i).
+        raise OutcomeConflictsWithSteps("Passed and Failed are worked out from the step results")
+    if "failed" in steps:
+        if explicit is not None:
+            raise OutcomeConflictsWithSteps("A step failed, so the run is Failed")  # K17h
+        return FinalStatus("failed", skipped)
+    if "blocked" in steps:
+        if explicit not in (None, "blocked"):
+            raise OutcomeConflictsWithSteps("A step is blocked, so the run is Blocked")
+        return FinalStatus("blocked", skipped)
+    if explicit is not None:
+        return FinalStatus(explicit, skipped)
+    if steps and all(s in ("passed", "skipped") for s in steps) and "passed" in steps:
+        return FinalStatus("passed", skipped)
+    not_recorded = [i + 1 for i, s in enumerate(steps) if s == "not_run"]
+    if not_recorded:
+        listed = ", ".join(str(n) for n in not_recorded)
+        detail = (
+            f"Step {listed} has no result" if len(not_recorded) == 1 else f"Steps {listed} have no result"
+        ) + ". Record them or choose Blocked, Skipped or Not applicable with a reason."
+        raise IncompleteAttempt(
+            detail,
+            errors=[
+                FieldError(f"steps[{n - 1}].status", "not_recorded", f"Step {n} has no result")
+                for n in not_recorded
+            ],
+        )
+    raise IncompleteAttempt("Every step is skipped. Choose Skipped or Not applicable with a reason.")
+
+
+@dataclass(frozen=True)
+class StepRecord:
+    position: int
+    status: str
+    actual_result: str | None
+
+
+def finalize_problems(
+    fmt: str, steps: Sequence[StepRecord], status: str, reason: str | None, comment: str | None
+) -> list[FieldError]:
+    """BR-10: actual result on failed steps, reason on blocked/skipped/N/A (K2), comment on a failed
+    text attempt (docs/02 §7.3). The service raises the first family of problems found."""
+    problems: list[FieldError] = []
+    if fmt == "steps":
+        for st in steps:
+            if st.status == "failed" and not (st.actual_result or "").strip():
+                problems.append(
+                    FieldError(
+                        f"steps[{st.position - 1}].actual_result",
+                        "actual_result_required",
+                        f"Step {st.position} failed: describe the actual result",
+                    )
+                )
+    if status in REASON_STATUSES and not (reason or "").strip():
+        problems.append(FieldError("reason", "reason_required", "Give a reason"))
+    if reason is not None and len(reason) > REASON_MAX:
+        problems.append(FieldError("reason", "too_long", f"At most {REASON_MAX} characters"))
+    if fmt == "text" and status == "failed" and not (comment or "").strip():
+        problems.append(FieldError("comment", "field_required", "Describe what failed"))
+    return problems
+
+
+def derive_run_status(attempts: Sequence[tuple[int, str, str | None]]) -> str:
+    """BR-08 from `(attempt_no, state, status)` rows: a draft → in_progress; else the latest final
+    attempt's status; no attempt → not_run. Used by the consistency check (docs/04 §5.6)."""
+    if any(state == "draft" for _, state, _ in attempts):
+        return "in_progress"
+    finals = sorted((n, st) for n, state, st in attempts if state == "final" and st is not None)
+    return finals[-1][1] if finals else "not_run"
+
+
+def may_execute(*, assignee_id: UUID | None, user_id: UUID, only_assignee: bool, has_manage: bool) -> bool:
+    """BR-32: with "only assignee executes" others need cycle.manage; unassigned runs are open to all."""
+    if not only_assignee or has_manage:
+        return True
+    return assignee_id is None or assignee_id == user_id
+
+
+def duration_seconds(started: datetime, finished: datetime, given: int | None) -> int:
+    """docs/02 §7.3: the tester's value, else the elapsed time; within 0–86,400 (SQL CHECK)."""
+    if given is not None:
+        return max(0, min(given, MAX_DURATION))
+    return max(0, min(int((finished - started).total_seconds()), MAX_DURATION))

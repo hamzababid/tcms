@@ -12,6 +12,7 @@ from tcms.api.deps import Auth, app_state, get_read_uow, get_uow, project_contex
 from tcms.core.context import AccessContext
 from tcms.core.errors import NotFound
 from tcms.core.uow import UnitOfWork
+from tcms.execution import service as execution
 from tcms.identity import queries as identity_queries
 from tcms.identity.schemas import UserRef
 from tcms.identity.service import Authenticated
@@ -24,10 +25,12 @@ from tcms.workspace import queries as workspace_queries
 router = APIRouter(prefix="/api/v1", tags=["records"])
 
 CommentEntity = Literal["test_case", "test_case_version"]
-AttachmentEntity = Literal["test_case", "test_case_step"]
+AttachmentEntity = Literal["test_case", "test_case_step", "test_step_result"]
 
 
 def _record(uow: UnitOfWork, ctx: AccessContext, entity_type: str, entity_id: UUID) -> RecordRef:
+    if entity_type == "test_step_result":  # evidence on a step of an attempt (M4)
+        return execution.step_result_record(uow, ctx, entity_id)
     return testdesign.resolve_record(uow, ctx, entity_type, entity_id)
 
 
@@ -114,7 +117,7 @@ CONTENT_CSP = "sandbox; default-src 'none'; img-src 'self'; style-src 'unsafe-in
 AttachmentCtx = Depends(project_context_from("attachment", "attachment_id"))
 
 
-def _attachment_read(a: attachments.AttachmentRow, refs: dict[UUID, UserRef]) -> s.AttachmentRead:
+def attachment_read(a: attachments.AttachmentRow, refs: dict[UUID, UserRef]) -> s.AttachmentRead:
     return s.AttachmentRead(
         id=a.id,
         file_name=a.file_name,
@@ -160,7 +163,7 @@ def upload(
         max_bytes=max_mb * 1024 * 1024,
         store=_store(request),
     )
-    return _attachment_read(row, _refs(uow, {row.uploaded_by}))
+    return attachment_read(row, _refs(uow, {row.uploaded_by}))
 
 
 def _attachment(uow: UnitOfWork, ctx: AccessContext, attachment_id: UUID) -> attachments.AttachmentRow:
@@ -176,7 +179,7 @@ def get_attachment(
     attachment_id: UUID, ctx: AccessContext = AttachmentCtx, uow: UnitOfWork = Depends(get_read_uow)
 ) -> s.AttachmentRead:
     row = _attachment(uow, ctx, attachment_id)
-    return _attachment_read(row, _refs(uow, {row.uploaded_by}))
+    return attachment_read(row, _refs(uow, {row.uploaded_by}))
 
 
 @router.get(

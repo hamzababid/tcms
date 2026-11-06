@@ -22,7 +22,7 @@ from tcms.core.errors import InvalidFilter, NotFound
 from tcms.core.pagination import FilterField, PageParams, paginate, parse_filters, parse_sort
 from tcms.execution import repository as exec_repo
 from tcms.execution import rules
-from tcms.execution.models import TestCycle, TestResult, TestRun
+from tcms.execution.models import TestCycle, TestResult, TestRun, TestStepResult
 from tcms.testdesign import queries as td
 
 __all__ = [
@@ -381,6 +381,9 @@ class AttemptView:
     finished_at: datetime | None
     skipped_steps: int
     corrects_result_id: UUID | None
+    duration_seconds: int | None = None
+    reason: str | None = None
+    comment: str | None = None
 
 
 @dataclass(frozen=True)
@@ -414,6 +417,9 @@ def run_detail(s: Session, ctx: AccessContext, run_id: UUID) -> RunDetail:
             a.finished_at,
             a.skipped_steps,
             a.corrects_result_id,
+            a.duration_seconds,
+            a.reason,
+            a.comment,
         )
         for a in attempts
     ]
@@ -453,3 +459,182 @@ def owning_project_of_cycle(s: Session, cycle_id: UUID) -> tuple[UUID, UUID] | N
 def owning_project_of_run(s: Session, run_id: UUID) -> tuple[UUID, UUID] | None:
     row = s.execute(select(TestRun.organization_id, TestRun.project_id).where(TestRun.id == run_id)).first()
     return (row[0], row[1]) if row else None
+
+
+def owning_project_of_result(s: Session, result_id: UUID) -> tuple[UUID, UUID] | None:
+    row = s.execute(
+        select(TestResult.organization_id, TestResult.project_id).where(TestResult.id == result_id)
+    ).first()
+    return (row[0], row[1]) if row else None
+
+
+def owning_project_of_step_result(s: Session, step_result_id: UUID) -> tuple[UUID, UUID] | None:
+    row = s.execute(
+        select(TestStepResult.organization_id, TestStepResult.project_id).where(
+            TestStepResult.id == step_result_id
+        )
+    ).first()
+    return (row[0], row[1]) if row else None
+
+
+# -- attempts (M4, docs/06 §5.5) -------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class StepResultView:
+    id: UUID
+    step_id: UUID
+    position: int
+    status: str
+    actual_result: str | None
+    comment: str | None
+    updated_at: datetime
+
+
+@dataclass(frozen=True)
+class ResultView:
+    id: UUID
+    run_id: UUID
+    attempt_no: int
+    state: str
+    status: str | None
+    source: str
+    executed_by: UUID | None
+    started_at: datetime
+    finished_at: datetime | None
+    duration_seconds: int | None
+    build: str | None
+    environment_id: UUID
+    comment: str | None
+    reason: str | None
+    skipped_steps: int
+    corrects_result_id: UUID | None
+    steps: list[StepResultView]
+
+
+def _result_view(r: TestResult, steps: list[TestStepResult]) -> ResultView:
+    return ResultView(
+        id=r.id,
+        run_id=r.run_id,
+        attempt_no=r.attempt_no,
+        state=r.state.value,
+        status=r.status.value if r.status else None,
+        source=r.source.value,
+        executed_by=r.executed_by,
+        started_at=r.started_at,
+        finished_at=r.finished_at,
+        duration_seconds=r.duration_seconds,
+        build=r.build,
+        environment_id=r.environment_id,
+        comment=r.comment,
+        reason=r.reason,
+        skipped_steps=r.skipped_steps,
+        corrects_result_id=r.corrects_result_id,
+        steps=[
+            StepResultView(
+                x.id, x.step_id, x.position, x.status.value, x.actual_result, x.comment, x.updated_at
+            )
+            for x in steps
+        ],
+    )
+
+
+def result_detail(s: Session, ctx: AccessContext, result_id: UUID) -> ResultView:
+    r = exec_repo.result(s, ctx, result_id)
+    if r is None:
+        raise NotFound()
+    return _result_view(r, exec_repo.step_results(s, r.id))
+
+
+def draft_detail(s: Session, run_id: UUID) -> ResultView | None:
+    r = exec_repo.draft_of(s, run_id)
+    return _result_view(r, exec_repo.step_results(s, r.id)) if r else None
+
+
+QUEUE_FILTERS = frozenset({"mine_open", "mine", "open", "all"})
+
+
+@dataclass(frozen=True)
+class QueueView:
+    filter: str
+    position: int | None  # 1-based place of the run in the queue; None when the run is not in it
+    total: int
+    previous_run_id: UUID | None
+    next_run_id: UUID | None
+
+
+def queue(s: Session, ctx: AccessContext, run_id: UUID, queue_filter: str | None) -> QueueView:
+    """The runner's queue (docs/02 §7.4): my not-finalized runs by position, or every not-finalized run
+    when none is mine (decision D5). `next_run_id` skips the current run even if it is outside the queue."""
+    wanted = queue_filter or "mine_open"
+    if wanted not in QUEUE_FILTERS:
+        raise InvalidFilter(f"queue_filter must be one of {', '.join(sorted(QUEUE_FILTERS))}")
+    r = exec_repo.run(s, ctx, run_id)
+    if r is None:
+        raise NotFound()
+    me = ctx.principal.user_id
+
+    def ids_for(f: str) -> list[UUID]:
+        return exec_repo.queue_runs(
+            s,
+            ctx,
+            r.cycle_id,
+            assignee_id=me if f.startswith("mine") else None,
+            open_only=f.endswith("open"),
+        )
+
+    ids_ = ids_for(wanted)
+    if (
+        wanted == "mine_open"
+        and not ids_
+        and not exec_repo.queue_runs(s, ctx, r.cycle_id, assignee_id=me, open_only=False)
+    ):
+        wanted, ids_ = "open", ids_for("open")
+    if run_id in ids_:
+        i = ids_.index(run_id)
+        prev_id = ids_[i - 1] if i > 0 else None
+        next_id = ids_[i + 1] if i + 1 < len(ids_) else None
+        return QueueView(wanted, i + 1, len(ids_), prev_id, next_id)
+    # Not in the queue any more (e.g. just finished): continue with the first open run after it.
+    order = exec_repo.queue_runs(s, ctx, r.cycle_id, assignee_id=None, open_only=False)
+    after = set(order[order.index(run_id) + 1 :]) if run_id in order else set()
+    next_id = next((x for x in ids_ if x in after), ids_[0] if ids_ else None)
+    return QueueView(wanted, None, len(ids_), None, next_id)
+
+
+# -- My Work (docs/02 §7.5, docs/06 §4.1) ----------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class MyCycle:
+    cycle: TestCycle
+    counts: dict[str, int]
+    needs_retest: int
+    next_run_id: UUID | None
+
+
+def my_cycles(s: Session, org_id: UUID, project_ids: list[UUID], user_id: UUID) -> list[MyCycle]:
+    rows = exec_repo.my_run_counts(s, org_id, project_ids, user_id)
+    by_cycle: dict[UUID, tuple[TestCycle, dict[str, int], int]] = {}
+    for c, status, n, retest in rows:
+        _, counts, rt = by_cycle.get(c.id, (c, {}, 0))
+        counts[status] = counts.get(status, 0) + n
+        by_cycle[c.id] = (c, counts, rt + retest)
+    nexts = exec_repo.my_next_runs(s, org_id, list(by_cycle), user_id)
+    out = [MyCycle(c, counts, rt, nexts.get(cid)) for cid, (c, counts, rt) in by_cycle.items()]
+    # Cycles with work left first, then by due date (none last), then key.
+    return sorted(
+        out,
+        key=lambda m: (
+            m.next_run_id is None,
+            m.cycle.due_date is None,
+            m.cycle.due_date or date.max,
+            m.cycle.key,
+        ),
+    )
+
+
+def my_week(
+    s: Session, org_id: UUID, project_ids: list[UUID], user_id: UUID, since: datetime
+) -> dict[str, int]:
+    return exec_repo.my_finished_counts(s, org_id, project_ids, user_id, since)
