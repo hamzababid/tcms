@@ -64,8 +64,8 @@ A self-hosted, internally owned test management platform that lets a QA organiza
 | Organization Administrator | Organization | Manages users, roles, organization settings, integrations; implicit admin on all projects |
 | QA Manager | Project | Owns test strategy, plans, cycles, reporting, release readiness |
 | QA Lead | Project | Organizes the repository, reviews cases, assigns and monitors execution |
-| QA Engineer | Project | Writes and executes cases, records evidence, reports and retests defects |
-| Developer | Project | Reads cases and evidence, works defects through to Fixed |
+| QA Engineer | Project | Writes and executes cases, records evidence, links bugs from failures and retests fixes |
+| Developer | Project | Reads cases and evidence, opens linked bugs in the team's tracker; reads the failing run's steps and evidence |
 | Product Manager / Business Analyst | Project | Owns requirements, links them to cases, reviews coverage |
 | Viewer (Management) | Project | Read-only dashboards and reports |
 
@@ -77,9 +77,9 @@ The permission model is defined in [02 Functional Spec §3](02-Functional-Specif
 
 **Bilal — QA Lead (primary).** Keeps 4,000 cases organized, reviews new cases, assigns a 250-case regression to five testers every two weeks. Needs bulk operations and a clear view of who is behind.
 
-**Sana — QA Engineer (primary).** Executes 40–60 manual cases per day. Wants to stay on one screen, use the keyboard, paste screenshots, and raise a complete defect in seconds.
+**Sana — QA Engineer (primary).** Executes 40–60 manual cases per day. Wants to stay on one screen, use the keyboard, paste screenshots, and link the bug she logged in the team's tracker in seconds.
 
-**Omar — Developer (secondary).** Opens defects from Jira or TCMS, wants exact reproduction steps, the case version, environment, build and screenshots — without asking QA.
+**Omar — Developer (secondary).** Opens bugs in the team's tracker (Jira or another tool), follows the link to TCMS, wants exact reproduction steps, the case version, environment, build and screenshots — without asking QA.
 
 **Hira — Product Manager (secondary).** Wants to see which acceptance criteria are verified for the upcoming release and which have no tests.
 
@@ -98,7 +98,7 @@ Full step-by-step workflows are in [02 Functional Spec §14](02-Functional-Speci
 | UJ-3 | Author and review a test case | Sana → Bilal | Approved version available to cycles |
 | UJ-4 | Plan release SPARK v2.5 and create Regression Cycle 01 (250 cases) with assignments | Ayesha, Bilal | Testers see their work |
 | UJ-5 | Execute assigned runs, record step results and evidence | Sana | Results recorded |
-| UJ-6 | Raise a defect from a failed step; developer fixes; tester retests and verifies | Sana → Omar → Sana | Defect closed with full trail |
+| UJ-6 | Link the tracker bug to a failed step; developer fixes it in the tracker; lead marks it ready for retest; tester retests | Sana → Omar → Bilal → Sana | Failure, bug reference and passing retest connected in TCMS |
 | UJ-7 | Review requirement coverage for a release | Hira | Gap list of untested requirements |
 | UJ-8 | Assess release readiness and record go/no-go | Ayesha → Faisal | Auditable release decision |
 | UJ-9 | Quarterly access review export | Zain | Evidence file for auditor |
@@ -107,7 +107,7 @@ Full step-by-step workflows are in [02 Functional Spec §14](02-Functional-Speci
 
 ## 6. Functional requirements
 
-Priority: **M** = Must (MVP), **S** = Should (Phase 2), **C** = Could (Phase 3). Module codes: AUTH, WS (workspace), TD (test design), PLN (planning), EXE (execution), DEF (defects), REQ (requirements), RPT (reporting), SRCH (search), AUD (audit), IMP (import/export), ADM (administration), INT (integrations), AUTO (automation).
+Priority: **M** = Must (MVP), **S** = Should (Phase 2), **C** = Could (Phase 3). Module codes: AUTH, WS (workspace), TD (test design), PLN (planning), EXE (execution), DEF (bug links, ADR-023), REQ (requirements), RPT (reporting), SRCH (search), AUD (audit), IMP (import/export), ADM (administration), INT (integrations), AUTO (automation).
 
 ### 6.1 Identity and access — AUTH
 
@@ -195,20 +195,20 @@ Priority: **M** = Must (MVP), **S** = Should (Phase 2), **C** = Could (Phase 3).
 | FR-EXE-012 | Cycle lifecycle: Planned, Active, Closed; reopen with permission and reason. | M |
 | FR-EXE-013 | Cycle progress view by status, assignee and folder. | M |
 | FR-EXE-014 | "My Work": runs assigned to me across projects. | M |
-| FR-EXE-015 | Retest flags on runs linked to defects that are Ready for Retest. | M |
+| FR-EXE-015 | Retest flags on runs linked to a bug reference marked Ready for retest (BR-21). | M |
 | FR-EXE-016 | Configuration matrices (one run per case × configuration). | S |
 
-### 6.6 Defects — DEF
+### 6.6 Bug links — DEF
 
 | ID | Requirement | Pri |
 | --- | --- | --- |
-| FR-DEF-001 | Create defects with the fields in the functional spec. | M |
-| FR-DEF-002 | Create a defect from a failed step, pre-filled from the run. | M |
-| FR-DEF-003 | Link a defect to many results and cases; link an existing defect to a result. | M |
-| FR-DEF-004 | Lifecycle state machine with role-restricted transitions (BR-19). | M |
-| FR-DEF-005 | Comments, attachments and status history on defects. | M |
-| FR-DEF-006 | Defect list with filters, saved views, bulk transition and assignment. | M |
-| FR-DEF-007 | Create the defect in Jira and mirror its status (Jira as owner). | S |
+| FR-DEF-001 | Link a bug from any tracker (reference, optional URL and title) to a step, attempt or test case; bugs themselves stay in the team's tracker (ADR-023). | M |
+| FR-DEF-002 | Per-project tracker name and URL template (`{ref}`), so a reference alone opens the bug. | M |
+| FR-DEF-003 | One reference may link many results and cases; bug chips on runner, run history, cycle runs and case. | M |
+| FR-DEF-004 | Require a bug link before a Failed attempt can be finished (project option). | M |
+| FR-DEF-005 | "Copy bug details": a ready-to-paste report of the failing run (steps, expected, actual, environment, build, link). | M |
+| FR-DEF-006 | Project Bugs list grouped by reference (cases, runs, failing runs) with "Ready for retest". | M |
+| FR-DEF-007 | Tracker connector: create the bug in the tracker from Assay and show its status by reference. | S |
 
 ### 6.7 Requirements and traceability — REQ
 
@@ -217,7 +217,7 @@ Priority: **M** = Must (MVP), **S** = Should (Phase 2), **C** = Could (Phase 3).
 | FR-REQ-001 | Create and edit requirements with type, priority, acceptance criteria, owner, status, target release, optional parent. | M |
 | FR-REQ-002 | Link requirements and cases many-to-many. | M |
 | FR-REQ-003 | Import requirements from CSV/Excel. | M |
-| FR-REQ-004 | Traceability matrix per release: requirement → cases → latest results → defects. | M |
+| FR-REQ-004 | Traceability matrix per release: requirement → cases → latest results → linked bugs. | M |
 | FR-REQ-005 | Coverage metrics (BR-23). | M |
 | FR-REQ-006 | Import Jira issues as read-only mirrored requirements. | S |
 | FR-REQ-007 | Advanced RTM: historical coverage per release, export to PDF. | S |
@@ -241,7 +241,7 @@ Priority: **M** = Must (MVP), **S** = Should (Phase 2), **C** = Could (Phase 3).
 
 | ID | Requirement | Pri |
 | --- | --- | --- |
-| FR-SRCH-001 | Global search across case keys/titles, folders, requirements, defects, cycles, plans and external keys. | M |
+| FR-SRCH-001 | Global search across case keys/titles, folders, requirements, bug references, cycles, plans and external keys. | M |
 | FR-SRCH-002 | Advanced filters on every list, sorting, pagination. | M |
 | FR-SRCH-003 | Saved views (private or shared within a project). | M |
 
@@ -262,7 +262,7 @@ Priority: **M** = Must (MVP), **S** = Should (Phase 2), **C** = Could (Phase 3).
 | FR-IMP-001 | Import test cases from CSV/XLSX with column mapping, folder creation, multi-row steps, dry-run preview and error report. | M |
 | FR-IMP-002 | Export cases (with steps) to CSV/XLSX in a re-importable format. | M |
 | FR-IMP-003 | Import/export requirements. | M |
-| FR-IMP-004 | Export defects, cycles and run results. | M |
+| FR-IMP-004 | Export bug links, cycles and run results. | M |
 | FR-IMP-005 | Import from TestRail/Zephyr export formats. | C |
 
 ### 6.12 Integrations and automation — INT, AUTO
@@ -304,21 +304,21 @@ These rules are normative. The functional specification expands each one; the da
 | BR-16 | Human-readable keys (`SPARK-TC-123`) are allocated sequentially per project and entity type, never reused, and never change when an item moves. |
 | BR-17 | With approval enforced, cycles use the approved version; a newer unapproved version does not affect cycles until approved. |
 | BR-18 | With approval enabled, the author of a version cannot approve it unless the project allows self-approval. |
-| BR-19 | Defect status changes follow the state machine in the functional spec; each transition requires the corresponding permission. Duplicate requires `duplicate_of`; Rejected and Cannot Reproduce require a resolution note. |
-| BR-20 | A defect created from a result is linked to that result, its run, the pinned case version, the failing step and the environment. |
-| BR-21 | When a defect moves to Ready for Retest, every non-superseded run linked to it in a non-closed cycle gets `needs_retest = true`; a new finalized attempt on that run clears it. |
-| BR-22 | A passing retest never changes defect status automatically; the tester is prompted to verify. |
+| BR-19 | *Retired (ADR-023): Assay has no defect workflow; bug status lives in the team's tracker.* |
+| BR-20 | A bug link created from a result records that attempt, its run, the step (if any) and the case. Links are not part of the attempt: they may be added to or removed from draft and finalized attempts (BR-06 unaffected). |
+| BR-21 | When a bug reference is marked Ready for retest, every non-superseded run linked to it in a non-closed cycle gets `needs_retest = true`; a new finalized attempt on that run clears it. |
+| BR-22 | *Retired (ADR-023): there is no defect status in Assay to verify.* |
 | BR-23 | Requirement coverage and status are computed per release (functional spec §10.5). |
 | BR-24 | Metrics follow the exact definitions in functional spec §11.2. Superseded runs are always excluded; Not Applicable runs are excluded from denominators but shown. |
 | BR-25 | Every update to a mutable record carries the `row_version` it read; a mismatch is rejected with HTTP 409. |
 | BR-26 | Audit events are written in the same database transaction as the change and are never updated or deleted. |
 | BR-27 | Project keys: 2–10 characters, uppercase letters and digits, starting with a letter, unique in the organization, immutable. |
-| BR-28 | Attachments on finalized results, approved versions and closed defects cannot be removed. |
+| BR-28 | Attachments on finalized results, and approved versions cannot be removed. |
 | BR-29 | New project members receive the Viewer role unless a role is specified. |
 | BR-30 | Executing a run in a Planned cycle moves the cycle to Active. |
 | BR-31 | Cycles created from a plan snapshot the plan's case list at that moment; later plan changes affect the cycle only via "Sync from plan", which adds new cases and never removes runs with results. |
 | BR-32 | When a run is executed by someone other than its assignee, `executed_by` records the actual user; if the project enables "only assignee executes", others are blocked unless they hold `cycle.manage`. |
-| BR-33 | The source of truth for each entity is fixed (HLD §8.3): TCMS owns cases, plans, cycles, results; for Jira-linked projects Jira owns mirrored requirements and Jira-created defects' status. |
+| BR-33 | The source of truth for each entity is fixed (HLD §8.3): TCMS owns cases, plans, cycles, results; for Jira-linked projects Jira owns mirrored requirements; bug status always lives in the team's tracker (ADR-023). |
 
 ## 8. Non-functional requirements
 
@@ -375,7 +375,7 @@ These rules are normative. The functional specification expands each one; the da
 | ID | Requirement |
 | --- | --- |
 | NFR-UX-01 | Execute a step result with keyboard only; at most one click/keystroke per step status. |
-| NFR-UX-02 | Common QA tasks (start next run, raise defect from failure, assign 50 runs) complete in ≤ 3 interactions after reaching the screen. |
+| NFR-UX-02 | Common QA tasks (start next run, link a bug from a failure, assign 50 runs) complete in ≤ 3 interactions after reaching the screen. |
 | NFR-UX-03 | WCAG 2.2 AA. Status never conveyed by colour alone. |
 | NFR-UX-04 | Responsive: full function ≥ 1280 px; read and execute ≥ 768 px; read-only dashboards ≥ 375 px. |
 | NFR-UX-05 | Supported browsers: current and previous major Chrome, Edge, Firefox, Safari. |
@@ -404,7 +404,7 @@ These rules are normative. The functional specification expands each one; the da
 
 **In scope (product):** all FRs above, delivered in the phases in [09 Roadmap](09-Implementation-Roadmap.md).
 
-**MVP = every FR with priority M.** MVP exit gate: a SPARK QA team runs a full regression cycle (≥ 250 cases, ≥ 3 testers, defects raised and retested, readiness decision recorded) entirely in TCMS.
+**MVP = every FR with priority M.** MVP exit gate: a SPARK QA team runs a full regression cycle (≥ 250 cases, ≥ 3 testers, failures linked to bugs and retested, readiness decision recorded) entirely in TCMS.
 
 **Out of scope:**
 - Billing, plans, self-service signup.
@@ -422,7 +422,7 @@ These rules are normative. The functional specification expands each one; the da
 | ID | Assumption | If wrong |
 | --- | --- | --- |
 | AS-01 | Jira Cloud (not Data Center). | Connector auth/API layer changes; core unaffected. |
-| AS-02 | The narrow Jira connector starts Phase 2. | Defect double-entry persists longer. |
+| AS-02 | The narrow Jira connector starts Phase 2. | Bugs are logged in the tracker and linked in Assay by reference until then. |
 | AS-03 | For Jira-linked projects Jira is the source of truth for stories/requirements; TCMS-authored requirements elsewhere. | Requirement ownership rules (BR-33) change. |
 | AS-04 | Data-validation case format is Phase 2. | SPARK telemetry tests use Steps format in MVP. |
 | AS-05 | Results retained indefinitely; attachment retention configurable, default indefinite. | Add retention jobs earlier. |
@@ -450,7 +450,7 @@ These rules are normative. The functional specification expands each one; the da
 | RK-01 | Scope creep into a full ALM | High | High | MoSCoW enforced; out-of-scope list; gate reviews |
 | RK-02 | Generated code becomes hard for two developers to maintain | Medium | High | Strict layering, conventions in CLAUDE.md, typed code, high test coverage, ADRs |
 | RK-03 | Testers keep using Excel because the runner is slower | Medium | High | Runner performance targets; usability test with SPARK testers before MVP gate |
-| RK-04 | Internal defects abandoned in favour of Jira | High | Medium | Jira connector first in Phase 2 |
+| RK-04 | Internal defects abandoned in favour of Jira | Closed | — | ADR-023: no internal defects; Assay links to the team's tracker |
 | RK-05 | Incorrect metrics damage trust | Medium | High | Metric definitions with tests; numerator/denominator shown |
 | RK-06 | Data loss or tampering | Low | High | Append-only results and audit, DB-level guards, backups, restore tests |
 | RK-07 | Excel import of messy legacy data | High | Medium | Dry run with row-level errors, mapping UI, re-runnable import |

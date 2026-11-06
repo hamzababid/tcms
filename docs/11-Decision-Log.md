@@ -164,3 +164,10 @@ Status values: **Accepted**, **Superseded by ADR-xxx**, **Proposed**.
 - **Status:** Accepted
 - **Decision:** `tsvector` + GIN and `pg_trgm` for global and list search; no external search engine.
 - **Consequences:** No extra infrastructure; adequate up to ~1 M searchable records. Revisit with OpenSearch fed by the outbox if needed.
+
+## ADR-023 — Bugs live in the team's tracker; Assay links to them
+- **Status:** Accepted (product owner, 2026-11-06). Supersedes the internal defect module of [02 §8](02-Functional-Specification.md) as first specified (state machine, kanban, watchers) and narrows RK-04.
+- **Context:** Teams already report and work bugs in a shared tracker where developers, product and QA all are (Jira for some, Azure DevOps, GitHub, Linear or others for the rest). A second defect workflow in Assay would mean double entry and would be abandoned (RK-04).
+- **Decision:** Assay stores **bug links**: a reference (`SPK-431`, `#1287`), an optional `http(s)` URL (built from a per-project URL template when not given) and an optional title, attached to an attempt (with run, step and case) or directly to a case. Assay keeps no bug status, assignee or severity. Retest is requested manually per reference ("Ready for retest" flags the linked runs, BR-21). The readiness rule `max_open_defects` is replaced by `max_failed`. The baseline defect tables stay unused, reserved for a future tracker connector.
+- **Consequences:** M5 shrinks from 2 weeks to about 1. Traceability and reports show linked bug references, not open-defect counts by severity. A Phase 2 connector can read status from the tracker by reference without changing the link model.
+- **Alternatives:** Full internal defect workflow (rejected: duplicate of the tracker); no bug data at all (rejected: no link between failures and bugs).

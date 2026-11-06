@@ -14,7 +14,7 @@ Durations are indicative (working weeks, with Claude Code doing most implementat
 
 | Phase | Goal | Gate to exit |
 | --- | --- | --- |
-| **MVP** (M0–M9, ~22 weeks) | Manual testing lifecycle end to end with trustworthy results and audit | SPARK runs a full regression cycle (≥ 250 cases, ≥ 3 testers, defects raised and retested, readiness decision recorded) entirely in TCMS; AC-PRD-01…09 |
+| **MVP** (M0–M9, ~22 weeks) | Manual testing lifecycle end to end with trustworthy results and audit | SPARK runs a full regression cycle (≥ 250 cases, ≥ 3 testers, failures linked to bugs and retested, readiness decision recorded) entirely in TCMS; AC-PRD-01…09 |
 | **Phase 2** (P2.1–P2.8, ~16 weeks) | Connect Jira and CI; reuse; SSO; advanced reporting | Jira-created defects and CI results live for SPARK for 4 weeks without manual reconciliation |
 | **Phase 3** | Intelligence and breadth | Per-feature success measures |
 
@@ -26,7 +26,7 @@ flowchart LR
   M1 --> M2[M2 Repository & cases]
   M2 --> M3[M3 Plans & cycles]
   M3 --> M4[M4 Execution runner]
-  M4 --> M5[M5 Defects]
+  M4 --> M5[M5 Bug links]
   M2 --> M6[M6 Requirements, RTM, search]
   M5 --> M7[M7 Reporting & readiness]
   M6 --> M7
@@ -81,14 +81,15 @@ M6 can start in parallel with M4/M5 once M2 is done (separate module, different 
 | Acceptance | TCMS-070…090 pass; roll-up matrix (TCMS-071) exhaustive; P2 perf scenario run on interim large seed: step save p95 < 200 ms |
 | Dependencies | M3 |
 
-### M5 — Defects (2 weeks)
+### M5 — Bug links (1 week; re-scoped by ADR-023)
 
-| | |
+| Item | Content |
 | --- | --- |
-| Scope | E10: defect CRUD, state machine with permissions, from-result prefill, link existing, retest flags and verify prompt, status history, watchers, list/kanban/detail, bulk |
-| Deliverables | Full defect lifecycle inside TCMS |
+| Goal | Failures are connected to the bugs the team logs in its own tracker |
+| Scope | E10: bug links on steps, attempts and cases; tracker name and URL template; Copy bug details; Bugs list; Ready for retest (BR-21); "failed result needs a bug link" option; `max_failed` readiness rule replaces `max_open_defects` |
+| Deliverables | Bug chips in runner, run history, cycle runs and case; project Bugs page |
 | Acceptance | TCMS-100…107 pass |
-| Dependencies | M4 |
+| Depends on | M4 |
 
 ### M6 — Requirements, traceability and search (2.5 weeks, parallel after M2)
 

@@ -14,7 +14,7 @@ Wireframes are low-fidelity ASCII: they fix **what is on the screen, where, and 
 
 1. **Operational efficiency over decoration.** Dense, scannable tables; no hero banners; whitespace serves grouping, not style.
 2. **Stay in context.** Details open in a right-side panel over lists; full pages only for deep work (case editing, runner, RTM).
-3. **One screen for execution.** The runner never navigates away to record, attach, or raise a defect.
+3. **One screen for execution.** The runner never navigates away to record, attach, or link a bug.
 4. **Keyboard first, mouse friendly.** Every frequent action has a shortcut; shortcuts are discoverable (`?`).
 5. **Truthful numbers.** Every percentage shows its counts; undefined rates show "—".
 6. **Status is never colour alone.** Icon + label + colour.
@@ -36,7 +36,7 @@ flowchart TB
   proj --> cycles[Cycles]
   cycles --> cycle[Cycle detail]
   cycle --> runner[Runner]
-  proj --> defects[Defects]
+  proj --> bugs[Bugs]
   proj --> reqs[Requirements]
   proj --> rtm[Traceability]
   proj --> releases[Releases\nreadiness · decisions]
@@ -63,7 +63,7 @@ flowchart TB
 │  ▸ Repository │                                                                          │
 │  ▸ Plans      │                                                                          │
 │  ▸ Cycles     │                                                                          │
-│  ▸ Defects    │                                                                          │
+│  ▸ Bugs       │                                                                          │
 │  ▸ Requirements│                                                                         │
 │  ▸ Traceability│                                                                         │
 │  ▸ Releases   │                                                                          │
@@ -123,8 +123,8 @@ Right drawer 560–720 px (resizable), deep-linked via query param (`?case=SPARK
 │ TEST CASES                                             │
 │   SPARK-TC-12  Login with valid credentials            │
 │   SPARK-TC-40  Session timeout after inactivity        │
-│ DEFECTS                                                │
-│   SPARK-D-87   Dashboard load exceeds 3 s after login  │
+│ BUGS                                                   │
+│   SPK-431      Dashboard load exceeds 3 s after login  │
 │ REQUIREMENTS · CYCLES · PLANS · FOLDERS                │
 │   … see all results →                                  │
 ├────────────────────────────────────────────────────────┤
@@ -138,7 +138,7 @@ Typing an exact key jumps straight to it on Enter. Also acts as command palette:
 
 - Labels above fields; required marked `*`; inline validation on blur and on submit; server errors mapped to fields from `errors[]`.
 - Primary action bottom-right; `Ctrl+Enter` submits; `Esc` cancels (confirm if dirty).
-- **ReasonDialog** for actions requiring a reason (block run, reopen cycle, reject defect).
+- **ReasonDialog** for actions requiring a reason (block run, reopen cycle).
 - **Conflict dialog** on `409 stale_row_version`: "Changed by X at T" + Reload / Compare.
 - Destructive confirmations require typing the key for hard deletes and project archive.
 
@@ -191,10 +191,10 @@ Row click → project overview. Visible projects limited to memberships unless O
 
 ```
 SPARK · Overview                        [Release: SPARK v2.5 ▾] [Cycles: all ▾] [Env ▾]
-┌ Readiness ──────────────┐ ┌ Execution ─────────────────┐ ┌ Defects ────────────────┐
-│ ✖ Not ready  (2 of 4    │ │ Progress 205 of 245 (84%)  │ │ Open 14                  │
-│   rules unmet)          │ │ Pass rate 180 of 205 (88%) │ │ Critical 0 · High 3      │
-│ [View readiness →]      │ │ ▇▇▇▇▇▇▇▇▇▇▇▇░░░ P F B S NR  │ │ [View defects →]         │
+┌ Readiness ──────────────┐ ┌ Execution ─────────────────┐ ┌ Bugs ───────────────────┐
+│ ✖ Not ready  (2 of 4    │ │ Progress 205 of 245 (84%)  │ │ Linked 14                │
+│   rules unmet)          │ │ Pass rate 180 of 205 (88%) │ │ On failing runs 3        │
+│ [View readiness →]      │ │ ▇▇▇▇▇▇▇▇▇▇▇▇░░░ P F B S NR  │ │ [View bugs →]            │
 └─────────────────────────┘ └────────────────────────────┘ └─────────────────────────┘
 ┌ Active cycles ─────────────────────────────────────────────────────────────────────┐
 │ SPARK-CY-12 Regression Cycle 01 · QA · due Nov 10  ▇▇▇▇▇▇▇▇░░  205/245  ⚠ 3 retest │
@@ -278,7 +278,7 @@ Side panel or full page with tabs:
 
 ```
 SPARK-TC-12 · Login with valid credentials            ✔ Approved · v4   [Edit] [Run in…▾] [⋯]
-[Details] [Versions (4)] [Executions (17)] [Requirements (2)] [Defects (1)] [History] [Comments (3)]
+[Details] [Versions (4)] [Executions (17)] [Requirements (2)] [Bugs (1)] [History] [Comments (3)]
 
 Details: properties summary row + preconditions, steps table (read view), attachments.
 
@@ -294,7 +294,7 @@ Versions:
 Compare view (side by side): changed fields highlighted; steps aligned; added (green +),
 removed (red −, strike), changed (yellow, inline word diff); "show unchanged" toggle.
 
-Executions: table — cycle, release, env, version, status, executed by, date, defects.
+Executions: table — cycle, release, env, version, status, executed by, date, bugs.
 ```
 
 Review mode (when `in_review` and user can approve): top bar `[Approve] [Return…]`, diff against approved version shown by default, per-step comment threads.
@@ -309,7 +309,7 @@ Dates           [2026-11-03] → [2026-11-14]                 Environments [QA �
 Objectives      [markdown]
 Scope           In scope [markdown]          Out of scope [markdown]
 Entry criteria  [markdown]
-Exit criteria   Rules:  [Execution progress ≥ 100%] [No open Critical defects] [+ Rule ▾]
+Exit criteria   Rules:  [Execution progress ≥ 100%] [No failed runs] [+ Rule ▾]
                 Notes [markdown]
 Risks           ┌ Description ─────────────┬ Impact ┬ Mitigation ─────────────┐ [+ Risk]
 Acceptance crit [markdown]
@@ -344,7 +344,7 @@ SPARK-CY-12 · Regression Cycle 01   ● Active · QA · build 2.5.0-rc1 · due 
 [By assignee] [By folder]  ← toggle grouping of the table below
 ┌ Runs ─────────────────────────────────────────────────────────────────────────────────┐
 │ [Status ▾][Assignee ▾][Folder ▾][Priority ▾][Needs retest][🔍]                         │
-│ ☐ # │ Case          │ Title                       │ Ver │ Assignee │ Status    │ Defects │
+│ ☐ # │ Case          │ Title                       │ Ver │ Assignee │ Status    │ Bugs    │
 │ ☐ 1 │ SPARK-TC-12   │ Login with valid creds      │ v3↑ │ Sana     │ ✖ Failed  │ D-87 ⟳  │
 │ ☐ 2 │ SPARK-TC-13   │ Login – locked account      │ v2  │ Sana     │ ✔ Passed  │         │
 │ ☐ 3 │ SPARK-TC-40   │ Session timeout             │ v1  │ — pool — │ ○ Not run │         │
@@ -371,15 +371,15 @@ Full-width page; the sidebar auto-collapses.
 │ ○ TC-14 Wrong pwd    ││ 2  Enter valid email/password,  Dashboard loads within   [✔][✖][⛔][⤼]       │
 │ …                    ││    press Sign in                3 s                      ✖ Failed           │
 │                      ││    Actual result * [Dashboard took 9 s; spinner shown          ]          │
-│                      ││    📎 screenshot-1.png  [+ attach / paste]   [Raise defect (D)] [Link…]   │
-│                      ││    → SPARK-D-87 created                                                  │
+│                      ││    📎 screenshot-1.png  [+ attach / paste]   [Link bug (D)]           │
+│                      ││    🐞 SPK-431 ⋯                                                          │
 │                      ││ 3  Check the header             User name shown           ○ Not run      │
 │                      ││──────────────────────────────────────────────────────────────────────────│
 │                      ││ Comment [markdown]                         Build [2.5.0-rc1]              │
 │                      ││ [Pass all remaining]  [Block run…] [Skip…] [N/A…]     [Finish run (Ctrl+⏎)]│
 │                      ││ Result preview: ✖ Failed                                                 │
 └──────────────────────┘└──────────────────────────────────────────────────────────────────────────┘
-History: attempt 1 ✖ Failed · Sana · Nov 3 10:04  [view]     Linked defects: D-87 (Ready for retest)
+History: attempt 1 ✖ Failed · Sana · Nov 3 10:04  [view]     Bugs: SPK-431  [Copy bug details]
 ```
 
 Behaviour:
@@ -388,34 +388,23 @@ Behaviour:
 - Focused step row highlighted; `P/F/B/S` set status and move focus to the next step (except `F`, which focuses Actual result).
 - Result preview updates live from BR-09; Finish disabled with explanation when incomplete ("2 steps not recorded — record them or Block/Skip/N/A the run").
 - Save status indicator per step (✓ saved, ↻ saving, ⚠ not saved – retrying).
-- Raise defect (`D`) opens a slide-over form prefilled (§8.3 of functional spec) — Save returns focus to the step; created defect chip appears.
+- Link bug (`D`) opens the Link bug dialog for the current step (§8.2 of the functional spec); saving shows the chip on the step and returns to the runner. "Copy bug details" copies a ready-to-paste report for the tracker. When the project requires a bug link on failures, Finish opens the dialog and finishes once the bug is linked.
 - After finishing: toast "SPARK-TC-12 Failed · Next: SPARK-TC-13" and auto-advance after 1 s (setting; default on).
-- Retest prompt for linked defects after a passing retest (BR-22): inline card "SPARK-D-87 is Ready for retest — [Mark Verified] [Keep]".
+- Bug chips appear on each step, on the attempt line and in History; a passing retest clears ⟳ and the chips stay (BR-22 retired).
 - Newer version banner: if no attempt yet and permitted → `[Update to v4]`.
 - Timer: elapsed since start (pause button); used as duration on finish (editable).
 - Text-format cases show the text body and a status selector instead of the step grid.
 - Responsive ≥ 768 px: queue collapses into a dropdown.
 
-### 5.10 Defect management
+### 5.10 Bugs (ADR-023)
 
-List: table (§4.1) with filters group Open/Resolved/Deferred tabs; columns key, title, severity, priority, status, assignee, module, found in, age, links count.
+Bugs are reported and fixed in the team's tracker; Assay shows the links.
 
-Detail (panel or page):
-
-```
-SPARK-D-87 · Dashboard load exceeds 3 s after login
-▲ High severity · ▲ High priority · ● Ready for retest   [Transition ▾] [Edit] [⋯]
-Assignee Omar  · Reporter Sana · Module Authentication · Found in SPARK v2.5 · Env QA · Build 2.5.0-rc1
-Fix version 2.5.1 · Retest: pending (1 of 1 linked runs)
-[Details] [Links (2)] [Activity] [Comments (4)] [Attachments (1)]
-Details: Steps to reproduce · Expected · Actual · Resolution
-Links: results (cycle / case / step / attempt status), cases, requirements, [+ Link]
-Activity: status history timeline + field changes
-```
-
-- `[Transition ▾]` lists only allowed targets (from `GET /defects/{id}/transitions`); choosing one opens a small form with required fields only.
-- Kanban view (toggle) grouped by status for the open set; drag to transition (validated).
-- Create form: title, severity, priority, environment, build, browser/device, module, found in release, assignee, description, steps, expected, actual, attachments, links.
+- **Bugs list** (`/p/:key/bugs`, `G D`): one row per reference: Bug (reference, ↗ open in tracker, title), Cases, Runs, Failing now (with ⟳ when runs need retest), Cycles, Last linked, `[Ready for retest]` (cycle.manage). Filter row: text (reference or title); toolbar checkbox "Linked to failing runs". Clicking a row opens a dialog listing every link (case, cycle · attempt (status) · step, run status, Open run).
+- **Bug chip** (everywhere): bug icon + reference (+ title where there is room), fail tone; a link to the tracker URL when there is one (`target=_blank`, `rel=noopener noreferrer`, http(s) only). The `⋯` part opens: Open in <tracker>, Copy reference, Ready for retest…, Edit link…, Remove link… (by permission).
+- **Link bug dialog**: Bug reference (required; recent references of the cycle as quick picks), Link (placeholder = the URL the project template would build; empty uses it), Title. Errors inline.
+- **Ready for retest dialog**: "n of m linked runs will be flagged ⟳ for retest" (dry run), `[Flag for retest]`.
+- Project settings › Options › **Bug tracker**: tracker name ("Open in Jira") and bug address with `{ref}`.
 
 ### 5.11 Requirements traceability matrix
 
@@ -423,7 +412,7 @@ Activity: status history timeline + field changes
 Traceability                     [Release: SPARK v2.5 ▾] [Status ▾] [☐ Uncovered only] [Export ▾]
 Coverage 54 of 60 (90%) · Verified 41 of 60 (68%) · Failed 4 · Blocked 1 · Not run 8 · Not covered 6
 ┌──────────────────────────────────────┬───────┬────────────────┬──────────────────────────┬──────────┐
-│ Requirement                          │ Cases │ Status in rel. │ Latest results           │ Defects  │
+│ Requirement                          │ Cases │ Status in rel. │ Latest results           │ Bugs     │
 ├──────────────────────────────────────┼───────┼────────────────┼──────────────────────────┼──────────┤
 │ ▾ SPARK-R-3  Authentication (epic)   │   9   │ ✖ Failed       │                          │ H1       │
 │   ▾ SPARK-R-12 Sign in with SSO      │   3   │ ✖ Failed       │ TC-12 ✖ · TC-50 ○ · TC-51 ✔│ H1       │
@@ -433,7 +422,7 @@ Coverage 54 of 60 (90%) · Verified 41 of 60 (68%) · Failed 4 · Blocked 1 · N
 ```
 
 - Expanding a requirement shows case rows with result details (cycle, date, executed by).
-- Cells link to case/run/defect panels.
+- Cells link to case and run panels; bug chips open the tracker.
 - "Link cases" opens a case picker with repository tree.
 - Export: one row per requirement–case pair.
 
@@ -459,7 +448,7 @@ Integrations (P2): Jira connections — status, last sync, errors, [Test], [Conf
 System: version, migration head, job queue (queued, running, dead) with retry/discard, storage usage.
 ```
 
-Project settings: General (name, description, key read-only), Options (approval, self-approval, only-assignee-executes, module depth, require defect for failure, attachment limit), Members (table + add), Environments, Releases, Tags, Import/Export, Danger zone (archive project).
+Project settings: General (name, description, key read-only), Options (approval, self-approval, only-assignee-executes, module depth, require a bug link for failures, bug tracker name and address, attachment limit), Members (table + add), Environments, Releases, Tags, Import/Export, Danger zone (archive project).
 
 ### 5.14 My Work
 
@@ -469,7 +458,7 @@ My Work                                                            [All projects
 │ SPARK-CY-12 Regression Cycle 01 · due Nov 10   ○ 30 not run · ◐ 2 in progress · ⟳ 3  │ [Continue ▶]
 │ HELIOS-CY-4 Smoke                · due Nov 5    ○ 20                                  │ [Start ▶]
 └──────────────────────────────────────────────────────────────────────────────────────┘
-┌ Defects assigned to me (4) ┐ ┌ Awaiting my review (6) ┐ ┌ My week ───────────────────┐
+┌ Awaiting my review (6) ┐ ┌ My week ───────────────────┐
 │ D-87 ▲High Ready for retest │ │ TC-14 Login wrong pwd   │ │ Executed 61 · P 52 F 7 B 2 │
 └─────────────────────────────┘ └─────────────────────────┘ └────────────────────────────┘
 ┌ Upcoming (next 14 days) ─────────────────────────────────────────────────────────────┐
@@ -477,13 +466,13 @@ My Work                                                            [All projects
 
 ### 5.15 Release and readiness
 
-Release page: header (name, status, dates, `[Change status]`), tabs **Readiness**, **Plans**, **Cycles**, **Defects**, **Decisions**.
+Release page: header (name, status, dates, `[Change status]`), tabs **Readiness**, **Plans**, **Cycles**, **Bugs**, **Decisions**.
 
 ```
 Readiness · SPARK v2.5                                             ✖ Not ready
 ┌ Rule ──────────────────────────────┬ Threshold ┬ Actual                 ┬ Met ┐
 │ Execution progress                  │ ≥ 100%    │ 205 of 245 (84%)       │ ✖   │
-│ No open Critical defects            │ = 0       │ 0                      │ ✔   │
+│ No failed runs                      │ = 0       │ 0                      │ ✔   │
 │ Pass rate of applicable             │ ≥ 95%     │ 180 of 245 (73%)       │ ✖   │
 │ Requirement coverage                │ ≥ 90%     │ 54 of 60 (90%)         │ ✔   │
 └─────────────────────────────────────┴───────────┴────────────────────────┴─────┘
@@ -577,7 +566,7 @@ AppShell, Sidebar, Breadcrumbs, ProjectSwitcher, CommandPalette, DataTable, Filt
 | 1280–1439 | Side panel 560 px; repository tree 260 px |
 | 1024–1279 | Sidebar collapsed to icons; side panel overlays |
 | 768–1023 | Tables show priority columns only; runner queue in dropdown; editing supported |
-| < 768 | Read-only dashboards, defect view/comment, My Work list; editing and runner show "Use a larger screen" with read view |
+| < 768 | Read-only dashboards, bug lists, My Work list; editing and runner show "Use a larger screen" with read view |
 
 ## 10. Keyboard shortcuts
 
@@ -585,7 +574,7 @@ AppShell, Sidebar, Breadcrumbs, ProjectSwitcher, CommandPalette, DataTable, Filt
 | --- | --- | --- |
 | Global | `/` | Search / command palette |
 | Global | `?` | Shortcut help |
-| Global | `G` then `W/R/C/D/Q/T/O` | Go to My Work / Repository / Cycles / Defects / Requirements / Traceability / Overview |
+| Global | `G` then `W/R/C/D/Q/T/O` | Go to My Work / Repository / Cycles / Bugs / Requirements / Traceability / Overview |
 | Global | `G P` | Project switcher |
 | Lists | `J/K`, `X`, `Enter`, `Esc` | Move, select, open, close panel |
 | Repository | `C` | New case in current folder |
@@ -595,7 +584,7 @@ AppShell, Sidebar, Breadcrumbs, ProjectSwitcher, CommandPalette, DataTable, Filt
 | Runner | `Space` | Start attempt |
 | Runner | `P/F/B/S` | Set step status |
 | Runner | `↑/↓` or `K/J` | Previous/next step |
-| Runner | `D` | Raise defect from current step |
+| Runner | `D` | Link a bug to the current step |
 | Runner | `A` | Attach file to current step |
 | Runner | `Ctrl+Enter` | Finish run |
 | Runner | `Shift+N`, `Shift+P` | Next / previous run |

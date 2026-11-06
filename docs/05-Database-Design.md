@@ -183,7 +183,7 @@ Indexes: `ux_sessions__token_hash`, `ix_sessions__user_id`, `ix_sessions__expire
 | name | text | no | | 1–100 |
 | description | text | yes | | |
 | status | project_status | no | active | |
-| settings | jsonb | no | `{}` | `approval_required` false, `allow_self_approval` false, `only_assignee_executes` false, `report_module_depth` 1, `attachment_max_mb` 25, `require_defect_for_failure` false |
+| settings | jsonb | no | `{}` | `approval_required` false, `allow_self_approval` false, `only_assignee_executes` false, `report_module_depth` 1, `attachment_max_mb` 25, `require_bug_link_for_failure` false, `bug_tracker_name` `tracker`, `bug_url_template` null (M5 migration renamed `require_defect_for_failure`) |
 | archived_at, archived_by | | yes | | |
 | std | | | | |
 
@@ -435,7 +435,31 @@ Indexes: `ux_test_results__run_draft UNIQUE (run_id) WHERE state='draft'` (BR-07
 
 Unique `(result_id, step_id)`; index `(result_id, position)`.
 
-### 3.6 Defects
+### 3.6 Bug links (M5, ADR-023; `docs/schema/04_m5_bug_links.sql`)
+
+Bugs live in each team's tracker; Assay stores references to them.
+
+**bug_links**
+
+| Column | Type | Null | Notes |
+| --- | --- | --- | --- |
+| id | uuid | no | PK |
+| organization_id, project_id | uuid | no | composite FK to projects |
+| reference | text | no | 1–100, trimmed (`SPK-431`, `#1287`) |
+| reference_norm | text | no | `upper(reference)`; grouping and duplicate check |
+| url | text | yes | ≤ 2,000, `^https?://` |
+| title | text | yes | ≤ 255 |
+| test_case_id | uuid | no | composite FK test_cases (always set) |
+| run_id, result_id | uuid | yes | composite FKs; set together (`CHECK ((result_id IS NULL) = (run_id IS NULL))`) |
+| step_id | uuid | yes | FK test_case_steps; only with a result |
+| std | | | |
+
+Unique `ux_bug_links__target (project_id, reference_norm, test_case_id, coalesce(result_id, nil), coalesce(step_id, nil))`; indexes `(project_id, reference_norm)`, `run_id`, `result_id`, `test_case_id`. Not part of the attempt: rows may be added to final attempts; a discarded draft's rows are deleted by the service before the attempt.
+
+### 3.6b Defects (unused since ADR-023; reserved for a tracker connector)
+
+The baseline tables below exist but hold no data.
+
 
 **defects**
 
@@ -621,7 +645,7 @@ The API maps SQLSTATE `P0001` with message prefix `immutable_record` to `409 imm
 | Execution summary | `ix_test_runs__cycle_status` (index-only scan with `status`) |
 | Case execution history | `ix_test_runs__test_case_id` → results by `run_id` |
 | Results history report | `ix_test_results__project_finished` |
-| Defect lists | `ix_defects__project_status_severity` |
+| Bugs list / chips | `ix_bug_links__project_reference`, `ix_bug_links__run_id` |
 | Search | GIN `search_vector`, trigram title |
 | Audit per record | `ix_audit_events__entity` |
 
@@ -661,10 +685,8 @@ erDiagram
   test_runs ||--o{ test_results : attempts
   test_results ||--o{ test_step_results : records
   test_case_steps ||--o{ test_step_results : for_step
-  defects ||--o{ defect_links : links
-  test_results ||--o{ defect_links : evidences
-  test_cases ||--o{ defect_links : affects
-  defects ||--o{ defect_status_history : history
+  test_results ||--o{ bug_links : links
+  test_cases ||--o{ bug_links : links
   requirements }o--o{ test_cases : linked
   requirements ||--o{ requirements : parent
 ```
@@ -762,14 +784,9 @@ INSERT INTO test_step_results (id, ..., result_id, step_id, position, status, ac
  ('…sr2', ..., '…res1', '…s2', 2, 'failed', 'Dashboard took 9 s; spinner shown'),
  ('…sr3', ..., '…res1', '…s3', 3, 'not_run', NULL);   -- allowed: failed wins (BR-09)
 
-INSERT INTO defects (id, ..., key_num, key, title, steps_to_reproduce, expected_result, actual_result, severity, priority,
-                     status, environment_id, build, folder_id, found_in_release_id, reporter_id, ...)
-VALUES ('…d1', ..., 1, 'SPARK-D-1', 'Login with valid credentials – step 2 failed', '1. Open … 2. Enter …',
-        'Dashboard loads within 3 s', 'Dashboard took 9 s; spinner shown', 'high', 'high', 'open', '…env_qa',
-        '2.5.0-rc1', '…f3', '…rel_v25', '…u_sana', ...);
-
-INSERT INTO defect_links (id, ..., defect_id, result_id, run_id, step_id, test_case_id)
-VALUES ('…dl1', ..., '…d1', '…res1', '…run1', '…s2', '…c1');
+-- Bug SPK-431 lives in the team's tracker; Assay links it to the attempt, run, step and case (BR-20, ADR-023)
+INSERT INTO bug_links (id, ..., reference, reference_norm, url, test_case_id, run_id, result_id, step_id, created_by)
+VALUES ('…bl1', ..., 'SPK-431', 'SPK-431', 'https://acme.atlassian.net/browse/SPK-431', '…c1', '…run1', '…res1', '…s2', '…u_sana');
 ```
 
 (`…` abbreviates UUIDs and standard columns.)

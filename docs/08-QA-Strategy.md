@@ -43,7 +43,7 @@ Target pyramid (by count): ~60% unit, ~25% integration/API, ~10% component, ~5% 
 | --- | --- | --- |
 | Unit/integration | Factories per test; transactional rollback per test (savepoints) except tests of transaction behaviour | Fresh container per worker (`pytest-xdist`) |
 | E2E (CI) | `tcms seed --profile e2e`: 1 org, 2 projects (SPARK, HELIOS), one user per role per project, 300 cases, 2 releases, cycles in each status | Deterministic IDs and passwords |
-| Staging | `tcms seed --profile large`: 3 orgs; SPARK with 100,000 cases, 2,000 folders, 50 releases, 2,000 cycles, 500,000 attempts, 20,000 defects, 5,000 requirements | Used for perf and manual exploration |
+| Staging | `tcms seed --profile large`: 3 orgs; SPARK with 100,000 cases, 2,000 folders, 50 releases, 2,000 cycles, 500,000 attempts, 20,000 bug links, 5,000 requirements | Used for perf and manual exploration |
 | UAT | Real SPARK import into staging (anonymized users) | Pilot |
 
 Rules: tests never depend on wall-clock time (frozen clock fixture), on order, or on shared state. Test users and passwords are fixtures, never real data.
@@ -93,9 +93,9 @@ Generate all combinations of step statuses for 1–4 steps (5⁴ + … = 780 cas
 - Explicit `passed` is never accepted for step-format attempts.
 - A passed result never contains a `not_run`, `failed` or `blocked` step.
 
-### 6.2 Defect transitions (BR-19)
+### 6.2 Bug links (ADR-023)
 
-Matrix test: for each (from, to) of 13×13 and each permission profile {any, dev-as-assignee, dev-not-assignee, verify, none} assert allowed/denied exactly as the table; for allowed ones, assert required-field validation.
+Reference, URL and template rules are unit-tested (`tests/unit/test_bug_rules.py`); linking, permissions, retest eligibility (BR-21) and the finalize rule are API and integration tests (`tests/api/test_bug_links.py`). The former 13 × 13 defect transition matrix is retired with BR-19.
 
 ### 6.3 Coverage (BR-23)
 
@@ -120,7 +120,7 @@ Same generator; compare `ExecutionSummary` from SQL with an oracle; assert `None
 | BR-16/27 | `test_br_16_keys_never_reused_after_delete`, `test_br_27_project_key_format` |
 | BR-18 | `test_br_18_self_approval_blocked` |
 | BR-19 | Transition matrix (§6.2) |
-| BR-20/21/22 | `test_br_20_defect_from_result_links`, `test_br_21_ready_for_retest_flags_runs`, `test_br_22_retest_pass_does_not_change_defect` |
+| BR-20/21 | `test_br_20_final_attempts_accept_links_and_stay_immutable`, `test_ac_bug_01_02_tcms_100_link_from_a_failed_step`, `test_br_21_ac_bug_03_tcms_103_ready_for_retest_flags_only_eligible_runs` (BR-19, BR-22 retired by ADR-023) |
 | BR-23/24 | Property tests (§6.3, §6.4) |
 | BR-25 | `test_br_25_stale_row_version_409` (per mutable resource, parameterized) |
 | BR-26 | `test_br_26_audit_in_same_transaction` (rollback leaves no audit), `test_br_26_audit_append_only_sql` |
@@ -189,9 +189,9 @@ Each release records results in a performance log; regressions > 20% block relea
 | Item | Plan |
 | --- | --- |
 | Participants | QA Manager, QA Lead, 3–5 QA Engineers, 2 Developers, 1 PM |
-| Duration | 2 weeks (one full regression cycle + defect lifecycle) |
+| Duration | 2 weeks (one full regression cycle with bug links and retests) |
 | Scenarios | UJ-1 … UJ-9 from [01 PRD §5](01-PRD.md) with real SPARK data imported |
-| Measures | Time to execute 20 cases vs previous method (same testers); defects with complete reproduction info (developer rating); SUS questionnaire (target ≥ 75); count of blocking issues |
+| Measures | Time to execute 20 cases vs previous method (same testers); bug reports with complete reproduction info from Copy bug details (developer rating); SUS questionnaire (target ≥ 75); count of blocking issues |
 | Exit | No open critical/high TCMS defects; AC-PRD-07 met; QA Manager sign-off recorded as a release decision in TCMS |
 
 ## 13. Defect management for TCMS itself
@@ -315,18 +315,18 @@ Level: **U** unit, **I** integration, **A** API, **E** end-to-end, **P** perform
 | TCMS-089 | Text-format case execution | E | M | §7.3 | Tester-selected status |
 | TCMS-090 | Concurrent finalize of same draft | I | H | §10 | Exactly one succeeds |
 
-### 15.6 Defects
+### 15.6 Bug links (ADR-023)
 
-| ID | Title | Lvl | Pri | Refs | Expected |
+| ID | Test | Level | Pri | Refs | Expected |
 | --- | --- | --- | --- | --- | --- |
-| TCMS-100 | Raise defect from failed step prefilled | E | H | FR-DEF-002, AC-DEF-02 | Fields and links prefilled |
-| TCMS-101 | Transition matrix with permissions | U/A | H | BR-19, AC-DEF-01 | As table |
-| TCMS-102 | Duplicate requires duplicate_of | A | M | AC-DEF-04 | 422 |
-| TCMS-103 | Ready for retest flags linked runs | I | H | BR-21, AC-DEF-03 | needs_retest true |
-| TCMS-104 | Passing retest prompts verify, no auto change | E | H | BR-22 | Defect unchanged until confirmed |
-| TCMS-105 | Link existing defect to another result | A | M | FR-DEF-003 | Link created |
-| TCMS-106 | Defect status history recorded | I | M | FR-DEF-005 | History rows per transition |
-| TCMS-107 | Bulk transition only valid transitions | A | M | FR-DEF-006 | Invalid rejected per item |
+| TCMS-100 | Link a bug from a failed step in the runner (`D`) | E | H | FR-DEF-001, AC-BUG-01/02 | Chip on step, run history, cycle runs and case; URL from the template |
+| TCMS-101 | Reference, URL scheme, template and duplicate validation | U/A | H | AC-BUG-02/05/06 | 422 / 409 as specified |
+| TCMS-102 | Link a bug to a case directly | A/E | M | FR-DEF-001 | Shown on the case Bugs tab |
+| TCMS-103 | Ready for retest flags only eligible linked runs | I | H | BR-21, AC-BUG-03 | Superseded runs and closed cycles untouched |
+| TCMS-104 | Retest clears the flag; the bug stays on the history | E | H | BR-21 | needs_retest false, chip kept |
+| TCMS-105 | One reference from many runs groups in the Bugs list | A/E | M | FR-DEF-006 | Counts of cases, runs, failing runs |
+| TCMS-106 | Failed result needs a bug link (project option) | A/E | H | FR-DEF-004, AC-BUG-04 | 422 `bug_link_required`; runner asks, then finishes |
+| TCMS-107 | Edit and remove links by creator or `defect.edit`; audited | A | M | docs/02 §8.2 | 403 for others; `bug.updated` / `bug.unlinked` |
 
 ### 15.7 Requirements, reporting, search
 

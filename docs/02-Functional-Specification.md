@@ -29,7 +29,7 @@ Acceptance criteria are written as `AC-<module>-<n>` in Given/When/Then form and
 | Project key | `^[A-Z][A-Z0-9]{1,9}$` | Unique per organization; immutable (BR-27). |
 | Human key | `<PROJECT>-<PREFIX>-<n>` | Sequential per project and entity; never reused (BR-16). |
 
-Human key prefixes: test case `TC`, test plan `PL`, cycle `CY`, defect `D`, requirement `R`. Example: `SPARK-TC-1042`, `SPARK-D-87`.
+Human key prefixes: test case `TC`, test plan `PL`, cycle `CY`, requirement `R` (`D` is reserved; bug references are the tracker's own keys). Example: `SPARK-TC-1042`.
 
 Runs have no human key; they are shown as `<cycle key> / <case key>` (e.g. `SPARK-CY-12 / SPARK-TC-1042`).
 
@@ -74,9 +74,6 @@ In-app notifications (bell) are MVP; email is MVP for invitations, password rese
 | Runs assigned to me | Assignee | In-app; daily email digest (opt-out) |
 | Case submitted for review | Reviewer (or all users with `testcase.approve` if none) | In-app |
 | Case approved / returned | Author | In-app |
-| Defect assigned to me | Assignee | In-app + email (opt-out) |
-| Defect transitioned | Reporter, assignee, watchers | In-app |
-| Defect Ready for Retest | Reporter and executors of linked runs | In-app + email (opt-out) |
 | Mentioned in a comment (`@user`) | Mentioned user | In-app + email (opt-out) |
 | Import/export finished | Initiator | In-app |
 
@@ -109,11 +106,11 @@ Permissions are code-defined constants (seeded; not user-creatable). Roles bundl
 | `cycle.manage` | Project | Create/edit/close cycles, add/remove runs, assign, update/replace runs, edit others' drafts |
 | `cycle.reopen` | Project | Reopen closed cycles |
 | `run.execute` | Project | Start, record, finalize attempts; claim pool runs |
-| `defect.create` | Project | Create defects, link defects to results |
-| `defect.edit` | Project | Edit defect fields, assign |
-| `defect.transition.any` | Project | Any allowed transition |
-| `defect.transition.dev` | Project | Developer transitions (§8.2) |
-| `defect.transition.verify` | Project | Verifier transitions (§8.2) |
+| `defect.create` | Project | Link bugs to attempts and cases (§8; code kept from the defect design) |
+| `defect.edit` | Project | Edit or remove any bug link |
+| `defect.transition.any` | Project | Unused since ADR-023 (reserved for a tracker connector) |
+| `defect.transition.dev` | Project | Unused since ADR-023 |
+| `defect.transition.verify` | Project | Unused since ADR-023 |
 | `requirement.manage` | Project | Create/edit/archive/import requirements |
 | `requirement.link` | Project | Link/unlink requirements and cases |
 | `release.manage` | Project | Create/edit releases, record go/no-go |
@@ -226,7 +223,9 @@ Fields: `name` (1–100), `slug` (immutable), security policy (`mfa_required_for
 | settings.only_assignee_executes | bool, default false | BR-32 |
 | settings.report_module_depth | int 1–5, default 1 | Folder depth used as "module" in reports |
 | settings.attachment_max_mb | int 1…org `default_attachment_max_mb` | The org value is both the default for new projects and the cap; platform cap 100 MB |
-| settings.require_defect_for_failure | bool, default false | If true, finalizing a Failed attempt requires a linked defect |
+| settings.require_bug_link_for_failure | bool, default false | If true, finalizing a Failed attempt requires a bug link on that attempt (§8) |
+| settings.bug_tracker_name | text 1–40, default `tracker` | Shown on buttons ("Open in Jira") |
+| settings.bug_url_template | `http(s)` URL with one `{ref}`, optional | Builds the URL of a bug link from its reference |
 
 Creating a project: creator becomes QA Manager; default environments `QA` and `Staging` created; root folder is implicit (folders with `parent_id = null` are top-level).
 
@@ -234,7 +233,7 @@ Archiving a project: requires typing the project key; all cycles must be Closed 
 
 ### 4.3 Environments
 
-Fields: `name` (1–50, unique in project), `description`, `archived_at`. Used by plans (list), cycles (exactly one in MVP), results (copied from cycle), defects (optional). Archived environments cannot be chosen for new cycles.
+Fields: `name` (1–50, unique in project), `description`, `archived_at`. Used by plans (list), cycles (exactly one in MVP), results (copied from cycle). Archived environments cannot be chosen for new cycles.
 
 ### 4.4 Releases
 
@@ -305,7 +304,7 @@ Content fields (versioned, BR-01) are marked **V**. Metadata fields are not vers
 | created_by/at, updated_by/at | | | system | |
 | latest_version / approved_version | | int | system | |
 
-Brief alignment: the brief's single "Test Classification" list mixed three concepts. They are split into `type` (what is tested), `design_technique` (how cases were derived) and system tags (`smoke`, `sanity`, `regression` = which suites a case belongs to). "Module/Feature" is the folder (reports group by folder at `report_module_depth`). Test-case "Severity" is dropped; priority covers it and severity lives on defects. See ADR-012.
+Brief alignment: the brief's single "Test Classification" list mixed three concepts. They are split into `type` (what is tested), `design_technique` (how cases were derived) and system tags (`smoke`, `sanity`, `regression` = which suites a case belongs to). "Module/Feature" is the folder (reports group by folder at `report_module_depth`). Test-case "Severity" is dropped; priority covers it and bug severity lives in the team's tracker. See ADR-012, ADR-023.
 
 "Execution environment" on the case is not a field; environments belong to cycles. A case may state environment constraints in `preconditions`.
 
@@ -499,7 +498,7 @@ Step result fields: `status` (`not_run`, `passed`, `failed`, `blocked`, `skipped
    - Explicit outcome cannot contradict steps: explicit `passed` or `failed` is never accepted for a `steps` attempt (the steps decide), and any explicit outcome when a step failed is rejected with `422 outcome_conflicts_with_steps` (review K17h/i).
    - Every final `blocked`, `skipped` or `not_applicable` attempt needs a `reason`, including a `blocked` derived from steps; without one the request is rejected with `422 reason_required` and the runner asks for it (review K2, enforced by the `test_results` CHECK).
    - `text` format: tester chooses status; `failed` requires comment.
-   - If `require_defect_for_failure` and status `failed` and no defect linked to the attempt → `422 defect_required`.
+   - If `require_bug_link_for_failure` and status `failed` and no bug link on the attempt → `422 bug_link_required`.
 4. On finalize: attempt becomes immutable; run `status` and `latest_result_id` updated; `needs_retest` cleared; audit event `result.finalized`.
 5. **Discard draft**: executor or `cycle.manage`; deletes the draft and its step results (audited with a summary of what was recorded). Attachments uploaded to the draft are deleted.
 
@@ -537,7 +536,7 @@ Step result fields: `status` (`not_run`, `passed`, `failed`, `blocked`, `skipped
 ### 7.4 Execution screen behaviour (summary; layout in [07 UI §5.9](07-UI-UX-Specification.md))
 
 - Queue: the cycle's runs filtered (default: assigned to me, not finalized), in position order. "Next" moves to the next run in the queue without leaving the page.
-- Keyboard: `P` pass, `F` fail, `B` blocked, `S` skip, `↓`/`J` next step, `↑`/`K` previous step, `Space` start attempt, `A` attach, `Ctrl+Enter` finish run, `Shift+N` next run, `D` raise defect from current step, `?` help.
+- Keyboard: `P` pass, `F` fail, `B` blocked, `S` skip, `↓`/`J` next step, `↑`/`K` previous step, `Space` start attempt, `A` attach, `Ctrl+Enter` finish run, `Shift+N` next run, `D` link a bug to the current step, `?` help.
 - Selecting **Fail** focuses the actual-result field (required before leaving the step).
 - "Pass all remaining" button (sets all `not_run` steps to passed; confirmation when > 10 steps).
 - Paste image into actual result / comment → uploaded as step attachment.
@@ -545,98 +544,57 @@ Step result fields: `status` (`not_run`, `passed`, `failed`, `blocked`, `skipped
 
 ### 7.5 My Work
 
-Lists runs assigned to the user in active and planned cycles across projects, grouped by cycle, with counts by status, due dates, and `needs_retest` flags. Also: defects assigned to me, cases awaiting my review.
+Lists runs assigned to the user in active and planned cycles across projects, grouped by cycle, with counts by status, due dates, and `needs_retest` flags. Also: cases awaiting my review, and my last 7 days of executions.
 
-## 8. Defects (DEF)
+## 8. Bug links (DEF)
+
+Bugs are reported and worked in each team's own tracker (Jira, Azure DevOps, GitHub, Linear, …). Assay records **links** to them so failures, retests and traceability connect to the bug (ADR-023). Assay stores no bug status, assignee, severity or workflow.
 
 ### 8.1 Fields
 
 | Field | Type | Required | Rules |
 | --- | --- | --- | --- |
-| key | `SPARK-D-n` | auto | |
-| title | 5–255 | yes | |
-| description | Markdown | no | |
-| steps_to_reproduce | Markdown | yes | Prefilled from run (§8.3) |
-| expected_result | Markdown | yes | |
-| actual_result | Markdown | yes | |
-| severity | `critical`/`high`/`medium`/`low` | yes | default `medium` |
-| priority | `critical`/`high`/`medium`/`low` | yes | default `medium` |
-| status | §8.2 | system | initial `open` |
-| environment_id | ref | no | |
-| build | text ≤ 100 | no | |
-| browser_device | text ≤ 200 | no | |
-| folder_id | ref | no | "Module" for reporting; prefilled from case folder |
-| found_in_release_id | ref | no | prefilled from cycle |
-| fix_version | text ≤ 100 | no | |
-| reporter_id | user | system | |
-| assignee_id | user | no | project member |
-| resolution | enum | on certain transitions | `fixed`, `wont_fix`, `duplicate`, `cannot_reproduce`, `not_a_bug`, `deferred` |
-| resolution_note | Markdown | per §8.2 | |
-| duplicate_of_id | ref | when duplicate | same project, not itself, not creating a chain loop |
-| watchers | users | no | |
-| links | results, cases, requirements | | §8.3 |
-| retest status | derived | | `not_required`, `pending` (ready_for_retest and linked runs not retested), `passed`, `failed` (latest retest results of linked runs) |
+| reference | text 1–100 | yes | The tracker's identifier as the team writes it (`SPK-431`, `#1287`, `AB#5521`). Trimmed; compared case-insensitively (`reference_norm` = upper-cased) |
+| url | text ≤ 2,000 | no | `http://` or `https://` only. When empty and the project has a URL template, built from it at creation (`{ref}` URL-encoded) and stored |
+| title | text ≤ 255 | no | Short summary, shown next to the reference |
+| test_case_id | ref | system | Always set: the run's case, or the case linked directly |
+| result_id, run_id | ref | system | Set together when linked from an attempt |
+| step_id | ref | no | The pinned step when linked from a step |
+| created_by, created_at, updated_by, updated_at | | system | |
 
-### 8.2 Lifecycle (BR-19)
+Project settings (§4.2): `bug_tracker_name` (1–40, default `tracker`; buttons read "Open in Jira"), `bug_url_template` (optional, `http(s)://…` containing `{ref}` exactly once), `require_bug_link_for_failure`.
 
-States: `open`, `triaged`, `assigned`, `in_progress`, `fixed`, `ready_for_retest`, `verified`, `closed`, `reopened`, `rejected`, `duplicate`, `cannot_reproduce`, `deferred`.
+### 8.2 Linking (BR-20)
 
-**Open set** (counted as open defects): `open`, `triaged`, `assigned`, `in_progress`, `fixed`, `ready_for_retest`, `reopened`. **Deferred** is counted separately. **Resolved set**: `verified`, `closed`, `rejected`, `duplicate`, `cannot_reproduce`.
+- From the runner: "Link bug" (`D`) on a step, or on the attempt for text cases. Works on draft and finalized attempts: links are not part of the attempt (BR-06 unaffected). Recently used references in the cycle are suggested.
+- From a test case: "Link bug" adds a direct case link (bug found outside execution).
+- The same reference can be linked to many attempts and cases; the same reference twice on the same attempt (and step) or the same case → `409 already_linked`.
+- **Copy bug details**: a ready-to-paste Markdown report of the attempt (case key and title, pinned version, preconditions, steps 1..n with test data, expected and actual of step n, environment, build, cycle, link to the run) for the team's tracker.
+- Edit (URL, title) or remove: the creator, or `defect.edit`. Audit `bug.linked`, `bug.updated`, `bug.unlinked`.
+- Discarding a draft (§7.3) removes its links (audited `bug.unlinked`, reason "draft discarded").
 
-| From | To | Permission (any of) | Required input |
-| --- | --- | --- | --- |
-| open | triaged | any | severity, priority confirmed |
-| open, triaged | assigned | any | assignee |
-| open, triaged, reopened | rejected | any | resolution_note |
-| open, triaged, reopened | duplicate | any | duplicate_of_id |
-| open, triaged, in_progress | cannot_reproduce | any, dev (from in_progress) | resolution_note |
-| open, triaged, assigned, in_progress | deferred | any | resolution_note |
-| assigned, reopened | in_progress | any, dev | — |
-| in_progress | assigned | any, dev | — (dev handing back) |
-| in_progress | fixed | any, dev | resolution `fixed` (default), resolution_note optional, fix_version optional |
-| fixed | ready_for_retest | any | — |
-| fixed, ready_for_retest | reopened | any, verify | comment |
-| ready_for_retest | verified | any, verify | — |
-| verified | closed | any, verify | — |
-| verified, closed | reopened | any, verify | comment |
-| rejected, duplicate, cannot_reproduce | reopened | any | comment |
-| rejected, duplicate, cannot_reproduce, deferred | closed | any | — |
-| deferred | triaged | any | — |
-| reopened | triaged, assigned | any | assignee if assigned |
+### 8.3 Retest (BR-21)
 
-"any" = `defect.transition.any`; "dev" = `defect.transition.dev` and the user is the assignee; "verify" = `defect.transition.verify`. Org Admins hold all. Every transition records a `defect_status_history` row (from, to, by, at, note) and an audit event. Moving to `assigned` without an assignee is rejected; changing the assignee of an `open`/`triaged` defect moves it to `assigned` automatically.
+"Ready for retest" on a reference (Bugs list or chip menu; `cycle.manage`) sets `needs_retest = true` on every non-superseded run linked to it in a non-closed cycle and reports the count (preview in the confirm dialog). A new finalized attempt clears the flag (§7.3). Audit `bug.retest_requested` with the flagged runs. Assay never changes anything in the tracker.
 
-### 8.3 Defects from execution (BR-20, BR-21)
+### 8.4 Bugs list
 
-- "Raise defect" from a step in a draft or finalized attempt opens the defect form prefilled:
-  - title: `<case title> – step <n> failed` (editable),
-  - steps_to_reproduce: preconditions + steps 1..n (action + data) of the pinned version, numbered,
-  - expected_result: step n expected result,
-  - actual_result: step n actual result,
-  - environment, build, found_in_release, folder (module) from the run,
-  - attachments: the step's attachments copied by reference,
-  - links: result attempt, run, case, failing step id.
-- "Link existing defect" from a step: search by key/title; creates link only.
-- A defect can link to many results across cycles and to cases directly (e.g., a defect found outside execution).
-- When status → `ready_for_retest`: linked non-superseded runs in non-closed cycles get `needs_retest = true` (BR-21); executors of the linked attempts are notified.
-- Retest of a linked run that passes: the runner shows "Defect SPARK-D-87 is Ready for Retest — mark Verified?" (BR-22). Failing retest: "Reopen SPARK-D-87?".
-
-### 8.4 Defect list
-
-Filters: status (set or open/resolved/deferred groups), severity, priority, assignee, reporter, module (folder), release found, environment, created/updated date range, linked cycle, has Jira link (P2), text. Bulk: assign, transition (only transitions valid for all selected and permitted), set priority/severity, add watchers, export.
+One row per reference in the project: reference (opens the URL), title (latest non-empty), linked cases, linked runs, runs currently failed, cycles, first and last linked. Filters: text (reference or title), cycle, "linked to failing runs". Selecting a row lists every link (cycle / case / step / attempt status). Actions: Ready for retest, Open in tracker.
 
 **AC**
 
-- AC-DEF-01: Given a defect in `open`, when a developer (dev permission only) transitions it to `fixed`, then `403 transition_not_permitted`.
-- AC-DEF-02: Given a defect raised from step 3 of a failed attempt, then its steps_to_reproduce contains preconditions and steps 1–3 and it is linked to the attempt, run and case.
-- AC-DEF-03: Given a defect linked to two runs in an active cycle, when it moves to ready_for_retest, then both runs show needs_retest.
-- AC-DEF-04: Given a duplicate transition without duplicate_of_id, then `422 field_required`.
+- AC-BUG-01: Given a failed step 3 of a draft, when the tester links `SPK-431`, then the link stores the attempt, run, step and case, and the run, the cycle runs list and the case show `SPK-431`.
+- AC-BUG-02: Given the URL template `https://acme.atlassian.net/browse/{ref}`, when `SPK-431` is linked without a URL, then its URL is `https://acme.atlassian.net/browse/SPK-431`; a given URL is kept as given.
+- AC-BUG-03: Given `SPK-431` linked to two runs of an active cycle, a superseded run and a run in a closed cycle, when Ready for retest is used, then only the two active runs get `needs_retest`.
+- AC-BUG-04: Given `require_bug_link_for_failure`, when a Failed attempt without a link is finalized, then `422 bug_link_required`; after linking it finalizes.
+- AC-BUG-05: Given a URL that is not `http(s)://`, then `422 validation_error`.
+- AC-BUG-06: Given `SPK-431` linked to an attempt, when it is linked to the same attempt again, then `409 already_linked`.
 
 ## 9. Comments, attachments, activity
 
 ### 9.1 Comments
 
-- On test cases (optionally anchored to a version), runs/attempts, defects, requirements, plans, cycles.
+- On test cases (optionally anchored to a version), runs/attempts, requirements, plans, cycles.
 - Markdown, ≤ 10,000 chars, `@mention` project members.
 - Author can edit/delete within 15 minutes; afterwards immutable (edits shown as "edited"; old text in audit).
 - Review comments on a case version are shown in the review panel.
@@ -647,7 +605,7 @@ Filters: status (set or open/resolved/deferred groups), severity, priority, assi
 - Max size: project setting (default and cap = organization `default_attachment_max_mb`, default 25 MB; platform cap 100 MB). Max 50 attachments per record.
 - Filename sanitized; stored under random object key; original name kept for download.
 - Previews for images and PDF; others download.
-- Deletion: uploader or `cycle.manage`/`testcase.edit`/`defect.edit` on the owning record, unless BR-28 forbids.
+- Deletion: uploader or `cycle.manage`/`testcase.edit` on the owning record, unless BR-28 forbids.
 
 ### 9.3 Activity feed
 
@@ -675,7 +633,7 @@ Project feed shows recent audit events rendered as sentences ("Sana finalized SP
 ### 10.2 Links
 
 - Many-to-many requirement ↔ test case (FR-REQ-002); created from either side; bulk link from case list ("Link selected to requirement…").
-- Requirement ↔ defect links are derived (defects linked to the requirement's cases' results) plus optional direct links.
+- Requirement ↔ bug: derived only (bug links on the requirement's cases and their results).
 - Links are not versioned; adding/removing is audited.
 
 ### 10.3 Release scope for a requirement
@@ -692,7 +650,7 @@ Rows: requirements in scope for the selected release (or all non-archived requir
 | Coverage | number of linked active cases |
 | Cases | expandable list: case key/title, latest result in release (status badge, cycle, date), link |
 | Status in release | §10.5 |
-| Defects | open defects linked via results in the release or directly (count by severity, expandable) |
+| Bugs | bug references linked to the requirement's cases or their results in the release (expandable) |
 
 Filters: release, status in release, uncovered only, priority, type, owner. Export CSV/XLSX (one row per requirement–case pair).
 
@@ -733,7 +691,7 @@ Coverage metrics (per release):
 
 ### 11.1 Common filters
 
-Release, cycle(s), date range (applies to `finished_at` of attempts or `created_at` of defects), module (folder at configured depth), tester (`executed_by` for results, `assignee` for pending), environment. Dashboards remember the last filter per user (local preference).
+Release, cycle(s), date range (applies to `finished_at` of attempts or `created_at` of bug links), module (folder at configured depth), tester (`executed_by` for results, `assignee` for pending), environment. Dashboards remember the last filter per user (local preference).
 
 ### 11.2 Metric definitions (BR-24)
 
@@ -753,9 +711,8 @@ Let **runs in scope** = non-superseded runs in the selected cycles (or all cycle
 | Blocked rate | B ÷ A | |
 | First-time pass rate | runs whose first finalized attempt passed ÷ runs with ≥ 1 finalized attempt (excluding NA) | Advanced (P2) |
 | Retest count | finalized attempts with attempt_no > 1 | |
-| Open defects | count(defects in open set) | Filtered by found_in_release when a release is selected |
-| Critical/high open defects | open defects with severity ∈ {critical, high} | |
-| Defect age | now − created_at for open defects; median and max | |
+| Failures without a bug | failed runs (latest attempt) with no bug link on that attempt | |
+| Linked bugs | distinct bug references linked to runs in scope | |
 | Requirement coverage | §10.5 | |
 | Automation coverage | cases with automation_status = automated ÷ active cases | Repository metric |
 | Total test cases | active cases (status ≠ archived) | Repository metrics count cases, not runs |
@@ -772,13 +729,13 @@ Charts never show a percentage without its counts in the tooltip or label.
 | Active cycles | List: name, release, environment, progress bar (P/F/B/S/NR segments), due date, overdue flag |
 | Execution summary | Counts and rates from §11.2 for scope |
 | Status breakdown | Stacked bar per cycle |
-| Defects | Open by severity; critical/high list; opened vs resolved last 30 days |
+| Bugs | Bug references with failing runs; failures without a bug |
 | Requirement coverage | Covered/Total, Verified/Total for selected release; top 10 uncovered |
 | Regression status | Runs of cases tagged `regression` in scope: progress + pass rate |
 | Release readiness | §11.4 |
 | Team progress | Per tester: assigned, executed, remaining, failed, blocked |
 
-**QA Engineer dashboard (My Work)** — §7.5 plus: my executed runs today/this week, my failed and blocked runs awaiting retest, defects assigned to or reported by me, upcoming cycles (start date in next 14 days) where I have assignments.
+**QA Engineer dashboard (My Work)** — §7.5 plus: my executed runs today/this week, my failed and blocked runs awaiting retest, bugs I linked, upcoming cycles (start date in next 14 days) where I have assignments.
 
 **Project quality dashboard**
 
@@ -786,15 +743,14 @@ Charts never show a percentage without its counts in the tooltip or label.
 | --- | --- |
 | Execution trend | Daily executed and pass rate over date range (from `metric_snapshots` + today live) |
 | Pass/fail trend | Daily P/F/B counts |
-| Defect trend | Opened, resolved, open total per day |
-| Defects by severity | Current open by severity |
-| Defects by module | Open by folder at module depth |
+| Bug links trend | Bug links added per day |
+| Bugs by module | Distinct references by folder at module depth |
 | Requirement coverage | Per release |
 | Automation coverage | Repository automation status distribution |
 | Regression status | Per release |
-| Release-wise quality | For last 6 releases: pass rate of applicable, open critical/high at release date, defects found, coverage % |
+| Release-wise quality | For last 6 releases: pass rate of applicable, failed runs at release date, bug references linked, coverage % |
 
-**Organization dashboard:** per project row: active cycles, execution progress, pass rate, open critical/high defects, last activity.
+**Organization dashboard:** per project row: active cycles, execution progress, pass rate, failed runs, last activity.
 
 ### 11.4 Release readiness (FR-RPT-006)
 
@@ -805,13 +761,13 @@ Readiness rules come from plan exit criteria for plans in the release, plus defa
 | `min_execution_progress` | percent | Execution progress ≥ value |
 | `min_pass_rate` | percent | Pass rate (P ÷ E) ≥ value |
 | `min_pass_rate_applicable` | percent | P ÷ A ≥ value |
-| `max_open_defects` | severity set, count | Open defects with those severities found in release ≤ count |
+| `max_failed` | count | Failed runs (latest attempt) ≤ count (replaces `max_open_defects`, ADR-023) |
 | `max_blocked` | count | Blocked runs ≤ count |
 | `min_requirement_coverage` | percent | Coverage % ≥ value |
 | `min_requirements_verified` | percent | Verified % ≥ value |
 | `tag_fully_executed` | tag | All runs of cases with that tag executed |
 
-Defaults (when no plan exit criteria): execution progress ≥ 100%, no open critical defects, pass rate of applicable ≥ 95%, requirement coverage ≥ 90%.
+Defaults (when no plan exit criteria): execution progress ≥ 100%, no failed runs, pass rate of applicable ≥ 95%, requirement coverage ≥ 90%.
 
 Panel shows each rule: met/not met, actual value with counts, threshold. Overall: **Ready** only if all met. The QA Manager (`release.manage`) records a **decision**: `go`, `go_with_risks` (risks text required), `no_go`, comment required; a snapshot of all rule results and metrics is stored with the decision (immutable). Multiple decisions over time allowed; latest shown.
 
@@ -821,9 +777,9 @@ MVP reports (each a filterable table + CSV/XLSX export, `data.export`):
 
 | Report | Rows |
 | --- | --- |
-| Cycle execution report | One row per run: case key, title, folder, priority, assignee, status, executed by, finished at, version, defects |
+| Cycle execution report | One row per run: case key, title, folder, priority, assignee, status, executed by, finished at, version, bug references |
 | Results history | One row per finalized attempt in range |
-| Defect report | One row per defect with all fields |
+| Bug links report | One row per bug link: reference, URL, title, case, cycle, run status, step, linked by, linked at |
 | Traceability report | One row per requirement–case pair with status in release |
 | Tester activity | Per tester per day: executed, passed, failed, blocked |
 | Test case inventory | One row per case with metadata and latest result |
@@ -832,7 +788,7 @@ Exports ≤ 10,000 rows are synchronous; larger exports run as background jobs (
 
 ## 12. Search, filters, saved views (SRCH)
 
-- **Global search** (header, `/` shortcut): scoped to current project by default with "all projects" toggle. Matches: exact key (`SPARK-TC-12`, also `TC-12`, `12` within project), external keys (P2), titles (prefix + trigram fuzzy), folder names, cycle/plan names, requirement and defect titles and descriptions (full text). Results grouped by type, top 5 each, "see all" → filtered list.
+- **Global search** (header, `/` shortcut): scoped to current project by default with "all projects" toggle. Matches: exact key (`SPARK-TC-12`, also `TC-12`, `12` within project), external keys (P2), titles (prefix + trigram fuzzy), folder names, cycle/plan names, requirement titles and descriptions (full text), bug references and titles. Results grouped by type, top 5 each, "see all" → filtered list.
 - **Filters**: each list defines filterable fields; operators: `is`, `is not`, `in`, `contains`, `before/after/between` (dates), `is empty`. Combined with AND; multi-value fields with OR within a field.
 - **Saved views**: name, entity type, filters, columns, sort; visibility `private` or `project` (shared requires `cycle.manage` or `plan.manage` or `project.configure`). Users can set a default view per list.
 
@@ -849,7 +805,7 @@ Every audit event: `id`, `occurred_at`, `organization_id`, `project_id` (nullabl
 | Config | `organization.updated`, `project.created/updated/archived/restored`, `release.status_changed`, `project.settings_changed`, `environment.*`, `release.*`, `release.decision_recorded` |
 | Test design | `folder.*`, `test_case.created`, `test_case.version_created`, `test_case.updated` (metadata), `test_case.submitted/approved/returned/deprecated/archived/restored/deleted`, `test_case.moved`, link changes |
 | Planning/execution | `plan.*`, `cycle.created/updated/started/closed/reopened/archived`, `run.added/removed/assigned/version_updated/replaced` (one event per run; bulk actions share `bulk_operation_id`; claiming is `run.assigned` with `claimed: true`), `result.started/discarded/finalized/corrected`, `result.draft_taken_over` |
-| Defects | `defect.created/updated/transitioned/linked/unlinked` |
+| Bug links | `bug.linked/updated/unlinked/retest_requested` |
 | Requirements | `requirement.*`, `requirement.linked/unlinked` |
 | Data | `import.committed`, `export.created`, `attachment.uploaded/deleted` |
 
@@ -862,7 +818,7 @@ Step-result edits during a draft are **not** individual audit events (too noisy)
 
 ### 13.3 Views
 
-- Record **History** tab on cases, plans, cycles, runs, defects, requirements.
+- Record **History** tab on cases, plans, cycles, runs, requirements.
 - Project audit log (`project.audit.view`) and organization audit log (`org.audit.view`) with filters: actor, action, entity type, date range; CSV export.
 - Access review export (FR-AUD-004): one row per user × scope: email, name, active, org admin, MFA enrolled, project, role, granted by, granted at, last sign-in.
 
@@ -891,13 +847,12 @@ See §15.
 ### W5 — Execute (UJ-5)
 1. Sana opens My Work → "Start" on Regression Cycle 01.
 2. Runner opens first assigned run; she records steps with keys; failed step → actual result + pasted screenshot.
-3. `D` raises defect prefilled; she saves it; returns to the run; `Ctrl+Enter` finishes (Failed); `Shift+N` opens next run.
+3. She logs the bug in the team's tracker ("Copy bug details" fills it), presses `D` and enters `SPK-431`; back on the run, `Ctrl+Enter` finishes (Failed); `Shift+N` opens next run.
 
-### W6 — Defect and retest (UJ-6)
-1. Lead triages SPARK-D-87 (severity high), assigns Omar.
-2. Omar: In Progress → Fixed (fix version 2.5.1).
-3. Lead: Ready for Retest → run flagged; Sana notified.
-4. Sana retests run (attempt 2) → Passed → prompt → Verified → (Lead) Closed.
+### W6 — Bug and retest (UJ-6)
+1. Omar fixes SPK-431 in the team's tracker, following the link to the failing run for steps and evidence.
+2. Bilal opens Bugs → SPK-431 → Ready for retest → the linked run is flagged ⟳.
+3. Sana retests the run (attempt 2) → Passed; the flag clears and SPK-431 stays on the run history. The bug is closed in the tracker.
 
 ### W7 — Coverage review (UJ-7)
 Hira opens Traceability, selects release v2.5, filters "not covered", links cases or creates tasks for QA (comment with @mention).
@@ -926,7 +881,7 @@ Validation errors: unknown enum value (with allowed values listed), missing titl
 
 - Test cases: CSV/XLSX in the same row-per-step layout with a `Key` column so that the file re-imports as updates. Includes metadata, tags (comma-separated), latest version content (option: approved version).
 - Requirements: one row per requirement + linked case keys.
-- Defects, cycles/runs, results: per §11.5.
+- Bug links, cycles/runs, results: per §11.5.
 - Exports respect the user's permissions and current filters.
 
 ### 15.3 Requirements import (FR-IMP-003 / FR-REQ-003)
@@ -946,8 +901,8 @@ Detailed in [03 HLD §8](03-HLD.md); full functional spec written at Phase 2 sta
 ### 16.1 Jira (FR-INT-002..005)
 
 - Connection: org-level, Jira Cloud site URL, auth (OAuth 2.0 3LO preferred; API token + email fallback), tested on save.
-- Project mapping: TCMS project ↔ Jira project(s); issue type for defects; field mapping (summary, description, priority, severity custom field, environment, labels); status mapping Jira status → TCMS display status category (`to_do`, `in_progress`, `done`).
-- Defects: "Create in Jira" from failed step creates a Jira issue (description with reproduction steps and a link back) and a TCMS defect record with `external_owner = jira`; its status, assignee and resolution are read-only in TCMS and refreshed by webhook (if available) or polling every 10 minutes and on view.
+- Project mapping: TCMS project ↔ Jira project(s); issue type for bugs; field mapping (summary, description, priority, severity custom field, environment, labels); status mapping Jira status → TCMS display status category (`to_do`, `in_progress`, `done`).
+- Bugs: "Create in Jira" from a failed step creates a Jira issue (description from Copy bug details and a link back) and a bug link to it; the link shows the issue's status, read-only, refreshed by webhook (if available) or polling every 10 minutes and on view.
 - Requirements: JQL-based import of stories/epics into read-only requirements (`source = jira`), refreshed every hour; deleted/unreachable issues marked "stale", never deleted.
 - Links: test case ↔ Jira issue key with live summary/status card.
 - Failures: sync errors shown on the connection page and on affected records; retries with backoff; never block saving TCMS data.

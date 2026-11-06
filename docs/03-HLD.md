@@ -120,7 +120,8 @@ flowchart TB
 | `testdesign` | folders, test_cases, test_case_versions, test_case_steps, tags, test_case_tags, test_case_links, automation_keys | `workspace`, `identity`, `platform` |
 | `planning` | test_plans, test_plan_cases, test_plan_requirements, test_plan_environments | `testdesign`, `requirements`, `workspace`, `platform` |
 | `execution` | test_cycles, test_runs, test_results, test_step_results | `testdesign`, `planning`, `workspace`, `platform` |
-| `defects` | defects, defect_links, defect_status_history, defect_watchers | `execution`, `testdesign`, `workspace`, `platform` |
+| `bugs` | bug_links (ADR-023) | `execution`, `testdesign`, `workspace`, `platform` |
+| `defects` | defects, defect_links, defect_status_history, defect_watchers (unused since ADR-023) | — |
 | `requirements` | requirements, requirement_case_links | `testdesign`, `workspace`, `platform` |
 | `reporting` | metric_snapshots, (read access to all via SQL views) | read-only queries over all; `platform` |
 | `integrations` | integration_connections, external_links, automation_imports (P2) | calls other modules' services |
@@ -138,11 +139,11 @@ flowchart BT
   planning --> testdesign
   planning --> requirements
   execution --> planning
-  defects --> execution
+  bugs --> execution
   reporting -.read-only.-> execution
-  reporting -.read-only.-> defects
+  reporting -.read-only.-> bugs
   reporting -.read-only.-> requirements
-  integrations --> defects
+  integrations --> bugs
   integrations --> requirements
   integrations --> execution
 ```
@@ -171,8 +172,9 @@ Lightweight synchronous dispatcher; handlers run **in the same transaction** (fo
 
 | Event | Producer | Handlers |
 | --- | --- | --- |
-| `DefectTransitioned(to=ready_for_retest)` | defects | execution: set `needs_retest`; platform: notifications job |
-| `ResultFinalized` | execution | defects: none in MVP; reporting: mark snapshot dirty; integrations (P2): none |
+| `ResultFinalizing` | execution | bugs: `require_bug_link_for_failure` veto (dispatched at once) |
+| `DraftDiscarding` | execution | bugs: delete the attempt's links before the delete |
+| `ResultFinalized` | execution | bugs: none; reporting: mark snapshot dirty; integrations (P2): none |
 | `TestCaseVersionCreated` | testdesign | execution: none (runs pinned); notifications if in review |
 | `MembershipChanged` | identity | platform: session permission cache bust |
 
@@ -268,8 +270,7 @@ Key tables:
 | Plans, cycles, runs, results | TCMS | Jira may show a summary panel (P3) |
 | Requirements authored in TCMS | TCMS | — |
 | Requirements imported from Jira | Jira (title, description, status, priority, acceptance criteria) | TCMS owns links to cases and coverage |
-| Defects created in TCMS (internal) | TCMS | — |
-| Defects created in Jira from TCMS | Jira (status, assignee, resolution, priority after creation) | TCMS owns links to results/cases and retest flags; initial content sent once at creation |
+| Bugs (ADR-023) | The team's tracker (Jira, Azure DevOps, GitHub, …): content, status, assignee, resolution | TCMS owns bug links to results/cases and retest flags; P2 connector may create the issue from a failed step |
 | Users | TCMS (P2: IdP via OIDC) | — |
 
 ### 8.4 Automation results ingestion (P2)
