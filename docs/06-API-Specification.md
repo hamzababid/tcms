@@ -310,19 +310,23 @@ Bugs live in each team's tracker; these endpoints store references to them ([02 
 | GET | `/projects/{project_id}/bugs/links` | project.view | `?reference=` → every link of the reference; `404` if none | DEF-006 |
 | POST | `/projects/{project_id}/bugs/retest` | cycle.manage | `{reference, dry_run?}` → `{reference, linked_runs, flagged, dry_run}`; flags the eligible linked runs (BR-21) | EXE-015 |
 
-### 4.9 Requirements and traceability
+### 4.9 Requirement references and traceability (ADR-024)
 
 | Method | Path | Perm | Description | FR |
 | --- | --- | --- | --- | --- |
-| GET | `/projects/{project_id}/requirements` | project.view | Filters: type, status, priority, owner_id, target_release_id, parent_id, covered (bool), q; `?tree=true` | REQ-001 |
-| POST | `/projects/{project_id}/requirements` | requirement.manage | | REQ-001 |
-| GET/PATCH | `/requirements/{id}` | view / requirement.manage | | |
+| GET | `/projects/{project_id}/requirements` | project.view | Filters: `q` (reference or title), `linked` (bool), `plan_id`, `release_id` (scope, §10.3), `include_archived`; natural order; each item has `status` (in the release, or across all cycles) | REQ-001 |
+| POST | `/projects/{project_id}/requirements` | requirement.manage | `{references, url?, title?}` (paste many, ≤ 500; url/title for a single one) → 201 `{created, references[]}`; existing ones are reused | REQ-001/003 |
+| GET / PATCH | `/requirements/{id}` | view / requirement.manage | GET `?release_id=` → reference with `cases[]` (latest result) and `plans[]`; PATCH `{url?, title?}` | |
 | POST | `/requirements/{id}/archive` · `/restore` | requirement.manage | | |
-| GET | `/requirements/{id}/test-cases` | project.view | Linked cases with latest result (`?release_id=`) | |
-| POST/DELETE | `/requirements/{id}/test-cases` | requirement.link | `{test_case_ids}` | REQ-002 |
-| POST | `/projects/{project_id}/requirements/link-cases` | requirement.link | Bulk `{requirement_id, test_case_ids}` | |
-| GET | `/projects/{project_id}/traceability` | project.view | `?release_id=&status=&uncovered=&page=` → rows (§5.8) | REQ-004 |
-| GET | `/projects/{project_id}/coverage` | project.view | `?release_id=` → summary metrics | REQ-005 |
+| POST | `/requirements/{id}/test-cases` | requirement.link | `{test_case_ids?, folder_ids?, tags?}` → `{count}` (idempotent) | REQ-002 |
+| DELETE | `/requirements/{id}/test-cases/{case_id}` | requirement.link | → 204 | REQ-002 |
+| GET / POST | `/test-cases/{id}/requirements` | view / requirement.link | POST `{references}` (unknown ones are registered) → `{count, created}` | REQ-002 |
+| POST | `/projects/{project_id}/requirements/link-cases` | requirement.link | Bulk `{references, test_case_ids}` | REQ-002 |
+| POST / DELETE | `/test-plans/{id}/requirements` | plan.manage | POST `{references}`; DELETE `{requirement_ids}` (reference ids) | PLN-003 |
+| GET | `/projects/{project_id}/traceability` | project.view | `?release_id=&status=&uncovered=&q=` → `{release_id, summary, rows[]}` (§5.8) | REQ-004 |
+| GET | `/projects/{project_id}/coverage` | project.view | `?release_id=` → summary metrics (BR-23) | REQ-005 |
+
+Test case list filters gain `requirement` (a reference) and `has_requirements` (bool).
 
 ### 4.10 Dashboards and reports
 
@@ -339,7 +343,7 @@ Bugs live in each team's tracker; these endpoints store references to them ([02 
 
 | Method | Path | Perm | Description |
 | --- | --- | --- | --- |
-| GET | `/search` | auth | `?q=&project_id=&types=test_case,requirement,bug,cycle,plan,folder&limit=5` → grouped results |
+| GET | `/search` | auth | `?q=&project_id=&types=test_case,requirement,bug,cycle,plan,folder&limit=5` → `{q, groups: [{type, items: [{type, id, key, title, url, project}]}]}`; without `project_id` every active project I belong to |
 | GET | `/projects/{project_id}/saved-views` | project.view | `?entity_type=` (own + shared) |
 | POST | `/projects/{project_id}/saved-views` | project.view (shared requires cycle.manage, plan.manage or project.configure) | |
 | PATCH/DELETE | `/saved-views/{id}` | owner (shared: same as create) | |
@@ -567,16 +571,18 @@ Rates are `null` when the denominator is 0 (BR-24).
 
 ```json
 {
-  "requirement": { "id": "…", "key": "SPARK-R-12", "title": "Users can sign in with SSO", "type": "user_story", "priority": "high", "parent_id": null },
-  "linked_cases": 3,
+  "requirement": { "id": "…", "reference": "SPK-120", "url": "https://acme.atlassian.net/browse/SPK-120", "title": "Sign in with SSO", "archived": false, "case_count": 2, "status": "failed" },
+  "linked_cases": 2,
   "status_in_release": "failed",
   "cases": [
-    { "id": "…", "key": "SPARK-TC-1042", "title": "…", "latest": { "status": "failed", "cycle_key": "SPARK-CY-12", "finished_at": "…", "result_id": "…" } },
-    { "id": "…", "key": "SPARK-TC-1050", "title": "…", "latest": null }
+    { "id": "…", "key": "SPARK-TC-1042", "title": "…", "latest": { "status": "failed", "cycle_key": "SPARK-CY-12", "finished_at": "…", "executed_by": { "...": "UserRef" }, "run_id": "…" }, "bugs": [ { "reference": "SPK-431", "url": "…" } ] },
+    { "id": "…", "key": "SPARK-TC-1050", "title": "…", "latest": null, "bugs": [] }
   ],
   "bugs": [ { "reference": "SPK-431", "url": "https://acme.atlassian.net/browse/SPK-431" } ]
 }
 ```
+
+Summary (`summary`, also `GET /coverage`): `{total, covered, not_covered, passed, failed, blocked, not_run, coverage: Rate, verified: Rate}`; rates are null when `total` is 0.
 
 ### 5.9 Readiness
 

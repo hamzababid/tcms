@@ -402,39 +402,36 @@ Bugs live in each team's tracker; the `bugs` module stores references (`bug_link
 
 ## 7. Requirements coverage (SQL)
 
+Since ADR-024 coverage runs over `requirement_refs` and `requirement_ref_cases`. The SQL lives in `reporting/coverage.py` (reporting reads every module's tables, docs/03 §5); the status rules come from `requirements/rules.py` and the rates from `reporting/metrics.RequirementCoverage` (ADR-013).
+
 ```sql
--- latest final, non-NA attempt per case within release :rid
-WITH run_scope AS (
-  SELECT r.test_case_id, r.latest_result_id
-  FROM test_runs r JOIN test_cycles c ON c.id = r.cycle_id
-  WHERE c.project_id = :pid AND c.release_id = :rid AND r.superseded_by_run_id IS NULL
-),
-attempts AS (
-  SELECT tr.id, rs.test_case_id, tr.status, tr.finished_at
-  FROM test_results tr JOIN test_runs r ON r.id = tr.run_id
-  JOIN run_scope rs ON rs.test_case_id = r.test_case_id
-  JOIN test_cycles c ON c.id = r.cycle_id
-  WHERE c.release_id = :rid AND r.superseded_by_run_id IS NULL
-    AND tr.state = 'final' AND tr.status <> 'not_applicable'
-),
-latest AS (
-  SELECT DISTINCT ON (test_case_id) test_case_id, status
-  FROM attempts ORDER BY test_case_id, finished_at DESC, id DESC
-)
-SELECT q.id AS requirement_id,
-       count(tc.id) FILTER (WHERE tc.status <> 'archived')                         AS linked_cases,
-       bool_or(l.status = 'failed')                                                 AS any_failed,
-       bool_or(l.status = 'blocked')                                                AS any_blocked,
-       bool_or(tc.status <> 'archived' AND (l.status IS NULL OR l.status = 'skipped')) AS any_not_run
-FROM requirements q
-LEFT JOIN requirement_case_links rcl ON rcl.requirement_id = q.id
-LEFT JOIN test_cases tc ON tc.id = rcl.test_case_id AND tc.status <> 'archived'
-LEFT JOIN latest l ON l.test_case_id = tc.id
-WHERE q.project_id = :pid AND q.id = ANY(:scope_ids)
-GROUP BY q.id;
+-- scope: a reference is in scope for release :rid when a plan of the release lists it,
+-- or a linked case ran in a cycle of the release (M6 Q1 = a). Without a release: every non-archived reference.
+SELECT q.id FROM requirement_refs q
+WHERE q.project_id = :pid AND q.archived_at IS NULL
+  AND (:rid IS NULL
+       OR EXISTS (SELECT 1 FROM plan_requirement_refs pr JOIN test_plans p ON p.id = pr.plan_id
+                  WHERE pr.ref_id = q.id AND p.release_id = :rid)
+       OR EXISTS (SELECT 1 FROM requirement_ref_cases rc
+                  JOIN test_runs r ON r.test_case_id = rc.test_case_id
+                  JOIN test_cycles c ON c.id = r.cycle_id
+                  WHERE rc.ref_id = q.id AND c.release_id = :rid));
+
+-- latest final, non-N/A attempt per linked case among non-superseded runs of the release's cycles
+SELECT DISTINCT ON (r.test_case_id) r.test_case_id, tr.status, tr.finished_at, tr.executed_by, r.id, c.key
+FROM test_results tr
+JOIN test_runs r ON r.id = tr.run_id
+JOIN test_cycles c ON c.id = r.cycle_id
+WHERE c.project_id = :pid AND (:rid IS NULL OR c.release_id = :rid)
+  AND r.superseded_by_run_id IS NULL
+  AND tr.state = 'final' AND tr.status <> 'not_applicable'
+  AND r.test_case_id = ANY(:case_ids)
+ORDER BY r.test_case_id, tr.finished_at DESC, tr.id DESC;
 ```
 
-Status mapping in Python (`requirements/rules.py::requirement_status`) per [02 §10.5](02-Functional-Specification.md). Unit tests cover each branch; an integration test compares SQL vs a pure-Python reference implementation on random fixtures (property test).
+Archived cases are left out of the links. Status mapping in Python (`requirements/rules.py::status_in_release`) per [02 §10.5](02-Functional-Specification.md). Rows are sorted in natural order of the reference (SPK-2 before SPK-10); there is no hierarchy. Unit tests cover each branch; `tests/integration/test_coverage_oracle.py` compares the SQL with a pure-Python reference implementation on random fixtures (Hypothesis property test).
+
+Traceability (`GET /requirements/traceability`) adds the bug references per case: for a release, only bug links from runs of that release count; links made directly on the case always count.
 
 ## 8. Reporting
 

@@ -134,6 +134,12 @@ Right drawer 560–720 px (resizable), deep-linked via query param (`?case=SPARK
 
 Typing an exact key jumps straight to it on Enter. Also acts as command palette: `>` prefix lists actions ("> New test case", "> Go to cycle…").
 
+Implementation (M6): the header button "Search or type > for actions" (`/`) opens the overlay. Results come from `GET /search`, grouped by type (cases, folders, plans, cycles, requirements, bugs); inside a project the current project is searched, elsewhere every project the user is a member of. An exact key is listed first. The `>` actions are Go to My Work / Repository / Plans / Cycles / Bugs / Requirements / Traceability / Activity / Projects and New test case.
+
+### 4.3b Saved views (M6)
+
+The case list, plans, cycles, cycle runs, bugs and requirements have a "Saved views" menu in the toolbar (the button reads "Saved views: <name>" when one is applied). It lists my views and shared views, and offers Save view… (name, "Share with the project" for users with cycle.manage, plan.manage or project.configure, "Open this list with this view"), Update, Rename and Delete (owner only). A view stores the list's filters, sort and the screen state (folder, search text). My default wins over the project default. Column visibility is not saved.
+
 ### 4.4 Forms and dialogs
 
 - Labels above fields; required marked `*`; inline validation on blur and on submit; server errors mapped to fields from `errors[]`.
@@ -406,25 +412,34 @@ Bugs are reported and fixed in the team's tracker; Assay shows the links.
 - **Ready for retest dialog**: "n of m linked runs will be flagged ⟳ for retest" (dry run), `[Flag for retest]`.
 - Project settings › Options › **Bug tracker**: tracker name ("Open in Jira") and bug address with `{ref}`.
 
-### 5.11 Requirements traceability matrix
+### 5.11 Requirements and traceability matrix (ADR-024)
+
+Requirements are written in the team's tool; Assay shows references to them (`SPK-120 ↗`) and the cases that verify them. There is no hierarchy: lists are flat, in natural order of the reference (SPK-2 before SPK-10).
+
+- **Requirements list** (`/p/:key/requirements`, `G Q`): Requirement (reference ↗, title), Cases, Status (all cycles), Updated; filter on reference or title and on "Linked to cases / Not linked"; "Show archived"; saved views. `[Add requirements]` (requirement.manage) opens "Paste many": one reference per line, optionally `reference<TAB>title<TAB>url`, up to 500. A row opens a dialog to edit the link and title, archive or restore, and link or unlink cases.
+- **Case detail › Requirements tab**: chips of the linked references, `[Link requirement]` (requirement.link) accepts known or new references.
+- **Plan detail › Requirements tab**: references in the plan's scope with their status in the plan's release; add/remove with plan.manage.
+- **Repository bulk action** "Link to requirement": links the selected (or all matching) cases to one reference. The repository filter has a Requirement input (a reference, or "has requirements" yes/no).
+- Requirement chip: reference + ↗ to the URL (own link, or the project's requirement address, which falls back to the bug address), title where there is room.
 
 ```
-Traceability                     [Release: SPARK v2.5 ▾] [Status ▾] [☐ Uncovered only] [Export ▾]
+Traceability                 [Release: SPARK v2.5 ▾] [Status in release ▾] [☐ Uncovered only] [Reference or title]
 Coverage 54 of 60 (90%) · Verified 41 of 60 (68%) · Failed 4 · Blocked 1 · Not run 8 · Not covered 6
-┌──────────────────────────────────────┬───────┬────────────────┬──────────────────────────┬──────────┐
-│ Requirement                          │ Cases │ Status in rel. │ Latest results           │ Bugs     │
-├──────────────────────────────────────┼───────┼────────────────┼──────────────────────────┼──────────┤
-│ ▾ SPARK-R-3  Authentication (epic)   │   9   │ ✖ Failed       │                          │ H1       │
-│   ▾ SPARK-R-12 Sign in with SSO      │   3   │ ✖ Failed       │ TC-12 ✖ · TC-50 ○ · TC-51 ✔│ H1       │
-│   ▸ SPARK-R-13 Password reset        │   4   │ ✔ Passed       │ ✔✔✔✔                     │          │
-│ ▸ SPARK-R-20 Energy dashboard KPIs   │   0   │ ◌ Not covered  │ [Link cases]             │          │
-└──────────────────────────────────────┴───────┴────────────────┴──────────────────────────┴──────────┘
+┌────────────────────────────────────┬───────┬───────────────────┬────────────────────────────┬──────────┐
+│ Requirement                        │ Cases │ Status in release │ Latest results             │ Bugs     │
+├────────────────────────────────────┼───────┼───────────────────┼────────────────────────────┼──────────┤
+│ ▾ SPK-12 ↗ Sign in with SSO        │   3   │ ✖ Failed          │ TC-12 ✖ · TC-50 ○ · TC-51 ✔ │ SPK-431  │
+│     SPARK-TC-12 Login with SSO     │       │                   │ ✖ C-4 · 3 Nov · Sana · Details│        │
+│ ▸ SPK-13 ↗ Password reset          │   4   │ ✔ Passed          │ ✔✔✔✔                       │          │
+│ ▸ SPK-20 ↗ Energy dashboard KPIs   │   0   │ ◌ Not covered     │ [Link cases]               │          │
+└────────────────────────────────────┴───────┴───────────────────┴────────────────────────────┴──────────┘
 ```
 
-- Expanding a requirement shows case rows with result details (cycle, date, executed by).
-- Cells link to case and run panels; bug chips open the tracker.
-- "Link cases" opens a case picker with repository tree.
-- Export: one row per requirement–case pair.
+- Release "All cycles" shows every non-archived reference; a release shows references a plan of the release lists or whose cases ran in it.
+- Expanding a requirement shows case rows with the latest result (cycle, date, executed by) and a Details link to the run.
+- Bugs column: bug chips from the release's runs of the linked cases, plus links made directly on the case.
+- "Link cases" (requirement.link) opens the case picker.
+- Export of the matrix comes with M8.
 
 ### 5.12 QA dashboards
 

@@ -91,14 +91,14 @@ M6 can start in parallel with M4/M5 once M2 is done (separate module, different 
 | Acceptance | TCMS-100…107 pass |
 | Depends on | M4 |
 
-### M6 — Requirements, traceability and search (2.5 weeks, parallel after M2)
+### M6 — Requirement references, traceability and search (re-scoped by ADR-024)
 
 | | |
 | --- | --- |
-| Scope | E11, E12: requirements CRUD/hierarchy, links, plan–requirement links, coverage computation, RTM screen, coverage summary; global search, list filters on all lists, saved views |
-| Deliverables | PMs can manage requirements and see coverage |
+| Scope | E11: requirement references (paste many, URL template), links to cases and plans, coverage per release, traceability matrix; E12: global search, command palette, saved views (incl. plan Add cases), requirement filters in the repository |
+| Deliverables | PMs can reference their tool's requirements and see coverage |
 | Acceptance | TCMS-110…112, 118…120 pass; coverage property test |
-| Dependencies | M2 (and M4 for result-based status; status column shows "not run" until M4 is merged) |
+| Dependencies | M4 (results), M5 (bug links on the matrix) |
 
 ### M7 — Reporting and readiness (2.5 weeks)
 
