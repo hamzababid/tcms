@@ -256,7 +256,7 @@ Each line has my recommended default. Reply "approve with defaults" or override 
 | # | Decision | Recommended default |
 | --- | --- | --- |
 | **Q1** (K1) | When is an Org Admin's access to a non-member project audited? | Once per session per project, as `project.admin_accessed` |
-| **Q2** (K2) | Does a step-derived **Blocked** require a reason, as the DB CHECK demands? | Yes, every final blocked/skipped/N/A needs a reason; update 02 §7.3 and BR-10 wording (confirm any time before M4) |
+| **Q2** (K2) | Does a step-derived **Blocked** require a reason, as the DB CHECK demands? | Yes, every final blocked/skipped/N/A needs a reason; update 02 §7.3 and BR-10 wording. **Confirmed by the product owner 2026-11-05; built in M4** |
 | **Q3** (K5) | Landing page before My Work exists (M1–M3) | Last project's Activity page; with no projects, the Projects list. Adjust TCMS-001 expectation |
 | **Q4** (K6) | Invitation UI in M1 | Minimal Administration › Invitations + Security policy pages in M1; rest of Admin in M8 |
 | **Q5** (K8) | Seeded Org Admin and mandatory MFA | Pre-enrolled with a documented dev-only TOTP secret, refused in production; amend CLAUDE.md rule 10 to allow it |
