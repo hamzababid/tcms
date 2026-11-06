@@ -10,7 +10,7 @@ from uuid import UUID
 from tcms.core import clock, ids
 from tcms.core.concurrency import check_row_version
 from tcms.core.context import AccessContext
-from tcms.core.enums import ProjectStatus, ReleaseStatus
+from tcms.core.enums import ProjectStatus, ReleaseDecisionKind, ReleaseStatus
 from tcms.core.errors import FieldError, NotFound, ValidationFailed
 from tcms.core.events import DomainEvent
 from tcms.core.permissions import RoleCode
@@ -19,8 +19,14 @@ from tcms.core.uow import UnitOfWork
 from tcms.identity import service as identity
 from tcms.workspace import repository as repo
 from tcms.workspace import rules
-from tcms.workspace.errors import ConfirmationMismatch, InvalidTransition, NameTaken, ProjectKeyTaken
-from tcms.workspace.models import Environment, KeySequence, Organization, Project, Release
+from tcms.workspace.errors import (
+    ConfirmationMismatch,
+    InvalidTransition,
+    NameTaken,
+    ProjectKeyTaken,
+    ReleaseArchived,
+)
+from tcms.workspace.models import Environment, KeySequence, Organization, Project, Release, ReleaseDecision
 
 
 @dataclass(frozen=True)
@@ -504,6 +510,64 @@ def update_release(
         action = "release.status_changed" if list(changes) == ["status"] else "release.updated"
         uow.audit(ctx, action, rel, changes=changes)
     return rel
+
+
+_DECISION_LABEL = {"go": "Go", "go_with_risks": "Go with risks", "no_go": "No-go"}
+
+
+def record_decision(
+    uow: UnitOfWork,
+    ctx: AccessContext,
+    release_id: UUID,
+    *,
+    decision: str,
+    comment: str,
+    risks: str | None,
+    snapshot: dict[str, Any],
+) -> ReleaseDecision:
+    """FR-RPT-006 / docs/02 §11.4: append-only go/no-go record (BR-26 family). The snapshot is computed by
+    the caller from `reporting.readiness` (CLAUDE.md rule 4: never accepted from clients)."""
+    ctx.require("release.manage")
+    rel = repo.release(uow.session, _org_id(ctx), release_id)
+    if rel is None or rel.project_id != ctx.project_id:
+        raise NotFound()
+    if rel.status is ReleaseStatus.archived:
+        raise ReleaseArchived()
+    kind = ReleaseDecisionKind(decision)
+    errors = []
+    comment = (comment or "").strip()
+    risks = (risks or "").strip() or None
+    if not 1 <= len(comment) <= 20000:
+        errors.append(FieldError("comment", "field_required", "Add a comment (up to 20,000 characters)"))
+    if kind is ReleaseDecisionKind.go_with_risks and not risks:
+        errors.append(FieldError("risks", "field_required", "Describe the risks you accept"))
+    if risks is not None and len(risks) > 20000:
+        errors.append(FieldError("risks", "invalid_length", "Up to 20,000 characters"))
+    if errors:
+        raise ValidationFailed(errors=errors)
+    row = ReleaseDecision(
+        id=ids.new_id(),
+        organization_id=rel.organization_id,
+        project_id=rel.project_id,
+        release_id=rel.id,
+        decision=kind,
+        comment=comment,
+        risks=risks,
+        snapshot=snapshot,
+        decided_by=ctx.principal.user_id,
+        decided_at=clock.now(),
+    )
+    uow.session.add(row)
+    uow.session.flush()
+    uow.audit(
+        ctx,
+        "release.decision_recorded",
+        rel,
+        changes={"decision": [None, kind.value]},
+        summary=f"{ctx.principal.display_name} recorded {_DECISION_LABEL[kind.value]} for {rel.name}",
+        extra={"decision_id": str(row.id), "ready": bool(snapshot.get("ready"))},
+    )
+    return row
 
 
 def _jsonable(v: Any) -> Any:

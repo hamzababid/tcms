@@ -23,3 +23,7 @@ class InvalidTransition(RuleViolation):
 
 class ConfirmationMismatch(RuleViolation):
     code, title = "confirmation_mismatch", "The confirmation does not match"
+
+
+class ReleaseArchived(Conflict):
+    code, title = "invalid_status", "The release is archived; restore it before recording a decision"

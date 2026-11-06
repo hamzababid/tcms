@@ -102,7 +102,7 @@ const projectColumns: ColumnDef<Project>[] = [
     header: "Key",
     cell: (c) => (
       <Link
-        to="/p/$projectKey/activity"
+        to="/p/$projectKey"
         params={{ projectKey: c.row.original.key }}
         className="font-mono text-[13px] font-medium text-link hover:underline"
       >

@@ -638,6 +638,46 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/data-transfers/{transfer_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Transfer
+     * @description docs/06 §4.13: initiator or project.configure.
+     */
+    get: operations["get_transfer_api_v1_data_transfers__transfer_id__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/data-transfers/{transfer_id}/download": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Download Transfer
+     * @description docs/06 §4.13: the initiator downloads a ready export within 7 days.
+     */
+    get: operations["download_transfer_api_v1_data_transfers__transfer_id__download_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/environments/{environment_id}": {
     parameters: {
       query?: never;
@@ -877,7 +917,8 @@ export interface paths {
     /**
      * My Work
      * @description US-099 / FR-EXE-014 (docs/07 §5.14): my runs in planned and active cycles of my active projects,
-     *     cases awaiting my review, and what I finished in the last 7 days. Defects arrive with M5.
+     *     cases awaiting my review, what I finished today and in the last 7 days, my failed / blocked runs and
+     *     runs to retest, and the bugs I linked (M7 R-142).
      */
     get: operations["my_work_api_v1_me_work_get"];
     put?: never;
@@ -941,6 +982,26 @@ export interface paths {
      * @description US-021.
      */
     patch: operations["patch_organization_api_v1_organization_patch"];
+    trace?: never;
+  };
+  "/api/v1/organization/dashboard": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Organization Dashboard
+     * @description FR-WS-008 / US-146: Org Admins (org.reports.view) see every active project; others their own.
+     */
+    get: operations["organization_dashboard_api_v1_organization_dashboard_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
     trace?: never;
   };
   "/api/v1/organization/invitations": {
@@ -1294,6 +1355,46 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/projects/{project_id}/dashboards/manager": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Manager Dashboard
+     * @description FR-RPT-001 / docs/02 §11.3: every widget of the project Overview in one response (TCMS-115).
+     */
+    get: operations["manager_dashboard_api_v1_projects__project_id__dashboards_manager_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/projects/{project_id}/dashboards/quality": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Quality Dashboard
+     * @description FR-RPT-003 / docs/02 §11.3: trends from daily snapshots plus today live (D5).
+     */
+    get: operations["quality_dashboard_api_v1_projects__project_id__dashboards_quality_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/projects/{project_id}/environments": {
     parameters: {
       query?: never;
@@ -1309,6 +1410,26 @@ export interface paths {
     put?: never;
     /** Create Environment */
     post: operations["create_environment_api_v1_projects__project_id__environments_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/projects/{project_id}/execution-summary": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Execution Summary
+     * @description docs/06 §5.7 for any filter of docs/02 §11.1 (BR-24).
+     */
+    get: operations["execution_summary_api_v1_projects__project_id__execution_summary_get"];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -1395,6 +1516,47 @@ export interface paths {
     patch: operations["change_member_api_v1_projects__project_id__members__user_id__patch"];
     trace?: never;
   };
+  "/api/v1/projects/{project_id}/metrics/refresh": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Refresh Metrics
+     * @description docs/06 §4.10: enqueue today's snapshot; one per project per 10 minutes (dedupe key).
+     */
+    post: operations["refresh_metrics_api_v1_projects__project_id__metrics_refresh_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/projects/{project_id}/release-summaries": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Release Summaries
+     * @description Releases page (docs/07 §5.15): each release with its execution summary, readiness and latest"
+     *     " decision.
+     */
+    get: operations["release_summaries_api_v1_projects__project_id__release_summaries_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/projects/{project_id}/releases": {
     parameters: {
       query?: never;
@@ -1407,6 +1569,47 @@ export interface paths {
     put?: never;
     /** Create Release */
     post: operations["create_release_api_v1_projects__project_id__releases_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/projects/{project_id}/reports/{report}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Run Report
+     * @description FR-RPT-004: `cycle-execution`, `results-history`, `bug-links`, `traceability`, `tester-activity`,
+     *     `case-inventory`; filters per report (D9), unknown filters → 400.
+     */
+    get: operations["run_report_api_v1_projects__project_id__reports__report__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/projects/{project_id}/reports/{report}/export": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Export Report
+     * @description FR-RPT-005 / AC-RPT-04/05 / TCMS-117: CSV or XLSX with formula-injection protection.
+     */
+    post: operations["export_report_api_v1_projects__project_id__reports__report__export_post"];
     delete?: never;
     options?: never;
     head?: never;
@@ -1645,6 +1848,51 @@ export interface paths {
      * @description US-026 / TCMS-024: status changes follow the transition table (docs/02 §4.4).
      */
     patch: operations["patch_release_api_v1_releases__release_id__patch"];
+    trace?: never;
+  };
+  "/api/v1/releases/{release_id}/decisions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Decisions
+     * @description Decision timeline, newest first, each with its frozen snapshot.
+     */
+    get: operations["list_decisions_api_v1_releases__release_id__decisions_get"];
+    put?: never;
+    /**
+     * Record Decision
+     * @description TCMS-116 / AC-REL-03: go, go with risks (risks required) or no-go; the readiness snapshot is computed
+     *     here and stored with the decision (append-only).
+     */
+    post: operations["record_decision_api_v1_releases__release_id__decisions_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/releases/{release_id}/readiness": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Release Readiness
+     * @description FR-RPT-006 / docs/02 §11.4 (D1: per plan over its own cycles; defaults when no plan has rules).
+     */
+    get: operations["release_readiness_api_v1_releases__release_id__readiness_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
     trace?: never;
   };
   "/api/v1/requirements/{ref_id}": {
@@ -2497,6 +2745,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/test-plans/{plan_id}/readiness": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Plan Readiness
+     * @description L25: the plan Overview shows its exit rules as met / not met.
+     */
+    get: operations["plan_readiness_api_v1_test_plans__plan_id__readiness_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/test-plans/{plan_id}/requirements": {
     parameters: {
       query?: never;
@@ -2892,6 +3160,15 @@ export interface components {
       /** Url */
       url: string | null;
     };
+    /** BugMetricsRead */
+    BugMetricsRead: {
+      /** Failures Without Bug */
+      failures_without_bug: number;
+      /** Linked */
+      linked: number;
+      /** On Failing Runs */
+      on_failing_runs: number;
+    };
     /** BugRef */
     BugRef: {
       /** Reference */
@@ -2906,6 +3183,19 @@ export interface components {
        * @description Markdown to paste into the team's tracker
        */
       text: string;
+    };
+    /** BugRowRead */
+    BugRowRead: {
+      /** Failing Runs */
+      failing_runs: number;
+      /** Reference */
+      reference: string;
+      /** Runs */
+      runs: number;
+      /** Title */
+      title: string | null;
+      /** Url */
+      url: string | null;
     };
     /** BugSummaryRead */
     BugSummaryRead: {
@@ -3523,6 +3813,104 @@ export interface components {
      * @enum {string}
      */
     CycleStatus: "planned" | "active" | "closed";
+    /** CycleWidget */
+    CycleWidget: {
+      /** Due Date */
+      due_date: string | null;
+      environment: components["schemas"]["Ref"];
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Key */
+      key: string;
+      /** Name */
+      name: string;
+      /** Overdue */
+      overdue: boolean;
+      release: components["schemas"]["Ref"] | null;
+      /** Start Date */
+      start_date: string | null;
+      /** Status */
+      status: string;
+      summary: components["schemas"]["ExecutionSummaryRead"];
+    };
+    /** DecisionCreate */
+    DecisionCreate: {
+      /** Comment */
+      comment: string;
+      /**
+       * Decision
+       * @enum {string}
+       */
+      decision: "go" | "go_with_risks" | "no_go";
+      /** Risks */
+      risks?: string | null;
+    };
+    /** DecisionDetail */
+    DecisionDetail: {
+      /** Comment */
+      comment: string;
+      /**
+       * Decided At
+       * Format: date-time
+       */
+      decided_at: string;
+      decided_by: components["schemas"]["UserRef"] | null;
+      /**
+       * Decision
+       * @enum {string}
+       */
+      decision: "go" | "go_with_risks" | "no_go";
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Ready
+       * @description Readiness at the time of the decision (from the snapshot)
+       */
+      ready: boolean;
+      /** Risks */
+      risks: string | null;
+      /**
+       * Snapshot
+       * @description Rule results and metrics frozen at decision time
+       */
+      snapshot: {
+        [key: string]: unknown;
+      };
+    };
+    /** DecisionRead */
+    DecisionRead: {
+      /** Comment */
+      comment: string;
+      /**
+       * Decided At
+       * Format: date-time
+       */
+      decided_at: string;
+      decided_by: components["schemas"]["UserRef"] | null;
+      /**
+       * Decision
+       * @enum {string}
+       */
+      decision: "go" | "go_with_risks" | "no_go";
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Ready
+       * @description Readiness at the time of the decision (from the snapshot)
+       */
+      ready: boolean;
+      /** Risks */
+      risks: string | null;
+    };
     /**
      * DesignTechnique
      * @enum {string}
@@ -3666,6 +4054,31 @@ export interface components {
       severities?: ("critical" | "high" | "medium" | "low")[] | null;
       /** Tag */
       tag?: string | null;
+    };
+    /** ExportAccepted */
+    ExportAccepted: {
+      /** Rows */
+      rows: number;
+      /**
+       * Transfer Id
+       * Format: uuid
+       */
+      transfer_id: string;
+    };
+    /** ExportRequest */
+    ExportRequest: {
+      /**
+       * Filters
+       * @description The report's query parameters
+       */
+      filters?: {
+        [key: string]: string;
+      };
+      /**
+       * Format
+       * @enum {string}
+       */
+      format: "csv" | "xlsx";
     };
     /** FieldDiffRead */
     FieldDiffRead: {
@@ -3977,6 +4390,29 @@ export interface components {
       /** Mfa Required */
       mfa_required: boolean;
     };
+    /**
+     * ManagerDashboard
+     * @description docs/02 §11.3 QA Manager dashboard = project Overview (docs/07 §5.3).
+     */
+    ManagerDashboard: {
+      bugs: components["schemas"]["BugMetricsRead"];
+      coverage: components["schemas"]["CoverageRead"];
+      /** Cycles */
+      cycles: components["schemas"]["CycleWidget"][];
+      readiness: components["schemas"]["ReadinessBrief"] | null;
+      regression: components["schemas"]["ExecutionSummaryRead"];
+      release: components["schemas"]["Ref"] | null;
+      repository: components["schemas"]["RepositoryRead"];
+      /** Retest Count */
+      retest_count: number;
+      summary: components["schemas"]["ExecutionSummaryRead"];
+      /** Team */
+      team: components["schemas"]["TesterRead"][];
+      /** Top Bugs */
+      top_bugs: components["schemas"]["BugRowRead"][];
+      /** Top Uncovered */
+      top_uncovered: components["schemas"]["UncoveredRef"][];
+    };
     /** MeResponse */
     MeResponse: {
       /** Is Org Admin */
@@ -4053,6 +4489,41 @@ export interface components {
       /** Recovery Code */
       recovery_code?: string | null;
     };
+    /** ModuleBugs */
+    ModuleBugs: {
+      /**
+       * Folder Id
+       * Format: uuid
+       */
+      folder_id: string;
+      /** Name */
+      name: string;
+      /** References */
+      references: number;
+    };
+    /** MyWorkAttention */
+    MyWorkAttention: {
+      /** Case Key */
+      case_key: string;
+      /**
+       * Cycle Id
+       * Format: uuid
+       */
+      cycle_id: string;
+      /** Cycle Key */
+      cycle_key: string;
+      /** Needs Retest */
+      needs_retest: boolean;
+      project: components["schemas"]["ProjectRef"];
+      /**
+       * Run Id
+       * Format: uuid
+       */
+      run_id: string;
+      status: components["schemas"]["RunStatus"];
+      /** Title */
+      title: string;
+    };
     /** MyWorkCycle */
     MyWorkCycle: {
       /** Due Date */
@@ -4072,18 +4543,32 @@ export interface components {
        */
       next_run_id: string | null;
       project: components["schemas"]["ProjectRef"];
+      /** Start Date */
+      start_date: string | null;
       status: components["schemas"]["CycleStatus"];
       summary: components["schemas"]["ExecutionSummaryRead"];
     };
     /**
      * MyWorkRead
-     * @description docs/06 §4.1 `GET /me/work` (docs/07 §5.14). Defects assigned to me arrive with M5.
+     * @description docs/06 §4.1 `GET /me/work` (docs/07 §5.14, docs/02 §11.3 QA Engineer dashboard).
      */
     MyWorkRead: {
+      /**
+       * Attention
+       * @description My failed / blocked runs and runs to retest
+       */
+      attention: components["schemas"]["MyWorkAttention"][];
+      /**
+       * Bugs Linked Week
+       * @description Distinct bug references I linked in the last 7 days
+       */
+      bugs_linked_week: number;
       /** Cycles */
       cycles: components["schemas"]["MyWorkCycle"][];
       /** Reviews */
       reviews: components["schemas"]["MyWorkReview"][];
+      /** @description Attempts I finished today (UTC) */
+      today: components["schemas"]["ExecutionSummaryRead"];
       /** @description Attempts I finished in the last 7 days */
       week: components["schemas"]["ExecutionSummaryRead"];
     };
@@ -4116,6 +4601,11 @@ export interface components {
       /** Version No */
       version_no: number;
     };
+    /** OrgDashboard */
+    OrgDashboard: {
+      /** Projects */
+      projects: components["schemas"]["OrgProjectRow"][];
+    };
     /** OrgMemberPatch */
     OrgMemberPatch: {
       /** Is Org Admin */
@@ -4137,6 +4627,19 @@ export interface components {
       /** Projects */
       projects: number;
       user: components["schemas"]["UserRef"];
+    };
+    /** OrgProjectRow */
+    OrgProjectRow: {
+      /** Active Cycles */
+      active_cycles: number;
+      /** Bugs On Failing Runs */
+      bugs_on_failing_runs: number;
+      /** Failed */
+      failed: number;
+      /** Last Activity */
+      last_activity: string | null;
+      project: components["schemas"]["KeyRef"];
+      summary: components["schemas"]["ExecutionSummaryRead"];
     };
     /** OrgSettings */
     OrgSettings: {
@@ -4313,6 +4816,18 @@ export interface components {
        * @enum {string}
        */
       scope: "org" | "project";
+    };
+    /** PlanBrief */
+    PlanBrief: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Key */
+      key: string;
+      /** Name */
+      name: string;
     };
     /** PlanCaseItem */
     PlanCaseItem: {
@@ -4556,6 +5071,12 @@ export interface components {
        */
       updated_at: string;
     };
+    /** PlanReadiness */
+    PlanReadiness: {
+      plan: components["schemas"]["PlanBrief"];
+      /** Ready */
+      ready: boolean;
+    };
     /** PlanRef */
     PlanRef: {
       /**
@@ -4788,6 +5309,32 @@ export interface components {
      * @enum {string}
      */
     ProjectStatus: "active" | "archived";
+    /**
+     * QualityDashboard
+     * @description docs/02 §11.3 project quality dashboard.
+     */
+    QualityDashboard: {
+      automation: components["schemas"]["RepositoryRead"];
+      /** Bugs By Module */
+      bugs_by_module: components["schemas"]["ModuleBugs"][];
+      /**
+       * Date From
+       * Format: date
+       */
+      date_from: string;
+      /**
+       * Date To
+       * Format: date
+       */
+      date_to: string;
+      /** Days */
+      days: components["schemas"]["TrendDay"][];
+      /** Last Snapshot Day */
+      last_snapshot_day: string | null;
+      release: components["schemas"]["Ref"] | null;
+      /** Releases */
+      releases: components["schemas"]["ReleaseQuality"][];
+    };
     /** QueueRead */
     QueueRead: {
       /**
@@ -4822,6 +5369,42 @@ export interface components {
       /** Value */
       value: number | null;
     };
+    /** ReadinessBrief */
+    ReadinessBrief: {
+      /** Met */
+      met: number;
+      /** Ready */
+      ready: boolean;
+      release: components["schemas"]["Ref"];
+      /** Total */
+      total: number;
+      /** Uses Defaults */
+      uses_defaults: boolean;
+    };
+    /**
+     * ReadinessRead
+     * @description docs/06 §5.9.
+     */
+    ReadinessRead: {
+      coverage: components["schemas"]["CoverageRead"];
+      /**
+       * Evaluated At
+       * Format: date-time
+       */
+      evaluated_at: string;
+      latest_decision: components["schemas"]["DecisionRead"] | null;
+      plan: components["schemas"]["KeyRef"] | null;
+      /** Plans */
+      plans: components["schemas"]["PlanReadiness"][];
+      /** Ready */
+      ready: boolean;
+      release: components["schemas"]["Ref"] | null;
+      /** Rules */
+      rules: components["schemas"]["RuleRead"][];
+      summary: components["schemas"]["ExecutionSummaryRead"];
+      /** Uses Defaults */
+      uses_defaults: boolean;
+    };
     /** ReadyStatus */
     ReadyStatus: {
       /** Checks */
@@ -4854,6 +5437,13 @@ export interface components {
       /** References */
       references: string;
     };
+    /** RefreshRead */
+    RefreshRead: {
+      /** Job Id */
+      job_id: string | null;
+      /** Queued */
+      queued: boolean;
+    };
     /** RefsCreated */
     RefsCreated: {
       /** Created */
@@ -4872,6 +5462,35 @@ export interface components {
       /** Target Date */
       target_date?: string | null;
     };
+    /** ReleaseListItem */
+    ReleaseListItem: {
+      /** Cycle Count */
+      cycle_count: number;
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      latest_decision: components["schemas"]["DecisionRead"] | null;
+      /** Name */
+      name: string;
+      /** Plan Count */
+      plan_count: number;
+      /**
+       * Ready
+       * @description Evaluated for planned and active releases only
+       */
+      ready: boolean | null;
+      /** Released At */
+      released_at: string | null;
+      /** Start Date */
+      start_date: string | null;
+      /** Status */
+      status: string;
+      summary: components["schemas"]["ExecutionSummaryRead"];
+      /** Target Date */
+      target_date: string | null;
+    };
     /** ReleasePatch */
     ReleasePatch: {
       /** Description */
@@ -4885,6 +5504,24 @@ export interface components {
       status?: components["schemas"]["ReleaseStatus"] | null;
       /** Target Date */
       target_date?: string | null;
+    };
+    /** ReleaseQuality */
+    ReleaseQuality: {
+      /** Bug References */
+      bug_references: number;
+      coverage: components["schemas"]["RateRead"];
+      /**
+       * Failed At Release
+       * @description Failed runs on the release day (snapshot); null if none
+       */
+      failed_at_release: number | null;
+      pass_rate_applicable: components["schemas"]["RateRead"];
+      regression: components["schemas"]["ExecutionSummaryRead"];
+      release: components["schemas"]["Ref"];
+      /** Released At */
+      released_at: string | null;
+      /** Status */
+      status: string;
     };
     /** ReleaseRead */
     ReleaseRead: {
@@ -4933,6 +5570,64 @@ export interface components {
       run_ids_in_order?: string[] | null;
       /** Sort By */
       sort_by?: ("folder" | "priority") | null;
+    };
+    /** ReportColumn */
+    ReportColumn: {
+      /** Key */
+      key: string;
+      /**
+       * Kind
+       * @enum {string}
+       */
+      kind: "text" | "int" | "datetime" | "date";
+      /** Label */
+      label: string;
+    };
+    /** ReportRead */
+    ReportRead: {
+      /** Columns */
+      columns: components["schemas"]["ReportColumn"][];
+      /** Filters */
+      filters: string[];
+      /** Items */
+      items: {
+        [key: string]: unknown;
+      }[];
+      /** Page */
+      page: number;
+      /** Page Size */
+      page_size: number;
+      /** Report */
+      report: string;
+      /** Title */
+      title: string;
+      /** Total */
+      total: number;
+    };
+    /** RepositoryRead */
+    RepositoryRead: {
+      approved: components["schemas"]["RateRead"];
+      automation_coverage: components["schemas"]["RateRead"];
+      /** By Automation */
+      by_automation: {
+        [key: string]: number;
+      };
+      /** By Status */
+      by_status: {
+        [key: string]: number;
+      };
+      /** By Type */
+      by_type: {
+        [key: string]: number;
+      };
+      /** Folders */
+      folders: number;
+      /** Plans By Status */
+      plans_by_status: {
+        [key: string]: number;
+      };
+      /** Total Cases */
+      total_cases: number;
     };
     /** RequirementDetail */
     RequirementDetail: {
@@ -5197,6 +5892,33 @@ export interface components {
       name: string;
       /** Permissions */
       permissions: string[];
+    };
+    /** RuleRead */
+    RuleRead: {
+      /** @description Percentage rules and tag_fully_executed */
+      actual: components["schemas"]["RateRead"] | null;
+      /**
+       * Count
+       * @description Count rules (max_failed, max_blocked)
+       */
+      count: number | null;
+      /** Met */
+      met: boolean;
+      /**
+       * Note
+       * @description Why the value is undefined (D2: undefined is not met)
+       */
+      note: string | null;
+      /** Params */
+      params: {
+        [key: string]: unknown;
+      };
+      /** @description The plan the rule comes from; null = default rule */
+      plan: components["schemas"]["PlanBrief"] | null;
+      /** Threshold */
+      threshold: number;
+      /** Type */
+      type: string;
     };
     /** RunCase */
     RunCase: {
@@ -5638,6 +6360,21 @@ export interface components {
       /** Usage */
       usage: number;
     };
+    /** TesterRead */
+    TesterRead: {
+      /** Assigned */
+      assigned: number;
+      /** Blocked */
+      blocked: number;
+      /** Executed */
+      executed: number;
+      /** Failed */
+      failed: number;
+      /** Remaining */
+      remaining: number;
+      /** @description null = the unassigned pool */
+      user: components["schemas"]["UserRef"] | null;
+    };
     /** TraceCase */
     TraceCase: {
       /** Bugs */
@@ -5678,6 +6415,85 @@ export interface components {
       /** Rows */
       rows: components["schemas"]["TraceRow"][];
       summary: components["schemas"]["CoverageRead"];
+    };
+    /** TransferRead */
+    TransferRead: {
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Download Url */
+      download_url: string | null;
+      /** Entity */
+      entity: string;
+      /** Errors */
+      errors: unknown[];
+      /** Expires At */
+      expires_at: string | null;
+      /** Finished At */
+      finished_at: string | null;
+      /** Format */
+      format: string;
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Kind */
+      kind: string;
+      /** Status */
+      status: string;
+      /** Summary */
+      summary: {
+        [key: string]: unknown;
+      };
+    };
+    /** TrendDay */
+    TrendDay: {
+      /** Blocked */
+      blocked: number;
+      /** Bug Links Added */
+      bug_links_added: number;
+      /**
+       * Day
+       * Format: date
+       */
+      day: string;
+      /** Executed */
+      executed: number;
+      /** Failed */
+      failed: number;
+      /** Failed Runs */
+      failed_runs: number;
+      /**
+       * Live
+       * @description Today, computed live (not a stored snapshot)
+       */
+      live: boolean;
+      pass_rate: components["schemas"]["RateRead"];
+      /** Passed */
+      passed: number;
+      /** Req Covered */
+      req_covered: number;
+      /** Req Passed */
+      req_passed: number;
+      /** Req Total */
+      req_total: number;
+    };
+    /** UncoveredRef */
+    UncoveredRef: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Reference */
+      reference: string;
+      /** Title */
+      title: string | null;
+      /** Url */
+      url: string | null;
     };
     /** UserRef */
     UserRef: {
@@ -7599,6 +8415,90 @@ export interface operations {
       };
     };
   };
+  get_transfer_api_v1_data_transfers__transfer_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        transfer_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TransferRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  download_transfer_api_v1_data_transfers__transfer_id__download_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        transfer_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The export file */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/octet-stream": unknown;
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   patch_environment_api_v1_environments__environment_id__patch: {
     parameters: {
       query?: never;
@@ -8428,6 +9328,46 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["OrganizationRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  organization_dashboard_api_v1_organization_dashboard_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OrgDashboard"];
         };
       };
       /** @description Validation or business-rule error */
@@ -9430,6 +10370,103 @@ export interface operations {
       };
     };
   };
+  manager_dashboard_api_v1_projects__project_id__dashboards_manager_get: {
+    parameters: {
+      query?: {
+        release_id?: string | null;
+        /** @description Comma-separated cycle IDs */
+        cycle_ids?: string | null;
+        environment_id?: string | null;
+        module_folder_id?: string | null;
+        tester_id?: string | null;
+        date_from?: string | null;
+        date_to?: string | null;
+      };
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ManagerDashboard"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  quality_dashboard_api_v1_projects__project_id__dashboards_quality_get: {
+    parameters: {
+      query?: {
+        release_id?: string | null;
+        date_from?: string | null;
+        date_to?: string | null;
+      };
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["QualityDashboard"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   list_environments_api_v1_projects__project_id__environments_get: {
     parameters: {
       query?: {
@@ -9496,6 +10533,57 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["EnvironmentRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  execution_summary_api_v1_projects__project_id__execution_summary_get: {
+    parameters: {
+      query?: {
+        release_id?: string | null;
+        /** @description Comma-separated cycle IDs */
+        cycle_ids?: string | null;
+        environment_id?: string | null;
+        module_folder_id?: string | null;
+        tester_id?: string | null;
+        date_from?: string | null;
+        date_to?: string | null;
+      };
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ExecutionSummaryRead"];
         };
       };
       /** @description Validation or business-rule error */
@@ -9828,6 +10916,92 @@ export interface operations {
       };
     };
   };
+  refresh_metrics_api_v1_projects__project_id__metrics_refresh_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RefreshRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  release_summaries_api_v1_projects__project_id__release_summaries_get: {
+    parameters: {
+      query?: {
+        include_archived?: boolean;
+      };
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ReleaseListItem"][];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   list_releases_api_v1_projects__project_id__releases_get: {
     parameters: {
       query?: never;
@@ -9892,6 +11066,110 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ReleaseRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  run_report_api_v1_projects__project_id__reports__report__get: {
+    parameters: {
+      query?: {
+        page?: number;
+        page_size?: number;
+      };
+      header?: never;
+      path: {
+        report: string;
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ReportRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  export_report_api_v1_projects__project_id__reports__report__export_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        report: string;
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ExportRequest"];
+      };
+    };
+    responses: {
+      /** @description The file (≤ 10,000 rows) */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
+          "text/csv": unknown;
+        };
+      };
+      /** @description Generated in the background; notified when ready */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ExportAccepted"];
         };
       };
       /** @description Validation or business-rule error */
@@ -10701,6 +11979,136 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ReleaseRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  list_decisions_api_v1_releases__release_id__decisions_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        release_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DecisionDetail"][];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  record_decision_api_v1_releases__release_id__decisions_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        release_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["DecisionCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DecisionDetail"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  release_readiness_api_v1_releases__release_id__readiness_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        release_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ReadinessRead"];
         };
       };
       /** @description Validation or business-rule error */
@@ -13122,6 +14530,48 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["PlanRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  plan_readiness_api_v1_test_plans__plan_id__readiness_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        plan_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ReadinessRead"];
         };
       };
       /** @description Validation or business-rule error */

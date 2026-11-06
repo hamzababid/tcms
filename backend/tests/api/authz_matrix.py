@@ -726,6 +726,52 @@ MATRIX: dict[tuple[str, str], Entry] = {
     ("GET", P + "/traceability"): Entry(
         "project:project.view", lambda f: ("GET", _p(f, "/traceability"), None)
     ),
+    # reporting, readiness, decisions, exports (M7 / E13)
+    ("GET", P + "/release-summaries"): Entry(
+        "project:project.view", lambda f: ("GET", _p(f, "/release-summaries"), None)
+    ),
+    ("GET", "/api/v1/releases/{release_id}/readiness"): Entry(
+        "project:project.view", lambda f: ("GET", f"/api/v1/releases/{f.release_id}/readiness", None)
+    ),
+    ("GET", "/api/v1/releases/{release_id}/decisions"): Entry(
+        "project:project.view", lambda f: ("GET", f"/api/v1/releases/{f.release_id}/decisions", None)
+    ),
+    ("POST", "/api/v1/releases/{release_id}/decisions"): Entry(
+        "project:release.manage",
+        lambda f: (
+            "POST",
+            f"/api/v1/releases/{f.release_id}/decisions",
+            {"decision": "go_with_risks", "comment": "x"},
+        ),
+    ),
+    ("GET", PL + "/readiness"): Entry(
+        "project:project.view", lambda f: ("GET", PL.format(plan_id=_plan(f)) + "/readiness", None)
+    ),
+    ("GET", P + "/execution-summary"): Entry(
+        "project:project.view", lambda f: ("GET", _p(f, "/execution-summary"), None)
+    ),
+    ("GET", P + "/dashboards/manager"): Entry(
+        "project:project.view", lambda f: ("GET", _p(f, "/dashboards/manager"), None)
+    ),
+    ("GET", P + "/dashboards/quality"): Entry(
+        "project:project.view", lambda f: ("GET", _p(f, "/dashboards/quality"), None)
+    ),
+    ("POST", P + "/metrics/refresh"): Entry(
+        "project:project.view", lambda f: ("POST", _p(f, "/metrics/refresh"), None)
+    ),
+    ("GET", "/api/v1/organization/dashboard"): Entry(
+        "auth", lambda f: ("GET", "/api/v1/organization/dashboard", None)
+    ),
+    ("GET", P + "/reports/{report}"): Entry(
+        "project:project.view", lambda f: ("GET", _p(f, "/reports/case-inventory"), None)
+    ),
+    ("POST", P + "/reports/{report}/export"): Entry(
+        "project:data.export",
+        lambda f: ("POST", _p(f, "/reports/tester-activity/export"), {"format": "csv", "filters": {}}),
+    ),
+    # Initiator only (any member may start an export): covered by test_ac_rpt_04_large_export_runs_in_the_background.
+    ("GET", "/api/v1/data-transfers/{transfer_id}"): Entry("project:project.view"),
+    ("GET", "/api/v1/data-transfers/{transfer_id}/download"): Entry("project:project.view"),
     # search and saved views (M6 / E12)
     ("GET", "/api/v1/search"): Entry("auth", lambda f: ("GET", "/api/v1/search?q=probe", None)),
     ("GET", P + "/saved-views"): Entry(

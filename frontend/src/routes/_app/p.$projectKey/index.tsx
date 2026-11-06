@@ -1,8 +1,12 @@
-import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+
+import { OverviewPage } from "@/features/reporting/OverviewPage";
+
+import { useRouteProject } from "../p.$projectKey";
 
 export const Route = createFileRoute("/_app/p/$projectKey/")({
-  component: function ProjectHome() {
-    const { projectKey } = Route.useParams();
-    return <Navigate to="/p/$projectKey/activity" params={{ projectKey }} replace />;
+  component: function ProjectOverview() {
+    const project = useRouteProject();
+    return <OverviewPage key={project.id} project={project} />;
   },
 });

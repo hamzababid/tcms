@@ -20,6 +20,7 @@ from tcms.execution import schemas as s
 from tcms.execution import service
 from tcms.identity import queries as identity_queries
 from tcms.identity.service import Authenticated
+from tcms.reporting import queries as reporting_queries
 from tcms.testdesign import queries as tq
 from tcms.workspace import queries as workspace_queries
 
@@ -142,7 +143,8 @@ def discard(result_id: UUID, ctx: AccessContext = ResultCtx, uow: UnitOfWork = D
 @router.get("/me/work", response_model=s.MyWorkRead)
 def my_work(auth: Authenticated = Auth, uow: UnitOfWork = Depends(get_read_uow)) -> s.MyWorkRead:
     """US-099 / FR-EXE-014 (docs/07 §5.14): my runs in planned and active cycles of my active projects,
-    cases awaiting my review, and what I finished in the last 7 days. Defects arrive with M5."""
+    cases awaiting my review, what I finished today and in the last 7 days, my failed / blocked runs and
+    runs to retest, and the bugs I linked (M7 R-142)."""
     se = uow.session
     org = auth.organization_id
     memberships = identity_queries.memberships(se, auth)
@@ -161,6 +163,7 @@ def my_work(auth: Authenticated = Auth, uow: UnitOfWork = Depends(get_read_uow))
             key=m.cycle.key,
             name=m.cycle.name,
             status=m.cycle.status,
+            start_date=m.cycle.start_date,
             due_date=m.cycle.due_date,
             summary=summary_read(m.counts, m.needs_retest),
             next_run_id=m.next_run_id,
@@ -175,5 +178,28 @@ def my_work(auth: Authenticated = Auth, uow: UnitOfWork = Depends(get_read_uow))
         s.MyWorkReview(project=refs[r.project_id], id=r.id, key=r.key, title=r.title, updated_at=r.updated_at)
         for r in tq.awaiting_review(se, org, auth.user_id, approvers)
     ]
-    week = eq.my_week(se, org, pids, auth.user_id, clock.now() - timedelta(days=7))
-    return s.MyWorkRead(cycles=cycles, reviews=reviews, week=summary_read(week))
+    now = clock.now()
+    week = eq.my_week(se, org, pids, auth.user_id, now - timedelta(days=7))
+    _, day_start, _ = reporting_queries.today_window()
+    today = eq.my_week(se, org, pids, auth.user_id, day_start)
+    attention = [
+        s.MyWorkAttention(
+            project=refs[a.project_id],
+            run_id=a.run_id,
+            cycle_id=a.cycle_id,
+            cycle_key=a.cycle_key,
+            case_key=a.case_key,
+            title=a.title,
+            status=a.status,
+            needs_retest=a.needs_retest,
+        )
+        for a in reporting_queries.my_attention(se, org, pids, auth.user_id)
+    ]
+    return s.MyWorkRead(
+        cycles=cycles,
+        reviews=reviews,
+        week=summary_read(week),
+        today=summary_read(today),
+        attention=attention,
+        bugs_linked_week=reporting_queries.my_bug_links(se, org, pids, auth.user_id, now - timedelta(days=7)),
+    )

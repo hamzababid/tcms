@@ -546,6 +546,9 @@ def test_us_099_my_work_lists_my_cycles_reviews_and_week(world: World) -> None:
         1,
     )
     assert body["week"]["failed"] == 1
+    assert body["today"]["failed"] == 1, "R-142: executed today"
+    assert [(a["run_id"], a["status"]) for a in body["attention"]] == [(run_id, "failed")], "R-142"
+    assert body["bugs_linked_week"] == 0
     assert body["reviews"] == [], "engineers cannot approve"
 
 

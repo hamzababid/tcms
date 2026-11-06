@@ -44,7 +44,11 @@ def worker() -> None:
     install_modules()
     from tcms.platform import attachments, storage
 
-    attachments.configure_gc(attachments.Storage(storage.make_client(settings), settings.s3_bucket))
+    store = attachments.Storage(storage.make_client(settings), settings.s3_bucket)
+    attachments.configure_gc(store)
+    from tcms.platform import transfers
+
+    transfers.configure(store)
     w = Worker(
         session_factory(app_engine(settings, worker=True)),
         concurrency=settings.worker_concurrency,
@@ -114,6 +118,21 @@ def seed(profile: str) -> None:
 
     install_modules()
     for line in run(profile):
+        click.echo(line)
+
+
+@main.command("seed-timing")
+@click.option("--repeat", default=5, show_default=True)
+def seed_timing(repeat: int) -> None:
+    """Time dashboards, readiness and reports on the seeded SPARK project (local only)."""
+    settings = get_settings()
+    if settings.is_production:
+        raise click.ClickException("timing runs are disabled in production")
+    from tcms.main import install_modules
+    from tcms.seed import timing
+
+    install_modules()
+    for line in timing.run(repeat):
         click.echo(line)
 
 

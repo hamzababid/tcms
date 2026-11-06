@@ -394,6 +394,7 @@ class MyWorkCycle(BaseModel):
     key: str
     name: str
     status: CycleStatus
+    start_date: date | None
     due_date: date | None
     summary: ExecutionSummaryRead
     next_run_id: UUID | None = Field(description="My first run that is not finished (Start / Continue)")
@@ -407,12 +408,26 @@ class MyWorkReview(BaseModel):
     updated_at: datetime
 
 
+class MyWorkAttention(BaseModel):
+    project: ProjectRef
+    run_id: UUID
+    cycle_id: UUID
+    cycle_key: str
+    case_key: str
+    title: str
+    status: RunStatus
+    needs_retest: bool
+
+
 class MyWorkRead(BaseModel):
-    """docs/06 §4.1 `GET /me/work` (docs/07 §5.14). Defects assigned to me arrive with M5."""
+    """docs/06 §4.1 `GET /me/work` (docs/07 §5.14, docs/02 §11.3 QA Engineer dashboard)."""
 
     cycles: list[MyWorkCycle]
     reviews: list[MyWorkReview]
     week: ExecutionSummaryRead = Field(description="Attempts I finished in the last 7 days")
+    today: ExecutionSummaryRead = Field(description="Attempts I finished today (UTC)")
+    attention: list[MyWorkAttention] = Field(description="My failed / blocked runs and runs to retest")
+    bugs_linked_week: int = Field(description="Distinct bug references I linked in the last 7 days")
 
 
 RunRead.model_rebuild()

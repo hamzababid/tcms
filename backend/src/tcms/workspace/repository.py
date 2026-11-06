@@ -8,7 +8,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from tcms.core.enums import ProjectStatus
-from tcms.workspace.models import Environment, KeySequence, Organization, Project, Release
+from tcms.workspace.models import Environment, KeySequence, Organization, Project, Release, ReleaseDecision
 
 
 def organization(s: Session, org_id: UUID, *, for_update: bool = False) -> Organization | None:
@@ -137,3 +137,18 @@ def project_of_release(s: Session, release_id: UUID) -> tuple[UUID, UUID] | None
         select(Release.organization_id, Release.project_id).where(Release.id == release_id)
     ).first()
     return (row[0], row[1]) if row else None
+
+
+def decisions(s: Session, org_id: UUID, release_ids: list[UUID]) -> list[ReleaseDecision]:
+    """Newest first (ix_release_decisions__release_id_decided_at)."""
+    if not release_ids:
+        return []
+    return list(
+        s.execute(
+            select(ReleaseDecision)
+            .where(ReleaseDecision.organization_id == org_id, ReleaseDecision.release_id.in_(release_ids))
+            .order_by(ReleaseDecision.decided_at.desc(), ReleaseDecision.id.desc())
+        )
+        .scalars()
+        .all()
+    )
