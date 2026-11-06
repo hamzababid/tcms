@@ -18,6 +18,7 @@ from tcms.api.v1 import (
     plans,
     projects,
     records,
+    reporting,
     requirements,
     results,
     saved_views,
@@ -39,6 +40,9 @@ def install_modules() -> None:
     import tcms.identity.jobs
     import tcms.platform.attachments
     import tcms.platform.email
+    import tcms.platform.transfers
+    import tcms.reporting.exports
+    import tcms.reporting.snapshots
     import tcms.testdesign.jobs
     import tcms.testdesign.service  # noqa: F401
 
@@ -57,6 +61,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     from tcms.platform import attachments, storage
 
     store = attachments.Storage(storage.make_client(settings), settings.s3_bucket)
+    from tcms.platform import transfers
+
+    transfers.configure(store)
     app.state.tcms = AppState(
         settings=settings, session_factory=session_factory(app_engine(settings)), store=store
     )
@@ -76,6 +83,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         requirements,
         search,
         saved_views,
+        reporting,
         records,
     ):
         app.include_router(module.router, responses=PROBLEM_RESPONSES)

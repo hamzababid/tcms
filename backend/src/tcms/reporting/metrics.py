@@ -100,3 +100,49 @@ class RequirementCoverage:
             coverage=Rate.of(covered, total),
             verified=Rate.of(passed, total),
         )
+
+
+@dataclass(frozen=True)
+class BugMetrics:
+    """docs/02 §11.2 bug metrics over runs in scope (ADR-023: references, not defect records)."""
+
+    linked: int  # distinct bug references linked to runs in scope
+    on_failing_runs: int  # distinct references linked to a run whose current status is failed
+    failures_without_bug: int  # failed runs with no bug link on their current attempt
+
+
+@dataclass(frozen=True)
+class RepositoryMetrics:
+    """docs/02 §11.2 repository metrics: cases, not runs; archived cases are not counted."""
+
+    total_cases: int
+    by_status: dict[str, int]
+    by_type: dict[str, int]
+    by_automation: dict[str, int]
+    approved: Rate
+    automation_coverage: Rate
+    folders: int
+    plans_by_status: dict[str, int]
+
+    @classmethod
+    def from_counts(
+        cls,
+        *,
+        by_status: Mapping[str, int],
+        by_type: Mapping[str, int],
+        by_automation: Mapping[str, int],
+        folders: int,
+        plans_by_status: Mapping[str, int],
+    ) -> RepositoryMetrics:
+        active = {k: int(v) for k, v in by_status.items() if k != "archived"}
+        total = sum(active.values())
+        return cls(
+            total_cases=total,
+            by_status=active,
+            by_type={k: int(v) for k, v in by_type.items()},
+            by_automation={k: int(v) for k, v in by_automation.items()},
+            approved=Rate.of(active.get("approved", 0), total),
+            automation_coverage=Rate.of(int(by_automation.get("automated", 0)), total),
+            folders=folders,
+            plans_by_status={k: int(v) for k, v in plans_by_status.items()},
+        )

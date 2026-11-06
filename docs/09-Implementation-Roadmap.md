@@ -105,7 +105,7 @@ M6 can start in parallel with M4/M5 once M2 is done (separate module, different 
 | | |
 | --- | --- |
 | Scope | E13, E16: metrics module, execution summary, manager/engineer/quality/org dashboards, metric snapshots job, reports (6) with filters and CSV/XLSX export (sync and background), readiness rules and decisions, release page; notifications (in-app + email, digests) |
-| Deliverables | Managers can assess and record release readiness |
+| Deliverables | Managers can assess and record release readiness. Delivered in two PRs (product owner, 2026-11-06): **M7a** reporting and readiness (E13), **M7b** notifications and email (E16) |
 | Acceptance | TCMS-113…117 pass; metrics property test; dashboards < 2 s on large seed |
 | Dependencies | M5, M6 |
 

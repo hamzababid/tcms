@@ -616,7 +616,7 @@ Indexes: `ix_audit_events__org_occurred (organization_id, occurred_at DESC)`, `i
 
 **data_transfers**: `id`, `organization_id`, `project_id`, `kind transfer_kind`, `entity text` (`test_case`, `requirement`, `defect`, `report:<name>`), `status transfer_status`, `format text` (`csv`, `xlsx`), `source_object_key`, `result_object_key`, `options jsonb` (mapping, mode, filters), `summary jsonb` (counts), `errors jsonb` (first 1,000 row errors), `created_by`, `created_at`, `finished_at`, `expires_at`.
 
-**metric_snapshots**: `id`, `organization_id`, `project_id`, `release_id NULL`, `cycle_id NULL`, `day date`, `counters jsonb`, `created_at`. Unique `(project_id, coalesce(release_id, tcms_nil_uuid()), coalesce(cycle_id, tcms_nil_uuid()), day)`.
+**metric_snapshots**: `id`, `organization_id`, `project_id`, `release_id NULL`, `cycle_id NULL`, `day date`, `counters jsonb`, `created_at`. Unique `(project_id, coalesce(release_id, tcms_nil_uuid()), coalesce(cycle_id, tcms_nil_uuid()), day)`. Counters per docs/04 §8 (M7; bug-link counters replace the defect counters, ADR-023).
 
 **idempotency_keys**: `key text`, `principal_id uuid`, `endpoint text`, `request_hash bytea`, `response_status int`, `response_body jsonb`, `created_at`; PK `(principal_id, key)`; purged after 24 h.
 

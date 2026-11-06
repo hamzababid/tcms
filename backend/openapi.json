@@ -1075,6 +1075,29 @@
         "title": "BugLinkRead",
         "type": "object"
       },
+      "BugMetricsRead": {
+        "properties": {
+          "failures_without_bug": {
+            "title": "Failures Without Bug",
+            "type": "integer"
+          },
+          "linked": {
+            "title": "Linked",
+            "type": "integer"
+          },
+          "on_failing_runs": {
+            "title": "On Failing Runs",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "linked",
+          "on_failing_runs",
+          "failures_without_bug"
+        ],
+        "title": "BugMetricsRead",
+        "type": "object"
+      },
       "BugRef": {
         "properties": {
           "reference": {
@@ -1112,6 +1135,53 @@
           "text"
         ],
         "title": "BugReportRead",
+        "type": "object"
+      },
+      "BugRowRead": {
+        "properties": {
+          "failing_runs": {
+            "title": "Failing Runs",
+            "type": "integer"
+          },
+          "reference": {
+            "title": "Reference",
+            "type": "string"
+          },
+          "runs": {
+            "title": "Runs",
+            "type": "integer"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "reference",
+          "url",
+          "title",
+          "failing_runs",
+          "runs"
+        ],
+        "title": "BugRowRead",
         "type": "object"
       },
       "BugSummaryRead": {
@@ -3012,6 +3082,258 @@
         "title": "CycleStatus",
         "type": "string"
       },
+      "CycleWidget": {
+        "properties": {
+          "due_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "environment": {
+            "$ref": "#/components/schemas/Ref"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "overdue": {
+            "title": "Overdue",
+            "type": "boolean"
+          },
+          "release": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Ref"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/ExecutionSummaryRead"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "name",
+          "status",
+          "release",
+          "environment",
+          "start_date",
+          "due_date",
+          "overdue",
+          "summary"
+        ],
+        "title": "CycleWidget",
+        "type": "object"
+      },
+      "DecisionCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "comment": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Comment",
+            "type": "string"
+          },
+          "decision": {
+            "enum": [
+              "go",
+              "go_with_risks",
+              "no_go"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "risks": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risks"
+          }
+        },
+        "required": [
+          "decision",
+          "comment"
+        ],
+        "title": "DecisionCreate",
+        "type": "object"
+      },
+      "DecisionDetail": {
+        "properties": {
+          "comment": {
+            "title": "Comment",
+            "type": "string"
+          },
+          "decided_at": {
+            "format": "date-time",
+            "title": "Decided At",
+            "type": "string"
+          },
+          "decided_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decision": {
+            "enum": [
+              "go",
+              "go_with_risks",
+              "no_go"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "ready": {
+            "description": "Readiness at the time of the decision (from the snapshot)",
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "risks": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risks"
+          },
+          "snapshot": {
+            "additionalProperties": true,
+            "description": "Rule results and metrics frozen at decision time",
+            "title": "Snapshot",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "decision",
+          "comment",
+          "risks",
+          "decided_by",
+          "decided_at",
+          "ready",
+          "snapshot"
+        ],
+        "title": "DecisionDetail",
+        "type": "object"
+      },
+      "DecisionRead": {
+        "properties": {
+          "comment": {
+            "title": "Comment",
+            "type": "string"
+          },
+          "decided_at": {
+            "format": "date-time",
+            "title": "Decided At",
+            "type": "string"
+          },
+          "decided_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decision": {
+            "enum": [
+              "go",
+              "go_with_risks",
+              "no_go"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "ready": {
+            "description": "Readiness at the time of the decision (from the snapshot)",
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "risks": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risks"
+          }
+        },
+        "required": [
+          "id",
+          "decision",
+          "comment",
+          "risks",
+          "decided_by",
+          "decided_at",
+          "ready"
+        ],
+        "title": "DecisionRead",
+        "type": "object"
+      },
       "DesignTechnique": {
         "enum": [
           "positive",
@@ -3422,6 +3744,51 @@
           }
         },
         "title": "ExitRuleParams",
+        "type": "object"
+      },
+      "ExportAccepted": {
+        "properties": {
+          "rows": {
+            "title": "Rows",
+            "type": "integer"
+          },
+          "transfer_id": {
+            "format": "uuid",
+            "title": "Transfer Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "transfer_id",
+          "rows"
+        ],
+        "title": "ExportAccepted",
+        "type": "object"
+      },
+      "ExportRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "filters": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "The report's query parameters",
+            "title": "Filters",
+            "type": "object"
+          },
+          "format": {
+            "enum": [
+              "csv",
+              "xlsx"
+            ],
+            "title": "Format",
+            "type": "string"
+          }
+        },
+        "required": [
+          "format"
+        ],
+        "title": "ExportRequest",
         "type": "object"
       },
       "FieldDiffRead": {
@@ -4311,6 +4678,94 @@
         "title": "LoginResponse",
         "type": "object"
       },
+      "ManagerDashboard": {
+        "description": "docs/02 \u00a711.3 QA Manager dashboard = project Overview (docs/07 \u00a75.3).",
+        "properties": {
+          "bugs": {
+            "$ref": "#/components/schemas/BugMetricsRead"
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/CoverageRead"
+          },
+          "cycles": {
+            "items": {
+              "$ref": "#/components/schemas/CycleWidget"
+            },
+            "title": "Cycles",
+            "type": "array"
+          },
+          "readiness": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReadinessBrief"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "regression": {
+            "$ref": "#/components/schemas/ExecutionSummaryRead"
+          },
+          "release": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Ref"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "repository": {
+            "$ref": "#/components/schemas/RepositoryRead"
+          },
+          "retest_count": {
+            "title": "Retest Count",
+            "type": "integer"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/ExecutionSummaryRead"
+          },
+          "team": {
+            "items": {
+              "$ref": "#/components/schemas/TesterRead"
+            },
+            "title": "Team",
+            "type": "array"
+          },
+          "top_bugs": {
+            "items": {
+              "$ref": "#/components/schemas/BugRowRead"
+            },
+            "title": "Top Bugs",
+            "type": "array"
+          },
+          "top_uncovered": {
+            "items": {
+              "$ref": "#/components/schemas/UncoveredRef"
+            },
+            "title": "Top Uncovered",
+            "type": "array"
+          }
+        },
+        "required": [
+          "release",
+          "readiness",
+          "summary",
+          "retest_count",
+          "bugs",
+          "top_bugs",
+          "cycles",
+          "coverage",
+          "top_uncovered",
+          "regression",
+          "team",
+          "repository"
+        ],
+        "title": "ManagerDashboard",
+        "type": "object"
+      },
       "MeResponse": {
         "properties": {
           "is_org_admin": {
@@ -4553,6 +5008,78 @@
         "title": "MfaVerifyRequest",
         "type": "object"
       },
+      "ModuleBugs": {
+        "properties": {
+          "folder_id": {
+            "format": "uuid",
+            "title": "Folder Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "references": {
+            "title": "References",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "folder_id",
+          "name",
+          "references"
+        ],
+        "title": "ModuleBugs",
+        "type": "object"
+      },
+      "MyWorkAttention": {
+        "properties": {
+          "case_key": {
+            "title": "Case Key",
+            "type": "string"
+          },
+          "cycle_id": {
+            "format": "uuid",
+            "title": "Cycle Id",
+            "type": "string"
+          },
+          "cycle_key": {
+            "title": "Cycle Key",
+            "type": "string"
+          },
+          "needs_retest": {
+            "title": "Needs Retest",
+            "type": "boolean"
+          },
+          "project": {
+            "$ref": "#/components/schemas/ProjectRef"
+          },
+          "run_id": {
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RunStatus"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project",
+          "run_id",
+          "cycle_id",
+          "cycle_key",
+          "case_key",
+          "title",
+          "status",
+          "needs_retest"
+        ],
+        "title": "MyWorkAttention",
+        "type": "object"
+      },
       "MyWorkCycle": {
         "properties": {
           "due_date": {
@@ -4596,6 +5123,18 @@
           "project": {
             "$ref": "#/components/schemas/ProjectRef"
           },
+          "start_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
           "status": {
             "$ref": "#/components/schemas/CycleStatus"
           },
@@ -4609,6 +5148,7 @@
           "key",
           "name",
           "status",
+          "start_date",
           "due_date",
           "summary",
           "next_run_id"
@@ -4617,8 +5157,21 @@
         "type": "object"
       },
       "MyWorkRead": {
-        "description": "docs/06 \u00a74.1 `GET /me/work` (docs/07 \u00a75.14). Defects assigned to me arrive with M5.",
+        "description": "docs/06 \u00a74.1 `GET /me/work` (docs/07 \u00a75.14, docs/02 \u00a711.3 QA Engineer dashboard).",
         "properties": {
+          "attention": {
+            "description": "My failed / blocked runs and runs to retest",
+            "items": {
+              "$ref": "#/components/schemas/MyWorkAttention"
+            },
+            "title": "Attention",
+            "type": "array"
+          },
+          "bugs_linked_week": {
+            "description": "Distinct bug references I linked in the last 7 days",
+            "title": "Bugs Linked Week",
+            "type": "integer"
+          },
           "cycles": {
             "items": {
               "$ref": "#/components/schemas/MyWorkCycle"
@@ -4633,6 +5186,10 @@
             "title": "Reviews",
             "type": "array"
           },
+          "today": {
+            "$ref": "#/components/schemas/ExecutionSummaryRead",
+            "description": "Attempts I finished today (UTC)"
+          },
           "week": {
             "$ref": "#/components/schemas/ExecutionSummaryRead",
             "description": "Attempts I finished in the last 7 days"
@@ -4641,7 +5198,10 @@
         "required": [
           "cycles",
           "reviews",
-          "week"
+          "week",
+          "today",
+          "attention",
+          "bugs_linked_week"
         ],
         "title": "MyWorkRead",
         "type": "object"
@@ -4715,6 +5275,22 @@
         "title": "NewerVersionRead",
         "type": "object"
       },
+      "OrgDashboard": {
+        "properties": {
+          "projects": {
+            "items": {
+              "$ref": "#/components/schemas/OrgProjectRow"
+            },
+            "title": "Projects",
+            "type": "array"
+          }
+        },
+        "required": [
+          "projects"
+        ],
+        "title": "OrgDashboard",
+        "type": "object"
+      },
       "OrgMemberPatch": {
         "additionalProperties": false,
         "properties": {
@@ -4773,6 +5349,50 @@
           "projects"
         ],
         "title": "OrgMemberRead",
+        "type": "object"
+      },
+      "OrgProjectRow": {
+        "properties": {
+          "active_cycles": {
+            "title": "Active Cycles",
+            "type": "integer"
+          },
+          "bugs_on_failing_runs": {
+            "title": "Bugs On Failing Runs",
+            "type": "integer"
+          },
+          "failed": {
+            "title": "Failed",
+            "type": "integer"
+          },
+          "last_activity": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Activity"
+          },
+          "project": {
+            "$ref": "#/components/schemas/KeyRef"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/ExecutionSummaryRead"
+          }
+        },
+        "required": [
+          "project",
+          "active_cycles",
+          "summary",
+          "failed",
+          "bugs_on_failing_runs",
+          "last_activity"
+        ],
+        "title": "OrgProjectRow",
         "type": "object"
       },
       "OrgSettings": {
@@ -5296,6 +5916,30 @@
           "scope"
         ],
         "title": "PermissionRead",
+        "type": "object"
+      },
+      "PlanBrief": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "name"
+        ],
+        "title": "PlanBrief",
         "type": "object"
       },
       "PlanCaseItem": {
@@ -6198,6 +6842,23 @@
         "title": "PlanRead",
         "type": "object"
       },
+      "PlanReadiness": {
+        "properties": {
+          "plan": {
+            "$ref": "#/components/schemas/PlanBrief"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "plan",
+          "ready"
+        ],
+        "title": "PlanReadiness",
+        "type": "object"
+      },
       "PlanRef": {
         "properties": {
           "id": {
@@ -6838,6 +7499,79 @@
         "title": "ProjectStatus",
         "type": "string"
       },
+      "QualityDashboard": {
+        "description": "docs/02 \u00a711.3 project quality dashboard.",
+        "properties": {
+          "automation": {
+            "$ref": "#/components/schemas/RepositoryRead"
+          },
+          "bugs_by_module": {
+            "items": {
+              "$ref": "#/components/schemas/ModuleBugs"
+            },
+            "title": "Bugs By Module",
+            "type": "array"
+          },
+          "date_from": {
+            "format": "date",
+            "title": "Date From",
+            "type": "string"
+          },
+          "date_to": {
+            "format": "date",
+            "title": "Date To",
+            "type": "string"
+          },
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/TrendDay"
+            },
+            "title": "Days",
+            "type": "array"
+          },
+          "last_snapshot_day": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Snapshot Day"
+          },
+          "release": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Ref"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "releases": {
+            "items": {
+              "$ref": "#/components/schemas/ReleaseQuality"
+            },
+            "title": "Releases",
+            "type": "array"
+          }
+        },
+        "required": [
+          "release",
+          "date_from",
+          "date_to",
+          "days",
+          "bugs_by_module",
+          "automation",
+          "releases",
+          "last_snapshot_day"
+        ],
+        "title": "QualityDashboard",
+        "type": "object"
+      },
       "QueueRead": {
         "properties": {
           "filter": {
@@ -6960,6 +7694,120 @@
         "title": "RateRead",
         "type": "object"
       },
+      "ReadinessBrief": {
+        "properties": {
+          "met": {
+            "title": "Met",
+            "type": "integer"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "release": {
+            "$ref": "#/components/schemas/Ref"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "uses_defaults": {
+            "title": "Uses Defaults",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "release",
+          "ready",
+          "met",
+          "total",
+          "uses_defaults"
+        ],
+        "title": "ReadinessBrief",
+        "type": "object"
+      },
+      "ReadinessRead": {
+        "description": "docs/06 \u00a75.9.",
+        "properties": {
+          "coverage": {
+            "$ref": "#/components/schemas/CoverageRead"
+          },
+          "evaluated_at": {
+            "format": "date-time",
+            "title": "Evaluated At",
+            "type": "string"
+          },
+          "latest_decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DecisionRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "plan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/KeyRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "plans": {
+            "items": {
+              "$ref": "#/components/schemas/PlanReadiness"
+            },
+            "title": "Plans",
+            "type": "array"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "release": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Ref"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rules": {
+            "items": {
+              "$ref": "#/components/schemas/RuleRead"
+            },
+            "title": "Rules",
+            "type": "array"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/ExecutionSummaryRead"
+          },
+          "uses_defaults": {
+            "title": "Uses Defaults",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "release",
+          "plan",
+          "ready",
+          "uses_defaults",
+          "rules",
+          "plans",
+          "summary",
+          "coverage",
+          "latest_decision",
+          "evaluated_at"
+        ],
+        "title": "ReadinessRead",
+        "type": "object"
+      },
       "ReadyStatus": {
         "properties": {
           "checks": {
@@ -7036,6 +7884,32 @@
         "title": "ReferencesRequest",
         "type": "object"
       },
+      "RefreshRead": {
+        "properties": {
+          "job_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Id"
+          },
+          "queued": {
+            "title": "Queued",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "job_id",
+          "queued"
+        ],
+        "title": "RefreshRead",
+        "type": "object"
+      },
       "RefsCreated": {
         "properties": {
           "created": {
@@ -7107,6 +7981,107 @@
           "name"
         ],
         "title": "ReleaseCreate",
+        "type": "object"
+      },
+      "ReleaseListItem": {
+        "properties": {
+          "cycle_count": {
+            "title": "Cycle Count",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "latest_decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DecisionRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "plan_count": {
+            "title": "Plan Count",
+            "type": "integer"
+          },
+          "ready": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Evaluated for planned and active releases only",
+            "title": "Ready"
+          },
+          "released_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Released At"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/ExecutionSummaryRead"
+          },
+          "target_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Date"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status",
+          "start_date",
+          "target_date",
+          "released_at",
+          "summary",
+          "ready",
+          "latest_decision",
+          "plan_count",
+          "cycle_count"
+        ],
+        "title": "ReleaseListItem",
         "type": "object"
       },
       "ReleasePatch": {
@@ -7184,6 +8159,66 @@
           }
         },
         "title": "ReleasePatch",
+        "type": "object"
+      },
+      "ReleaseQuality": {
+        "properties": {
+          "bug_references": {
+            "title": "Bug References",
+            "type": "integer"
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/RateRead"
+          },
+          "failed_at_release": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Failed runs on the release day (snapshot); null if none",
+            "title": "Failed At Release"
+          },
+          "pass_rate_applicable": {
+            "$ref": "#/components/schemas/RateRead"
+          },
+          "regression": {
+            "$ref": "#/components/schemas/ExecutionSummaryRead"
+          },
+          "release": {
+            "$ref": "#/components/schemas/Ref"
+          },
+          "released_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Released At"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "release",
+          "status",
+          "released_at",
+          "pass_rate_applicable",
+          "failed_at_release",
+          "bug_references",
+          "coverage",
+          "regression"
+        ],
+        "title": "ReleaseQuality",
         "type": "object"
       },
       "ReleaseRead": {
@@ -7340,6 +8375,151 @@
           }
         },
         "title": "ReorderRequest",
+        "type": "object"
+      },
+      "ReportColumn": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "text",
+              "int",
+              "datetime",
+              "date"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "kind"
+        ],
+        "title": "ReportColumn",
+        "type": "object"
+      },
+      "ReportRead": {
+        "properties": {
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/ReportColumn"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "filters": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Filters",
+            "type": "array"
+          },
+          "items": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "report": {
+            "title": "Report",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "report",
+          "title",
+          "columns",
+          "filters",
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "title": "ReportRead",
+        "type": "object"
+      },
+      "RepositoryRead": {
+        "properties": {
+          "approved": {
+            "$ref": "#/components/schemas/RateRead"
+          },
+          "automation_coverage": {
+            "$ref": "#/components/schemas/RateRead"
+          },
+          "by_automation": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "By Automation",
+            "type": "object"
+          },
+          "by_status": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "By Status",
+            "type": "object"
+          },
+          "by_type": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "By Type",
+            "type": "object"
+          },
+          "folders": {
+            "title": "Folders",
+            "type": "integer"
+          },
+          "plans_by_status": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Plans By Status",
+            "type": "object"
+          },
+          "total_cases": {
+            "title": "Total Cases",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total_cases",
+          "by_status",
+          "by_type",
+          "by_automation",
+          "approved",
+          "automation_coverage",
+          "folders",
+          "plans_by_status"
+        ],
+        "title": "RepositoryRead",
         "type": "object"
       },
       "RequirementDetail": {
@@ -8068,6 +9248,85 @@
           "permissions"
         ],
         "title": "RoleRead",
+        "type": "object"
+      },
+      "RuleRead": {
+        "properties": {
+          "actual": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RateRead"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Percentage rules and tag_fully_executed"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Count rules (max_failed, max_blocked)",
+            "title": "Count"
+          },
+          "met": {
+            "title": "Met",
+            "type": "boolean"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Why the value is undefined (D2: undefined is not met)",
+            "title": "Note"
+          },
+          "params": {
+            "additionalProperties": true,
+            "title": "Params",
+            "type": "object"
+          },
+          "plan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlanBrief"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The plan the rule comes from; null = default rule"
+          },
+          "threshold": {
+            "title": "Threshold",
+            "type": "number"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "threshold",
+          "params",
+          "actual",
+          "count",
+          "met",
+          "note",
+          "plan"
+        ],
+        "title": "RuleRead",
         "type": "object"
       },
       "RunCase": {
@@ -9278,6 +10537,51 @@
         "title": "TagRead",
         "type": "object"
       },
+      "TesterRead": {
+        "properties": {
+          "assigned": {
+            "title": "Assigned",
+            "type": "integer"
+          },
+          "blocked": {
+            "title": "Blocked",
+            "type": "integer"
+          },
+          "executed": {
+            "title": "Executed",
+            "type": "integer"
+          },
+          "failed": {
+            "title": "Failed",
+            "type": "integer"
+          },
+          "remaining": {
+            "title": "Remaining",
+            "type": "integer"
+          },
+          "user": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "null = the unassigned pool"
+          }
+        },
+        "required": [
+          "user",
+          "assigned",
+          "executed",
+          "remaining",
+          "failed",
+          "blocked"
+        ],
+        "title": "TesterRead",
+        "type": "object"
+      },
       "TraceCase": {
         "properties": {
           "bugs": {
@@ -9398,6 +10702,208 @@
           "rows"
         ],
         "title": "TraceabilityRead",
+        "type": "object"
+      },
+      "TransferRead": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "download_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Download Url"
+          },
+          "entity": {
+            "title": "Entity",
+            "type": "string"
+          },
+          "errors": {
+            "items": {},
+            "title": "Errors",
+            "type": "array"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "format": {
+            "title": "Format",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "summary": {
+            "additionalProperties": true,
+            "title": "Summary",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "entity",
+          "status",
+          "format",
+          "summary",
+          "errors",
+          "created_at",
+          "finished_at",
+          "expires_at",
+          "download_url"
+        ],
+        "title": "TransferRead",
+        "type": "object"
+      },
+      "TrendDay": {
+        "properties": {
+          "blocked": {
+            "title": "Blocked",
+            "type": "integer"
+          },
+          "bug_links_added": {
+            "title": "Bug Links Added",
+            "type": "integer"
+          },
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "executed": {
+            "title": "Executed",
+            "type": "integer"
+          },
+          "failed": {
+            "title": "Failed",
+            "type": "integer"
+          },
+          "failed_runs": {
+            "title": "Failed Runs",
+            "type": "integer"
+          },
+          "live": {
+            "description": "Today, computed live (not a stored snapshot)",
+            "title": "Live",
+            "type": "boolean"
+          },
+          "pass_rate": {
+            "$ref": "#/components/schemas/RateRead"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "integer"
+          },
+          "req_covered": {
+            "title": "Req Covered",
+            "type": "integer"
+          },
+          "req_passed": {
+            "title": "Req Passed",
+            "type": "integer"
+          },
+          "req_total": {
+            "title": "Req Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "day",
+          "executed",
+          "passed",
+          "failed",
+          "blocked",
+          "pass_rate",
+          "bug_links_added",
+          "failed_runs",
+          "req_total",
+          "req_covered",
+          "req_passed",
+          "live"
+        ],
+        "title": "TrendDay",
+        "type": "object"
+      },
+      "UncoveredRef": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "reference": {
+            "title": "Reference",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "id",
+          "reference",
+          "title",
+          "url"
+        ],
+        "title": "UncoveredRef",
         "type": "object"
       },
       "UserRef": {
@@ -12738,6 +14244,130 @@
         ]
       }
     },
+    "/api/v1/data-transfers/{transfer_id}": {
+      "get": {
+        "description": "docs/06 \u00a74.13: initiator or project.configure.",
+        "operationId": "get_transfer_api_v1_data_transfers__transfer_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "transfer_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Transfer Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Get Transfer",
+        "tags": [
+          "reporting"
+        ]
+      }
+    },
+    "/api/v1/data-transfers/{transfer_id}/download": {
+      "get": {
+        "description": "docs/06 \u00a74.13: the initiator downloads a ready export within 7 days.",
+        "operationId": "download_transfer_api_v1_data_transfers__transfer_id__download_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "transfer_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Transfer Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/octet-stream": {}
+            },
+            "description": "The export file"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Download Transfer",
+        "tags": [
+          "reporting"
+        ]
+      }
+    },
     "/api/v1/environments/{environment_id}": {
       "patch": {
         "operationId": "patch_environment_api_v1_environments__environment_id__patch",
@@ -13708,7 +15338,7 @@
     },
     "/api/v1/me/work": {
       "get": {
-        "description": "US-099 / FR-EXE-014 (docs/07 \u00a75.14): my runs in planned and active cycles of my active projects,\ncases awaiting my review, and what I finished in the last 7 days. Defects arrive with M5.",
+        "description": "US-099 / FR-EXE-014 (docs/07 \u00a75.14): my runs in planned and active cycles of my active projects,\ncases awaiting my review, what I finished today and in the last 7 days, my failed / blocked runs and\nruns to retest, and the bugs I linked (M7 R-142).",
         "operationId": "my_work_api_v1_me_work_get",
         "responses": {
           "200": {
@@ -13997,6 +15627,58 @@
         "summary": "Patch Organization",
         "tags": [
           "organization"
+        ]
+      }
+    },
+    "/api/v1/organization/dashboard": {
+      "get": {
+        "description": "FR-WS-008 / US-146: Org Admins (org.reports.view) see every active project; others their own.",
+        "operationId": "organization_dashboard_api_v1_organization_dashboard_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgDashboard"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Organization Dashboard",
+        "tags": [
+          "reporting"
         ]
       }
     },
@@ -15800,6 +17482,305 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/dashboards/manager": {
+      "get": {
+        "description": "FR-RPT-001 / docs/02 \u00a711.3: every widget of the project Overview in one response (TCMS-115).",
+        "operationId": "manager_dashboard_api_v1_projects__project_id__dashboards_manager_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "release_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Release Id"
+            }
+          },
+          {
+            "description": "Comma-separated cycle IDs",
+            "in": "query",
+            "name": "cycle_ids",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Comma-separated cycle IDs",
+              "title": "Cycle Ids"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "module_folder_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Module Folder Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tester_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tester Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagerDashboard"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Manager Dashboard",
+        "tags": [
+          "reporting"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/dashboards/quality": {
+      "get": {
+        "description": "FR-RPT-003 / docs/02 \u00a711.3: trends from daily snapshots plus today live (D5).",
+        "operationId": "quality_dashboard_api_v1_projects__project_id__dashboards_quality_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "release_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Release Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityDashboard"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Quality Dashboard",
+        "tags": [
+          "reporting"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}/environments": {
       "get": {
         "description": "Archived environments are excluded unless asked for (AC-WS-03: not selectable for new cycles).",
@@ -15946,6 +17927,190 @@
         "summary": "Create Environment",
         "tags": [
           "projects"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/execution-summary": {
+      "get": {
+        "description": "docs/06 \u00a75.7 for any filter of docs/02 \u00a711.1 (BR-24).",
+        "operationId": "execution_summary_api_v1_projects__project_id__execution_summary_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "release_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Release Id"
+            }
+          },
+          {
+            "description": "Comma-separated cycle IDs",
+            "in": "query",
+            "name": "cycle_ids",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Comma-separated cycle IDs",
+              "title": "Cycle Ids"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "module_folder_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Module Folder Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tester_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tester Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutionSummaryRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Execution Summary",
+        "tags": [
+          "reporting"
         ]
       }
     },
@@ -16452,6 +18617,148 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/metrics/refresh": {
+      "post": {
+        "description": "docs/06 \u00a74.10: enqueue today's snapshot; one per project per 10 minutes (dedupe key).",
+        "operationId": "refresh_metrics_api_v1_projects__project_id__metrics_refresh_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefreshRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Refresh Metrics",
+        "tags": [
+          "reporting"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/release-summaries": {
+      "get": {
+        "description": "Releases page (docs/07 \u00a75.15): each release with its execution summary, readiness and latest\"\n\" decision.",
+        "operationId": "release_summaries_api_v1_projects__project_id__release_summaries_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_archived",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Archived",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ReleaseListItem"
+                  },
+                  "title": "Response Release Summaries Api V1 Projects  Project Id  Release Summaries Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Release Summaries",
+        "tags": [
+          "reporting"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}/releases": {
       "get": {
         "operationId": "list_releases_api_v1_projects__project_id__releases_get",
@@ -16587,6 +18894,195 @@
         "summary": "Create Release",
         "tags": [
           "projects"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/reports/{report}": {
+      "get": {
+        "description": "FR-RPT-004: `cycle-execution`, `results-history`, `bug-links`, `traceability`, `tester-activity`,\n`case-inventory`; filters per report (D9), unknown filters \u2192 400.",
+        "operationId": "run_report_api_v1_projects__project_id__reports__report__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "report",
+            "required": true,
+            "schema": {
+              "title": "Report",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Run Report",
+        "tags": [
+          "reporting"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/reports/{report}/export": {
+      "post": {
+        "description": "FR-RPT-005 / AC-RPT-04/05 / TCMS-117: CSV or XLSX with formula-injection protection.",
+        "operationId": "export_report_api_v1_projects__project_id__reports__report__export_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "report",
+            "required": true,
+            "schema": {
+              "title": "Report",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {},
+              "text/csv": {}
+            },
+            "description": "The file (\u2264 10,000 rows)"
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportAccepted"
+                }
+              }
+            },
+            "description": "Generated in the background; notified when ready"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Export Report",
+        "tags": [
+          "reporting"
         ]
       }
     },
@@ -18379,6 +20875,210 @@
         "summary": "Patch Release",
         "tags": [
           "projects"
+        ]
+      }
+    },
+    "/api/v1/releases/{release_id}/decisions": {
+      "get": {
+        "description": "Decision timeline, newest first, each with its frozen snapshot.",
+        "operationId": "list_decisions_api_v1_releases__release_id__decisions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "release_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Release Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DecisionDetail"
+                  },
+                  "title": "Response List Decisions Api V1 Releases  Release Id  Decisions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "List Decisions",
+        "tags": [
+          "reporting"
+        ]
+      },
+      "post": {
+        "description": "TCMS-116 / AC-REL-03: go, go with risks (risks required) or no-go; the readiness snapshot is computed\nhere and stored with the decision (append-only).",
+        "operationId": "record_decision_api_v1_releases__release_id__decisions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "release_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Release Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Record Decision",
+        "tags": [
+          "reporting"
+        ]
+      }
+    },
+    "/api/v1/releases/{release_id}/readiness": {
+      "get": {
+        "description": "FR-RPT-006 / docs/02 \u00a711.4 (D1: per plan over its own cycles; defaults when no plan has rules).",
+        "operationId": "release_readiness_api_v1_releases__release_id__readiness_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "release_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Release Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Release Readiness",
+        "tags": [
+          "reporting"
         ]
       }
     },
@@ -22500,6 +25200,70 @@
         "summary": "Clone Plan",
         "tags": [
           "test-plans"
+        ]
+      }
+    },
+    "/api/v1/test-plans/{plan_id}/readiness": {
+      "get": {
+        "description": "L25: the plan Overview shows its exit rules as met / not met.",
+        "operationId": "plan_readiness_api_v1_test_plans__plan_id__readiness_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Plan Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Plan Readiness",
+        "tags": [
+          "reporting"
         ]
       }
     },

@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as SetupMfaRouteImport } from './routes/setup-mfa'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppMyWorkRouteImport } from './routes/_app/my-work'
+import { Route as AppOrgRouteImport } from './routes/_app/org'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
 import { Route as AppProjectsRouteImport } from './routes/_app/projects'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
@@ -26,6 +27,7 @@ import { Route as AppPProjectKeyRouteImport } from './routes/_app/p.$projectKey'
 import { Route as AppPProjectKeyIndexRouteImport } from './routes/_app/p.$projectKey/index'
 import { Route as AppPProjectKeyActivityRouteImport } from './routes/_app/p.$projectKey/activity'
 import { Route as AppPProjectKeyBugsRouteImport } from './routes/_app/p.$projectKey/bugs'
+import { Route as AppPProjectKeyReportsRouteImport } from './routes/_app/p.$projectKey/reports'
 import { Route as AppPProjectKeyRepositoryRouteImport } from './routes/_app/p.$projectKey/repository'
 import { Route as AppPProjectKeyRequirementsRouteImport } from './routes/_app/p.$projectKey/requirements'
 import { Route as AppPProjectKeySettingsRouteImport } from './routes/_app/p.$projectKey/settings'
@@ -35,6 +37,8 @@ import { Route as AppPProjectKeyCyclesIndexRouteImport } from './routes/_app/p.$
 import { Route as AppPProjectKeyCyclesCycleKeyRouteImport } from './routes/_app/p.$projectKey/cycles.$cycleKey'
 import { Route as AppPProjectKeyPlansIndexRouteImport } from './routes/_app/p.$projectKey/plans.index'
 import { Route as AppPProjectKeyPlansPlanKeyRouteImport } from './routes/_app/p.$projectKey/plans.$planKey'
+import { Route as AppPProjectKeyReleasesIndexRouteImport } from './routes/_app/p.$projectKey/releases.index'
+import { Route as AppPProjectKeyReleasesReleaseIdRouteImport } from './routes/_app/p.$projectKey/releases.$releaseId'
 import { Route as AppPProjectKeyCasesCaseKeyIndexRouteImport } from './routes/_app/p.$projectKey/cases.$caseKey.index'
 import { Route as AppPProjectKeyCasesCaseKeyEditRouteImport } from './routes/_app/p.$projectKey/cases.$caseKey.edit'
 import { Route as AppPProjectKeyCyclesCycleKeyRunRunIdRouteImport } from './routes/_app/p.$projectKey/cycles.$cycleKey_.run.$runId'
@@ -66,6 +70,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const AppMyWorkRoute = AppMyWorkRouteImport.update({
   id: '/my-work',
   path: '/my-work',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOrgRoute = AppOrgRouteImport.update({
+  id: '/org',
+  path: '/org',
   getParentRoute: () => AppRoute,
 } as any)
 const AppProfileRoute = AppProfileRouteImport.update({
@@ -123,6 +132,11 @@ const AppPProjectKeyBugsRoute = AppPProjectKeyBugsRouteImport.update({
   path: '/bugs',
   getParentRoute: () => AppPProjectKeyRoute,
 } as any)
+const AppPProjectKeyReportsRoute = AppPProjectKeyReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AppPProjectKeyRoute,
+} as any)
 const AppPProjectKeyRepositoryRoute =
   AppPProjectKeyRepositoryRouteImport.update({
     id: '/repository',
@@ -175,6 +189,18 @@ const AppPProjectKeyPlansPlanKeyRoute =
     path: '/plans/$planKey',
     getParentRoute: () => AppPProjectKeyRoute,
   } as any)
+const AppPProjectKeyReleasesIndexRoute =
+  AppPProjectKeyReleasesIndexRouteImport.update({
+    id: '/releases/',
+    path: '/releases/',
+    getParentRoute: () => AppPProjectKeyRoute,
+  } as any)
+const AppPProjectKeyReleasesReleaseIdRoute =
+  AppPProjectKeyReleasesReleaseIdRouteImport.update({
+    id: '/releases/$releaseId',
+    path: '/releases/$releaseId',
+    getParentRoute: () => AppPProjectKeyRoute,
+  } as any)
 const AppPProjectKeyCasesCaseKeyIndexRoute =
   AppPProjectKeyCasesCaseKeyIndexRouteImport.update({
     id: '/cases/$caseKey/',
@@ -200,6 +226,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/setup-mfa': typeof SetupMfaRoute
   '/my-work': typeof AppMyWorkRoute
+  '/org': typeof AppOrgRoute
   '/profile': typeof AppProfileRoute
   '/projects': typeof AppProjectsRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -210,6 +237,7 @@ export interface FileRoutesByFullPath {
   '/p/$projectKey': typeof AppPProjectKeyRouteWithChildren
   '/p/$projectKey/activity': typeof AppPProjectKeyActivityRoute
   '/p/$projectKey/bugs': typeof AppPProjectKeyBugsRoute
+  '/p/$projectKey/reports': typeof AppPProjectKeyReportsRoute
   '/p/$projectKey/repository': typeof AppPProjectKeyRepositoryRoute
   '/p/$projectKey/requirements': typeof AppPProjectKeyRequirementsRoute
   '/p/$projectKey/settings': typeof AppPProjectKeySettingsRoute
@@ -218,8 +246,10 @@ export interface FileRoutesByFullPath {
   '/p/$projectKey/cases/new': typeof AppPProjectKeyCasesNewRoute
   '/p/$projectKey/cycles/$cycleKey': typeof AppPProjectKeyCyclesCycleKeyRoute
   '/p/$projectKey/plans/$planKey': typeof AppPProjectKeyPlansPlanKeyRoute
+  '/p/$projectKey/releases/$releaseId': typeof AppPProjectKeyReleasesReleaseIdRoute
   '/p/$projectKey/cycles/': typeof AppPProjectKeyCyclesIndexRoute
   '/p/$projectKey/plans/': typeof AppPProjectKeyPlansIndexRoute
+  '/p/$projectKey/releases/': typeof AppPProjectKeyReleasesIndexRoute
   '/p/$projectKey/cases/$caseKey/edit': typeof AppPProjectKeyCasesCaseKeyEditRoute
   '/p/$projectKey/cases/$caseKey/': typeof AppPProjectKeyCasesCaseKeyIndexRoute
   '/p/$projectKey/cycles/$cycleKey/run/$runId': typeof AppPProjectKeyCyclesCycleKeyRunRunIdRoute
@@ -229,6 +259,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/setup-mfa': typeof SetupMfaRoute
   '/my-work': typeof AppMyWorkRoute
+  '/org': typeof AppOrgRoute
   '/profile': typeof AppProfileRoute
   '/projects': typeof AppProjectsRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -239,6 +270,7 @@ export interface FileRoutesByTo {
   '/admin/security': typeof AppAdminSecurityRoute
   '/p/$projectKey/activity': typeof AppPProjectKeyActivityRoute
   '/p/$projectKey/bugs': typeof AppPProjectKeyBugsRoute
+  '/p/$projectKey/reports': typeof AppPProjectKeyReportsRoute
   '/p/$projectKey/repository': typeof AppPProjectKeyRepositoryRoute
   '/p/$projectKey/requirements': typeof AppPProjectKeyRequirementsRoute
   '/p/$projectKey/settings': typeof AppPProjectKeySettingsRoute
@@ -247,8 +279,10 @@ export interface FileRoutesByTo {
   '/p/$projectKey/cases/new': typeof AppPProjectKeyCasesNewRoute
   '/p/$projectKey/cycles/$cycleKey': typeof AppPProjectKeyCyclesCycleKeyRoute
   '/p/$projectKey/plans/$planKey': typeof AppPProjectKeyPlansPlanKeyRoute
+  '/p/$projectKey/releases/$releaseId': typeof AppPProjectKeyReleasesReleaseIdRoute
   '/p/$projectKey/cycles': typeof AppPProjectKeyCyclesIndexRoute
   '/p/$projectKey/plans': typeof AppPProjectKeyPlansIndexRoute
+  '/p/$projectKey/releases': typeof AppPProjectKeyReleasesIndexRoute
   '/p/$projectKey/cases/$caseKey/edit': typeof AppPProjectKeyCasesCaseKeyEditRoute
   '/p/$projectKey/cases/$caseKey': typeof AppPProjectKeyCasesCaseKeyIndexRoute
   '/p/$projectKey/cycles/$cycleKey/run/$runId': typeof AppPProjectKeyCyclesCycleKeyRunRunIdRoute
@@ -260,6 +294,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/setup-mfa': typeof SetupMfaRoute
   '/_app/my-work': typeof AppMyWorkRoute
+  '/_app/org': typeof AppOrgRoute
   '/_app/profile': typeof AppProfileRoute
   '/_app/projects': typeof AppProjectsRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -271,6 +306,7 @@ export interface FileRoutesById {
   '/_app/p/$projectKey': typeof AppPProjectKeyRouteWithChildren
   '/_app/p/$projectKey/activity': typeof AppPProjectKeyActivityRoute
   '/_app/p/$projectKey/bugs': typeof AppPProjectKeyBugsRoute
+  '/_app/p/$projectKey/reports': typeof AppPProjectKeyReportsRoute
   '/_app/p/$projectKey/repository': typeof AppPProjectKeyRepositoryRoute
   '/_app/p/$projectKey/requirements': typeof AppPProjectKeyRequirementsRoute
   '/_app/p/$projectKey/settings': typeof AppPProjectKeySettingsRoute
@@ -279,8 +315,10 @@ export interface FileRoutesById {
   '/_app/p/$projectKey/cases/new': typeof AppPProjectKeyCasesNewRoute
   '/_app/p/$projectKey/cycles/$cycleKey': typeof AppPProjectKeyCyclesCycleKeyRoute
   '/_app/p/$projectKey/plans/$planKey': typeof AppPProjectKeyPlansPlanKeyRoute
+  '/_app/p/$projectKey/releases/$releaseId': typeof AppPProjectKeyReleasesReleaseIdRoute
   '/_app/p/$projectKey/cycles/': typeof AppPProjectKeyCyclesIndexRoute
   '/_app/p/$projectKey/plans/': typeof AppPProjectKeyPlansIndexRoute
+  '/_app/p/$projectKey/releases/': typeof AppPProjectKeyReleasesIndexRoute
   '/_app/p/$projectKey/cases/$caseKey/edit': typeof AppPProjectKeyCasesCaseKeyEditRoute
   '/_app/p/$projectKey/cases/$caseKey/': typeof AppPProjectKeyCasesCaseKeyIndexRoute
   '/_app/p/$projectKey/cycles/$cycleKey_/run/$runId': typeof AppPProjectKeyCyclesCycleKeyRunRunIdRoute
@@ -293,6 +331,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/setup-mfa'
     | '/my-work'
+    | '/org'
     | '/profile'
     | '/projects'
     | '/invite/$token'
@@ -303,6 +342,7 @@ export interface FileRouteTypes {
     | '/p/$projectKey'
     | '/p/$projectKey/activity'
     | '/p/$projectKey/bugs'
+    | '/p/$projectKey/reports'
     | '/p/$projectKey/repository'
     | '/p/$projectKey/requirements'
     | '/p/$projectKey/settings'
@@ -311,8 +351,10 @@ export interface FileRouteTypes {
     | '/p/$projectKey/cases/new'
     | '/p/$projectKey/cycles/$cycleKey'
     | '/p/$projectKey/plans/$planKey'
+    | '/p/$projectKey/releases/$releaseId'
     | '/p/$projectKey/cycles/'
     | '/p/$projectKey/plans/'
+    | '/p/$projectKey/releases/'
     | '/p/$projectKey/cases/$caseKey/edit'
     | '/p/$projectKey/cases/$caseKey/'
     | '/p/$projectKey/cycles/$cycleKey/run/$runId'
@@ -322,6 +364,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/setup-mfa'
     | '/my-work'
+    | '/org'
     | '/profile'
     | '/projects'
     | '/invite/$token'
@@ -332,6 +375,7 @@ export interface FileRouteTypes {
     | '/admin/security'
     | '/p/$projectKey/activity'
     | '/p/$projectKey/bugs'
+    | '/p/$projectKey/reports'
     | '/p/$projectKey/repository'
     | '/p/$projectKey/requirements'
     | '/p/$projectKey/settings'
@@ -340,8 +384,10 @@ export interface FileRouteTypes {
     | '/p/$projectKey/cases/new'
     | '/p/$projectKey/cycles/$cycleKey'
     | '/p/$projectKey/plans/$planKey'
+    | '/p/$projectKey/releases/$releaseId'
     | '/p/$projectKey/cycles'
     | '/p/$projectKey/plans'
+    | '/p/$projectKey/releases'
     | '/p/$projectKey/cases/$caseKey/edit'
     | '/p/$projectKey/cases/$caseKey'
     | '/p/$projectKey/cycles/$cycleKey/run/$runId'
@@ -352,6 +398,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/setup-mfa'
     | '/_app/my-work'
+    | '/_app/org'
     | '/_app/profile'
     | '/_app/projects'
     | '/invite/$token'
@@ -363,6 +410,7 @@ export interface FileRouteTypes {
     | '/_app/p/$projectKey'
     | '/_app/p/$projectKey/activity'
     | '/_app/p/$projectKey/bugs'
+    | '/_app/p/$projectKey/reports'
     | '/_app/p/$projectKey/repository'
     | '/_app/p/$projectKey/requirements'
     | '/_app/p/$projectKey/settings'
@@ -371,8 +419,10 @@ export interface FileRouteTypes {
     | '/_app/p/$projectKey/cases/new'
     | '/_app/p/$projectKey/cycles/$cycleKey'
     | '/_app/p/$projectKey/plans/$planKey'
+    | '/_app/p/$projectKey/releases/$releaseId'
     | '/_app/p/$projectKey/cycles/'
     | '/_app/p/$projectKey/plans/'
+    | '/_app/p/$projectKey/releases/'
     | '/_app/p/$projectKey/cases/$caseKey/edit'
     | '/_app/p/$projectKey/cases/$caseKey/'
     | '/_app/p/$projectKey/cycles/$cycleKey_/run/$runId'
@@ -430,6 +480,13 @@ declare module '@tanstack/react-router' {
       path: '/my-work'
       fullPath: '/my-work'
       preLoaderRoute: typeof AppMyWorkRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/org': {
+      id: '/_app/org'
+      path: '/org'
+      fullPath: '/org'
+      preLoaderRoute: typeof AppOrgRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/profile': {
@@ -509,6 +566,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPProjectKeyBugsRouteImport
       parentRoute: typeof AppPProjectKeyRoute
     }
+    '/_app/p/$projectKey/reports': {
+      id: '/_app/p/$projectKey/reports'
+      path: '/reports'
+      fullPath: '/p/$projectKey/reports'
+      preLoaderRoute: typeof AppPProjectKeyReportsRouteImport
+      parentRoute: typeof AppPProjectKeyRoute
+    }
     '/_app/p/$projectKey/repository': {
       id: '/_app/p/$projectKey/repository'
       path: '/repository'
@@ -572,6 +636,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPProjectKeyPlansPlanKeyRouteImport
       parentRoute: typeof AppPProjectKeyRoute
     }
+    '/_app/p/$projectKey/releases/': {
+      id: '/_app/p/$projectKey/releases/'
+      path: '/releases'
+      fullPath: '/p/$projectKey/releases/'
+      preLoaderRoute: typeof AppPProjectKeyReleasesIndexRouteImport
+      parentRoute: typeof AppPProjectKeyRoute
+    }
+    '/_app/p/$projectKey/releases/$releaseId': {
+      id: '/_app/p/$projectKey/releases/$releaseId'
+      path: '/releases/$releaseId'
+      fullPath: '/p/$projectKey/releases/$releaseId'
+      preLoaderRoute: typeof AppPProjectKeyReleasesReleaseIdRouteImport
+      parentRoute: typeof AppPProjectKeyRoute
+    }
     '/_app/p/$projectKey/cases/$caseKey/': {
       id: '/_app/p/$projectKey/cases/$caseKey/'
       path: '/cases/$caseKey'
@@ -599,6 +677,7 @@ declare module '@tanstack/react-router' {
 interface AppPProjectKeyRouteChildren {
   AppPProjectKeyActivityRoute: typeof AppPProjectKeyActivityRoute
   AppPProjectKeyBugsRoute: typeof AppPProjectKeyBugsRoute
+  AppPProjectKeyReportsRoute: typeof AppPProjectKeyReportsRoute
   AppPProjectKeyRepositoryRoute: typeof AppPProjectKeyRepositoryRoute
   AppPProjectKeyRequirementsRoute: typeof AppPProjectKeyRequirementsRoute
   AppPProjectKeySettingsRoute: typeof AppPProjectKeySettingsRoute
@@ -607,8 +686,10 @@ interface AppPProjectKeyRouteChildren {
   AppPProjectKeyCasesNewRoute: typeof AppPProjectKeyCasesNewRoute
   AppPProjectKeyCyclesCycleKeyRoute: typeof AppPProjectKeyCyclesCycleKeyRoute
   AppPProjectKeyPlansPlanKeyRoute: typeof AppPProjectKeyPlansPlanKeyRoute
+  AppPProjectKeyReleasesReleaseIdRoute: typeof AppPProjectKeyReleasesReleaseIdRoute
   AppPProjectKeyCyclesIndexRoute: typeof AppPProjectKeyCyclesIndexRoute
   AppPProjectKeyPlansIndexRoute: typeof AppPProjectKeyPlansIndexRoute
+  AppPProjectKeyReleasesIndexRoute: typeof AppPProjectKeyReleasesIndexRoute
   AppPProjectKeyCasesCaseKeyEditRoute: typeof AppPProjectKeyCasesCaseKeyEditRoute
   AppPProjectKeyCasesCaseKeyIndexRoute: typeof AppPProjectKeyCasesCaseKeyIndexRoute
   AppPProjectKeyCyclesCycleKeyRunRunIdRoute: typeof AppPProjectKeyCyclesCycleKeyRunRunIdRoute
@@ -617,6 +698,7 @@ interface AppPProjectKeyRouteChildren {
 const AppPProjectKeyRouteChildren: AppPProjectKeyRouteChildren = {
   AppPProjectKeyActivityRoute: AppPProjectKeyActivityRoute,
   AppPProjectKeyBugsRoute: AppPProjectKeyBugsRoute,
+  AppPProjectKeyReportsRoute: AppPProjectKeyReportsRoute,
   AppPProjectKeyRepositoryRoute: AppPProjectKeyRepositoryRoute,
   AppPProjectKeyRequirementsRoute: AppPProjectKeyRequirementsRoute,
   AppPProjectKeySettingsRoute: AppPProjectKeySettingsRoute,
@@ -625,8 +707,10 @@ const AppPProjectKeyRouteChildren: AppPProjectKeyRouteChildren = {
   AppPProjectKeyCasesNewRoute: AppPProjectKeyCasesNewRoute,
   AppPProjectKeyCyclesCycleKeyRoute: AppPProjectKeyCyclesCycleKeyRoute,
   AppPProjectKeyPlansPlanKeyRoute: AppPProjectKeyPlansPlanKeyRoute,
+  AppPProjectKeyReleasesReleaseIdRoute: AppPProjectKeyReleasesReleaseIdRoute,
   AppPProjectKeyCyclesIndexRoute: AppPProjectKeyCyclesIndexRoute,
   AppPProjectKeyPlansIndexRoute: AppPProjectKeyPlansIndexRoute,
+  AppPProjectKeyReleasesIndexRoute: AppPProjectKeyReleasesIndexRoute,
   AppPProjectKeyCasesCaseKeyEditRoute: AppPProjectKeyCasesCaseKeyEditRoute,
   AppPProjectKeyCasesCaseKeyIndexRoute: AppPProjectKeyCasesCaseKeyIndexRoute,
   AppPProjectKeyCyclesCycleKeyRunRunIdRoute:
@@ -639,6 +723,7 @@ const AppPProjectKeyRouteWithChildren = AppPProjectKeyRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppMyWorkRoute: typeof AppMyWorkRoute
+  AppOrgRoute: typeof AppOrgRoute
   AppProfileRoute: typeof AppProfileRoute
   AppProjectsRoute: typeof AppProjectsRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -649,6 +734,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppMyWorkRoute: AppMyWorkRoute,
+  AppOrgRoute: AppOrgRoute,
   AppProfileRoute: AppProfileRoute,
   AppProjectsRoute: AppProjectsRoute,
   AppIndexRoute: AppIndexRoute,

@@ -8,8 +8,11 @@ import {
   ChevronsLeft,
   ChevronsRight,
   ChevronsUpDown,
+  BarChart3,
   ClipboardList,
   FileText,
+  Flag,
+  LayoutDashboard,
   GitCompare,
   FolderKanban,
   FolderTree,
@@ -47,6 +50,8 @@ interface NavItem {
   params?: Record<string, string>;
   label: string;
   icon: LucideIcon;
+  /** Active only on this exact path (the project Overview is the parent of every project route). */
+  exact?: boolean;
 }
 
 /** Sidebar item (docs/design/Sidebar.dc.html): 34 px, 13.5/500, 18 px icon, active #312E81. */
@@ -60,6 +65,7 @@ function NavLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
         collapsed && "justify-center px-0",
       )}
       activeProps={{ className: "!bg-sidebar-active !text-white" }}
+      activeOptions={{ exact: item.exact ?? false }}
       title={collapsed ? item.label : undefined}
     >
       <item.icon aria-hidden="true" className="size-[18px] shrink-0" strokeWidth={2} />
@@ -139,6 +145,10 @@ function ProjectSwitcher({
         const to =
           e.key.toLowerCase() === "q" ? "/p/$projectKey/requirements" : "/p/$projectKey/traceability";
         void navigate({ to, params: { projectKey: current.key } });
+      } else if (armed && e.key.toLowerCase() === "o" && current) {
+        armed = false;
+        e.preventDefault();
+        void navigate({ to: "/p/$projectKey", params: { projectKey: current.key } });
       } else if (armed && e.key.toLowerCase() === "w") {
         armed = false;
         e.preventDefault();
@@ -185,7 +195,7 @@ function ProjectSwitcher({
           projects.map((p) => (
             <MenuItem
               key={p.id}
-              onSelect={() => void navigate({ to: "/p/$projectKey/activity", params: { projectKey: p.key } })}
+              onSelect={() => void navigate({ to: "/p/$projectKey", params: { projectKey: p.key } })}
               className={cn(p.id === current?.id && "bg-accent-tint text-accent-ink")}
             >
               <span className="w-[72px] shrink-0 truncate font-mono text-xs font-medium text-ink-secondary">
@@ -221,7 +231,13 @@ function useCrumbs(project: Project | undefined): Crumb[] {
   if (project) {
     const params = { projectKey: project.key };
     crumbs.push({ label: project.key, to: "/p/$projectKey", params, mono: true });
+    if (/^\/p\/[^/]+\/?$/.test(path)) crumbs.push({ label: "Overview" });
     if (path.endsWith("/activity")) crumbs.push({ label: "Activity" });
+    if (path.endsWith("/reports")) crumbs.push({ label: "Reports" });
+    if (path.includes("/releases")) {
+      crumbs.push({ label: "Releases", to: "/p/$projectKey/releases", params });
+      if (/\/releases\/[^/]+/.test(path)) crumbs.push({ label: "Release" });
+    }
     if (path.endsWith("/bugs")) crumbs.push({ label: "Bugs" });
     if (path.endsWith("/requirements")) crumbs.push({ label: "Requirements" });
     if (path.endsWith("/traceability")) crumbs.push({ label: "Traceability" });
@@ -266,6 +282,7 @@ function useCrumbs(project: Project | undefined): Crumb[] {
     }
   } else if (path.startsWith("/projects")) crumbs.push({ label: "Projects" });
   else if (path.startsWith("/my-work")) crumbs.push({ label: "My Work" });
+  else if (path.startsWith("/org")) crumbs.push({ label: "Organization dashboard" });
   else if (path.startsWith("/profile")) crumbs.push({ label: "Your account" });
   else if (path.startsWith("/admin")) {
     crumbs.push({ label: "Administration" });
@@ -402,6 +419,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   const projectItems: NavItem[] = current
     ? [
         {
+          to: "/p/$projectKey",
+          params: { projectKey: current.key },
+          label: "Overview",
+          icon: LayoutDashboard,
+          exact: true,
+        },
+        {
           to: "/p/$projectKey/repository",
           params: { projectKey: current.key },
           label: "Repository",
@@ -436,6 +460,18 @@ export function AppShell({ children }: { children: ReactNode }) {
           params: { projectKey: current.key },
           label: "Traceability",
           icon: GitCompare,
+        },
+        {
+          to: "/p/$projectKey/releases",
+          params: { projectKey: current.key },
+          label: "Releases",
+          icon: Flag,
+        },
+        {
+          to: "/p/$projectKey/reports",
+          params: { projectKey: current.key },
+          label: "Reports",
+          icon: BarChart3,
         },
         {
           to: "/p/$projectKey/activity",
@@ -491,6 +527,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </NavSection>
         ) : null}
         <NavSection label="Organization" collapsed={collapsed}>
+          <NavLink item={{ to: "/org", label: "Dashboard", icon: LayoutDashboard }} collapsed={collapsed} />
           <NavLink item={{ to: "/projects", label: "Projects", icon: FolderKanban }} collapsed={collapsed} />
           {isAdmin ? (
             <>

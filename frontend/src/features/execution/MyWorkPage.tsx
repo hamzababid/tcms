@@ -7,7 +7,7 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { formatCount, formatDate, formatDateTime, formatRate } from "@/lib/format";
 
-import { useMyWork, type MyWorkCycle } from "./api";
+import { useMyWork, type MyWork, type MyWorkCycle } from "./api";
 import { LEGEND } from "./labels";
 
 /** My Work (docs/07 §5.14, docs/02 §7.5; US-099): my runs across projects, reviews, my week. */
@@ -44,12 +44,20 @@ export function MyWorkPage() {
               </ul>
             )}
           </Card>
-          <div className="grid gap-5 lg:grid-cols-2">
+          <AttentionCard items={work.data.attention} />
+          <div className="grid gap-5 lg:grid-cols-3">
             <ReviewsCard reviews={work.data.reviews} />
+            <Card title="Today" description="Attempts you finished today">
+              <WeekSummary week={work.data.today} empty="Nothing finished today yet." />
+            </Card>
             <Card title="My week" description="Attempts you finished in the last 7 days">
               <WeekSummary week={work.data.week} />
+              <p className="mt-3 text-xs text-ink-secondary">
+                Bugs you linked this week: {formatCount(work.data.bugs_linked_week)}
+              </p>
             </Card>
           </div>
+          <UpcomingCard cycles={work.data.cycles} />
         </div>
       )}
     </Page>
@@ -147,10 +155,12 @@ function ReviewsCard({
   );
 }
 
-function WeekSummary({ week }: { week: MyWorkCycle["summary"] }) {
+function WeekSummary({ week, empty }: { week: MyWorkCycle["summary"]; empty?: string }) {
   const finished = week.passed + week.failed + week.blocked + week.skipped + week.not_applicable;
   if (finished === 0)
-    return <p className="text-[13px] text-ink-secondary">Nothing finished in the last 7 days.</p>;
+    return (
+      <p className="text-[13px] text-ink-secondary">{empty ?? "Nothing finished in the last 7 days."}</p>
+    );
   return (
     <div className="grid gap-2 text-[13px]">
       <p className="tabular text-ink">
@@ -167,5 +177,58 @@ function WeekSummary({ week }: { week: MyWorkCycle["summary"] }) {
         <li className="tabular text-ink-secondary">(N/A {formatCount(week.not_applicable)})</li>
       </ul>
     </div>
+  );
+}
+
+/** docs/02 §11.3 QA Engineer dashboard: my failed and blocked runs, and runs flagged for retest. */
+function AttentionCard({ items }: { items: MyWork["attention"] }) {
+  return (
+    <Card title={`Failed, blocked or to retest (${items.length})`} flush>
+      {items.length === 0 ? (
+        <p className="p-5 text-[13px] text-ink-secondary">
+          None of your runs is failed, blocked or flagged for retest.
+        </p>
+      ) : (
+        <ul className="divide-y divide-border text-[13px]">
+          {items.map((a) => (
+            <li key={a.run_id} className="flex items-center gap-3 px-5 py-2.5">
+              <Link
+                to="/p/$projectKey/cycles/$cycleKey/run/$runId"
+                params={{ projectKey: a.project.key, cycleKey: a.cycle_key, runId: a.run_id }}
+                className="w-28 shrink-0 font-mono text-[12.5px] font-medium text-link hover:underline"
+              >
+                {a.case_key}
+              </Link>
+              <span className="min-w-0 flex-1 truncate">{a.title}</span>
+              <span className="font-mono text-xs text-ink-secondary">{a.cycle_key}</span>
+              {a.needs_retest ? <StatusBadge kind="execution" status="needs_retest" /> : null}
+              <StatusBadge kind="execution" status={a.status} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+/** Cycles starting in the next 14 days where I have runs. */
+function UpcomingCard({ cycles }: { cycles: MyWorkCycle[] }) {
+  const today = new Date();
+  const limit = new Date(today.getTime() + 14 * 86_400_000).toISOString().slice(0, 10);
+  const now = today.toISOString().slice(0, 10);
+  const upcoming = cycles.filter((c) => c.start_date && c.start_date >= now && c.start_date <= limit);
+  if (upcoming.length === 0) return null;
+  return (
+    <Card title={`Upcoming (${upcoming.length})`} description="Cycles starting in the next 14 days" flush>
+      <ul className="divide-y divide-border text-[13px]">
+        {upcoming.map((c) => (
+          <li key={c.id} className="flex items-center gap-3 px-5 py-2.5">
+            <span className="w-28 shrink-0 font-mono text-[12.5px]">{c.key}</span>
+            <span className="min-w-0 flex-1 truncate">{c.name}</span>
+            <span className="text-xs text-ink-secondary">starts {formatDate(c.start_date)}</span>
+          </li>
+        ))}
+      </ul>
+    </Card>
   );
 }

@@ -101,6 +101,7 @@ export function GlobalSearch({ project }: { project: Project | undefined }) {
     ...(project
       ? (
           [
+            ["Go to Overview", "/p/$projectKey"],
             ["Go to Repository", "/p/$projectKey/repository"],
             ["New test case", "/p/$projectKey/cases/new"],
             ["Go to Plans", "/p/$projectKey/plans"],
@@ -108,6 +109,8 @@ export function GlobalSearch({ project }: { project: Project | undefined }) {
             ["Go to Bugs", "/p/$projectKey/bugs"],
             ["Go to Requirements", "/p/$projectKey/requirements"],
             ["Go to Traceability", "/p/$projectKey/traceability"],
+            ["Go to Releases", "/p/$projectKey/releases"],
+            ["Go to Reports", "/p/$projectKey/reports"],
             ["Go to Activity", "/p/$projectKey/activity"],
           ] as const
         ).map(([label, to]): Hit => ({
@@ -118,6 +121,13 @@ export function GlobalSearch({ project }: { project: Project | undefined }) {
           },
         }))
       : []),
+    {
+      kind: "action",
+      label: "Go to Organization dashboard",
+      run: () => {
+        go("/org", {});
+      },
+    },
     {
       kind: "action",
       label: "Go to Projects",

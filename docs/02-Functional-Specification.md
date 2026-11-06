@@ -754,7 +754,7 @@ Charts never show a percentage without its counts in the tooltip or label.
 
 ### 11.4 Release readiness (FR-RPT-006)
 
-Readiness rules come from plan exit criteria for plans in the release, plus default rules if none exist. Rule types:
+Readiness rules come from plan exit criteria for plans in the release, plus default rules if none exist (ADR-025): each plan's rules are evaluated over that plan's cycles in the release and its requirement references (listed on the plan or linked to its cases); the release is **Ready** when every plan with rules is ready; plans without rules do not count. Thresholds are stored as fractions (percent rules) or whole numbers (count rules). A rule whose actual value is undefined (zero denominator or no runs in scope) is **not met**. Rule types:
 
 | Rule type | Parameters | Evaluation |
 | --- | --- | --- |
@@ -765,11 +765,11 @@ Readiness rules come from plan exit criteria for plans in the release, plus defa
 | `max_blocked` | count | Blocked runs ≤ count |
 | `min_requirement_coverage` | percent | Coverage % ≥ value |
 | `min_requirements_verified` | percent | Verified % ≥ value |
-| `tag_fully_executed` | tag | All runs of cases with that tag executed |
+| `tag_fully_executed` | tag | Every applicable run of cases with that tag is passed, failed or blocked; no such run → not met |
 
-Defaults (when no plan exit criteria): execution progress ≥ 100%, no failed runs, pass rate of applicable ≥ 95%, requirement coverage ≥ 90%.
+Defaults (when no plan of the release has exit rules; over every cycle of the release): execution progress ≥ 100%, no failed runs, pass rate of applicable ≥ 95%, requirement coverage ≥ 90% (only when the release has requirement references in scope).
 
-Panel shows each rule: met/not met, actual value with counts, threshold. Overall: **Ready** only if all met. The QA Manager (`release.manage`) records a **decision**: `go`, `go_with_risks` (risks text required), `no_go`, comment required; a snapshot of all rule results and metrics is stored with the decision (immutable). Multiple decisions over time allowed; latest shown.
+Panel shows each rule: met/not met, actual value with counts, threshold. Overall: **Ready** only if all met. The QA Manager (`release.manage`) records a **decision**: `go`, `go_with_risks` (risks text required), `no_go`, comment required; a snapshot of all rule results and metrics is stored with the decision (immutable). Multiple decisions over time allowed; latest shown. A decision can be recorded for any release that is not archived and does not change the release status. The plan Overview shows the plan's own rules as met / not met.
 
 ### 11.5 Reports and export (FR-RPT-004/005)
 
@@ -784,7 +784,31 @@ MVP reports (each a filterable table + CSV/XLSX export, `data.export`):
 | Tester activity | Per tester per day: executed, passed, failed, blocked |
 | Test case inventory | One row per case with metadata and latest result |
 
-Exports ≤ 10,000 rows are synchronous; larger exports run as background jobs (max 500,000 rows) and notify on completion; files kept 7 days.
+Exports ≤ 10,000 rows are synchronous; larger exports run as background jobs (max 500,000 rows; more → `422 too_many_rows`) and notify on completion; files kept 7 days. Text cells starting with `=`, `+`, `-`, `@`, tab or carriage return are written with a leading `'` (formula injection, A03). CSV is UTF-8 with a BOM.
+
+Columns and filters (M7):
+
+| Report | Filters | Columns |
+| --- | --- | --- |
+| Cycle execution | release, cycles, environment, module, tester, status, assignee | cycle, case, title, folder, priority, assignee, status, executed by, finished at, version, environment, build, bugs |
+| Results history | as above + date range (finished at) | finished at, cycle, case, title, attempt, status, executed by, environment, build, bugs |
+| Bug links | release, cycles, environment, module, date range (linked at) | bug, link, title, case, cycle, run status, step, linked by, linked at |
+| Traceability | release, status in release | requirement, requirement title, link, status in release, case, case title, latest result, cycle, finished at, executed by, bugs |
+| Tester activity | release, cycles, environment, tester, date range | day, tester, executed, passed, failed, blocked |
+| Test case inventory | release (latest result), module, tag, case status, type, priority | case, title, folder, type, priority, status, version, owner, automation, tags, requirements, latest result, latest result at |
+
+Unknown filters → `400 invalid_filter`. "Tester" is `executed_by` of the current attempt for executed runs and the assignee for pending runs; date ranges are UTC days.
+
+### 11.6 Acceptance criteria (M7)
+
+- AC-RPT-01: Given a cycle with 10 runs (6 P, 2 F, 1 B, 1 NA) and a superseded failed run, then total 10, applicable 9, executed 9, pass rate 6 of 9; the superseded run is not counted (TCMS-113/114).
+- AC-RPT-02: Given no executed runs, then pass rate is `null` and shown "—" (TCMS-113).
+- AC-RPT-03: The Overview's numbers equal the reports' with the same filters (TCMS-115).
+- AC-RPT-04: ≤ 10,000 rows export at once; more → `202 {transfer_id}`, the initiator is notified, the file expires after 7 days.
+- AC-RPT-05: Formula-looking cells are prefixed with `'` in CSV and XLSX (TCMS-117).
+- AC-REL-01: Plan rules `min_pass_rate ≥ 95%` and `max_failed = 0` with 3 P / 1 F in the plan's cycle → both not met, actual values with counts, release Not ready (TCMS-116).
+- AC-REL-02: No plan with rules → default rules over the release's cycles.
+- AC-REL-03: "Go with risks" without risks → 422; a decision stores the snapshot; later results do not change it; UPDATE/DELETE fail (TCMS-116).
 
 ## 12. Search, filters, saved views (SRCH)
 

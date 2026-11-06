@@ -43,6 +43,7 @@ WHERE c.organization_id = :org AND c.project_id = :pid
   AND (CAST(:rid AS uuid) IS NULL OR c.release_id = :rid)
   AND r.superseded_by_run_id IS NULL
   AND tr.state = 'final' AND tr.status <> 'not_applicable'
+  AND (CAST(:until AS timestamptz) IS NULL OR tr.finished_at < :until)
   AND r.test_case_id = ANY(:case_ids)
 ORDER BY r.test_case_id, tr.finished_at DESC, tr.id DESC
 """
@@ -91,13 +92,19 @@ def scope_ids(s: Session, ctx: AccessContext, release_id: UUID | None) -> list[U
 
 
 def coverage_rows(
-    s: Session, ctx: AccessContext, release_id: UUID | None, ref_ids: list[UUID] | None = None
+    s: Session,
+    ctx: AccessContext,
+    release_id: UUID | None,
+    ref_ids: list[UUID] | None = None,
+    *,
+    until: datetime | None = None,
 ) -> list[RefCoverage]:
-    """Every reference in scope (or the given ones) with its cases' latest results and its status."""
+    """Every reference in scope (or the given ones) with its cases' latest results and its status.
+    `until` reads results finished before that instant (daily snapshots, D5)."""
     ids = scope_ids(s, ctx, release_id) if ref_ids is None else ref_ids
     if not ids:
         return []
-    base = {"org": ctx.principal.organization_id, "pid": ctx.pid, "rid": release_id}
+    base = {"org": ctx.principal.organization_id, "pid": ctx.pid, "rid": release_id, "until": until}
     refs = {r[0]: r for r in s.execute(text(_REFS_SQL), {"pid": ctx.pid, "ref_ids": ids}).all()}
     links: dict[UUID, list[tuple[UUID, str, str]]] = {}
     for ref_id, case_id, key, title in s.execute(text(_LINKS_SQL), {"pid": ctx.pid, "ref_ids": ids}).all():

@@ -25,6 +25,8 @@ import { Tabs } from "@/components/ui/tabs";
 import { CreateCycleDialog } from "@/features/execution/CreateCycleDialog";
 import { nextCycleName } from "@/features/execution/labels";
 import { RecordHistory } from "@/features/projects/RecordHistory";
+import { usePlanReadiness } from "@/features/reporting/api";
+import { ReadinessRules, ReadyBadge } from "@/features/reporting/readiness";
 import { PlanRequirements } from "@/features/requirements/components";
 import { AddCasesDialog } from "@/features/testdesign/CaseSelector";
 import { formatDate, formatPercent } from "@/lib/format";
@@ -302,6 +304,7 @@ export function PlanDetail({
 }
 
 function Overview({ project, plan }: { project: Project; plan: PlanRead }) {
+  const readiness = usePlanReadiness(plan.id);
   const environments = useEnvironments(project.id);
   const releases = useReleases(project.id);
   const members = useMembers(project.id);
@@ -347,23 +350,30 @@ function Overview({ project, plan }: { project: Project; plan: PlanRead }) {
       <div className="grid content-start gap-5">
         <Card
           title="Exit criteria"
-          description="Readiness evaluates these rules against the release's results."
+          description="Each rule is checked against this plan's cycles (in its release, when it has one)."
+          actions={readiness.data && rules.length ? <ReadyBadge ready={readiness.data.ready} /> : null}
         >
           {rules.length === 0 && !plan.exit_criteria_notes ? (
             <p className="text-[13px] text-ink-muted">No exit criteria yet.</p>
           ) : (
             <>
               {rules.length ? (
-                <ul className="mb-3 flex flex-wrap gap-2">
-                  {rules.map((r, i) => (
-                    <li
-                      key={i}
-                      className="rounded-full border border-border bg-ground px-2.5 py-1 text-[12.5px] text-ink"
-                    >
-                      {ruleText(r)}
-                    </li>
-                  ))}
-                </ul>
+                <div className="mb-3">
+                  {readiness.data ? (
+                    <ReadinessRules rules={readiness.data.rules} showPlan={false} />
+                  ) : (
+                    <ul className="flex flex-wrap gap-2">
+                      {rules.map((r, i) => (
+                        <li
+                          key={i}
+                          className="rounded-full border border-border bg-ground px-2.5 py-1 text-[12.5px] text-ink"
+                        >
+                          {ruleText(r)}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               ) : null}
               <MarkdownView text={plan.exit_criteria_notes} />
             </>

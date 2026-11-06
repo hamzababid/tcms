@@ -12,7 +12,7 @@ from tcms.core.enums import ProjectStatus
 from tcms.core.policy import OrgPolicy
 from tcms.workspace import repository as repo
 from tcms.workspace import rules
-from tcms.workspace.models import Environment, Organization, Project, Release
+from tcms.workspace.models import Environment, Organization, Project, Release, ReleaseDecision
 
 
 def org_policy(s: Session, org_id: UUID) -> OrgPolicy:
@@ -60,6 +60,11 @@ def project_settings(p: Project) -> dict[str, Any]:
     return rules.merged_project_settings(p.settings, {})
 
 
+def project_settings_of(s: Session, org_id: UUID, project_id: UUID) -> dict[str, Any]:
+    p = repo.project(s, org_id, project_id)
+    return rules.merged_project_settings(p.settings if p else {}, {})
+
+
 def environments(s: Session, org_id: UUID, project_id: UUID, *, include_archived: bool) -> list[Environment]:
     return repo.environments(s, org_id, project_id, include_archived=include_archived)
 
@@ -70,6 +75,17 @@ def releases(s: Session, org_id: UUID, project_id: UUID) -> list[Release]:
 
 def release(s: Session, org_id: UUID, release_id: UUID) -> Release | None:
     return repo.release(s, org_id, release_id)
+
+
+def decisions(s: Session, org_id: UUID, release_id: UUID) -> list[ReleaseDecision]:
+    return repo.decisions(s, org_id, [release_id])
+
+
+def latest_decisions(s: Session, org_id: UUID, release_ids: list[UUID]) -> dict[UUID, ReleaseDecision]:
+    out: dict[UUID, ReleaseDecision] = {}
+    for d in repo.decisions(s, org_id, release_ids):
+        out.setdefault(d.release_id, d)
+    return out
 
 
 def allowed_release_targets(r: Release) -> list[str]:

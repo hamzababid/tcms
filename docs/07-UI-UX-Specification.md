@@ -185,13 +185,13 @@ The case list, plans, cycles, cycle runs, bugs and requirements have a "Saved vi
 ```
 Organization · ACME Energy                                   [Date: last 30 days ▾]
 ┌ Projects ───────────────────────────────────────────────────────────────────────────┐
-│ Project │ Active cycles │ Execution progress   │ Pass rate        │ Open crit/high │ Last activity │
-│ SPARK   │ 2             │ ███████░░ 205/245    │ 180/205 (88%)    │ 0 / 3          │ 5 min ago     │
-│ HELIOS  │ 1             │ ██░░░░░░░ 40/180     │ 38/40 (95%)      │ 1 / 2          │ 2 h ago       │
+│ Project │ Active cycles │ Execution progress   │ Pass rate        │ Failed runs │ Bugs on failing runs │ Last activity │
+│ SPARK   │ 2             │ ███████░░ 205/245    │ 180/205 (88%)    │ 20          │ 3                    │ 5 min ago     │
+│ HELIOS  │ 1             │ ██░░░░░░░ 40/180     │ 38/40 (95%)      │ 2           │ 1                    │ 2 h ago       │
 └─────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-Row click → project overview. Visible projects limited to memberships unless Org Admin.
+Row click → project overview. Visible projects limited to memberships unless Org Admin. Route `/org` (sidebar Organization › Dashboard). Numbers cover planned and active cycles; "Open crit/high" became failed runs and bugs on failing runs (ADR-023).
 
 ### 5.3 Project overview dashboard
 
@@ -213,11 +213,11 @@ SPARK · Overview                        [Release: SPARK v2.5 ▾] [Cycles: all 
 └───────────────────────────┘ └───────────────────────────────────────────────────────┘
 ┌ Repository ─────────────────┐ ┌ Activity ───────────────────────────────────────────┐
 │ 4,112 cases · 97% approved  │ │ Sana finalized SPARK-CY-12 / TC-1042 as Failed  2m  │
-│ 38% automated               │ │ Omar moved SPARK-D-87 to Fixed                   9m  │
+│ 38% automated               │ │ Sana linked SPK-431 to SPARK-TC-1042             9m  │
 └─────────────────────────────┘ └─────────────────────────────────────────────────────┘
 ```
 
-Each widget links to the detailed view with filters applied. This is also the **QA Manager dashboard** (§5.12 lists its full widget set).
+Each widget links to the detailed view with filters applied. This is also the **QA Manager dashboard** (§5.12 lists its full widget set). Implementation (M7): route `/p/:key` (the project home, `G O`); filters Release (default: the first active release), Environment and Tester, remembered per project in the browser; one request (`/dashboards/manager`) feeds every widget; the Status by cycle chart has a "View data" table. The Activity feed stays on its own page.
 
 ### 5.4 Test repository
 
@@ -351,7 +351,7 @@ SPARK-CY-12 · Regression Cycle 01   ● Active · QA · build 2.5.0-rc1 · due 
 ┌ Runs ─────────────────────────────────────────────────────────────────────────────────┐
 │ [Status ▾][Assignee ▾][Folder ▾][Priority ▾][Needs retest][🔍]                         │
 │ ☐ # │ Case          │ Title                       │ Ver │ Assignee │ Status    │ Bugs    │
-│ ☐ 1 │ SPARK-TC-12   │ Login with valid creds      │ v3↑ │ Sana     │ ✖ Failed  │ D-87 ⟳  │
+│ ☐ 1 │ SPARK-TC-12   │ Login with valid creds      │ v3↑ │ Sana     │ ✖ Failed  │ SPK-431 ⟳│
 │ ☐ 2 │ SPARK-TC-13   │ Login – locked account      │ v2  │ Sana     │ ✔ Passed  │         │
 │ ☐ 3 │ SPARK-TC-40   │ Session timeout             │ v1  │ — pool — │ ○ Not run │         │
 └───────────────────────────────────────────────────────────────────────────────────────┘
@@ -443,8 +443,9 @@ Coverage 54 of 60 (90%) · Verified 41 of 60 (68%) · Failed 4 · Blocked 1 · N
 
 ### 5.12 QA dashboards
 
-- **QA Manager dashboard** = Project overview (§5.3) with the complete widget set from [02 §11.3](02-Functional-Specification.md): repository, active cycles, execution summary, status breakdown per cycle (stacked bars), defects (by severity, opened vs resolved 30 d), coverage, regression status, readiness, team progress.
-- **Quality dashboard** (Reports › Quality): trend charts (execution and pass rate per day; P/F/B per day; defects opened/resolved/open; defects by severity; defects by module; coverage per release; automation coverage; release-wise quality table for last 6 releases). Every chart has a "View data" table toggle and CSV export.
+- **QA Manager dashboard** = Project overview (§5.3) with the complete widget set from [02 §11.3](02-Functional-Specification.md): repository, active cycles, execution summary, status breakdown per cycle (stacked bars), bugs (linked, on failing runs, failures without a bug; ADR-023), coverage with the top uncovered references, regression status, readiness, team progress.
+- **Quality dashboard** (Reports › Quality, `/p/:key/reports`): trend charts (execution and pass rate per day; P/F/B per day; bug links per day; bugs by module), release-wise quality table for the last 6 releases, automation coverage; `[Refresh]` recomputes today's snapshot. Every chart has a "View data" table toggle.
+- **Reports** (tabs next to Quality): the six reports of 02 §11.5 as paginated tables with their filters and `[CSV]` `[Excel]` export (`data.export`); a large export shows "Preparing the export…" and then a Download link.
 - Chart rules: counts on hover and in the data table; percentages labelled with "x of y"; colours from status tokens; no 3D, no pie charts for > 5 categories.
 
 ### 5.13 Administration and integrations
@@ -473,11 +474,17 @@ My Work                                                            [All projects
 │ SPARK-CY-12 Regression Cycle 01 · due Nov 10   ○ 30 not run · ◐ 2 in progress · ⟳ 3  │ [Continue ▶]
 │ HELIOS-CY-4 Smoke                · due Nov 5    ○ 20                                  │ [Start ▶]
 └──────────────────────────────────────────────────────────────────────────────────────┘
-┌ Awaiting my review (6) ┐ ┌ My week ───────────────────┐
-│ D-87 ▲High Ready for retest │ │ TC-14 Login wrong pwd   │ │ Executed 61 · P 52 F 7 B 2 │
-└─────────────────────────────┘ └─────────────────────────┘ └────────────────────────────┘
+┌ Failed, blocked or to retest (3) ────────────────────────────────────────────────────┐
+│ SPARK-TC-1042 Dashboard totals      SPARK-CY-12   ⟳ Needs retest  ✖ Failed           │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+┌ Awaiting my review (6) ─┐ ┌ Today ──────────────────┐ ┌ My week ───────────────────┐
+│ TC-14 Login wrong pwd   │ │ Executed 9 · P 8 F 1    │ │ Executed 61 · P 52 F 7 B 2 │
+│                         │ │                         │ │ Bugs you linked: 4         │
+└─────────────────────────┘ └─────────────────────────┘ └────────────────────────────┘
 ┌ Upcoming (next 14 days) ─────────────────────────────────────────────────────────────┐
 ```
+
+M7 adds the QA Engineer widgets of 02 §11.3: failed and blocked runs and runs flagged for retest (flagged first, then the most recently changed; 20 at most), today, bugs linked this week, and cycles starting in the next 14 days.
 
 ### 5.15 Release and readiness
 
@@ -494,6 +501,8 @@ Readiness · SPARK v2.5                                             ✖ Not read
 [Record decision…]  → dialog: (•) Go ( ) Go with risks ( ) No-go · Comment * · Risks (if go with risks)
 Decisions: timeline with snapshot viewer.
 ```
+
+Implementation (M7, ADR-025): sidebar **Releases** (`/p/:key/releases`) lists releases with status, target date, execution bar, readiness (planned and active releases) and the latest decision; creating and editing releases stays in Settings. The release page shows each rule with the plan it comes from ("Default rule" when no plan has rules), the per-plan Ready badges, the release's execution and coverage, and `[Record decision…]` for `release.manage`. The plan Overview's Exit criteria card shows the same rule table for the plan.
 
 ### 5.16 Import wizard
 

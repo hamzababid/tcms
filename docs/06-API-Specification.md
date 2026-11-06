@@ -171,7 +171,7 @@ Legend: **Perm** = required permission (project scope unless prefixed `org.`); `
 | GET | `/organization/roles` | auth | Roles and permissions (read-only in MVP) |
 | GET | `/organization/access-review` | org.audit.view | `?format=json|csv|xlsx` (FR-AUD-004) |
 | GET | `/organization/audit-events` | org.audit.view | Filters: actor_id, action, entity_type, project_id, occurred_at__gte/lte |
-| GET | `/organization/dashboard` | org.reports.view (Org Admin) or project.view (rows limited to own projects) | Per-project headline metrics |
+| GET | `/organization/dashboard` | auth: `org.reports.view` sees every active project, others their own | Per project: active cycles, execution summary of open cycles, failed runs, bugs on failing runs, last activity (ADR-023 replaced open defects) |
 | GET | `/organization/system-status` | org.manage | Version, migration head, job queue stats |
 | GET | `/organization/jobs` | org.manage | `?status=dead` |
 | POST | `/organization/jobs/{id}/retry` | org.manage | |
@@ -198,9 +198,11 @@ Legend: **Perm** = required permission (project scope unless prefixed `org.`); `
 | POST | `/environments/{id}/archive` · `/restore` | project.configure | | |
 | GET/POST | `/projects/{project_id}/releases` | view / release.manage | | WS-006 |
 | GET/PATCH | `/releases/{id}` | view / release.manage | status transitions validated | |
-| GET | `/releases/{id}/readiness` | project.view | Rule evaluations + metrics | RPT-006 |
-| GET | `/releases/{id}/decisions` | project.view | | |
-| POST | `/releases/{id}/decisions` | release.manage | `{decision, comment, risks?}` → stores snapshot | RPT-006 |
+| GET | `/projects/{project_id}/release-summaries` | project.view | Releases page: each release with execution summary, readiness (planned/active only), latest decision, plan and cycle counts; `?include_archived=` | RPT-006 |
+| GET | `/releases/{id}/readiness` | project.view | Rule evaluations + metrics (§5.9, ADR-025) | RPT-006 |
+| GET | `/test-plans/{id}/readiness` | project.view | The plan's own rules over its cycles (plan Overview) | PLN-005 |
+| GET | `/releases/{id}/decisions` | project.view | Newest first, each with its `snapshot` | |
+| POST | `/releases/{id}/decisions` | release.manage | `{decision, comment, risks?}` → stores snapshot; `422` without risks for `go_with_risks`; `409 invalid_status` for an archived release | RPT-006 |
 
 ### 4.4 Folders and test cases
 
@@ -339,6 +341,8 @@ Test case list filters gain `requirement` (a reference) and `has_requirements` (
 | POST | `/projects/{project_id}/reports/{report}/export` | data.export | `{format: csv|xlsx, filters}` → `200` file (≤ 10k rows) or `202 {transfer_id}` | RPT-005 |
 | POST | `/projects/{project_id}/metrics/refresh` | project.view | Enqueue snapshot for today (rate-limited 1/10 min) | |
 
+Dashboard filters (§11.1): `release_id`, `cycle_ids` (comma list), `environment_id`, `module_folder_id`, `tester_id`, `date_from`, `date_to`. The manager dashboard returns every Overview widget in one response (`readiness`, `summary`, `retest_count`, `bugs {linked, on_failing_runs, failures_without_bug}`, `top_bugs`, `cycles` with summaries and `overdue`, `coverage`, `top_uncovered`, `regression`, `team`, `repository`). The quality dashboard returns `days` (one per day: executed, P/F/B, pass rate, bug links added, failed runs, requirement counts; today `live`), `bugs_by_module`, `automation`, and `releases` (last 6: pass rate of applicable, failed at release date from the snapshot, bug references, coverage, regression). Report responses carry `columns`, `filters`, `items`, `page`, `page_size`, `total`.
+
 ### 4.11 Search and saved views
 
 | Method | Path | Perm | Description |
@@ -378,7 +382,7 @@ Comment and attachment notes (M2):
 | POST | `/data-transfers/{id}/validate` | as import | `{sheet?, mapping, options: {mode: upsert|create_only, target_folder_id, steps_layout: row_per_step|single_cell, skip_error_rows}}` → `202`; result in GET | IMP-001 |
 | POST | `/data-transfers/{id}/commit` | as import | `202` | IMP-001 |
 | POST | `/projects/{project_id}/exports` | data.export | `{entity: test_case|requirement|bug_link, format, filters, version: latest|approved}` | IMP-002/004 |
-| GET | `/data-transfers/{id}` | initiator or project.configure | Status, summary, errors | |
+| GET | `/data-transfers/{id}` | initiator or project.configure | Status, summary, errors; `download_url` when ready | |
 | GET | `/data-transfers/{id}/download` | initiator | Result file / import report | |
 
 ### 4.14 Health and meta

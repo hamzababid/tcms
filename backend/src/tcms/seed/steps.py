@@ -143,7 +143,7 @@ def _seed(profile: str) -> str:
     return f"ACME Energy with {len(users)} users and projects {', '.join(keys)}"
 
 
-@step("organization, users and projects", profiles=("dev", "e2e"))
+@step("organization, users and projects", profiles=("dev", "e2e", "large"))
 def seed_workspace(profile: str) -> str:
     return _seed(profile)
 
@@ -704,3 +704,137 @@ def seed_requirement_refs(profile: str) -> str:
         if plan is not None:
             planning.link_requirements(uow, ctx, plan.id, references=" ".join(titles))
     return "SPK-101…105 linked to SPARK cases; all listed on SPARK-PL-1 (SPK-105 has no case)"
+
+
+def _spark_manager_ctx(s: object) -> AccessContext | None:
+    from tcms.core.permissions import PROJECT_PERMISSIONS
+
+    org = workspace_queries.organization_by_slug(s, ORG_SLUG)  # type: ignore[arg-type]
+    if org is None:
+        return None
+    spark = next(
+        (p for p in workspace_queries.projects(s, org.id, ids=None, status=None) if p.key == "SPARK"),  # type: ignore[arg-type]
+        None,
+    )
+    if spark is None:
+        return None
+    members = {m.user.email: m.user.id for m in identity_queries.project_members(s, org.id, spark.id)}  # type: ignore[arg-type]
+    manager = members.get("ayesha@acme.test")
+    if manager is None:
+        return None
+    return AccessContext.for_principal(
+        Principal(manager, org.id, False, display_name="Ayesha Raza"),
+        META,
+        project_id=spark.id,
+        permissions=PROJECT_PERMISSIONS,
+    )
+
+
+@step("SPARK release decision and snapshots", profiles=("dev",))
+def seed_release_history(profile: str) -> str:
+    """M7: Ayesha's first No-go on SPARK v2.5 (readiness snapshot stored) and 14 days of daily snapshots,
+    so Releases, the Overview and the Quality dashboard have something to show."""
+    from datetime import timedelta
+
+    from tcms.core import clock
+    from tcms.reporting import readiness, snapshots
+
+    del profile
+    factory = session_factory(app_engine(get_settings()))
+    with factory() as s:
+        ctx = _spark_manager_ctx(s)
+        if ctx is None:
+            return "no SPARK project or manager"
+        rel = next(
+            (
+                r
+                for r in workspace_queries.releases(s, ctx.principal.organization_id, ctx.pid)
+                if r.name == "SPARK v2.5"
+            ),
+            None,
+        )
+        if rel is None:
+            return "no SPARK v2.5 release"
+        if workspace_queries.decisions(s, ctx.principal.organization_id, rel.id):
+            return "SPARK v2.5 already has a decision — nothing to do"
+    with unit_of_work(factory) as uow:
+        snap = readiness.as_json(readiness.release_readiness(uow.session, ctx, rel.id))
+        snap["release"] = {"id": str(rel.id), "name": rel.name, "status": rel.status.value}
+        workspace.record_decision(
+            uow,
+            ctx,
+            rel.id,
+            decision="no_go",
+            comment="Regression is still running and SPK-431 fails on the dashboard. Re-assess on Friday.",
+            risks=None,
+            snapshot=snap,
+        )
+        today = clock.now().date()
+        for back in range(14, -1, -1):
+            snapshots.snapshot_project(uow.session, ctx, today - timedelta(days=back))
+    return "No-go decision on SPARK v2.5; snapshots for the last 15 days"
+
+
+# Twice the year-one volume (docs/01 §8.2: 10× year one = 100k cases, 500k results, so year one = 10k / 50k),
+# loaded in about a minute. The full 10× data set is part of the M8 k6 run (known limitation L43).
+LARGE = {
+    "cases": 20_000,
+    "releases": 20,
+    "released": 17,
+    "cycles_per_release": 20,
+    "day_step": 5,
+    "stride": 79,  # 250 runs × 79 < 20,000 cases: every run of a cycle has its own case
+    "attempts": 100_000,
+    "bug_links": 4_000,
+    "bug_refs": 800,
+    "requirements": 1_000,
+}
+
+
+@step("large dataset (TM-4)", profiles=("large",))
+def seed_large(profile: str) -> str:
+    """docs/08 §3 / M7 D16: SPARK at 10× year-one volume, written with bulk SQL (see large.sql)."""
+    from importlib.resources import files
+
+    from sqlalchemy import text
+
+    del profile
+    factory = session_factory(app_engine(get_settings()))
+    with factory() as s:
+        ctx = _spark_manager_ctx(s)
+        if ctx is None:
+            return "no SPARK project"
+        n = s.execute(
+            text("SELECT count(*) FROM test_cases WHERE project_id = :p"), {"p": ctx.pid}
+        ).scalar_one()
+        if n:
+            return f"SPARK already has {n:,} cases — the large profile needs an empty database"
+        env = s.execute(
+            text("SELECT id FROM environments WHERE project_id = :p ORDER BY name LIMIT 1"), {"p": ctx.pid}
+        ).scalar_one()
+        users = list(
+            s.execute(
+                text("SELECT user_id FROM project_members WHERE project_id = :p ORDER BY user_id"),
+                {"p": ctx.pid},
+            ).scalars()
+        )
+    script = files("tcms.seed").joinpath("large.sql").read_text().format(**LARGE)
+    body = "\n".join(line for line in script.splitlines() if not line.lstrip().startswith("--"))
+    params = {
+        "org": ctx.principal.organization_id,
+        "pid": ctx.pid,
+        "key": "SPARK",
+        "owner": ctx.principal.user_id,
+        "env": env,
+        "users": users,
+    }
+    with factory() as s:
+        for stmt in (x.strip() for x in body.split(";\n")):
+            if stmt:
+                used = {k: v for k, v in params.items() if f":{k}" in stmt}
+                s.execute(text(stmt), used)
+        s.commit()
+    return (
+        "SPARK: {cases:,} cases, 1,220 folders, {releases} releases, {cycles:,} cycles, {attempts:,} runs,"
+        " {bug_links:,} bug links, {requirements:,} requirements"
+    ).format(**LARGE, cycles=LARGE["releases"] * LARGE["cycles_per_release"])
