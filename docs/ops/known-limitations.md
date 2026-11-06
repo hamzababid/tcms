@@ -1,6 +1,6 @@
 # Known limitations
 
-Current as of M6 (2026-11-06). Remove entries when resolved.
+Current as of M7a (2026-11-06). Remove entries when resolved.
 
 | # | Limitation | Impact | Plan |
 | --- | --- | --- | --- |
@@ -18,8 +18,6 @@ Current as of M6 (2026-11-06). Remove entries when resolved.
 | L19 | The export bulk action is not built. "Add to plan" / "Add to cycle" work on selected cases, not on "Select all matching" (the requirement filters arrived in M6) | — | M8 (export) |
 | L20 | The design's notification bell and "Keyboard shortcuts" footer (docs/design/Topbar, Sidebar) are not rendered until those features exist (no dummy controls); global search arrived in M6 | — | Shortcut help: M8; notifications: M7 |
 | L24 | The new-cycle dialog shows "added N · skipped M" with reasons **after** creating, not the "will add N, skip M" preview of docs/07 §5.8 (docs/06 has no dry-run endpoint) | One extra look after creating | Add a dry-run to docs/06 if the preview is wanted |
-| L25 | The plan Overview lists exit rules but not their readiness (the Requirements tab and the "Add cases › Saved view" tab arrived in M6) | — | M7 (readiness) |
-| L26 | Cycle runs have no export (the Bugs column arrived in M5) | — | M8 (export) |
 | L27 | Runs are reordered with "Sort runs by folder / priority"; drag-and-drop reordering (`run_ids_in_order` is supported by the API) is not in the UI | — | When asked for |
 | L29 | Evidence attaches to a step (`test_step_result`) only; attempt-level attachments (`test_result`) are not offered in the runner | Text-format cases have no evidence upload | When asked for |
 | L30 | The sidebar does not collapse automatically in the runner (docs/design/Runner) | Less room for the step grid on small screens | When asked for |
@@ -29,8 +27,13 @@ Current as of M6 (2026-11-06). Remove entries when resolved.
 | L35 | The unused baseline defect tables (`defects`, `defect_links`, `defect_status_history`, `defect_watchers`) and the `defect.transition.*` permissions stay in the schema | No effect on users | Drop or reuse with the tracker connector |
 | L36 | Two simultaneous project creations with the same name return 500 instead of `409 name_taken` (race between the name check and the insert) | Rare; seen only in parallel E2E | Map the unique violation to 409 |
 | L37 | Assay does not read requirement titles or status from the team's tool (ADR-024); the title is a label typed or pasted in Assay | A renamed story keeps its old title until edited | Phase 2 requirements connector |
-| L38 | The traceability matrix and the requirements, bugs and other lists have no export | — | M8 (export) |
+| L38 | The requirements, bugs, cases and other lists have no export (the traceability matrix and cycle runs export through the Traceability and Cycle execution reports since M7) | — | M8 (export) |
 | L39 | The filter operators "is not" and "is empty" (docs/02 §12) are not offered on every list | Some negative filters need a saved view or the API | When asked for |
 | L40 | Saved views store filters, sort and screen state, not column visibility (which stays per browser) | Shared views open with the reader's own columns | When asked for |
 | L41 | Cycle "Add cases" has no Saved view tab (`saved_view_id` works for plans only) | Use the folder or filter tab | When asked for |
 | L42 | Global search covers the projects the user is a member of; an Org Admin sees other projects only when searching inside one | — | — |
+| L43 | The `large` seed loads twice the year-one volume (20,000 cases, 100,000 runs) instead of the 10× set of docs/08 §3 (100,000 cases, 500,000 attempts): the bulk insert of 500,000 runs did not finish in 18 minutes | Dashboard timings in docs/ops/performance.md are measured at 2× year one | M8: faster loader (COPY, deferred indexes) for the k6 run |
+| L44 | Snapshots of past days report runs without a final attempt as "not run"; "in progress" exists only live | Trend lines show no in-progress band | — |
+| L45 | The Overview offers Release, Environment and Tester filters; the API also takes cycles, module and a date range, which the screen does not offer yet | Use Reports for those filters | When asked for |
+| L46 | The Releases page evaluates readiness for planned and active releases only; released and archived releases show their last decision | — | — |
+| L47 | Notifications, the bell, mention emails and the assignment digest are M7b (second PR of M7); `export.ready` notifications are stored but not shown yet | Large exports: reopen Reports to see the Download link | M7b |
