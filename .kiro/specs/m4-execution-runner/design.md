@@ -4,7 +4,7 @@
 
 | # | Topic | Decision | Source / why |
 | --- | --- | --- | --- |
-| D1 | K2: reason for a step-derived Blocked | **Every** final blocked / skipped / not_applicable attempt needs a reason, including Blocked derived from steps. Finalize returns `422 reason_required`; the runner asks for it before finishing | Storage wins (CHECK in `test_results`, asserted by `99_verify.sql`); review proposal Q2. docs/02 §7.3 table and docs/01 BR-10 wording updated |
+| D1 | K2: reason for a step-derived Blocked | **Every** final blocked / skipped / not_applicable attempt needs a reason, including Blocked derived from steps. Finalize returns `422 reason_required`; the runner asks for it before finishing | Storage wins (CHECK in `test_results`, asserted by `99_verify.sql`); review proposal Q2, confirmed by the product owner on 2026-11-05. docs/02 §7.3 table and docs/01 BR-10 wording updated |
 | D2 | K17h/i: explicit outcome vs steps | Steps format: explicit `passed` or `failed` → `422 outcome_conflicts_with_steps`; any explicit outcome when a step failed → `422 outcome_conflicts_with_steps` (not silently "failed wins"). docs/04 §5.5 pseudocode fixed | Review K17h/i |
 | D3 | `require_defect_for_failure` | Not enforced in M4: defects (and linking them to attempts) arrive in M5. The setting is stored; M5 adds the `422 defect_required` check. Recorded in known-limitations | docs/09: defects are M5 |
 | D4 | Step evidence | Attachment entity `test_step_result` (row of the draft). Upload/unlink: executor or `cycle.manage`, draft only; final → `409 immutable_record` (BR-28). Discard removes links (orphans soft-deleted for GC). Run-level attachments are not offered (docs/07 attaches per step) | docs/04 §10.2, docs/06 §6 |
