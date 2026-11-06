@@ -160,7 +160,7 @@ docs/01, 02, 04, 06 and 08 (decisions D1, D2, D7 in the spec).
 | Story | Status | Verified by | Notes |
 | --- | --- | --- | --- |
 | US-090 Start an attempt, record steps, auto-save | ✅ | TCMS-070 / 084 `test_tcms_070_tcms_084_execute_a_run_all_passed`, `test_pass_all_remaining_marks_only_not_run_steps`, AC-EXE-09 `test_ac_exe_09_fifty_testers_save_steps_concurrently` (timing); E2E TCMS-070 + 086 + 084 | BR-30: the first start moves a planned cycle to active |
-| US-091 Derived status on finish | ✅ | TCMS-071 `test_br_09_tcms_071_roll_up_matrix_is_exhaustive`, AC-EXE-01 / TCMS-072, AC-EXE-03 / TCMS-073, AC-EXE-02 / TCMS-075, K17h/i `test_k17h_k17i_…`; TCMS-090 `test_tcms_090_concurrent_finalize_exactly_one_succeeds`; E2E TCMS-072 | `require_defect_for_failure` arrives with defects (M5) |
+| US-091 Derived status on finish | ✅ | TCMS-071 `test_br_09_tcms_071_roll_up_matrix_is_exhaustive`, AC-EXE-01 / TCMS-072, AC-EXE-03 / TCMS-073, AC-EXE-02 / TCMS-075, K17h/i `test_k17h_k17i_…`; TCMS-090 `test_tcms_090_concurrent_finalize_exactly_one_succeeds`; E2E TCMS-072 | Bug-link rule for failures added in M5 (`require_bug_link_for_failure`) |
 | US-092 Block / skip / N/A with a reason | ✅ | TCMS-074 `test_tcms_074_block_a_run_with_a_reason`, K2 `test_br_10_k2_blocked_from_steps_also_needs_a_reason`; E2E TCMS-074 | — |
 | US-093 Evidence per step | ✅ | TCMS-087 `test_tcms_087_step_evidence_and_discard`; E2E TCMS-087 (paste) | Attempt-level attachments not offered (L29) |
 | US-094 Keyboard and next run | ✅ | `test_runner_queue_is_my_open_runs_in_position_order`; E2E TCMS-086 (keyboard only), TCMS-088 (failed save), "Start testing" + Shift+N | — |
@@ -168,22 +168,46 @@ docs/01, 02, 04, 06 and 08 (decisions D1, D2, D7 in the spec).
 | US-096 Correct a result | ✅ | TCMS-080 `test_tcms_080_correct_a_result_with_a_reason` | Latest final attempt only (D6) |
 | US-097 Immutability and one draft | ✅ | BR-06 / AC-EXE-04 / TCMS-076 `test_br_06_…` (API + SQL trigger), BR-07 / AC-EXE-05 / TCMS-077 `test_br_07_…`, `test_br_07_concurrent_starts_make_one_draft`, AC-EXE-06 / TCMS-078 `test_ac_exe_06_…`, BR-32 / TCMS-085 `test_br_32_…`; E2E TCMS-058 with a live draft | — |
 | US-098 Text-format cases | ✅ | TCMS-089 `test_tcms_089_text_format_case`, unit `test_tcms_089_…`; E2E TCMS-089 | — |
-| US-099 My Work | ✅ | `test_us_099_my_work_lists_my_cycles_reviews_and_week`, `test_us_099_my_work_shows_cases_awaiting_my_review`; E2E TCMS-001 (lands on My Work), TCMS-070 | Defects block in M5 (L28) |
+| US-099 My Work | ✅ | `test_us_099_my_work_lists_my_cycles_reviews_and_week`, `test_us_099_my_work_shows_cases_awaiting_my_review`; E2E TCMS-001 (lands on My Work), TCMS-070 | Defects block dropped by ADR-023 (bugs live in the tracker) |
 | US-100 Newer version in the runner | ✅ | AC-EXE-08 / TCMS-081 / 082 `test_ac_exe_08_…`, TCMS-083 `test_tcms_083_…`; E2E TCMS-079 + 081, TCMS-083 (replace) | — |
 
 Also: nightly `execution.verify_run_status` reports run-status mismatches without fixing them
 (`test_run_status_consistency_check_reports_mismatches`); discarding a draft falls back to the latest final
 status (`test_discard_falls_back_to_the_latest_final_status`); the authz matrix covers every M4 route;
 `br_manifest.COMPLETED` includes M4. Seed: SPARK-CY-1 has 7 results and 1 draft by Sana. No migration
-(tables existed). L12 and L21–L23 are closed; deferred items: known-limitations L14, L28–L31.
+(tables existed). L12 and L21–L23 are closed; deferred items: known-limitations L14, L29–L31.
 
-### M5–M9 — not started
+## M5 — Bug links (branch `milestone/m5-bug-links`)
+
+Re-scoped by the product owner on 2026-11-06 (ADR-023): bugs live in each team's tracker (Jira, Azure DevOps,
+GitHub, …); Assay records links to them. Spec: `.kiro/specs/m5-bug-links/`. Backend tests in
+`backend/tests/api/test_bug_links.py` and `tests/unit/test_bug_rules.py`; E2E in `frontend/e2e/m5.spec.ts`
+(axe on every visited screen). Migration `0003_m5_bug_links` (`docs/schema/04_m5_bug_links.sql`).
+
+| Story | Status | Verified by | Notes |
+| --- | --- | --- | --- |
+| US-110 Link a bug from the runner | ✅ | AC-BUG-01/02 / TCMS-100 `test_ac_bug_01_02_tcms_100_link_from_a_failed_step`, BR-20 `test_br_20_final_attempts_accept_links_and_stay_immutable`; E2E TCMS-100 (keyboard `D`) | Final attempts accept links too |
+| US-111 Tracker name and URL template | ✅ | `test_project_tracker_settings`, unit `test_ac_bug_02_template_builds_and_encodes_the_url`, `test_url_template_validation`; E2E project options | — |
+| US-112 Chips on run, history, cycle, case | ✅ | `test_ac_bug_01_02_…` (run, cycle, case reads); E2E TCMS-100 | — |
+| US-113 Link a bug to a case | ✅ | TCMS-102 `test_tcms_102_link_a_case_directly`; E2E TCMS-102 | — |
+| US-114 Ready for retest | ✅ | BR-21 / AC-BUG-03 / TCMS-103 `test_br_21_ac_bug_03_tcms_103_…`; E2E TCMS-103 + 104 | Manual per reference (L32) |
+| US-115 Copy bug details | ✅ | `test_copy_bug_details_report`, unit `test_bug_report_*` | — |
+| US-116 Bugs list | ✅ | TCMS-105 `test_tcms_105_bugs_list_groups_by_reference`; E2E TCMS-105 | — |
+| US-117 Failed result needs a bug link | ✅ | AC-BUG-04 / TCMS-106 `test_ac_bug_04_tcms_106_failed_result_needs_a_bug_link`; E2E TCMS-106 | Runner asks, then finishes |
+
+Also: AC-BUG-05/06 `test_ac_bug_05_06_validation_and_duplicates`; TCMS-107 `test_tcms_107_edit_and_remove_permissions`;
+discard and close remove a draft's links (`test_discarding_a_draft_removes_its_links`); tenancy
+(`test_bug_links_are_project_scoped`); authz matrix covers every M5 route; `br_manifest`: BR-20/21 in M5, BR-19/22
+retired; `max_failed` replaces `max_open_defects` (migrated). Seed: SPARK tracker "Jira", `SPK-431` on the failed
+SPARK-CY-1 result, `SPK-440` on a case. L26 (Bugs column) and L28 are closed; deferred items: L32–L36.
+
+### M6–M9 — not started
 
 | Milestone | Epics | Status | Notes |
 | --- | --- | --- | --- |
 | M3 Plans & cycles | E07, E08 | ✅ done (merged, PR #9) | See the M3 section above |
-| M4 Execution runner | E09 | ✅ done (awaiting review) | See the M4 section above |
-| M5 Defects | E10 | ⬜ not started | US-110…117; BR-19…22; AC-DEF-01 ordering (K17j) |
+| M4 Execution runner | E09 | ✅ done (merged, PR #10) | See the M4 section above |
+| M5 Bug links | E10 | ✅ done (awaiting review) | See the M5 section above (ADR-023) |
 | M6 Requirements, RTM, search | E11, E12 | ⬜ not started | US-120…123, US-130…133; BR-23 |
 | M7 Reporting & readiness | E13, E16 | ⬜ not started | US-140…146, US-170…171; BR-24; `reporting/metrics.py` not yet created |
 | M8 Import/export, admin UI, hardening | E14, E15 (UI), E17 | ⬜ not started | US-150…154, US-162…166, US-180…184 |
