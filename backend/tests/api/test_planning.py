@@ -91,7 +91,7 @@ def test_us_070_create_plan_with_exit_rules_and_risks(world: World) -> None:
         environment_ids=[env_id],
         exit_rules=[
             {"type": "min_execution_progress", "threshold": 1.0},
-            {"type": "max_open_defects", "threshold": 0, "params": {"severities": ["critical"]}},
+            {"type": "max_failed", "threshold": 0},
         ],
         risks=[{"description": "Flaky payment gateway", "impact": "high", "mitigation": "Retry"}],
         start_date="2026-11-01",
@@ -101,7 +101,7 @@ def test_us_070_create_plan_with_exit_rules_and_risks(world: World) -> None:
     assert plan["status"] == "draft"
     assert plan["exit_rules"] == [
         {"type": "min_execution_progress", "threshold": 1.0},
-        {"type": "max_open_defects", "threshold": 0, "params": {"severities": ["critical"]}},
+        {"type": "max_failed", "threshold": 0},
     ]
     assert plan["risks"][0]["impact"] == "high"
     assert plan["environment_ids"] == [env_id]
@@ -325,7 +325,7 @@ def test_us_070_exit_rules_are_validated_against_the_rule_types(world: World) ->
         [{"type": "pass_rate_above", "threshold": 0.9}],
         [{"type": "min_pass_rate", "threshold": 95}],
         [{"type": "max_blocked", "threshold": 1.5}],
-        [{"type": "max_open_defects", "threshold": 0}],
+        [{"type": "max_failed", "threshold": -1}],
         [{"type": "tag_fully_executed", "threshold": 1}],
     ):
         r = sp.admin.post(sp.url("/test-plans"), json={"name": "Rules", "type": "smoke", "exit_rules": bad})

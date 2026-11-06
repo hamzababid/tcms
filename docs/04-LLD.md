@@ -39,7 +39,8 @@ tcms/
 │   │   ├── testdesign/
 │   │   ├── planning/
 │   │   ├── execution/
-│   │   ├── defects/
+│   │   ├── bugs/            # bug links (ADR-023)
+│   │   ├── defects/         # unused baseline models
 │   │   ├── requirements/
 │   │   ├── reporting/            # metrics.py (definitions), queries/*.sql, snapshots.py
 │   │   ├── integrations/         # base.py (Connector protocol), registry.py, jira/ (P2), automation/ (P2)
@@ -361,7 +362,7 @@ Finalize service:
 lock result + run
 validate: state draft; executor or cycle.manage; failed steps have actual_result (422 actual_result_required, lists step positions);
           reason present for every final blocked/skipped/not_applicable, derived or explicit (K2, 422 reason_required);
-          require_defect_for_failure check (M5, with defects)
+          require_bug_link_for_failure: emit ResultFinalizing and dispatch now (bugs: 422 bug_link_required, §6)
 status = compute_final_status(...)
 result.state = final; result.status = status; result.finished_at = now; result.duration_seconds = body or computed;
 result.skipped_steps = count(skipped)
@@ -389,24 +390,15 @@ audit run.replaced
 
 Order: generate the new run's UUID, update the old run's `superseded_by_run_id` to it, then insert the new run. This works only because `fk_test_runs_superseded_by_run_id` is DEFERRABLE INITIALLY DEFERRED (checked at commit); the partial unique index forbids inserting the new run first.
 
-## 6. Defect state machine
+## 6. Bug links (ADR-023)
 
-`defects/rules.py` holds the transition table from [02 §8.2](02-Functional-Specification.md) as data:
+Bugs live in each team's tracker; the `bugs` module stores references (`bug_links`, docs/05 §3.6). It sits beside `defects` (unused) above `execution`.
 
-```python
-TRANSITIONS: dict[tuple[DefectStatus, DefectStatus], TransitionSpec] = {
-    ("open", "triaged"):           TransitionSpec(perms={"any"}),
-    ("in_progress", "fixed"):      TransitionSpec(perms={"any", "dev"}, sets_resolution="fixed"),
-    ("open", "duplicate"):         TransitionSpec(perms={"any"}, requires={"duplicate_of_id"}),
-    # ... every row of the table
-}
-def allowed_transitions(status, ctx, defect) -> list[DefectStatus]: ...
-def check_transition(from_, to, ctx, defect, payload) -> None: ...
-```
-
-`dev` means `defect.transition.dev` **and** `defect.assignee_id == user`. `verify` means `defect.transition.verify`. `any` means `defect.transition.any`. Unit tests enumerate all 13 × 13 pairs.
-
-On `ready_for_retest` (in transaction): `UPDATE test_runs SET needs_retest = true WHERE id IN (runs linked via defect_links→results) AND superseded_by_run_id IS NULL AND cycle not closed`.
+- `bugs/rules.py` (pure): reference validation (1–100, no spaces) and `reference_norm = upper(trim)`, URL validation (`http`/`https` with a host only), template building (`{ref}` URL-encoded), and the "Copy bug details" Markdown (`bug_report`).
+- `bugs/service.py`: `link_to_result` (attempt, run, step, case; draft or final — links are not part of the attempt), `link_to_case`, `update_link`, `remove_link` (creator or `defect.edit`), `request_retest(reference, dry_run)`.
+- Retest (BR-21): `request_retest` collects the reference's `run_id`s and calls `execution.service.flag_runs_for_retest`, which sets `needs_retest` on runs that are not superseded and whose cycle is planned or active; audit `bug.retest_requested` with the run ids.
+- `require_bug_link_for_failure` (§5.5): `finalize_attempt` emits `ResultFinalizing(ctx, result_id, status)` and dispatches it at once; the bugs handler raises `422 bug_link_required` when the setting is on, the status is `failed` and the attempt has no link.
+- Discarding a draft (and closing a cycle with drafts): `DraftDiscarding(ctx, result_id, reason)` is dispatched before the delete; the handler deletes the attempt's links (audited `bug.unlinked`), so the FK on `result_id` holds.
 
 ## 7. Requirements coverage (SQL)
 
@@ -480,7 +472,7 @@ class Connector(Protocol):
 ```
 
 - `registry.get(connection.type)` returns the class. Connectors are pure HTTP adapters (httpx, timeouts 10 s, retries handled by jobs not inside connectors).
-- Jobs: `jira.create_issue(defect_id)`, `jira.refresh_issue(link_id)`, `jira.import_requirements(connection_id, project_id)`, `jira.poll(connection_id)`.
+- Jobs: `jira.create_issue(result_id, step_id)` (creates the issue and a bug link), `jira.refresh_issue(link_id)`, `jira.import_requirements(connection_id, project_id)`, `jira.poll(connection_id)`.
 - Automation parser interface: `parse(file) -> Iterator[AutomatedTestResult(key, name, status, duration, message, stdout, stderr)]`; JUnit parser uses `defusedxml.ElementTree.iterparse`.
 
 ## 10. Platform services
@@ -542,7 +534,7 @@ Use service functions (not raw inserts) so rules and audit apply; batch flush ev
 | `/p/:projectKey/plans`, `/plans/:planKey` | Plans |
 | `/p/:projectKey/cycles`, `/cycles/:cycleKey` | Cycles |
 | `/p/:projectKey/cycles/:cycleKey/run/:runId` | Runner |
-| `/p/:projectKey/defects`, `/defects/:defectKey` | Defects |
+| `/p/:projectKey/bugs` | Bugs (linked references, ADR-023) |
 | `/p/:projectKey/requirements`, `/requirements/:reqKey` | Requirements |
 | `/p/:projectKey/traceability` | RTM |
 | `/p/:projectKey/dashboards/quality`, `/reports/:report` | Reporting |
@@ -570,7 +562,7 @@ URLs use human keys; the client resolves keys via `GET /projects/{pid}/resolve?k
 | `AppShell` | Sidebar, top bar (project switcher, search, notifications, user menu), breadcrumbs |
 | `DataTable` | Server pagination/sort/filter, column chooser, row selection incl. "select all matching", sticky header, virtualization > 200 rows, saved views slot |
 | `FilterBar` | Chips per filter, typed editors (enum multi-select, user, date range, text) |
-| `StatusBadge` | Single source of status → color + icon + label for runs, steps, results, defects, cases, requirements |
+| `StatusBadge` | Single source of status → color + icon + label for runs, steps, results, cases, requirements |
 | `ProgressBar` | Segmented P/F/B/S/NR with counts on hover and in aria-label |
 | `MarkdownEditor` / `MarkdownView` | Textarea + toolbar + preview; paste-image upload; sanitized render |
 | `FolderTree` | Virtualized, drag-drop move, counts, keyboard navigation |

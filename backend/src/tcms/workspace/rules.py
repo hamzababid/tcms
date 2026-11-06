@@ -28,7 +28,9 @@ DEFAULT_PROJECT_SETTINGS: Final[dict[str, Any]] = {
     "only_assignee_executes": False,
     "report_module_depth": 1,
     "attachment_max_mb": 25,
-    "require_defect_for_failure": False,
+    "require_bug_link_for_failure": False,
+    "bug_tracker_name": "tracker",
+    "bug_url_template": None,
 }
 
 
@@ -89,8 +91,24 @@ _PROJECT_BOOLS: Final = (
     "approval_required",
     "allow_self_approval",
     "only_assignee_executes",
-    "require_defect_for_failure",
+    "require_bug_link_for_failure",
 )
+BUG_TRACKER_NAME_MAX: Final = 40
+BUG_URL_TEMPLATE_MAX: Final = 500
+_TEMPLATE_RE: Final = re.compile(r"^https?://[^\s{}]*\{ref\}[^\s{}]*$", re.I)
+
+
+def bug_url_template_problem(value: object) -> str | None:
+    """docs/02 §8.1: an http(s) URL containing `{ref}` exactly once; empty clears it."""
+    if value is None or value == "":
+        return None
+    if (
+        not isinstance(value, str)
+        or len(value) > BUG_URL_TEMPLATE_MAX
+        or not _TEMPLATE_RE.match(value.strip())
+    ):
+        return "Use an http(s) address with {ref} where the bug reference goes"
+    return None
 
 
 def project_settings_problems(patch: dict[str, Any], policy: OrgPolicy) -> list[FieldError]:
@@ -101,6 +119,12 @@ def project_settings_problems(patch: dict[str, Any], policy: OrgPolicy) -> list[
         if key in _PROJECT_BOOLS:
             if not isinstance(value, bool):
                 problems.append(FieldError(field, "invalid_type", "Must be true or false"))
+        elif key == "bug_tracker_name":
+            if not isinstance(value, str) or not 1 <= len(value.strip()) <= BUG_TRACKER_NAME_MAX:
+                problems.append(FieldError(field, "invalid_length", f"1–{BUG_TRACKER_NAME_MAX} characters"))
+        elif key == "bug_url_template":
+            if (msg := bug_url_template_problem(value)) is not None:
+                problems.append(FieldError(field, "invalid_format", msg))
         elif key == "report_module_depth":
             if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= 5:
                 problems.append(FieldError(field, "out_of_range", "Must be a whole number from 1 to 5"))
@@ -118,7 +142,11 @@ def default_project_settings(policy: OrgPolicy) -> dict[str, Any]:
 
 
 def merged_project_settings(current: dict[str, Any], patch: dict[str, Any]) -> dict[str, Any]:
-    return {**DEFAULT_PROJECT_SETTINGS, **current, **patch}
+    merged = {**DEFAULT_PROJECT_SETTINGS, **current, **patch}
+    for key in ("bug_tracker_name", "bug_url_template"):
+        if isinstance(merged.get(key), str):
+            merged[key] = merged[key].strip() or DEFAULT_PROJECT_SETTINGS[key]
+    return merged
 
 
 # -- releases (docs/02 §4.4) ----------------------------------------------------------------------

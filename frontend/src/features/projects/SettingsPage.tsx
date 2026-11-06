@@ -159,7 +159,8 @@ function General({ project, editable }: { project: Project; editable: boolean })
               ["Case approval", s.approval_required ? "Required" : "Off (auto-approved)"],
               ["Self-approval", s.allow_self_approval ? "Allowed" : "Not allowed"],
               ["Execution", s.only_assignee_executes ? "Assignee only" : "Any tester"],
-              ["Failed results", s.require_defect_for_failure ? "Need a defect" : "Defect optional"],
+              ["Failed results", s.require_bug_link_for_failure ? "Need a bug link" : "Bug link optional"],
+              ["Bug tracker", s.bug_tracker_name + (s.bug_url_template ? " (links from references)" : "")],
               ["Report module", `Folder level ${s.report_module_depth}`],
               ["Attachments", `Up to ${s.attachment_max_mb} MB`],
             ]}
@@ -196,7 +197,8 @@ function Options({ project, editable }: { project: Project; editable: boolean })
     }
   }
   const flag = (
-    k: "approval_required" | "allow_self_approval" | "only_assignee_executes" | "require_defect_for_failure",
+    k:
+      "approval_required" | "allow_self_approval" | "only_assignee_executes" | "require_bug_link_for_failure",
     label: string,
     description: string,
   ) => (
@@ -244,10 +246,53 @@ function Options({ project, editable }: { project: Project; editable: boolean })
               "Other testers can view the run but not record results.",
             )}
             {flag(
-              "require_defect_for_failure",
-              "A failed result needs a linked defect",
-              "Finishing a failed run asks for a new or existing defect.",
+              "require_bug_link_for_failure",
+              "A failed result needs a bug link",
+              "Finishing a failed run asks for the bug's reference in your tracker.",
             )}
+          </div>
+        </Card>
+        <Card
+          title="Bug tracker"
+          description="Bugs live in your team's tracker (Jira, Azure DevOps, GitHub…); Assay links to them."
+        >
+          <div className="flex flex-col gap-4">
+            <Field
+              label="Tracker name"
+              hint="Shown on buttons, e.g. “Open in Jira”."
+              error={errors["settings.bug_tracker_name"]}
+            >
+              {(p) => (
+                <Input
+                  {...p}
+                  className="max-w-64"
+                  maxLength={40}
+                  disabled={!editable}
+                  value={settings.bug_tracker_name}
+                  onChange={(e) => {
+                    setSettings({ ...settings, bug_tracker_name: e.target.value });
+                  }}
+                />
+              )}
+            </Field>
+            <Field
+              label="Bug address"
+              hint="Optional. Put {ref} where the reference goes, e.g. https://acme.atlassian.net/browse/{ref}"
+              error={errors["settings.bug_url_template"]}
+            >
+              {(p) => (
+                <Input
+                  {...p}
+                  type="url"
+                  disabled={!editable}
+                  placeholder="https://tracker.example.com/issues/{ref}"
+                  value={settings.bug_url_template ?? ""}
+                  onChange={(e) => {
+                    setSettings({ ...settings, bug_url_template: e.target.value });
+                  }}
+                />
+              )}
+            </Field>
           </div>
         </Card>
         <Card title="Reporting" description="How folders roll up in reports.">
@@ -272,7 +317,7 @@ function Options({ project, editable }: { project: Project; editable: boolean })
             )}
           </Field>
         </Card>
-        <Card title="Attachments" description="Applies to cases, steps, results and defects.">
+        <Card title="Attachments" description="Applies to cases, steps and results.">
           <Field
             label="Size limit (MB)"
             hint="Up to the organization limit."

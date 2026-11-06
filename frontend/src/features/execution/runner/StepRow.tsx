@@ -1,5 +1,5 @@
 import { AlertTriangle, Check, Loader2, Paperclip } from "lucide-react";
-import { forwardRef, useId, useRef, useState, type ClipboardEvent } from "react";
+import { forwardRef, useId, useRef, useState, type ClipboardEvent, type ReactNode } from "react";
 
 import type { Attachment } from "@/features/testdesign/api";
 import { MarkdownView } from "@/components/common/Markdown";
@@ -62,11 +62,26 @@ export interface StepRowProps {
   onStatus: (s: StepStatus) => void;
   onText: (field: "actual_result" | "comment", v: string) => void;
   onAttach: (file: File) => void;
+  /** Bug chips and the "Link bug (D)" action (docs/02 §8.2). */
+  bugSlot?: ReactNode;
 }
 
 /** One step of the runner grid: action, expected result, P/F/B/S, actual result, comment, evidence. */
 export const StepRow = forwardRef<HTMLLIElement, StepRowProps>(function StepRow(
-  { step, value, saveState, focused, editable, evidence, uploading, onFocus, onStatus, onText, onAttach },
+  {
+    step,
+    value,
+    saveState,
+    focused,
+    editable,
+    evidence,
+    uploading,
+    onFocus,
+    onStatus,
+    onText,
+    onAttach,
+    bugSlot,
+  },
   ref,
 ) {
   const n = step.position;
@@ -225,6 +240,7 @@ export const StepRow = forwardRef<HTMLLIElement, StepRowProps>(function StepRow(
               ) : null}
             </>
           ) : null}
+          {bugSlot}
         </div>
       </div>
     </li>

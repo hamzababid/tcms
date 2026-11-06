@@ -64,10 +64,11 @@ PERCENT_RULES: Final = frozenset(
         "min_requirements_verified",
     }
 )
-COUNT_RULES: Final = frozenset({"max_open_defects", "max_blocked"})
+COUNT_RULES: Final = frozenset(
+    {"max_failed", "max_blocked"}
+)  # max_failed replaced max_open_defects (ADR-023)
 FLAG_RULES: Final = frozenset({"tag_fully_executed"})
 RULE_TYPES: Final = PERCENT_RULES | COUNT_RULES | FLAG_RULES
-SEVERITIES: Final = ("critical", "high", "medium", "low")
 MAX_EXIT_RULES: Final = 20
 
 
@@ -87,12 +88,6 @@ def exit_rules_problem(rules: list[dict[str, Any]]) -> FieldError | None:
             isinstance(threshold, int | float) and threshold >= 0 and float(threshold).is_integer()
         ):
             return FieldError(f"{where}.threshold", "invalid_range", "Give a whole number of 0 or more")
-        if kind == "max_open_defects":
-            sev = params.get("severities")
-            if not sev or not set(sev) <= set(SEVERITIES):
-                return FieldError(
-                    f"{where}.params.severities", "field_required", "Choose at least one severity"
-                )
         if kind == "tag_fully_executed" and not str(params.get("tag") or "").strip():
             return FieldError(f"{where}.params.tag", "field_required", "Choose a tag")
     return None

@@ -44,6 +44,7 @@ from tcms.execution.errors import (
     RunHasResults,
     RunSuperseded,
 )
+from tcms.execution.events import DraftDiscarding, ResultFinalizing
 from tcms.execution.models import TestCycle, TestResult, TestRun, TestStepResult
 from tcms.identity import queries as identity_queries
 from tcms.planning import queries as planning_queries
@@ -699,7 +700,7 @@ def close_cycle(uow: UnitOfWork, ctx: AccessContext, cycle_id: UUID, *, discard_
         keys = _case_keys(uow, ctx, [run_ for _, run_ in pending])
         uow.bulk_operation_id = ids.new_id()
         for res, run_ in pending:
-            _remove_draft_evidence(uow, ctx, res)
+            _remove_draft_evidence(uow, ctx, res, reason=f"draft discarded when {cycle.key} was closed")
             repo.delete_draft(s, res)
             run_.status = repo.latest_final_status(s, run_)
             _touch(run_, ctx)
@@ -1292,6 +1293,9 @@ def finalize_attempt(
     if res.corrects_result_id is not None and reason_text is None:
         problems.append(FieldError("reason", "reason_required", "Say why the result is corrected"))
     _raise_finalize_problems(problems)
+    # Modules above execution may veto (bugs: require_bug_link_for_failure, ADR-023).
+    uow.emit(ResultFinalizing(ctx, res.id, final.status))
+    uow.dispatch_in_tx_events()
     now = clock.now()
     res.state = ResultState.final
     res.status = ResultStatus(final.status)
@@ -1329,8 +1333,13 @@ def finalize_attempt(
     return FinalizeResult(res, run_)
 
 
-def _remove_draft_evidence(uow: UnitOfWork, ctx: AccessContext, res: TestResult) -> None:
-    """Attachments uploaded to a discarded draft go with it (docs/02 §7.3 step 5)."""
+def _remove_draft_evidence(
+    uow: UnitOfWork, ctx: AccessContext, res: TestResult, *, reason: str = "draft discarded"
+) -> None:
+    """Attachments uploaded to a discarded draft go with it (docs/02 §7.3 step 5); modules above
+    execution drop their references first (bug links, docs/02 §8.2)."""
+    uow.emit(DraftDiscarding(ctx, res.id, reason))
+    uow.dispatch_in_tx_events()
     step_ids = [r.id for r in repo.step_results(uow.session, res.id)]
     attachments.remove_links_of(uow, ctx.principal.organization_id, "test_step_result", step_ids)
 
@@ -1404,3 +1413,18 @@ def verify_run_statuses(uow: UnitOfWork, ctx: AccessContext) -> list[UUID]:
 def projects_with_runs(uow: UnitOfWork) -> list[tuple[UUID, UUID]]:
     """(organization, project) pairs that have runs: the system consistency job visits each tenant."""
     return repo.projects_with_runs(uow.session)
+
+
+def flag_runs_for_retest(
+    uow: UnitOfWork, ctx: AccessContext, run_ids: list[UUID], *, dry_run: bool
+) -> list[UUID]:
+    """BR-21 (docs/02 §8.3): set `needs_retest` on the given runs that are not superseded and whose cycle is
+    not closed. Called by the bugs module, which checks `cycle.manage` and audits the request."""
+    ctx.require("cycle.manage")
+    runs = repo.retest_eligible_runs(uow.session, ctx, run_ids)
+    if not dry_run:
+        for run_ in runs:
+            if not run_.needs_retest:
+                run_.needs_retest = True
+                _touch(run_, ctx)
+    return [r.id for r in runs]

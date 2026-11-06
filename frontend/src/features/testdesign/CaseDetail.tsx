@@ -22,6 +22,7 @@ import { Tabs } from "@/components/ui/tabs";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { can } from "@/lib/permissions";
 import { MenuContent, MenuItem } from "@/components/ui/menu";
+import { CaseBugs } from "@/features/bugs/components";
 import { AuditTable, useAuditState } from "@/features/projects/AuditTable";
 import { cn } from "@/lib/utils";
 
@@ -209,6 +210,19 @@ export function CaseDetail({
               ),
             },
             { value: "executions", label: "Executions", content: <Executions caseId={c.id} /> },
+            {
+              value: "bugs",
+              label: "Bugs",
+              content: (
+                <CaseBugs
+                  project={project}
+                  caseId={c.id}
+                  caseKey={c.key}
+                  canLink={writable && can(perms, "defect.create")}
+                  canRetest={writable && can(perms, "cycle.manage")}
+                />
+              ),
+            },
             { value: "history", label: "History", content: <History caseId={c.id} members={members} /> },
             {
               value: "comments",

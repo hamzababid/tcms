@@ -648,3 +648,19 @@ def awaiting_review(
         .limit(limit)
     ).all()
     return [ReviewItem(*r) for r in rows]
+
+
+def step_positions(s: Session, ctx: AccessContext, step_ids: list[UUID]) -> dict[UUID, int]:
+    """Position of each pinned step (bug-link chips show "step n", docs/02 §8.2)."""
+    from tcms.testdesign.models import TestCaseStep
+
+    if not step_ids:
+        return {}
+    rows = s.execute(
+        select(TestCaseStep.id, TestCaseStep.position).where(
+            TestCaseStep.id.in_(step_ids),
+            TestCaseStep.organization_id == ctx.principal.organization_id,
+            TestCaseStep.project_id == ctx.pid,
+        )
+    ).all()
+    return {r[0]: r[1] for r in rows}

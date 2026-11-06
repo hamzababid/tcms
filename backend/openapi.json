@@ -811,6 +811,361 @@
         "title": "Body_upload_api_v1_attachments_post",
         "type": "object"
       },
+      "BugLinkCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "reference": {
+            "examples": [
+              "SPK-431"
+            ],
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Reference",
+            "type": "string"
+          },
+          "step_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A step of the run's pinned version",
+            "title": "Step Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "http(s) only; built from the project template if empty",
+            "title": "Url"
+          }
+        },
+        "required": [
+          "reference"
+        ],
+        "title": "BugLinkCreate",
+        "type": "object"
+      },
+      "BugLinkPatch": {
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Empty or null clears it",
+            "title": "Url"
+          }
+        },
+        "title": "BugLinkPatch",
+        "type": "object"
+      },
+      "BugLinkRead": {
+        "properties": {
+          "attempt_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt No"
+          },
+          "attempt_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Final status, or 'draft' while in progress",
+            "title": "Attempt Status"
+          },
+          "can_edit": {
+            "description": "The caller may edit or remove this link",
+            "title": "Can Edit",
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cycle": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LinkedCycle"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "reference": {
+            "title": "Reference",
+            "type": "string"
+          },
+          "result_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Id"
+          },
+          "row_version": {
+            "title": "Row Version",
+            "type": "integer"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "run_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Latest status of the linked run",
+            "title": "Run Status"
+          },
+          "step_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step Id"
+          },
+          "step_position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step Position"
+          },
+          "test_case": {
+            "$ref": "#/components/schemas/LinkedCase"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "id",
+          "reference",
+          "url",
+          "title",
+          "test_case",
+          "run_id",
+          "result_id",
+          "step_id",
+          "step_position",
+          "cycle",
+          "run_status",
+          "attempt_no",
+          "attempt_status",
+          "created_by",
+          "created_at",
+          "can_edit",
+          "row_version"
+        ],
+        "title": "BugLinkRead",
+        "type": "object"
+      },
+      "BugReportRead": {
+        "properties": {
+          "text": {
+            "description": "Markdown to paste into the team's tracker",
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "BugReportRead",
+        "type": "object"
+      },
+      "BugSummaryRead": {
+        "properties": {
+          "cases": {
+            "title": "Cases",
+            "type": "integer"
+          },
+          "cycle_keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Cycle Keys",
+            "type": "array"
+          },
+          "failing_runs": {
+            "title": "Failing Runs",
+            "type": "integer"
+          },
+          "first_linked_at": {
+            "format": "date-time",
+            "title": "First Linked At",
+            "type": "string"
+          },
+          "last_linked_at": {
+            "format": "date-time",
+            "title": "Last Linked At",
+            "type": "string"
+          },
+          "needs_retest_runs": {
+            "title": "Needs Retest Runs",
+            "type": "integer"
+          },
+          "reference": {
+            "title": "Reference",
+            "type": "string"
+          },
+          "runs": {
+            "title": "Runs",
+            "type": "integer"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "reference",
+          "url",
+          "title",
+          "cases",
+          "runs",
+          "failing_runs",
+          "needs_retest_runs",
+          "cycle_keys",
+          "first_linked_at",
+          "last_linked_at"
+        ],
+        "title": "BugSummaryRead",
+        "type": "object"
+      },
       "BulkRequest": {
         "additionalProperties": false,
         "properties": {
@@ -962,6 +1317,50 @@
           "only_not_run"
         ],
         "title": "BulkStepsRequest",
+        "type": "object"
+      },
+      "CaseBugLinkCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "reference": {
+            "examples": [
+              "SPK-431"
+            ],
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Reference",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "http(s) only; built from the project template if empty",
+            "title": "Url"
+          }
+        },
+        "required": [
+          "reference"
+        ],
+        "title": "CaseBugLinkCreate",
         "type": "object"
       },
       "CaseCounts": {
@@ -2911,7 +3310,7 @@
               "min_execution_progress",
               "min_pass_rate",
               "min_pass_rate_applicable",
-              "max_open_defects",
+              "max_failed",
               "max_blocked",
               "min_requirement_coverage",
               "min_requirements_verified",
@@ -3669,6 +4068,49 @@
           "target_case_id"
         ],
         "title": "LinkRequest",
+        "type": "object"
+      },
+      "LinkedCase": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "title"
+        ],
+        "title": "LinkedCase",
+        "type": "object"
+      },
+      "LinkedCycle": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "key"
+        ],
+        "title": "LinkedCycle",
         "type": "object"
       },
       "LiveStatus": {
@@ -4434,6 +4876,37 @@
           "total"
         ],
         "title": "Page[ActivityItem]",
+        "type": "object"
+      },
+      "Page_BugSummaryRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BugSummaryRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "title": "Page[BugSummaryRead]",
         "type": "object"
       },
       "Page_CaseListItem_": {
@@ -5990,6 +6463,23 @@
             "title": "Attachment Max Mb",
             "type": "integer"
           },
+          "bug_tracker_name": {
+            "description": "Shown on buttons, e.g. 'Open in Jira' (docs/02 \u00a78.1)",
+            "title": "Bug Tracker Name",
+            "type": "string"
+          },
+          "bug_url_template": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "http(s) URL with {ref}; builds bug link URLs",
+            "title": "Bug Url Template"
+          },
           "only_assignee_executes": {
             "title": "Only Assignee Executes",
             "type": "boolean"
@@ -5998,8 +6488,8 @@
             "title": "Report Module Depth",
             "type": "integer"
           },
-          "require_defect_for_failure": {
-            "title": "Require Defect For Failure",
+          "require_bug_link_for_failure": {
+            "title": "Require Bug Link For Failure",
             "type": "boolean"
           }
         },
@@ -6009,7 +6499,9 @@
           "only_assignee_executes",
           "report_module_depth",
           "attachment_max_mb",
-          "require_defect_for_failure"
+          "require_bug_link_for_failure",
+          "bug_tracker_name",
+          "bug_url_template"
         ],
         "title": "ProjectSettings",
         "type": "object"
@@ -6050,6 +6542,31 @@
             ],
             "title": "Attachment Max Mb"
           },
+          "bug_tracker_name": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bug Tracker Name"
+          },
+          "bug_url_template": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Empty string clears it",
+            "title": "Bug Url Template"
+          },
           "only_assignee_executes": {
             "anyOf": [
               {
@@ -6072,7 +6589,7 @@
             ],
             "title": "Report Module Depth"
           },
-          "require_defect_for_failure": {
+          "require_bug_link_for_failure": {
             "anyOf": [
               {
                 "type": "boolean"
@@ -6081,7 +6598,7 @@
                 "type": "null"
               }
             ],
-            "title": "Require Defect For Failure"
+            "title": "Require Bug Link For Failure"
           }
         },
         "title": "ProjectSettingsPatch",
@@ -6813,6 +7330,57 @@
           "steps"
         ],
         "title": "ResultRead",
+        "type": "object"
+      },
+      "RetestRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "dry_run": {
+            "default": false,
+            "description": "Only count the runs that would be flagged",
+            "title": "Dry Run",
+            "type": "boolean"
+          },
+          "reference": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Reference",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reference"
+        ],
+        "title": "RetestRequest",
+        "type": "object"
+      },
+      "RetestResponse": {
+        "properties": {
+          "dry_run": {
+            "title": "Dry Run",
+            "type": "boolean"
+          },
+          "flagged": {
+            "description": "Runs flagged (or that would be, with dry_run)",
+            "title": "Flagged",
+            "type": "integer"
+          },
+          "linked_runs": {
+            "title": "Linked Runs",
+            "type": "integer"
+          },
+          "reference": {
+            "title": "Reference",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reference",
+          "linked_runs",
+          "flagged",
+          "dry_run"
+        ],
+        "title": "RetestResponse",
         "type": "object"
       },
       "ReturnRequest": {
@@ -9463,6 +10031,134 @@
         ]
       }
     },
+    "/api/v1/bug-links/{link_id}": {
+      "delete": {
+        "operationId": "delete_link_api_v1_bug_links__link_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "link_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Link Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Delete Link",
+        "tags": [
+          "bugs"
+        ]
+      },
+      "patch": {
+        "description": "Correct URL or title: the person who linked it, or `defect.edit` (TCMS-107).",
+        "operationId": "patch_link_api_v1_bug_links__link_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "link_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Link Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BugLinkPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BugLinkRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Patch Link",
+        "tags": [
+          "bugs"
+        ]
+      }
+    },
     "/api/v1/comments": {
       "get": {
         "description": "Oldest first; deleted comments keep their place with `body: null` (FR-COL-001).",
@@ -9943,6 +10639,86 @@
         "summary": "Archive Cycle",
         "tags": [
           "cycles"
+        ]
+      }
+    },
+    "/api/v1/cycles/{cycle_id}/bug-links": {
+      "get": {
+        "description": "Cycle detail Bugs column (docs/07 \u00a75.8) or link-popover suggestions (`recent=true`).",
+        "operationId": "cycle_links_api_v1_cycles__cycle_id__bug_links_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cycle_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Cycle Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only the most recent distinct references (suggestions)",
+            "in": "query",
+            "name": "recent",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Only the most recent distinct references (suggestions)",
+              "title": "Recent",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BugLinkRead"
+                  },
+                  "title": "Response Cycle Links Api V1 Cycles  Cycle Id  Bug Links Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Cycle Links",
+        "tags": [
+          "bugs"
         ]
       }
     },
@@ -13287,6 +14063,292 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/bugs": {
+      "get": {
+        "description": "docs/02 \u00a78.4 (TCMS-105): one row per reference.",
+        "operationId": "list_bugs_api_v1_projects__project_id__bugs_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cycle_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cycle Id"
+            }
+          },
+          {
+            "description": "Only bugs linked to runs that are failed now",
+            "in": "query",
+            "name": "failing",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Only bugs linked to runs that are failed now",
+              "title": "Failing",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_BugSummaryRead_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "List Bugs",
+        "tags": [
+          "bugs"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/bugs/links": {
+      "get": {
+        "description": "Every link of one reference (Bugs list detail). The reference is a query parameter because tracker\nkeys may contain `#` or `/`.",
+        "operationId": "reference_links_api_v1_projects__project_id__bugs_links_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "reference",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Reference",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BugLinkRead"
+                  },
+                  "title": "Response Reference Links Api V1 Projects  Project Id  Bugs Links Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Reference Links",
+        "tags": [
+          "bugs"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/bugs/retest": {
+      "post": {
+        "description": "BR-21 / AC-BUG-03 (TCMS-103): flag the eligible linked runs; `dry_run` previews the count.",
+        "operationId": "request_retest_api_v1_projects__project_id__bugs_retest_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Request Retest",
+        "tags": [
+          "bugs"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}/cycles": {
       "get": {
         "description": "US-080 / FR-EXE-001: each item has its ExecutionSummary.",
@@ -15720,6 +16782,161 @@
         ]
       }
     },
+    "/api/v1/results/{result_id}/bug-links": {
+      "post": {
+        "description": "BR-20 / AC-BUG-01, 02, 06: link a bug to an attempt (and step); draft or final.",
+        "operationId": "link_to_result_api_v1_results__result_id__bug_links_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "result_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Result Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BugLinkCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BugLinkRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Link To Result",
+        "tags": [
+          "bugs"
+        ]
+      }
+    },
+    "/api/v1/results/{result_id}/bug-report": {
+      "get": {
+        "description": "\"Copy bug details\" (docs/02 \u00a78.2): Markdown for the team's tracker, with a link back to the run.",
+        "operationId": "bug_report_api_v1_results__result_id__bug_report_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "result_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Result Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "step_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Step Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BugReportRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Bug Report",
+        "tags": [
+          "bugs"
+        ]
+      }
+    },
     "/api/v1/results/{result_id}/finalize": {
       "post": {
         "description": "US-091/092/096/098 (TCMS-071\u2026075, 079, 080, 089, 090): roll-up (BR-09), reasons (BR-10).",
@@ -16048,6 +17265,73 @@
         "summary": "Get Run",
         "tags": [
           "cycles"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/bug-links": {
+      "get": {
+        "operationId": "run_links_api_v1_runs__run_id__bug_links_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BugLinkRead"
+                  },
+                  "title": "Response Run Links Api V1 Runs  Run Id  Bug Links Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Run Links",
+        "tags": [
+          "bugs"
         ]
       }
     },
@@ -16775,6 +18059,146 @@
         "summary": "Archive Case",
         "tags": [
           "test-cases"
+        ]
+      }
+    },
+    "/api/v1/test-cases/{case_id}/bug-links": {
+      "get": {
+        "description": "Case Bugs tab: direct links and links through its runs.",
+        "operationId": "case_links_api_v1_test_cases__case_id__bug_links_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BugLinkRead"
+                  },
+                  "title": "Response Case Links Api V1 Test Cases  Case Id  Bug Links Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Case Links",
+        "tags": [
+          "bugs"
+        ]
+      },
+      "post": {
+        "description": "docs/02 \u00a78.2 (TCMS-102): a bug found outside execution, linked to the case.",
+        "operationId": "link_to_case_api_v1_test_cases__case_id__bug_links_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaseBugLinkCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BugLinkRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Link To Case",
+        "tags": [
+          "bugs"
         ]
       }
     },

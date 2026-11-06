@@ -110,10 +110,10 @@ Auth endpoints: 20/min/IP. General: 600/min/user. Responses include `RateLimit-L
 | 403 | `csrf_failed` | Missing/invalid CSRF token or foreign Origin |
 | 403 | `permission_denied`, `mfa_enrollment_required`, `self_approval_not_allowed`, `transition_not_permitted`, `not_assignee`, `token_scope_insufficient`, `not_author`, `edit_window_closed` (comments) | Authorization |
 | 404 | `not_found` | Missing or not visible |
-| 409 | `conflict`, `stale_row_version`, `project_key_taken`, `name_taken`, `project_archived`, `cycle_closed`, `draft_exists`, `run_has_results`, `run_superseded`, `already_latest`, `invalid_status`, `folder_not_empty`, `immutable_record`, `case_has_runs`, `case_archived`, `automation_key_taken`, `folder_archived`, `link_limit`, `attachment_limit`, `system_tag`, `tag_in_use`, `last_org_admin`, `last_qa_manager`, `already_member`, `user_exists`, `mfa_already_enabled`, `mfa_required_by_policy`, `cannot_deactivate_self` | State conflict |
+| 409 | `conflict`, `already_linked`, `stale_row_version`, `project_key_taken`, `name_taken`, `project_archived`, `cycle_closed`, `draft_exists`, `run_has_results`, `run_superseded`, `already_latest`, `invalid_status`, `folder_not_empty`, `immutable_record`, `case_has_runs`, `case_archived`, `automation_key_taken`, `folder_archived`, `link_limit`, `attachment_limit`, `system_tag`, `tag_in_use`, `last_org_admin`, `last_qa_manager`, `already_member`, `user_exists`, `mfa_already_enabled`, `mfa_required_by_policy`, `cannot_deactivate_self` | State conflict |
 | 413 | `file_too_large` | Upload limit |
 | 415 | `unsupported_file_type` | Upload type |
-| 422 | `validation_error`, `rule_violation`, `incomplete_attempt`, `outcome_required`, `outcome_conflicts_with_steps`, `actual_result_required`, `reason_required`, `defect_required`, `folder_cycle`, `folder_too_deep`, `field_required`, `invalid_transition`, `idempotency_key_reused`, `no_eligible_version`, `token_invalid` (reset/invitation link unknown, used or expired), `password_policy`, `confirmation_mismatch` | Business rule |
+| 422 | `validation_error`, `rule_violation`, `incomplete_attempt`, `outcome_required`, `outcome_conflicts_with_steps`, `actual_result_required`, `reason_required`, `bug_link_required`, `folder_cycle`, `folder_too_deep`, `field_required`, `invalid_transition`, `idempotency_key_reused`, `no_eligible_version`, `token_invalid` (reset/invitation link unknown, used or expired), `password_policy`, `confirmation_mismatch` | Business rule |
 | 423 | `account_locked` | Lockout (returned only after valid password, see [02 §3.3](02-Functional-Specification.md)) |
 | 428 | `row_version_required` | Concurrency |
 | 429 | `rate_limited` | Rate limit |
@@ -149,7 +149,7 @@ Legend: **Perm** = required permission (project scope unless prefixed `org.`); `
 | DELETE | `/me/api-tokens/{id}` | auth | Revoke | |
 | GET | `/me/sessions` | auth | Own active sessions | |
 | DELETE | `/me/sessions/{id}` | auth | Revoke own session | |
-| GET | `/me/work` | auth | My Work: runs grouped by cycle, defects assigned, reviews pending | EXE-014 |
+| GET | `/me/work` | auth | My Work: runs grouped by cycle, reviews pending, my last 7 days | EXE-014 |
 | GET | `/me/notifications` | auth | Paginated; `?unread=true` | |
 | POST | `/me/notifications/read` | auth | `{ids[]}` or `{all: true}` | |
 
@@ -275,7 +275,7 @@ Bulk response: `200 {bulk_operation_id, updated, skipped: [{key, code, detail}]}
 | POST | `/cycles/{id}/runs/assign` | cycle.manage | `{run_ids? \| filter?, assignee_id \| null}` | EXE-004 |
 | POST | `/cycles/{id}/runs/reorder` | cycle.manage | `{run_ids_in_order}` or `{sort_by: folder|priority}` | |
 | POST | `/cycles/{id}/runs/update-versions` | cycle.manage | Update all eligible not-run runs | EXE-011 |
-| GET | `/runs/{id}` | project.view | Run, case summary, pinned version content (`include=version`), draft attempt (`include=draft`), attempts history (`include=history`), newer version info, linked defects, queue neighbours (`include=queue&queue_filter=…`) | EXE-005 |
+| GET | `/runs/{id}` | project.view | Run, case summary, pinned version content (`include=version`), draft attempt (`include=draft`), attempts history (`include=history`), newer version info, queue neighbours (`include=queue&queue_filter=…`); bug links come from `GET /runs/{id}/bug-links` | EXE-005 |
 | POST | `/runs/{id}/claim` | run.execute | Unassigned → me | EXE-004 |
 | POST | `/runs/{id}/update-version` | cycle.manage or assignee+run.execute | BR-04 | EXE-011 |
 | POST | `/runs/{id}/replace` | cycle.manage | BR-05 → new run | EXE-011 |
@@ -291,22 +291,24 @@ Bulk response: `200 {bulk_operation_id, updated, skipped: [{key, code, detail}]}
 | POST | `/results/{id}/steps/bulk` | executor or cycle.manage | `{status: passed, only_not_run: true}` (Pass all remaining) | |
 | POST | `/results/{id}/finalize` | executor or cycle.manage | `{outcome?: blocked|skipped|not_applicable|passed|failed (text only), reason?, duration_seconds?}` → attempt + run | EXE-007/008 |
 | DELETE | `/results/{id}` | executor or cycle.manage | Discard draft only | |
-| GET | `/results/{id}/defect-draft` | defect.create | Prefilled defect fields for `?step_id=` | DEF-002 |
+| GET | `/results/{id}/bug-report` | project.view | `?step_id=` → `{text}`: "Copy bug details" Markdown for the team's tracker (steps 1..n of the pinned version, expected, actual, environment, build, cycle, run link) | DEF-005 |
 
-### 4.8 Defects
+### 4.8 Bug links (ADR-023)
+
+Bugs live in each team's tracker; these endpoints store references to them ([02 §8](02-Functional-Specification.md)). References may contain `#` or `/`, so they travel in the body or the query string, never in the path.
 
 | Method | Path | Perm | Description | FR |
 | --- | --- | --- | --- | --- |
-| GET | `/projects/{project_id}/defects` | project.view | Filters: status (or `group=open|resolved|deferred`), severity, priority, assignee_id, reporter_id, folder_id, found_in_release_id, environment_id, cycle_id, created_at__gte/lte, q. Sort: key, severity, priority, status, created_at, updated_at | DEF-006 |
-| POST | `/projects/{project_id}/defects` | defect.create | Fields + optional `links: {result_id?, step_id?, test_case_ids?, requirement_ids?}`, `attachment_ids?` | DEF-001/002 |
-| GET | `/defects/{id}` | project.view | `?include=links,history,attachments,watchers` | |
-| PATCH | `/defects/{id}` | defect.edit | Non-status fields + `row_version` | |
-| GET | `/defects/{id}/transitions` | project.view | Allowed target statuses for caller with required fields | DEF-004 |
-| POST | `/defects/{id}/transitions` | per §8.2 | `{to, note?, assignee_id?, duplicate_of_id?, resolution?, resolution_note?, fix_version?, row_version}` | DEF-004 |
-| POST | `/defects/{id}/links` | defect.create | `{result_id? , test_case_id?, requirement_id?, step_id?}` | DEF-003 |
-| DELETE | `/defects/{id}/links/{link_id}` | defect.edit | | |
-| POST/DELETE | `/defects/{id}/watchers` | project.view | Add/remove self (or others with defect.edit) | |
-| POST | `/projects/{project_id}/defects/bulk` | per action | `assign`, `transition`, `set_priority`, `set_severity` | DEF-006 |
+| POST | `/results/{id}/bug-links` | defect.create | `{reference, url?, title?, step_id?}` → 201 BugLink. Draft or final attempt (BR-20); `step_id` must be a step of the run's pinned version; URL built from the project template when empty; `409 already_linked` for the same reference on the same attempt and step | DEF-001/002 |
+| POST | `/test-cases/{id}/bug-links` | defect.create | `{reference, url?, title?}` → 201 (direct case link) | DEF-001 |
+| GET | `/test-cases/{id}/bug-links` | project.view | Direct links and links through the case's runs | DEF-003 |
+| GET | `/runs/{id}/bug-links` | project.view | Links on every attempt of the run | DEF-003 |
+| GET | `/cycles/{id}/bug-links` | project.view | Links on the cycle's runs; `?recent=true` → the most recent distinct references (suggestions) | DEF-003 |
+| PATCH | `/bug-links/{id}` | creator or defect.edit | `{url?, title?}` (empty clears); the reference is not edited | |
+| DELETE | `/bug-links/{id}` | creator or defect.edit | → 204 | |
+| GET | `/projects/{project_id}/bugs` | project.view | One row per reference: `q` (reference or title), `cycle_id`, `failing` (only references linked to runs failed now); paginated, last linked first | DEF-006 |
+| GET | `/projects/{project_id}/bugs/links` | project.view | `?reference=` → every link of the reference; `404` if none | DEF-006 |
+| POST | `/projects/{project_id}/bugs/retest` | cycle.manage | `{reference, dry_run?}` → `{reference, linked_runs, flagged, dry_run}`; flags the eligible linked runs (BR-21) | EXE-015 |
 
 ### 4.9 Requirements and traceability
 
@@ -329,7 +331,7 @@ Bulk response: `200 {bulk_operation_id, updated, skipped: [{key, code, detail}]}
 | GET | `/projects/{project_id}/dashboards/manager` | project.view | Filters: release_id, cycle_ids, environment_id, module_folder_id, tester_id, date range | RPT-001 |
 | GET | `/projects/{project_id}/dashboards/quality` | project.view | Trends (`from`, `to`, `release_id`) | RPT-003 |
 | GET | `/projects/{project_id}/execution-summary` | project.view | Reusable summary (§5.7) for any filter | |
-| GET | `/projects/{project_id}/reports/{report}` | project.view | `report` ∈ `cycle-execution`, `results-history`, `defects`, `traceability`, `tester-activity`, `case-inventory`; filters per [02 §11.5](02-Functional-Specification.md); paginated JSON | RPT-004 |
+| GET | `/projects/{project_id}/reports/{report}` | project.view | `report` ∈ `cycle-execution`, `results-history`, `bug-links`, `traceability`, `tester-activity`, `case-inventory`; filters per [02 §11.5](02-Functional-Specification.md); paginated JSON | RPT-004 |
 | POST | `/projects/{project_id}/reports/{report}/export` | data.export | `{format: csv|xlsx, filters}` → `200` file (≤ 10k rows) or `202 {transfer_id}` | RPT-005 |
 | POST | `/projects/{project_id}/metrics/refresh` | project.view | Enqueue snapshot for today (rate-limited 1/10 min) | |
 
@@ -337,7 +339,7 @@ Bulk response: `200 {bulk_operation_id, updated, skipped: [{key, code, detail}]}
 
 | Method | Path | Perm | Description |
 | --- | --- | --- | --- |
-| GET | `/search` | auth | `?q=&project_id=&types=test_case,requirement,defect,cycle,plan,folder&limit=5` → grouped results |
+| GET | `/search` | auth | `?q=&project_id=&types=test_case,requirement,bug,cycle,plan,folder&limit=5` → grouped results |
 | GET | `/projects/{project_id}/saved-views` | project.view | `?entity_type=` (own + shared) |
 | POST | `/projects/{project_id}/saved-views` | project.view (shared requires cycle.manage, plan.manage or project.configure) | |
 | PATCH/DELETE | `/saved-views/{id}` | owner (shared: same as create) | |
@@ -361,7 +363,7 @@ Comment and attachment notes (M2):
 - **Mentions** are written in the body as `@[Display Name](user:<user uuid>)`. The server stores the mentioned user IDs (`mentions[]`), keeps only current project members, and notifies them (`comment.mentioned`). Clients render the token as the name.
 - `entity_type` for comments: `test_case`, `test_case_version` (more types arrive with their milestones). Deleted comments stay in the list with `body: null, deleted: true`. `editable_until` = `created_at` + 15 min.
 - Review comments from submit/approve/return are recorded on the **case** (AC-TD-22); the audit event names the version.
-- `entity_type` for attachments: `test_case`, `test_case_step`, `test_step_result` (evidence on a step of a draft attempt: executor or `cycle.manage`; `409 immutable_record` once the attempt is final), defects in M5. The size limit is the project's `attachment_max_mb` (≤ the org cap); the content type is sniffed from the bytes. `/content` serves images and PDFs `inline` and everything else as `attachment` (`?download=true` forces a download), always with `Content-Security-Policy: sandbox` and `X-Content-Type-Options: nosniff`. Removing a step attachment of an approved version returns `409 immutable_record` (BR-28).
+- `entity_type` for attachments: `test_case`, `test_case_step`, `test_step_result` (evidence on a step of a draft attempt: executor or `cycle.manage`; `409 immutable_record` once the attempt is final); bug links carry no attachments (ADR-023), evidence stays on the step. The size limit is the project's `attachment_max_mb` (≤ the org cap); the content type is sniffed from the bytes. `/content` serves images and PDFs `inline` and everything else as `attachment` (`?download=true` forces a download), always with `Content-Security-Policy: sandbox` and `X-Content-Type-Options: nosniff`. Removing a step attachment of an approved version returns `409 immutable_record` (BR-28).
 
 ### 4.13 Import / export
 
@@ -371,7 +373,7 @@ Comment and attachment notes (M2):
 | GET | `/projects/{project_id}/import-mappings` | project.view | Saved mapping templates | |
 | POST | `/data-transfers/{id}/validate` | as import | `{sheet?, mapping, options: {mode: upsert|create_only, target_folder_id, steps_layout: row_per_step|single_cell, skip_error_rows}}` → `202`; result in GET | IMP-001 |
 | POST | `/data-transfers/{id}/commit` | as import | `202` | IMP-001 |
-| POST | `/projects/{project_id}/exports` | data.export | `{entity: test_case|requirement|defect, format, filters, version: latest|approved}` | IMP-002/004 |
+| POST | `/projects/{project_id}/exports` | data.export | `{entity: test_case|requirement|bug_link, format, filters, version: latest|approved}` | IMP-002/004 |
 | GET | `/data-transfers/{id}` | initiator or project.configure | Status, summary, errors | |
 | GET | `/data-transfers/{id}/download` | initiator | Result file / import report | |
 
@@ -394,7 +396,7 @@ Comment and attachment notes (M2):
 | GET/POST/PATCH/DELETE | `/organization/integrations` … | Jira connections |
 | POST | `/integrations/{connection_id}/test` | Test connection |
 | POST | `/integrations/jira/webhook/{connection_id}` | Inbound webhook |
-| POST | `/defects/{id}/external` | Create linked Jira issue |
+| POST | `/results/{id}/bug-links/external` | Create the bug in the connected tracker and link it (FR-DEF-007) |
 | POST/DELETE | `/{entity}/{id}/external-links` | Link to an external issue |
 | POST | `/auth/oidc/{provider}/start`, GET `/auth/oidc/{provider}/callback` | SSO |
 | CRUD | `/projects/{project_id}/shared-steps` | Shared steps |
@@ -441,7 +443,7 @@ Comment and attachment notes (M2):
     "created_at": "2026-11-02T09:12:00Z",
     "approval": { "mode": "manual", "approved_by": { "id": "…", "display_name": "Bilal Khan" }, "approved_at": "2026-11-02T11:00:00Z" }
   },
-  "counts": { "requirements": 2, "attachments": 1, "open_defects": 0 },
+  "counts": { "requirements": 2, "attachments": 1, "bug_links": 0 },
   "created_by": { "...": "UserRef" },
   "created_at": "2026-10-01T08:00:00Z",
   "updated_at": "2026-11-02T11:00:00Z",
@@ -506,9 +508,8 @@ Comment and attachment notes (M2):
   "draft": null,
   "history": [
     { "id": "…", "attempt_no": 1, "state": "final", "status": "failed", "executed_by": { "...": "UserRef" },
-      "started_at": "…", "finished_at": "…", "skipped_steps": 0, "corrects_result_id": null, "defects": [ { "id": "…", "key": "SPARK-D-87", "status": "ready_for_retest" } ] }
+      "started_at": "…", "finished_at": "…", "skipped_steps": 0, "corrects_result_id": null }
   ],
-  "defects": [ { "id": "…", "key": "SPARK-D-87", "title": "…", "status": "ready_for_retest", "severity": "high" } ],
   "row_version": 5
 }
 ```
@@ -528,23 +529,21 @@ Comment and attachment notes (M2):
 }
 ```
 
-### 5.6 Defect (read)
+### 5.6 BugLink (read)
 
 ```json
 {
-  "id": "…", "key": "SPARK-D-87", "title": "Dashboard load exceeds 3 s after login",
-  "description": null, "steps_to_reproduce": "1. …", "expected_result": "…", "actual_result": "…",
-  "severity": "high", "priority": "high", "status": "ready_for_retest",
-  "environment": { "id": "…", "name": "QA" }, "build": "2.5.0-rc1", "browser_device": "Chrome 131 / Windows 11",
-  "module": { "id": "…", "name": "Authentication" }, "found_in_release": { "id": "…", "name": "SPARK v2.5" },
-  "fix_version": "2.5.1", "reporter": { "...": "UserRef" }, "assignee": { "...": "UserRef" },
-  "resolution": "fixed", "resolution_note": "Cached dashboard query", "duplicate_of": null,
-  "retest_status": "pending",
-  "external": null,
-  "links": [ { "id": "…", "type": "result", "run_id": "…", "result_id": "…", "cycle_key": "SPARK-CY-12", "test_case_key": "SPARK-TC-1042", "step_position": 2 } ],
-  "created_at": "…", "updated_at": "…", "resolved_at": null, "row_version": 6
+  "id": "…", "reference": "SPK-431", "url": "https://acme.atlassian.net/browse/SPK-431",
+  "title": "Dashboard load exceeds 3 s after login",
+  "test_case": { "id": "…", "key": "SPARK-TC-1042", "title": "…" },
+  "run_id": "…", "result_id": "…", "step_id": "…", "step_position": 2,
+  "cycle": { "id": "…", "key": "SPARK-CY-12" },
+  "run_status": "failed", "attempt_no": 1, "attempt_status": "failed",
+  "created_by": { "...": "UserRef" }, "created_at": "…", "can_edit": true, "row_version": 1
 }
 ```
+
+Bugs list row (`GET /projects/{id}/bugs`): `{reference, url, title, cases, runs, failing_runs, needs_retest_runs, cycle_keys[], first_linked_at, last_linked_at}`.
 
 ### 5.7 ExecutionSummary
 
@@ -575,7 +574,7 @@ Rates are `null` when the denominator is 0 (BR-24).
     { "id": "…", "key": "SPARK-TC-1042", "title": "…", "latest": { "status": "failed", "cycle_key": "SPARK-CY-12", "finished_at": "…", "result_id": "…" } },
     { "id": "…", "key": "SPARK-TC-1050", "title": "…", "latest": null }
   ],
-  "open_defects": { "total": 1, "by_severity": { "critical": 0, "high": 1, "medium": 0, "low": 0 } }
+  "bugs": [ { "reference": "SPK-431", "url": "https://acme.atlassian.net/browse/SPK-431" } ]
 }
 ```
 
@@ -587,7 +586,7 @@ Rates are `null` when the denominator is 0 (BR-24).
   "ready": false,
   "rules": [
     { "type": "min_execution_progress", "threshold": 1.0, "actual": { "numerator": 205, "denominator": 245, "value": 0.8367 }, "met": false, "source_plan_key": "SPARK-PL-3" },
-    { "type": "max_open_defects", "params": { "severities": ["critical"] }, "threshold": 0, "actual": { "value": 0 }, "met": true }
+    { "type": "max_failed", "threshold": 0, "actual": { "value": 0 }, "met": true }
   ],
   "latest_decision": { "decision": "no_go", "comment": "…", "decided_by": { "...": "UserRef" }, "decided_at": "…" },
   "evaluated_at": "2026-11-03T12:00:00Z"
@@ -604,7 +603,7 @@ POST /api/v1/runs/{rid}/results                               → 201 draft (att
 PATCH /api/v1/results/{res}/steps/{s1}  {"status":"passed"}
 PATCH /api/v1/results/{res}/steps/{s2}  {"status":"failed","actual_result":"Took 9 s"}
 POST /api/v1/attachments (multipart, entity_type=test_step_result, entity_id={s2 result id})
-GET  /api/v1/results/{res}/defect-draft?step_id={s2}
-POST /api/v1/projects/{pid}/defects  {..., "links":{"result_id":"{res}","step_id":"{s2}"}}
+GET  /api/v1/results/{res}/bug-report?step_id={s2}             → paste into the team's tracker
+POST /api/v1/results/{res}/bug-links  {"reference":"SPK-431","step_id":"{s2}"}
 POST /api/v1/results/{res}/finalize  {}                       → 200 status=failed
 ```

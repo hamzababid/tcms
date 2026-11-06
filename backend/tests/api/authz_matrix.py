@@ -201,6 +201,23 @@ def _remove_run_probe(f: Fixture) -> tuple[str, str, dict[str, Any]]:
     return ("DELETE", f"/api/v1/cycles/{cycle_id}/runs", {"run_ids": [str(run_id)]})
 
 
+def _bug_link(f: Fixture, reference: str | None = None) -> tuple[UUID, str, UUID]:
+    """A bug link on a fresh draft, made by the Org Admin → (link id, reference, result id). Changing it
+    needs its creator or defect.edit, so the matrix kind is defect.edit."""
+    from tcms.bugs import service as bugs
+    from tcms.core.permissions import PROJECT_PERMISSIONS
+    from tcms.core.uow import unit_of_work
+
+    result_id, _ = _draft(f)
+    ref = reference or f"PRB-{uuid.uuid4().hex[:6]}"
+    with unit_of_work(f.world.factory) as uow:
+        ctx = f.world.ctx(
+            f.org.id, f.org.admin.id, is_admin=True, project_id=f.project_id, perms=PROJECT_PERMISSIONS
+        )
+        row = bugs.link_to_result(uow, ctx, result_id, reference=ref, url=None, title=None, step_id=None)
+        return row.id, ref, result_id
+
+
 P = "/api/v1/projects/{project_id}"
 TC = "/api/v1/test-cases/{case_id}"
 PL = "/api/v1/test-plans/{plan_id}"
@@ -637,6 +654,41 @@ MATRIX: dict[tuple[str, str], Entry] = {
     ),
     ("POST", RS + "/finalize"): Entry(
         "project:cycle.manage", lambda f: ("POST", RS.format(result_id=_draft(f)[0]) + "/finalize", {})
+    ),
+    # bug links (M5 / E10, ADR-023)
+    ("POST", RS + "/bug-links"): Entry(
+        "project:defect.create",
+        lambda f: ("POST", RS.format(result_id=_draft(f)[0]) + "/bug-links", {"reference": "PRB-1"}),
+    ),
+    ("GET", RS + "/bug-report"): Entry(
+        "project:project.view", lambda f: ("GET", RS.format(result_id=_draft(f)[0]) + "/bug-report", None)
+    ),
+    ("POST", TC + "/bug-links"): Entry(
+        "project:defect.create",
+        lambda f: ("POST", _tc(f, "/bug-links", _case(f)), {"reference": "PRB-2"}),
+    ),
+    ("GET", TC + "/bug-links"): Entry("project:project.view", lambda f: ("GET", _tc(f, "/bug-links"), None)),
+    ("GET", RN + "/bug-links"): Entry(
+        "project:project.view", lambda f: ("GET", RN.format(run_id=_run(f)) + "/bug-links", None)
+    ),
+    ("GET", CY + "/bug-links"): Entry(
+        "project:project.view", lambda f: ("GET", CY.format(cycle_id=_cycle(f)) + "/bug-links", None)
+    ),
+    ("PATCH", "/api/v1/bug-links/{link_id}"): Entry(
+        "project:defect.edit",
+        lambda f: ("PATCH", f"/api/v1/bug-links/{_bug_link(f)[0]}", {"title": "probe"}),
+    ),
+    ("DELETE", "/api/v1/bug-links/{link_id}"): Entry(
+        "project:defect.edit", lambda f: ("DELETE", f"/api/v1/bug-links/{_bug_link(f)[0]}", None)
+    ),
+    ("GET", P + "/bugs"): Entry("project:project.view", lambda f: ("GET", _p(f, "/bugs"), None)),
+    ("GET", P + "/bugs/links"): Entry(
+        "project:project.view",
+        lambda f: ("GET", _p(f, "/bugs/links") + f"?reference={_bug_link(f)[1]}", None),
+    ),
+    ("POST", P + "/bugs/retest"): Entry(
+        "project:cycle.manage",
+        lambda f: ("POST", _p(f, "/bugs/retest"), {"reference": _bug_link(f)[1], "dry_run": True}),
     ),
     ("DELETE", RS): Entry(
         "project:cycle.manage", lambda f: ("DELETE", RS.format(result_id=_draft(f)[0]), None)

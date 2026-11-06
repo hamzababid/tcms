@@ -446,3 +446,25 @@ def projects_with_runs(s: Session) -> list[tuple[UUID, UUID]]:
     """System job helper (no user context): each tenant is then read through its own scoped context."""
     rows = s.execute(select(TestRun.organization_id, TestRun.project_id).distinct()).all()
     return [(o, p) for o, p in rows]
+
+
+# -- retest requests from bug links (BR-21, M5) ----------------------------------------------------
+
+
+def retest_eligible_runs(s: Session, ctx: AccessContext, run_ids: Sequence[UUID]) -> list[TestRun]:
+    """Runs of the project that are not superseded and whose cycle is not closed or archived."""
+    if not run_ids:
+        return []
+    stmt = (
+        _scope(select(TestRun), TestRun, ctx)
+        .join(TestCycle, TestCycle.id == TestRun.cycle_id)
+        .where(
+            TestRun.id.in_(list(run_ids)),
+            _ACTIVE,
+            TestCycle.status.in_([CycleStatus.planned, CycleStatus.active]),
+            TestCycle.archived_at.is_(None),
+        )
+        .order_by(TestRun.id)
+        .with_for_update(of=TestRun)
+    )
+    return list(s.execute(stmt).scalars())

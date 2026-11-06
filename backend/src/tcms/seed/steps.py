@@ -431,7 +431,7 @@ def seed_plans_and_cycles(profile: str) -> str:
                 environment_ids=[env.id],
                 exit_rules=[
                     {"type": "min_execution_progress", "threshold": 1.0},
-                    {"type": "max_open_defects", "threshold": 0, "params": {"severities": ["critical"]}},
+                    {"type": "max_failed", "threshold": 0},
                 ],
                 risks=[
                     {"description": "Payment gateway can be flaky", "impact": "medium", "mitigation": "Retry"}
@@ -556,3 +556,88 @@ def seed_results(profile: str) -> str:
                 )
                 recorded += 1
     return f"{recorded} results and 1 draft on SPARK-CY-1"
+
+
+@step("SPARK bug links", profiles=("dev",))
+def seed_bug_links(profile: str) -> str:
+    """ADR-023: SPARK tracks bugs in Jira; SPK-431 is linked to the failed seeded result (and its step) and
+    SPK-440 to a case directly, so the runner, cycle, case and Bugs pages show links."""
+    from tcms.bugs import queries as bug_queries
+    from tcms.bugs import service as bugs
+    from tcms.core.pagination import PageParams
+    from tcms.core.permissions import PROJECT_PERMISSIONS
+    from tcms.execution import queries as exec_queries
+
+    del profile
+    factory = session_factory(app_engine(get_settings()))
+    with factory() as s:
+        org = workspace_queries.organization_by_slug(s, ORG_SLUG)
+        spark = (
+            next(
+                (p for p in workspace_queries.projects(s, org.id, ids=None, status=None) if p.key == "SPARK"),
+                None,
+            )
+            if org
+            else None
+        )
+        if org is None or spark is None:
+            return "no SPARK project"
+        members = {m.user.email: m.user.id for m in identity_queries.project_members(s, org.id, spark.id)}
+        spark_version = spark.row_version
+    engineer, manager = members.get("sana@acme.test"), members.get("ayesha@acme.test")
+    if engineer is None or manager is None:
+        return "Sana or Ayesha is not a SPARK member"
+
+    def ctx_for(user_id: UUID, name: str) -> AccessContext:
+        return AccessContext.for_principal(
+            Principal(user_id, org.id, False, display_name=name),
+            META,
+            project_id=spark.id,
+            permissions=PROJECT_PERMISSIONS,
+        )
+
+    sana, ayesha = ctx_for(engineer, "Sana Malik"), ctx_for(manager, "Ayesha Raza")
+    with factory() as s:
+        if bug_queries.bug_list(s, sana, q=None, cycle_id=None, failing=False):
+            return "SPARK already has bug links — nothing to do"
+        cycle = exec_queries.cycle_by_key(s, sana, "SPARK-CY-1")
+        if cycle is None:
+            return "no SPARK-CY-1 — run the plan and cycle step first"
+        rows, _ = exec_queries.list_runs(s, sana, cycle.id, {}, PageParams(page=1, page_size=200))
+        failed = next((r.run for r in rows if r.run.status.value == "failed"), None)
+        if failed is None or failed.latest_result_id is None:
+            return "no failed run on SPARK-CY-1 — run the executed results step first"
+        result = exec_queries.result_detail(s, sana, failed.latest_result_id)
+        failed_step = next((st.step_id for st in result.steps if st.status == "failed"), None)
+        other_case = next(
+            (r.run.test_case_id for r in rows if r.run.test_case_id != failed.test_case_id), None
+        )
+    with unit_of_work(factory) as uow:
+        workspace.update_project(
+            uow,
+            ayesha,
+            row_version=spark_version,
+            name=None,
+            description=None,
+            description_set=False,
+            settings={
+                "bug_tracker_name": "Jira",
+                "bug_url_template": "https://acme.atlassian.net/browse/{ref}",
+            },
+            policy=workspace_queries.org_policy(uow.session, org.id),
+        )
+    with unit_of_work(factory) as uow:
+        bugs.link_to_result(
+            uow,
+            sana,
+            result.id,
+            reference="SPK-431",
+            url=None,
+            title="Dashboard takes 9 s to load after sign-in",
+            step_id=failed_step,
+        )
+        if other_case is not None:
+            bugs.link_to_case(
+                uow, sana, other_case, reference="SPK-440", url=None, title="Copy typo on login page"
+            )
+    return "Jira tracker settings, SPK-431 on the failed SPARK-CY-1 result, SPK-440 on a case"

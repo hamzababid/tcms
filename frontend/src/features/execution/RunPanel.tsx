@@ -7,6 +7,8 @@ import { ErrorState, Facts, Skeleton, errorMessage, useToast } from "@/component
 import { PriorityIcon } from "@/components/common/PriorityIcon";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { useRunBugLinks } from "@/features/bugs/api";
+import { BugChips, trackerOf } from "@/features/bugs/components";
 import { formatDateTime } from "@/lib/format";
 
 import { useRun, useRunAction, type RunRead } from "./api";
@@ -94,6 +96,8 @@ function RunBody({
   onOpenRun: (id: string) => void;
 }) {
   const toast = useToast();
+  const bugLinks = useRunBugLinks(r.id).data ?? [];
+  const tracker = trackerOf(project);
   const claim = useRunAction(project.id, cycleId, "claim");
   const update = useRunAction(project.id, cycleId, "update-version");
   const replace = useRunAction(project.id, cycleId, "replace");
@@ -253,6 +257,13 @@ function RunBody({
                 <span className="min-w-0 flex-1 truncate text-ink-secondary">
                   {a.executed_by?.display_name ?? "—"} · {formatDateTime(a.finished_at ?? a.started_at)}
                 </span>
+                <BugChips
+                  links={bugLinks.filter((l) => l.result_id === a.id)}
+                  project={project}
+                  tracker={tracker}
+                  canRetest={canManage}
+                  compact
+                />
               </li>
             ))}
           </ol>

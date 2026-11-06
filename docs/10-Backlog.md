@@ -24,7 +24,7 @@ Every story also meets the Definition of Done in [09 §7](09-Implementation-Road
 | E07 | Test plans | M3 | M |
 | E08 | Cycles and runs | M3 | M |
 | E09 | Execution runner and results | M4 | M |
-| E10 | Defects | M5 | M |
+| E10 | Bug links (ADR-023) | M5 | S |
 | E11 | Requirements and traceability | M6 | M |
 | E12 | Search, filters, saved views | M6 | M |
 | E13 | Dashboards, reports, readiness | M7 | M |
@@ -158,18 +158,18 @@ Every story also meets the Definition of Done in [09 §7](09-Implementation-Road
 | US-099 | As a QA Engineer, I see My Work across projects | M | M | FR-EXE-014 | Grouped by cycle with counts and retest flags |
 | US-100 | As a QA Engineer, I see when a newer case version exists and update if allowed | M | S | BR-04 | AC-EXE-08 |
 
-## E10 — Defects (M5)
+## E10 — Bug links (M5; ADR-023 replaced the internal defect workflow)
 
 | ID | Story | Pri | Size | Refs | Acceptance |
 | --- | --- | --- | --- | --- | --- |
-| US-110 | As a QA Engineer, I raise a defect from a failed step, prefilled | M | M | FR-DEF-002, BR-20 | AC-DEF-02 |
-| US-111 | As a user, I create and edit defects directly | M | M | FR-DEF-001 | Required fields validated |
-| US-112 | As a user, I transition defects according to the state machine and my role | M | L | FR-DEF-004, BR-19 | AC-DEF-01/04; matrix test |
-| US-113 | As a QA Engineer, I link an existing defect to a result or case | M | S | FR-DEF-003 | TCMS-105 |
-| US-114 | As a QA Engineer, runs linked to defects ready for retest are flagged and I am notified | M | M | BR-21 | AC-DEF-03 |
-| US-115 | As a QA Engineer, a passing retest prompts me to verify the defect | M | S | BR-22 | TCMS-104 |
-| US-116 | As a user, I list, filter, bulk-edit defects and use a kanban view | M | L | FR-DEF-006 | TCMS-107 |
-| US-117 | As a user, I see defect status history, comments, attachments, watchers | M | M | FR-DEF-005 | History per transition |
+| US-110 | As a QA Engineer, I link the bug I logged in our tracker to a failed step from the runner | M | M | FR-DEF-001, BR-20 | AC-BUG-01, TCMS-100 |
+| US-111 | As a QA Manager, I set the project's tracker name and bug address template | M | S | FR-DEF-002 | AC-BUG-02 |
+| US-112 | As a user, I see bug chips on the run, its history, the cycle runs and the case | M | M | FR-DEF-003 | TCMS-100, 102 |
+| US-113 | As a QA Engineer, I link a bug directly to a case | M | S | FR-DEF-001 | TCMS-102 |
+| US-114 | As a QA Lead, I mark a bug ready for retest so its linked runs are flagged | M | M | BR-21 | AC-BUG-03, TCMS-103/104 |
+| US-115 | As a QA Engineer, I copy a ready-to-paste bug report from a failed attempt | M | S | FR-DEF-005 | Copy bug details |
+| US-116 | As a user, I see a project Bugs list grouped by reference | M | M | FR-DEF-006 | TCMS-105 |
+| US-117 | As a QA Manager, I can require a bug link on every failed result | M | S | FR-DEF-004 | AC-BUG-04, TCMS-106 |
 
 ## E11 — Requirements and traceability (M6)
 
@@ -209,7 +209,7 @@ Every story also meets the Definition of Done in [09 §7](09-Implementation-Road
 | US-151 | As a QA Lead, I save and reuse mapping templates | M | S | 02 §15.1 | Templates per project |
 | US-152 | As a QA user, I export cases in re-importable format | M | M | FR-IMP-002 | AC-IMP-02 |
 | US-153 | As a PM, I import/export requirements | M | M | FR-IMP-003 | Links to case keys created |
-| US-154 | As a user, I export defects, cycles and results | M | S | FR-IMP-004 | Via reports (E13) |
+| US-154 | As a user, I export bug links, cycles and results | M | S | FR-IMP-004 | Via reports (E13) |
 
 ## E15 — Audit and administration (M1 core, M8 UI)
 
@@ -228,7 +228,7 @@ Every story also meets the Definition of Done in [09 §7](09-Implementation-Road
 | ID | Story | Pri | Size | Refs | Acceptance |
 | --- | --- | --- | --- | --- | --- |
 | US-170 | As a user, I receive in-app notifications for the events in 02 §2.7 | M | M | 02 §2.7 | Bell count; mark read |
-| US-171 | As a user, I receive emails (assignment digest, defect assigned, retest, mentions) and can opt out | M | M | 02 §2.7 | Templates; opt-out respected |
+| US-171 | As a user, I receive emails (assignment digest, mentions) and can opt out | M | M | 02 §2.7 | Templates; opt-out respected |
 
 ## E17 — Hardening and release (M8–M9)
 

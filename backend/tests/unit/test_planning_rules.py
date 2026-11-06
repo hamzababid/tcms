@@ -63,7 +63,7 @@ def test_risks(risks: list[dict[str, Any]], code: str | None) -> None:
         ([{"type": "min_execution_progress", "threshold": 1.0}], None, None),
         ([{"type": "min_pass_rate", "threshold": 0}], None, None),
         ([{"type": "max_blocked", "threshold": 3}], None, None),
-        ([{"type": "max_open_defects", "threshold": 0, "params": {"severities": ["critical"]}}], None, None),
+        ([{"type": "max_failed", "threshold": 0}], None, None),
         ([{"type": "tag_fully_executed", "threshold": 1, "params": {"tag": "smoke"}}], None, None),
         ([{"type": "min_pass_rate", "threshold": 1}] * 21, "exit_rules", "too_many"),
         ([{"type": "nope", "threshold": 1}], "exit_rules[0].type", "invalid_value"),
@@ -73,16 +73,8 @@ def test_risks(risks: list[dict[str, Any]], code: str | None) -> None:
         ([{"type": "max_blocked", "threshold": 1.5}], "exit_rules[0].threshold", "invalid_range"),
         ([{"type": "max_blocked", "threshold": -1}], "exit_rules[0].threshold", "invalid_range"),
         ([{"type": "max_blocked", "threshold": None}], "exit_rules[0].threshold", "invalid_range"),
-        (
-            [{"type": "max_open_defects", "threshold": 0}],
-            "exit_rules[0].params.severities",
-            "field_required",
-        ),
-        (
-            [{"type": "max_open_defects", "threshold": 0, "params": {"severities": ["blocker"]}}],
-            "exit_rules[0].params.severities",
-            "field_required",
-        ),
+        ([{"type": "max_failed", "threshold": 2.5}], "exit_rules[0].threshold", "invalid_range"),
+        ([{"type": "max_open_defects", "threshold": 0}], "exit_rules[0].type", "invalid_value"),
         (
             [{"type": "tag_fully_executed", "threshold": 1, "params": {"tag": "  "}}],
             "exit_rules[0].params.tag",

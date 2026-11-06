@@ -29,7 +29,7 @@ RuleType = Literal[
     "min_execution_progress",
     "min_pass_rate",
     "min_pass_rate_applicable",
-    "max_open_defects",
+    "max_failed",
     "max_blocked",
     "min_requirement_coverage",
     "min_requirements_verified",

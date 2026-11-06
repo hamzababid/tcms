@@ -329,6 +329,27 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/bug-links/{link_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete Link */
+    delete: operations["delete_link_api_v1_bug_links__link_id__delete"];
+    options?: never;
+    head?: never;
+    /**
+     * Patch Link
+     * @description Correct URL or title: the person who linked it, or `defect.edit` (TCMS-107).
+     */
+    patch: operations["patch_link_api_v1_bug_links__link_id__patch"];
+    trace?: never;
+  };
   "/api/v1/comments": {
     parameters: {
       query?: never;
@@ -406,6 +427,26 @@ export interface paths {
     put?: never;
     /** Archive Cycle */
     post: operations["archive_cycle_api_v1_cycles__cycle_id__archive_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/cycles/{cycle_id}/bug-links": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Cycle Links
+     * @description Cycle detail Bugs column (docs/07 §5.8) or link-popover suggestions (`recent=true`).
+     */
+    get: operations["cycle_links_api_v1_cycles__cycle_id__bug_links_get"];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -1148,6 +1189,67 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/projects/{project_id}/bugs": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Bugs
+     * @description docs/02 §8.4 (TCMS-105): one row per reference.
+     */
+    get: operations["list_bugs_api_v1_projects__project_id__bugs_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/projects/{project_id}/bugs/links": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Reference Links
+     * @description Every link of one reference (Bugs list detail). The reference is a query parameter because tracker
+     *     keys may contain `#` or `/`.
+     */
+    get: operations["reference_links_api_v1_projects__project_id__bugs_links_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/projects/{project_id}/bugs/retest": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Request Retest
+     * @description BR-21 / AC-BUG-03 (TCMS-103): flag the eligible linked runs; `dry_run` previews the count.
+     */
+    post: operations["request_retest_api_v1_projects__project_id__bugs_retest_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/projects/{project_id}/cycles": {
     parameters: {
       query?: never;
@@ -1464,6 +1566,46 @@ export interface paths {
     patch: operations["patch_result_api_v1_results__result_id__patch"];
     trace?: never;
   };
+  "/api/v1/results/{result_id}/bug-links": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Link To Result
+     * @description BR-20 / AC-BUG-01, 02, 06: link a bug to an attempt (and step); draft or final.
+     */
+    post: operations["link_to_result_api_v1_results__result_id__bug_links_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/results/{result_id}/bug-report": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Bug Report
+     * @description "Copy bug details" (docs/02 §8.2): Markdown for the team's tracker, with a link back to the run.
+     */
+    get: operations["bug_report_api_v1_results__result_id__bug_report_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/results/{result_id}/finalize": {
     parameters: {
       query?: never;
@@ -1536,6 +1678,23 @@ export interface paths {
      * @description docs/06 §4.6 / §5.4: run, case summary, pinned version, newer version, draft, attempts, queue.
      */
     get: operations["get_run_api_v1_runs__run_id__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/runs/{run_id}/bug-links": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Run Links */
+    get: operations["run_links_api_v1_runs__run_id__bug_links_get"];
     put?: never;
     post?: never;
     delete?: never;
@@ -1704,6 +1863,30 @@ export interface paths {
      * @description US-068 / FR-TD-007, BR-13.
      */
     post: operations["archive_case_api_v1_test_cases__case_id__archive_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/test-cases/{case_id}/bug-links": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Case Links
+     * @description Case Bugs tab: direct links and links through its runs.
+     */
+    get: operations["case_links_api_v1_test_cases__case_id__bug_links_get"];
+    put?: never;
+    /**
+     * Link To Case
+     * @description docs/02 §8.2 (TCMS-102): a bug found outside execution, linked to the case.
+     */
+    post: operations["link_to_case_api_v1_test_cases__case_id__bug_links_post"];
     delete?: never;
     options?: never;
     head?: never;
@@ -2370,6 +2553,122 @@ export interface components {
       /** File */
       file: string;
     };
+    /** BugLinkCreate */
+    BugLinkCreate: {
+      /**
+       * Reference
+       * @example SPK-431
+       */
+      reference: string;
+      /**
+       * Step Id
+       * @description A step of the run's pinned version
+       */
+      step_id?: string | null;
+      /** Title */
+      title?: string | null;
+      /**
+       * Url
+       * @description http(s) only; built from the project template if empty
+       */
+      url?: string | null;
+    };
+    /** BugLinkPatch */
+    BugLinkPatch: {
+      /** Title */
+      title?: string | null;
+      /**
+       * Url
+       * @description Empty or null clears it
+       */
+      url?: string | null;
+    };
+    /** BugLinkRead */
+    BugLinkRead: {
+      /** Attempt No */
+      attempt_no: number | null;
+      /**
+       * Attempt Status
+       * @description Final status, or 'draft' while in progress
+       */
+      attempt_status: string | null;
+      /**
+       * Can Edit
+       * @description The caller may edit or remove this link
+       */
+      can_edit: boolean;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      created_by: components["schemas"]["UserRef"] | null;
+      cycle: components["schemas"]["LinkedCycle"] | null;
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Reference */
+      reference: string;
+      /** Result Id */
+      result_id: string | null;
+      /** Row Version */
+      row_version: number;
+      /** Run Id */
+      run_id: string | null;
+      /**
+       * Run Status
+       * @description Latest status of the linked run
+       */
+      run_status: string | null;
+      /** Step Id */
+      step_id: string | null;
+      /** Step Position */
+      step_position: number | null;
+      test_case: components["schemas"]["LinkedCase"];
+      /** Title */
+      title: string | null;
+      /** Url */
+      url: string | null;
+    };
+    /** BugReportRead */
+    BugReportRead: {
+      /**
+       * Text
+       * @description Markdown to paste into the team's tracker
+       */
+      text: string;
+    };
+    /** BugSummaryRead */
+    BugSummaryRead: {
+      /** Cases */
+      cases: number;
+      /** Cycle Keys */
+      cycle_keys: string[];
+      /** Failing Runs */
+      failing_runs: number;
+      /**
+       * First Linked At
+       * Format: date-time
+       */
+      first_linked_at: string;
+      /**
+       * Last Linked At
+       * Format: date-time
+       */
+      last_linked_at: string;
+      /** Needs Retest Runs */
+      needs_retest_runs: number;
+      /** Reference */
+      reference: string;
+      /** Runs */
+      runs: number;
+      /** Title */
+      title: string | null;
+      /** Url */
+      url: string | null;
+    };
     /** BulkRequest */
     BulkRequest: {
       /**
@@ -2443,6 +2742,21 @@ export interface components {
        * @constant
        */
       status: "passed";
+    };
+    /** CaseBugLinkCreate */
+    CaseBugLinkCreate: {
+      /**
+       * Reference
+       * @example SPK-431
+       */
+      reference: string;
+      /** Title */
+      title?: string | null;
+      /**
+       * Url
+       * @description http(s) only; built from the project template if empty
+       */
+      url?: string | null;
     };
     /** CaseCounts */
     CaseCounts: {
@@ -3056,7 +3370,7 @@ export interface components {
         | "min_execution_progress"
         | "min_pass_rate"
         | "min_pass_rate_applicable"
-        | "max_open_defects"
+        | "max_failed"
         | "max_blocked"
         | "min_requirement_coverage"
         | "min_requirements_verified"
@@ -3298,6 +3612,28 @@ export interface components {
        * Format: uuid
        */
       target_case_id: string;
+    };
+    /** LinkedCase */
+    LinkedCase: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Key */
+      key: string;
+      /** Title */
+      title: string;
+    };
+    /** LinkedCycle */
+    LinkedCycle: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Key */
+      key: string;
     };
     /** LiveStatus */
     LiveStatus: {
@@ -3552,6 +3888,17 @@ export interface components {
     Page_ActivityItem_: {
       /** Items */
       items: components["schemas"]["ActivityItem"][];
+      /** Page */
+      page: number;
+      /** Page Size */
+      page_size: number;
+      /** Total */
+      total: number;
+    };
+    /** Page[BugSummaryRead] */
+    Page_BugSummaryRead_: {
+      /** Items */
+      items: components["schemas"]["BugSummaryRead"][];
       /** Page */
       page: number;
       /** Page Size */
@@ -4044,12 +4391,22 @@ export interface components {
       approval_required: boolean;
       /** Attachment Max Mb */
       attachment_max_mb: number;
+      /**
+       * Bug Tracker Name
+       * @description Shown on buttons, e.g. 'Open in Jira' (docs/02 §8.1)
+       */
+      bug_tracker_name: string;
+      /**
+       * Bug Url Template
+       * @description http(s) URL with {ref}; builds bug link URLs
+       */
+      bug_url_template: string | null;
       /** Only Assignee Executes */
       only_assignee_executes: boolean;
       /** Report Module Depth */
       report_module_depth: number;
-      /** Require Defect For Failure */
-      require_defect_for_failure: boolean;
+      /** Require Bug Link For Failure */
+      require_bug_link_for_failure: boolean;
     };
     /** ProjectSettingsPatch */
     ProjectSettingsPatch: {
@@ -4059,12 +4416,19 @@ export interface components {
       approval_required?: boolean | null;
       /** Attachment Max Mb */
       attachment_max_mb?: number | null;
+      /** Bug Tracker Name */
+      bug_tracker_name?: string | null;
+      /**
+       * Bug Url Template
+       * @description Empty string clears it
+       */
+      bug_url_template?: string | null;
       /** Only Assignee Executes */
       only_assignee_executes?: boolean | null;
       /** Report Module Depth */
       report_module_depth?: number | null;
-      /** Require Defect For Failure */
-      require_defect_for_failure?: boolean | null;
+      /** Require Bug Link For Failure */
+      require_bug_link_for_failure?: boolean | null;
     };
     /**
      * ProjectStatus
@@ -4286,6 +4650,31 @@ export interface components {
       status: ("passed" | "failed" | "blocked" | "skipped" | "not_applicable") | null;
       /** Steps */
       steps: components["schemas"]["StepResultRead"][];
+    };
+    /** RetestRequest */
+    RetestRequest: {
+      /**
+       * Dry Run
+       * @description Only count the runs that would be flagged
+       * @default false
+       */
+      dry_run: boolean;
+      /** Reference */
+      reference: string;
+    };
+    /** RetestResponse */
+    RetestResponse: {
+      /** Dry Run */
+      dry_run: boolean;
+      /**
+       * Flagged
+       * @description Runs flagged (or that would be, with dry_run)
+       */
+      flagged: number;
+      /** Linked Runs */
+      linked_runs: number;
+      /** Reference */
+      reference: string;
     };
     /** ReturnRequest */
     ReturnRequest: {
@@ -5588,6 +5977,92 @@ export interface operations {
       };
     };
   };
+  delete_link_api_v1_bug_links__link_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        link_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  patch_link_api_v1_bug_links__link_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        link_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["BugLinkPatch"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BugLinkRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   list_comments_api_v1_comments_get: {
     parameters: {
       query: {
@@ -5869,6 +6344,51 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["CycleRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  cycle_links_api_v1_cycles__cycle_id__bug_links_get: {
+    parameters: {
+      query?: {
+        /** @description Only the most recent distinct references (suggestions) */
+        recent?: boolean;
+      };
+      header?: never;
+      path: {
+        cycle_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BugLinkRead"][];
         };
       };
       /** @description Validation or business-rule error */
@@ -7944,6 +8464,145 @@ export interface operations {
       };
     };
   };
+  list_bugs_api_v1_projects__project_id__bugs_get: {
+    parameters: {
+      query?: {
+        page?: number;
+        page_size?: number;
+        q?: string | null;
+        cycle_id?: string | null;
+        /** @description Only bugs linked to runs that are failed now */
+        failing?: boolean;
+      };
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Page_BugSummaryRead_"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  reference_links_api_v1_projects__project_id__bugs_links_get: {
+    parameters: {
+      query: {
+        reference: string;
+      };
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BugLinkRead"][];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  request_retest_api_v1_projects__project_id__bugs_retest_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RetestRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RetestResponse"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   list_cycles_api_v1_projects__project_id__cycles_get: {
     parameters: {
       query?: {
@@ -9188,6 +9847,96 @@ export interface operations {
       };
     };
   };
+  link_to_result_api_v1_results__result_id__bug_links_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        result_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["BugLinkCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BugLinkRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  bug_report_api_v1_results__result_id__bug_report_get: {
+    parameters: {
+      query?: {
+        step_id?: string | null;
+      };
+      header?: never;
+      path: {
+        result_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BugReportRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   finalize_api_v1_results__result_id__finalize_post: {
     parameters: {
       query?: never;
@@ -9349,6 +10098,48 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["RunRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  run_links_api_v1_runs__run_id__bug_links_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        run_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BugLinkRead"][];
         };
       };
       /** @description Validation or business-rule error */
@@ -9796,6 +10587,94 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["CaseRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  case_links_api_v1_test_cases__case_id__bug_links_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        case_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BugLinkRead"][];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  link_to_case_api_v1_test_cases__case_id__bug_links_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        case_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CaseBugLinkCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BugLinkRead"];
         };
       };
       /** @description Validation or business-rule error */

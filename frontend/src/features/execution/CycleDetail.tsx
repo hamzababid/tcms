@@ -16,6 +16,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/field";
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
 import { Tabs } from "@/components/ui/tabs";
+import { useCycleBugLinks, type BugLink } from "@/features/bugs/api";
+import { BugChips, trackerOf } from "@/features/bugs/components";
 import { RecordHistory } from "@/features/projects/RecordHistory";
 import { useFolders } from "@/features/testdesign/api";
 import { AddCasesDialog } from "@/features/testdesign/CaseSelector";
@@ -626,6 +628,16 @@ function RunsSection({
   };
   const runs = useRuns(c.id, query, c.runs_pending);
   const items = runs.data?.items ?? [];
+  // Bugs column (docs/07 §5.8): distinct references linked to any attempt of each run.
+  const tracker = trackerOf(project);
+  const bugLinks = useCycleBugLinks(c.id).data ?? [];
+  const bugsByRun = new Map<string, BugLink[]>();
+  for (const l of bugLinks) {
+    if (!l.run_id) continue;
+    const list = bugsByRun.get(l.run_id) ?? [];
+    if (!list.some((x) => x.reference.toUpperCase() === l.reference.toUpperCase())) list.push(l);
+    bugsByRun.set(l.run_id, list);
+  }
   const total = runs.data?.total ?? 0;
 
   // Selection belongs to one filter, like the repository list (docs/07 §4.1).
@@ -861,6 +873,21 @@ function RunsSection({
         </span>
       ),
       meta: { width: "w-40", filter: { kind: "select", options: RUN_STATUS_OPTIONS } },
+    },
+    {
+      id: "bugs",
+      header: "Bugs",
+      enableSorting: false,
+      cell: (x) => (
+        <BugChips
+          links={bugsByRun.get(x.row.original.id) ?? []}
+          project={project}
+          tracker={tracker}
+          canRetest={canManage}
+          compact
+        />
+      ),
+      meta: { width: "w-40" },
     },
   ];
 

@@ -638,3 +638,112 @@ def my_week(
     s: Session, org_id: UUID, project_ids: list[UUID], user_id: UUID, since: datetime
 ) -> dict[str, int]:
     return exec_repo.my_finished_counts(s, org_id, project_ids, user_id, since)
+
+
+# -- attempt context for bug links (M5, docs/02 §8.2) ----------------------------------------------
+
+
+@dataclass(frozen=True)
+class AttemptContext:
+    """What the bugs module needs about an attempt: its run, case, cycle, pinned version and steps."""
+
+    result: ResultView
+    run_id: UUID
+    test_case_id: UUID
+    case_key: str
+    case_title: str
+    cycle_id: UUID
+    cycle_key: str
+    cycle_name: str
+    cycle_status: str
+    environment_name: str
+    version: td.VersionView | None
+
+
+def attempt_context(s: Session, ctx: AccessContext, result_id: UUID) -> AttemptContext:
+    r = exec_repo.result(s, ctx, result_id)
+    if r is None:
+        raise NotFound()
+    run_ = exec_repo.run(s, ctx, r.run_id)
+    cyc = exec_repo.cycle(s, ctx, run_.cycle_id) if run_ else None
+    if run_ is None or cyc is None:
+        raise NotFound()
+    ref = td.case_refs(s, ctx, [run_.test_case_id]).get(run_.test_case_id)
+    envs = {
+        e.id: e.name
+        for e in workspace_queries.environments(
+            s, ctx.principal.organization_id, ctx.pid, include_archived=True
+        )
+    }
+    return AttemptContext(
+        result=_result_view(r, exec_repo.step_results(s, r.id)),
+        run_id=run_.id,
+        test_case_id=run_.test_case_id,
+        case_key=ref.key if ref else "",
+        case_title=ref.title if ref else "",
+        cycle_id=cyc.id,
+        cycle_key=cyc.key,
+        cycle_name=cyc.name,
+        cycle_status=cyc.status.value,
+        environment_name=envs.get(r.environment_id, ""),
+        version=td.version_view_by_id(s, ctx, run_.test_case_version_id),
+    )
+
+
+@dataclass(frozen=True)
+class RunBrief:
+    run_id: UUID
+    cycle_id: UUID
+    cycle_key: str
+    cycle_status: str
+    status: str
+    needs_retest: bool
+    superseded: bool
+
+
+def runs_brief(s: Session, ctx: AccessContext, run_ids: list[UUID]) -> dict[UUID, RunBrief]:
+    """Cycle and status of each run (bug lists, docs/02 §8.4)."""
+    if not run_ids:
+        return {}
+    rows = s.execute(
+        select(TestRun, TestCycle)
+        .join(TestCycle, TestCycle.id == TestRun.cycle_id)
+        .where(
+            TestRun.organization_id == ctx.principal.organization_id,
+            TestRun.project_id == ctx.pid,
+            TestRun.id.in_(run_ids),
+        )
+    ).all()
+    return {
+        run.id: RunBrief(
+            run.id,
+            cyc.id,
+            cyc.key,
+            cyc.status.value,
+            run.status.value,
+            run.needs_retest,
+            run.superseded_by_run_id is not None,
+        )
+        for run, cyc in rows
+    }
+
+
+def run_ids_in_cycle(s: Session, ctx: AccessContext, cycle_id: UUID) -> list[UUID]:
+    stmt = exec_repo.run_list_stmt(ctx, cycle_id, include_superseded=True).with_only_columns(TestRun.id)
+    return list(s.execute(stmt).scalars())
+
+
+def attempt_brief(
+    s: Session, ctx: AccessContext, result_ids: list[UUID]
+) -> dict[UUID, tuple[int, str, str | None]]:
+    """(attempt_no, state, status) per attempt, for bug-link lists."""
+    if not result_ids:
+        return {}
+    rows = s.execute(
+        select(TestResult.id, TestResult.attempt_no, TestResult.state, TestResult.status).where(
+            TestResult.organization_id == ctx.principal.organization_id,
+            TestResult.project_id == ctx.pid,
+            TestResult.id.in_(result_ids),
+        )
+    ).all()
+    return {r[0]: (r[1], r[2].value, r[3].value if r[3] else None) for r in rows}
