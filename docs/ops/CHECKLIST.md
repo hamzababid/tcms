@@ -227,7 +227,7 @@ covered by TCMS-120); `br_manifest`: BR-23 in M6. Project setting "Requirement a
 falls back to the bug address). Seed: SPK-101…105 on SPARK-PL-1 (SPK-105 has no case). L19, L25 and L34 are closed;
 deferred items: L37–L42.
 
-## M7a — Reporting and readiness (branch `milestone/m7-reporting-readiness`)
+## M7 — Reporting, readiness and notifications (M7a `milestone/m7-reporting-readiness`, PR #14; M7b `milestone/m7b-notifications`)
 
 M7 is delivered in two PRs (product owner, 2026-11-06): M7a reporting and readiness (E13), M7b
 notifications and email (E16). Readiness is evaluated per plan (ADR-025, Q1 = a). Spec:
@@ -245,7 +245,8 @@ E2E in `frontend/e2e/m7.spec.ts` (axe on every visited screen). No migration (th
 | US-144 Six reports + CSV/XLSX | ✅ | `test_reports_filters_and_columns`, AC-RPT-05 / TCMS-117 `test_ac_rpt_05_tcms_117_export_escapes_formulas`, AC-RPT-04 `test_ac_rpt_04_large_export_runs_in_the_background`, unit escaping tests; E2E TCMS-117 | Closes L26 and the matrix part of L38 |
 | US-145 Readiness and decision | ✅ | AC-REL-01…03 / TCMS-116 `test_ac_rel_01_*`, `test_ac_rel_02_*`, `test_ac_rel_03_*`, unit rule tests; E2E UJ-8 | Plan Overview readiness closes L25 |
 | US-146 Organization dashboard | ✅ | `test_tcms_115_manager_dashboard_widgets` (org rows, member scoping) | `/org` |
-| US-170, US-171 Notifications and email | ⬜ M7b | — | L15, L16, L20, L33, L47 |
+| US-170 In-app notifications (bell) | ✅ M7b | AC-NTF-01 `test_ac_ntf_01_us_170_bell_count_list_and_mark_read`, L33 `test_l33_ready_for_retest_notifies_the_assignee`, purge `test_old_notifications_are_purged`, unit titles; E2E AC-NTF-01 | Closes L15, L16, the bell part of L20, L33 |
+| US-171 Email: mentions, daily digest, opt-out | ✅ M7b | AC-NTF-02 `test_ac_ntf_02_mention_email_and_opt_out`, AC-NTF-03 `test_ac_ntf_03_daily_digest_at_seven_local_time`, unit `test_ac_ntf_03_digest_goes_out_at_seven_in_the_users_time_zone`, templates; E2E opt-out | Profile › Notifications |
 
 Also: authz matrix covers every new route (data-transfer routes are initiator-only, covered by the export
 test); `br_manifest`: BR-24 in M7. Seed: SPARK v2.5 has a No-go decision and 15 days of snapshots;
@@ -259,6 +260,6 @@ test); `br_manifest`: BR-24 in M7. Seed: SPARK v2.5 has a No-go decision and 15 
 | M4 Execution runner | E09 | ✅ done (merged, PR #10) | See the M4 section above |
 | M5 Bug links | E10 | ✅ done (merged, PR #12) | See the M5 section above (ADR-023) |
 | M6 Requirements, RTM, search | E11, E12 | ✅ done (merged, PR #13) | See the M6 section above (ADR-024) |
-| M7 Reporting & readiness | E13, E16 | 🟡 M7a done (awaiting review); M7b notifications next | See the M7a section above (ADR-025) |
+| M7 Reporting & readiness | E13, E16 | ✅ M7a merged (PR #14); M7b done (awaiting review) | See the M7a section above (ADR-025) |
 | M8 Import/export, admin UI, hardening | E14, E15 (UI), E17 | ⬜ not started | US-150…154, US-162…166, US-180…184 |
 | M9 Pilot & go-live | — | ⬜ not started | US-185 |
