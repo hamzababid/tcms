@@ -135,6 +135,27 @@ def project_members(s: Session, org_id: UUID, project_id: UUID) -> list[ProjectM
     ]
 
 
+@dataclass(frozen=True)
+class MembershipRow:
+    """One project role of a user (M8b: Users page and access review)."""
+
+    project_id: UUID
+    role_code: str
+    role_name: str
+    granted_by: UUID | None
+    granted_at: datetime
+
+
+def org_memberships(s: Session, org_id: UUID) -> dict[UUID, list[MembershipRow]]:
+    """Every project membership in the organization, by user."""
+    out: dict[UUID, list[MembershipRow]] = {}
+    for m, r in repo.org_project_memberships(s, org_id):
+        out.setdefault(m.user_id, []).append(
+            MembershipRow(m.project_id, r.code, r.name, m.granted_by, m.granted_at)
+        )
+    return out
+
+
 def member_counts(s: Session, org_id: UUID, project_ids: list[UUID]) -> dict[UUID, int]:
     if not project_ids:
         return {}
@@ -154,6 +175,7 @@ class OrgMemberRow:
     last_login_at: datetime | None
     joined_at: datetime
     projects: int
+    granted_by: UUID | None = None  # who added them to the organization (None: setup or invitation)
 
 
 def org_members(s: Session, org_id: UUID) -> list[OrgMemberRow]:
@@ -173,6 +195,7 @@ def org_members(s: Session, org_id: UUID) -> list[OrgMemberRow]:
             last_login_at=u.last_login_at,
             joined_at=m.joined_at,
             projects=int(project_counts.get(u.id, 0)),
+            granted_by=m.granted_by,
         )
         for m, u in repo.org_members(s, org_id)
     ]

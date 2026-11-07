@@ -343,6 +343,16 @@ def project_memberships(s: Session, org_id: UUID, project_id: UUID) -> list[tupl
     return [(m, u, r) for m, u, r in rows]
 
 
+def org_project_memberships(s: Session, org_id: UUID) -> list[tuple[ProjectMember, Role]]:
+    rows = s.execute(
+        select(ProjectMember, Role)
+        .join(Role, Role.id == ProjectMember.role_id)
+        .where(ProjectMember.organization_id == org_id)
+        .order_by(ProjectMember.granted_at)
+    ).all()
+    return [(m, r) for m, r in rows]
+
+
 def count_role_members(s: Session, project_id: UUID, role_id: UUID, *, lock: bool = False) -> int:
     stmt = select(ProjectMember.user_id).where(
         ProjectMember.project_id == project_id, ProjectMember.role_id == role_id

@@ -66,7 +66,28 @@ def patch_organization(
 def list_members(
     ctx: AccessContext = Depends(org_context), uow: UnitOfWork = Depends(get_read_uow)
 ) -> list[ids.OrgMemberRead]:
+    """US-164: with each member's project roles (M8b)."""
     ctx.require("org.users.manage")
+    s, org_id = uow.session, ctx.principal.organization_id
+    memberships = identity_queries.org_memberships(s, org_id)
+    projects = {p.id: p for p in workspace_queries.projects(s, org_id, ids=None, status=None)}
+
+    def roles_of(user_id: UUID) -> list[ids.ProjectRoleRead]:
+        out = [
+            ids.ProjectRoleRead(
+                project_id=r.project_id,
+                project_key=projects[r.project_id].key,
+                project_name=projects[r.project_id].name,
+                project_status=projects[r.project_id].status.value,
+                role_code=r.role_code,
+                role_name=r.role_name,
+                granted_at=r.granted_at,
+            )
+            for r in memberships.get(user_id, [])
+            if r.project_id in projects
+        ]
+        return sorted(out, key=lambda r: r.project_key)
+
     return [
         ids.OrgMemberRead(
             user=ids.UserRef(**vars(m.user)),
@@ -75,8 +96,9 @@ def list_members(
             last_login_at=m.last_login_at,
             joined_at=m.joined_at,
             projects=m.projects,
+            project_roles=roles_of(m.user.id),
         )
-        for m in identity_queries.org_members(uow.session, ctx.principal.organization_id)
+        for m in identity_queries.org_members(s, org_id)
     ]
 
 

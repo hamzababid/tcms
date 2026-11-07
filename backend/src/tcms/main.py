@@ -9,6 +9,7 @@ from tcms.api.deps import AppState
 from tcms.api.middleware import RequestContextMiddleware
 from tcms.api.problems import PROBLEM_RESPONSES, install_problem_handlers
 from tcms.api.v1 import (
+    administration,
     auth,
     bugs,
     cycles,
@@ -27,11 +28,12 @@ from tcms.api.v1 import (
     search,
     test_cases,
 )
+from tcms.core import version
 from tcms.core.config import Settings, get_settings
 from tcms.core.db import app_engine, session_factory
 from tcms.core.logging import configure_logging
 
-API_VERSION = "0.1.0"
+API_VERSION = version.API_VERSION
 
 
 def install_modules() -> None:
@@ -48,7 +50,8 @@ def install_modules() -> None:
     import tcms.reporting.exports
     import tcms.reporting.snapshots
     import tcms.testdesign.jobs
-    import tcms.testdesign.service  # noqa: F401
+    import tcms.testdesign.service
+    import tcms.workspace.retention  # noqa: F401
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -75,6 +78,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     install_problem_handlers(app)
     for module in (
         health,
+        administration,
         auth,
         organization,
         projects,

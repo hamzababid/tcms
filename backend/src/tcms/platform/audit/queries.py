@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, time, timedelta
 from typing import Any
 from uuid import UUID
@@ -28,6 +28,7 @@ class EventRow:
     entity_key: str | None
     changes: dict[str, Any] | None
     summary: str | None
+    context: dict[str, Any] = field(default_factory=dict)  # request id, ip, user agent, extra
 
 
 def _row(e: AuditEvent) -> EventRow:
@@ -44,6 +45,7 @@ def _row(e: AuditEvent) -> EventRow:
         e.entity_key,
         e.changes,
         e.summary,
+        dict(e.context or {}),
     )
 
 
@@ -57,6 +59,7 @@ class AuditFilter:
     occurred_from: date | None = None
     occurred_to: date | None = None
     q: str | None = None
+    project_id: UUID | None = None  # organization audit log only
 
 
 def _filtered(stmt: Select[AuditEvent], f: AuditFilter) -> Select[AuditEvent]:
@@ -66,6 +69,8 @@ def _filtered(stmt: Select[AuditEvent], f: AuditFilter) -> Select[AuditEvent]:
         stmt = stmt.where(AuditEvent.actor_id == f.actor_id)
     if f.action:
         stmt = stmt.where(AuditEvent.action == f.action)
+    if f.project_id:
+        stmt = stmt.where(AuditEvent.project_id == f.project_id)
     if f.occurred_from:
         stmt = stmt.where(AuditEvent.occurred_at >= datetime.combine(f.occurred_from, time.min, tzinfo=UTC))
     if f.occurred_to:
@@ -102,6 +107,50 @@ def project_activity(
         .offset(page.offset)
     ).scalars()
     return [_row(e) for e in rows], total
+
+
+def _paged(s: Session, stmt: Select[AuditEvent], page: PageParams) -> tuple[list[EventRow], int]:
+    total = int(s.execute(select(func.count()).select_from(stmt.subquery())).scalar_one())
+    rows = s.execute(
+        stmt.order_by(AuditEvent.occurred_at.desc(), AuditEvent.id.desc())
+        .limit(page.page_size)
+        .offset(page.offset)
+    ).scalars()
+    return [_row(e) for e in rows], total
+
+
+def _scope(org_id: UUID, project_id: UUID | None) -> Select[AuditEvent]:
+    stmt = select(AuditEvent).where(AuditEvent.organization_id == org_id)
+    return stmt.where(AuditEvent.project_id == project_id) if project_id else stmt
+
+
+def events(
+    s: Session,
+    org_id: UUID,
+    page: PageParams,
+    *,
+    project_id: UUID | None = None,
+    filters: AuditFilter = AuditFilter(),
+) -> tuple[list[EventRow], int]:
+    """The audit log (docs/02 §13.3): every event of the organization, or of one project, unfiltered by
+    kind (unlike the activity feed)."""
+    return _paged(s, _filtered(_scope(org_id, project_id), filters), page)
+
+
+def export_events(
+    s: Session,
+    org_id: UUID,
+    *,
+    project_id: UUID | None = None,
+    filters: AuditFilter = AuditFilter(),
+    limit: int,
+) -> list[EventRow]:
+    """Newest first, at most `limit` (+1 so the caller can tell the file would be cut)."""
+    stmt = _filtered(_scope(org_id, project_id), filters)
+    rows = s.execute(
+        stmt.order_by(AuditEvent.occurred_at.desc(), AuditEvent.id.desc()).limit(limit + 1)
+    ).scalars()
+    return [_row(e) for e in rows]
 
 
 def entity_history(

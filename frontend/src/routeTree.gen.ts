@@ -14,6 +14,7 @@ import { Route as ForgotRouteImport } from './routes/forgot'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as SetupMfaRouteImport } from './routes/setup-mfa'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppAdminRouteImport } from './routes/_app/admin'
 import { Route as AppMyWorkRouteImport } from './routes/_app/my-work'
 import { Route as AppOrgRouteImport } from './routes/_app/org'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
@@ -21,11 +22,18 @@ import { Route as AppProjectsRouteImport } from './routes/_app/projects'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as LoginMfaRouteImport } from './routes/login_.mfa'
 import { Route as ResetTokenRouteImport } from './routes/reset.$token'
+import { Route as AppAdminIndexRouteImport } from './routes/_app/admin/index'
+import { Route as AppAdminAccessReviewRouteImport } from './routes/_app/admin/access-review'
+import { Route as AppAdminAuditRouteImport } from './routes/_app/admin/audit'
 import { Route as AppAdminInvitationsRouteImport } from './routes/_app/admin/invitations'
+import { Route as AppAdminRolesRouteImport } from './routes/_app/admin/roles'
 import { Route as AppAdminSecurityRouteImport } from './routes/_app/admin/security'
+import { Route as AppAdminSystemRouteImport } from './routes/_app/admin/system'
+import { Route as AppAdminUsersRouteImport } from './routes/_app/admin/users'
 import { Route as AppPProjectKeyRouteImport } from './routes/_app/p.$projectKey'
 import { Route as AppPProjectKeyIndexRouteImport } from './routes/_app/p.$projectKey/index'
 import { Route as AppPProjectKeyActivityRouteImport } from './routes/_app/p.$projectKey/activity'
+import { Route as AppPProjectKeyAuditRouteImport } from './routes/_app/p.$projectKey/audit'
 import { Route as AppPProjectKeyBugsRouteImport } from './routes/_app/p.$projectKey/bugs'
 import { Route as AppPProjectKeyImportRouteImport } from './routes/_app/p.$projectKey/import'
 import { Route as AppPProjectKeyReportsRouteImport } from './routes/_app/p.$projectKey/reports'
@@ -68,6 +76,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMyWorkRoute = AppMyWorkRouteImport.update({
   id: '/my-work',
   path: '/my-work',
@@ -103,15 +116,45 @@ const ResetTokenRoute = ResetTokenRouteImport.update({
   path: '/reset/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminAccessReviewRoute = AppAdminAccessReviewRouteImport.update({
+  id: '/access-review',
+  path: '/access-review',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminAuditRoute = AppAdminAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const AppAdminInvitationsRoute = AppAdminInvitationsRouteImport.update({
-  id: '/admin/invitations',
-  path: '/admin/invitations',
-  getParentRoute: () => AppRoute,
+  id: '/invitations',
+  path: '/invitations',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminRolesRoute = AppAdminRolesRouteImport.update({
+  id: '/roles',
+  path: '/roles',
+  getParentRoute: () => AppAdminRoute,
 } as any)
 const AppAdminSecurityRoute = AppAdminSecurityRouteImport.update({
-  id: '/admin/security',
-  path: '/admin/security',
-  getParentRoute: () => AppRoute,
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminSystemRoute = AppAdminSystemRouteImport.update({
+  id: '/system',
+  path: '/system',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminUsersRoute = AppAdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AppAdminRoute,
 } as any)
 const AppPProjectKeyRoute = AppPProjectKeyRouteImport.update({
   id: '/p/$projectKey',
@@ -126,6 +169,11 @@ const AppPProjectKeyIndexRoute = AppPProjectKeyIndexRouteImport.update({
 const AppPProjectKeyActivityRoute = AppPProjectKeyActivityRouteImport.update({
   id: '/activity',
   path: '/activity',
+  getParentRoute: () => AppPProjectKeyRoute,
+} as any)
+const AppPProjectKeyAuditRoute = AppPProjectKeyAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
   getParentRoute: () => AppPProjectKeyRoute,
 } as any)
 const AppPProjectKeyBugsRoute = AppPProjectKeyBugsRouteImport.update({
@@ -231,6 +279,7 @@ export interface FileRoutesByFullPath {
   '/forgot': typeof ForgotRoute
   '/login': typeof LoginRoute
   '/setup-mfa': typeof SetupMfaRoute
+  '/admin': typeof AppAdminRouteWithChildren
   '/my-work': typeof AppMyWorkRoute
   '/org': typeof AppOrgRoute
   '/profile': typeof AppProfileRoute
@@ -238,10 +287,17 @@ export interface FileRoutesByFullPath {
   '/invite/$token': typeof InviteTokenRoute
   '/login/mfa': typeof LoginMfaRoute
   '/reset/$token': typeof ResetTokenRoute
+  '/admin/access-review': typeof AppAdminAccessReviewRoute
+  '/admin/audit': typeof AppAdminAuditRoute
   '/admin/invitations': typeof AppAdminInvitationsRoute
+  '/admin/roles': typeof AppAdminRolesRoute
   '/admin/security': typeof AppAdminSecurityRoute
+  '/admin/system': typeof AppAdminSystemRoute
+  '/admin/users': typeof AppAdminUsersRoute
   '/p/$projectKey': typeof AppPProjectKeyRouteWithChildren
+  '/admin/': typeof AppAdminIndexRoute
   '/p/$projectKey/activity': typeof AppPProjectKeyActivityRoute
+  '/p/$projectKey/audit': typeof AppPProjectKeyAuditRoute
   '/p/$projectKey/bugs': typeof AppPProjectKeyBugsRoute
   '/p/$projectKey/import': typeof AppPProjectKeyImportRoute
   '/p/$projectKey/reports': typeof AppPProjectKeyReportsRoute
@@ -273,9 +329,16 @@ export interface FileRoutesByTo {
   '/login/mfa': typeof LoginMfaRoute
   '/reset/$token': typeof ResetTokenRoute
   '/': typeof AppIndexRoute
+  '/admin/access-review': typeof AppAdminAccessReviewRoute
+  '/admin/audit': typeof AppAdminAuditRoute
   '/admin/invitations': typeof AppAdminInvitationsRoute
+  '/admin/roles': typeof AppAdminRolesRoute
   '/admin/security': typeof AppAdminSecurityRoute
+  '/admin/system': typeof AppAdminSystemRoute
+  '/admin/users': typeof AppAdminUsersRoute
+  '/admin': typeof AppAdminIndexRoute
   '/p/$projectKey/activity': typeof AppPProjectKeyActivityRoute
+  '/p/$projectKey/audit': typeof AppPProjectKeyAuditRoute
   '/p/$projectKey/bugs': typeof AppPProjectKeyBugsRoute
   '/p/$projectKey/import': typeof AppPProjectKeyImportRoute
   '/p/$projectKey/reports': typeof AppPProjectKeyReportsRoute
@@ -301,6 +364,7 @@ export interface FileRoutesById {
   '/forgot': typeof ForgotRoute
   '/login': typeof LoginRoute
   '/setup-mfa': typeof SetupMfaRoute
+  '/_app/admin': typeof AppAdminRouteWithChildren
   '/_app/my-work': typeof AppMyWorkRoute
   '/_app/org': typeof AppOrgRoute
   '/_app/profile': typeof AppProfileRoute
@@ -309,10 +373,17 @@ export interface FileRoutesById {
   '/login_/mfa': typeof LoginMfaRoute
   '/reset/$token': typeof ResetTokenRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/admin/access-review': typeof AppAdminAccessReviewRoute
+  '/_app/admin/audit': typeof AppAdminAuditRoute
   '/_app/admin/invitations': typeof AppAdminInvitationsRoute
+  '/_app/admin/roles': typeof AppAdminRolesRoute
   '/_app/admin/security': typeof AppAdminSecurityRoute
+  '/_app/admin/system': typeof AppAdminSystemRoute
+  '/_app/admin/users': typeof AppAdminUsersRoute
   '/_app/p/$projectKey': typeof AppPProjectKeyRouteWithChildren
+  '/_app/admin/': typeof AppAdminIndexRoute
   '/_app/p/$projectKey/activity': typeof AppPProjectKeyActivityRoute
+  '/_app/p/$projectKey/audit': typeof AppPProjectKeyAuditRoute
   '/_app/p/$projectKey/bugs': typeof AppPProjectKeyBugsRoute
   '/_app/p/$projectKey/import': typeof AppPProjectKeyImportRoute
   '/_app/p/$projectKey/reports': typeof AppPProjectKeyReportsRoute
@@ -339,6 +410,7 @@ export interface FileRouteTypes {
     | '/forgot'
     | '/login'
     | '/setup-mfa'
+    | '/admin'
     | '/my-work'
     | '/org'
     | '/profile'
@@ -346,10 +418,17 @@ export interface FileRouteTypes {
     | '/invite/$token'
     | '/login/mfa'
     | '/reset/$token'
+    | '/admin/access-review'
+    | '/admin/audit'
     | '/admin/invitations'
+    | '/admin/roles'
     | '/admin/security'
+    | '/admin/system'
+    | '/admin/users'
     | '/p/$projectKey'
+    | '/admin/'
     | '/p/$projectKey/activity'
+    | '/p/$projectKey/audit'
     | '/p/$projectKey/bugs'
     | '/p/$projectKey/import'
     | '/p/$projectKey/reports'
@@ -381,9 +460,16 @@ export interface FileRouteTypes {
     | '/login/mfa'
     | '/reset/$token'
     | '/'
+    | '/admin/access-review'
+    | '/admin/audit'
     | '/admin/invitations'
+    | '/admin/roles'
     | '/admin/security'
+    | '/admin/system'
+    | '/admin/users'
+    | '/admin'
     | '/p/$projectKey/activity'
+    | '/p/$projectKey/audit'
     | '/p/$projectKey/bugs'
     | '/p/$projectKey/import'
     | '/p/$projectKey/reports'
@@ -408,6 +494,7 @@ export interface FileRouteTypes {
     | '/forgot'
     | '/login'
     | '/setup-mfa'
+    | '/_app/admin'
     | '/_app/my-work'
     | '/_app/org'
     | '/_app/profile'
@@ -416,10 +503,17 @@ export interface FileRouteTypes {
     | '/login_/mfa'
     | '/reset/$token'
     | '/_app/'
+    | '/_app/admin/access-review'
+    | '/_app/admin/audit'
     | '/_app/admin/invitations'
+    | '/_app/admin/roles'
     | '/_app/admin/security'
+    | '/_app/admin/system'
+    | '/_app/admin/users'
     | '/_app/p/$projectKey'
+    | '/_app/admin/'
     | '/_app/p/$projectKey/activity'
+    | '/_app/p/$projectKey/audit'
     | '/_app/p/$projectKey/bugs'
     | '/_app/p/$projectKey/import'
     | '/_app/p/$projectKey/reports'
@@ -487,6 +581,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin': {
+      id: '/_app/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/my-work': {
       id: '/_app/my-work'
       path: '/my-work'
@@ -536,19 +637,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/admin/': {
+      id: '/_app/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AppAdminIndexRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/access-review': {
+      id: '/_app/admin/access-review'
+      path: '/access-review'
+      fullPath: '/admin/access-review'
+      preLoaderRoute: typeof AppAdminAccessReviewRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/audit': {
+      id: '/_app/admin/audit'
+      path: '/audit'
+      fullPath: '/admin/audit'
+      preLoaderRoute: typeof AppAdminAuditRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/_app/admin/invitations': {
       id: '/_app/admin/invitations'
-      path: '/admin/invitations'
+      path: '/invitations'
       fullPath: '/admin/invitations'
       preLoaderRoute: typeof AppAdminInvitationsRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/roles': {
+      id: '/_app/admin/roles'
+      path: '/roles'
+      fullPath: '/admin/roles'
+      preLoaderRoute: typeof AppAdminRolesRouteImport
+      parentRoute: typeof AppAdminRoute
     }
     '/_app/admin/security': {
       id: '/_app/admin/security'
-      path: '/admin/security'
+      path: '/security'
       fullPath: '/admin/security'
       preLoaderRoute: typeof AppAdminSecurityRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/system': {
+      id: '/_app/admin/system'
+      path: '/system'
+      fullPath: '/admin/system'
+      preLoaderRoute: typeof AppAdminSystemRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/users': {
+      id: '/_app/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AppAdminUsersRouteImport
+      parentRoute: typeof AppAdminRoute
     }
     '/_app/p/$projectKey': {
       id: '/_app/p/$projectKey'
@@ -569,6 +712,13 @@ declare module '@tanstack/react-router' {
       path: '/activity'
       fullPath: '/p/$projectKey/activity'
       preLoaderRoute: typeof AppPProjectKeyActivityRouteImport
+      parentRoute: typeof AppPProjectKeyRoute
+    }
+    '/_app/p/$projectKey/audit': {
+      id: '/_app/p/$projectKey/audit'
+      path: '/audit'
+      fullPath: '/p/$projectKey/audit'
+      preLoaderRoute: typeof AppPProjectKeyAuditRouteImport
       parentRoute: typeof AppPProjectKeyRoute
     }
     '/_app/p/$projectKey/bugs': {
@@ -693,8 +843,35 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppAdminRouteChildren {
+  AppAdminAccessReviewRoute: typeof AppAdminAccessReviewRoute
+  AppAdminAuditRoute: typeof AppAdminAuditRoute
+  AppAdminInvitationsRoute: typeof AppAdminInvitationsRoute
+  AppAdminRolesRoute: typeof AppAdminRolesRoute
+  AppAdminSecurityRoute: typeof AppAdminSecurityRoute
+  AppAdminSystemRoute: typeof AppAdminSystemRoute
+  AppAdminUsersRoute: typeof AppAdminUsersRoute
+  AppAdminIndexRoute: typeof AppAdminIndexRoute
+}
+
+const AppAdminRouteChildren: AppAdminRouteChildren = {
+  AppAdminAccessReviewRoute: AppAdminAccessReviewRoute,
+  AppAdminAuditRoute: AppAdminAuditRoute,
+  AppAdminInvitationsRoute: AppAdminInvitationsRoute,
+  AppAdminRolesRoute: AppAdminRolesRoute,
+  AppAdminSecurityRoute: AppAdminSecurityRoute,
+  AppAdminSystemRoute: AppAdminSystemRoute,
+  AppAdminUsersRoute: AppAdminUsersRoute,
+  AppAdminIndexRoute: AppAdminIndexRoute,
+}
+
+const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
+  AppAdminRouteChildren,
+)
+
 interface AppPProjectKeyRouteChildren {
   AppPProjectKeyActivityRoute: typeof AppPProjectKeyActivityRoute
+  AppPProjectKeyAuditRoute: typeof AppPProjectKeyAuditRoute
   AppPProjectKeyBugsRoute: typeof AppPProjectKeyBugsRoute
   AppPProjectKeyImportRoute: typeof AppPProjectKeyImportRoute
   AppPProjectKeyReportsRoute: typeof AppPProjectKeyReportsRoute
@@ -717,6 +894,7 @@ interface AppPProjectKeyRouteChildren {
 
 const AppPProjectKeyRouteChildren: AppPProjectKeyRouteChildren = {
   AppPProjectKeyActivityRoute: AppPProjectKeyActivityRoute,
+  AppPProjectKeyAuditRoute: AppPProjectKeyAuditRoute,
   AppPProjectKeyBugsRoute: AppPProjectKeyBugsRoute,
   AppPProjectKeyImportRoute: AppPProjectKeyImportRoute,
   AppPProjectKeyReportsRoute: AppPProjectKeyReportsRoute,
@@ -743,24 +921,22 @@ const AppPProjectKeyRouteWithChildren = AppPProjectKeyRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
+  AppAdminRoute: typeof AppAdminRouteWithChildren
   AppMyWorkRoute: typeof AppMyWorkRoute
   AppOrgRoute: typeof AppOrgRoute
   AppProfileRoute: typeof AppProfileRoute
   AppProjectsRoute: typeof AppProjectsRoute
   AppIndexRoute: typeof AppIndexRoute
-  AppAdminInvitationsRoute: typeof AppAdminInvitationsRoute
-  AppAdminSecurityRoute: typeof AppAdminSecurityRoute
   AppPProjectKeyRoute: typeof AppPProjectKeyRouteWithChildren
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAdminRoute: AppAdminRouteWithChildren,
   AppMyWorkRoute: AppMyWorkRoute,
   AppOrgRoute: AppOrgRoute,
   AppProfileRoute: AppProfileRoute,
   AppProjectsRoute: AppProjectsRoute,
   AppIndexRoute: AppIndexRoute,
-  AppAdminInvitationsRoute: AppAdminInvitationsRoute,
-  AppAdminSecurityRoute: AppAdminSecurityRoute,
   AppPProjectKeyRoute: AppPProjectKeyRouteWithChildren,
 }
 

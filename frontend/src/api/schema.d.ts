@@ -1139,6 +1139,46 @@ export interface paths {
     patch: operations["patch_organization_api_v1_organization_patch"];
     trace?: never;
   };
+  "/api/v1/organization/access-review": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Access Review
+     * @description US-163 / FR-AUD-004 / TCMS-133: one row per user × scope (organization, then each project).
+     */
+    get: operations["get_access_review_api_v1_organization_access_review_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/organization/audit-events": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Org Audit Events
+     * @description US-162 / FR-AUD-002: every event of the organization, newest first; CSV up to 100,000 events.
+     */
+    get: operations["org_audit_events_api_v1_organization_audit_events_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/organization/dashboard": {
     parameters: {
       query?: never;
@@ -1197,6 +1237,47 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/organization/jobs": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Jobs
+     * @description TCMS-139: failed and dead jobs by default (`?status=` repeats), newest first.
+     */
+    get: operations["list_jobs_api_v1_organization_jobs_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/organization/jobs/{job_id}/retry": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Retry Job
+     * @description Put a failed or dead job back in the queue with a fresh attempt budget; `409 invalid_status`
+     *     otherwise.
+     */
+    post: operations["retry_job_api_v1_organization_jobs__job_id__retry_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/organization/members": {
     parameters: {
       query?: never;
@@ -1204,7 +1285,10 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** List Members */
+    /**
+     * List Members
+     * @description US-164: with each member's project roles (M8b).
+     */
     get: operations["list_members_api_v1_organization_members_get"];
     put?: never;
     post?: never;
@@ -1319,6 +1403,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/organization/system-status": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * System Status
+     * @description US-165: version, migration head, database and storage checks, job queue and stored files.
+     */
+    get: operations["system_status_api_v1_organization_system_status_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/projects": {
     parameters: {
       query?: never;
@@ -1399,6 +1503,26 @@ export interface paths {
      *     (docs/02 §4.2, review K17k).
      */
     post: operations["archive_project_api_v1_projects__project_id__archive_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/projects/{project_id}/audit-events": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Project Audit Events
+     * @description docs/06 §4.12: the project's audit log (`project.audit.view`), filters as the organization log.
+     */
+    get: operations["project_audit_events_api_v1_projects__project_id__audit_events_get"];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -3020,6 +3144,46 @@ export interface components {
        */
       time_zone: string;
     };
+    /** AccessReviewRow */
+    AccessReviewRow: {
+      /** Active */
+      active: boolean;
+      /** Email */
+      email: string;
+      /** Granted At */
+      granted_at: string | null;
+      /** Granted By */
+      granted_by: string | null;
+      /** Last Sign In */
+      last_sign_in: string | null;
+      /** Mfa Enrolled */
+      mfa_enrolled: boolean;
+      /** Name */
+      name: string;
+      /** Org Admin */
+      org_admin: boolean;
+      /**
+       * Project Id
+       * @description None: the organization row
+       */
+      project_id: string | null;
+      /** Project Key */
+      project_key: string | null;
+      /** Project Name */
+      project_name: string | null;
+      /**
+       * Role Code
+       * @description org_admin, org_member or a project role code
+       */
+      role_code: string;
+      /** Role Name */
+      role_name: string;
+      /**
+       * User Id
+       * Format: uuid
+       */
+      user_id: string;
+    };
     /** ActivityItem */
     ActivityItem: {
       /** Action */
@@ -3278,6 +3442,53 @@ export interface components {
       state: string;
       /** Status */
       status: string | null;
+    };
+    /** AuditEventRead */
+    AuditEventRead: {
+      /** Action */
+      action: string;
+      /** Actor Display */
+      actor_display: string | null;
+      /** Actor Id */
+      actor_id: string | null;
+      /** Actor Type */
+      actor_type: string;
+      /**
+       * Changes
+       * @description {field: [old, new]}
+       */
+      changes: {
+        [key: string]: unknown;
+      } | null;
+      /**
+       * Context
+       * @description request_id, ip, user_agent, bulk_operation_id and extras
+       */
+      context: {
+        [key: string]: unknown;
+      };
+      /** Entity Id */
+      entity_id: string | null;
+      /** Entity Key */
+      entity_key: string | null;
+      /** Entity Type */
+      entity_type: string;
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Occurred At
+       * Format: date-time
+       */
+      occurred_at: string;
+      /** Project Id */
+      project_id: string | null;
+      /** Project Key */
+      project_key?: string | null;
+      /** Summary */
+      summary: string | null;
     };
     /**
      * AutomationStatus
@@ -3747,6 +3958,13 @@ export interface components {
       | "security"
       | "compatibility"
       | "usability";
+    /** CheckRead */
+    CheckRead: {
+      /** Detail */
+      detail?: string | null;
+      /** Ok */
+      ok: boolean;
+    };
     /** CheckResult */
     CheckResult: {
       /** Detail */
@@ -4620,6 +4838,63 @@ export interface components {
       /** Role Code */
       role_code: string | null;
     };
+    /** JobRead */
+    JobRead: {
+      /** Attempts */
+      attempts: number;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Finished At */
+      finished_at: string | null;
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Last Error */
+      last_error: string | null;
+      /** Max Attempts */
+      max_attempts: number;
+      /**
+       * Run At
+       * Format: date-time
+       */
+      run_at: string;
+      /** Status */
+      status: string;
+      /**
+       * System
+       * @description An installation job, not tied to one organization
+       */
+      system: boolean;
+      /** Type */
+      type: string;
+    };
+    /** JobStatsRead */
+    JobStatsRead: {
+      /**
+       * Counts
+       * @description queued, running, succeeded, failed, dead
+       */
+      counts: {
+        [key: string]: number;
+      };
+      /** Last Succeeded At */
+      last_succeeded_at: string | null;
+      /**
+       * Oldest Due At
+       * @description Longest-waiting queued job that is due
+       */
+      oldest_due_at: string | null;
+    };
+    /**
+     * JobStatus
+     * @enum {string}
+     */
+    JobStatus: "queued" | "running" | "succeeded" | "failed" | "dead";
     /** KeyRef */
     KeyRef: {
       /**
@@ -5017,6 +5292,11 @@ export interface components {
       last_login_at: string | null;
       /** Mfa Enrolled */
       mfa_enrolled: boolean;
+      /**
+       * Project Roles
+       * @description M8b: one per project
+       */
+      project_roles?: components["schemas"]["ProjectRoleRead"][];
       /** Projects */
       projects: number;
       user: components["schemas"]["UserRef"];
@@ -5111,6 +5391,17 @@ export interface components {
       /** Total */
       total: number;
     };
+    /** Page[AuditEventRead] */
+    Page_AuditEventRead_: {
+      /** Items */
+      items: components["schemas"]["AuditEventRead"][];
+      /** Page */
+      page: number;
+      /** Page Size */
+      page_size: number;
+      /** Total */
+      total: number;
+    };
     /** Page[BugSummaryRead] */
     Page_BugSummaryRead_: {
       /** Items */
@@ -5137,6 +5428,17 @@ export interface components {
     Page_CycleListItem_: {
       /** Items */
       items: components["schemas"]["CycleListItem"][];
+      /** Page */
+      page: number;
+      /** Page Size */
+      page_size: number;
+      /** Total */
+      total: number;
+    };
+    /** Page[JobRead] */
+    Page_JobRead_: {
+      /** Items */
+      items: components["schemas"]["JobRead"][];
       /** Page */
       page: number;
       /** Page Size */
@@ -5639,6 +5941,29 @@ export interface components {
       key: string;
       /** Name */
       name: string;
+    };
+    /** ProjectRoleRead */
+    ProjectRoleRead: {
+      /**
+       * Granted At
+       * Format: date-time
+       */
+      granted_at: string;
+      /**
+       * Project Id
+       * Format: uuid
+       */
+      project_id: string;
+      /** Project Key */
+      project_key: string;
+      /** Project Name */
+      project_name: string;
+      /** Project Status */
+      project_status: string;
+      /** Role Code */
+      role_code: string;
+      /** Role Name */
+      role_name: string;
     };
     /** ProjectSettings */
     ProjectSettings: {
@@ -6743,6 +7068,13 @@ export interface components {
        */
       updated_at: string;
     };
+    /** StorageUsage */
+    StorageUsage: {
+      /** Bytes */
+      bytes: number;
+      /** Files */
+      files: number;
+    };
     /** Submission */
     Submission: {
       /**
@@ -6758,6 +7090,30 @@ export interface components {
       comment?: string | null;
       /** Reviewer Id */
       reviewer_id?: string | null;
+    };
+    /** SystemStatus */
+    SystemStatus: {
+      attachments: components["schemas"]["StorageUsage"];
+      /** Audit Retention Years */
+      audit_retention_years: number;
+      /**
+       * Checked At
+       * Format: date-time
+       */
+      checked_at: string;
+      /** Checks */
+      checks: {
+        [key: string]: components["schemas"]["CheckRead"];
+      };
+      /** Environment */
+      environment: string;
+      jobs: components["schemas"]["JobStatsRead"];
+      /** Migration Current */
+      migration_current: string | null;
+      /** Migration Head */
+      migration_head: string | null;
+      /** Version */
+      version: string;
     };
     /** TagCreate */
     TagCreate: {
@@ -10220,6 +10576,102 @@ export interface operations {
       };
     };
   };
+  get_access_review_api_v1_organization_access_review_get: {
+    parameters: {
+      query?: {
+        format?: "json" | "csv" | "xlsx";
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Rows as JSON, or the file with `?format=csv|xlsx` */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AccessReviewRow"][];
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
+          "text/csv": unknown;
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  org_audit_events_api_v1_organization_audit_events_get: {
+    parameters: {
+      query?: {
+        page?: number;
+        page_size?: number;
+        project_id?: string | null;
+        format?: "json" | "csv";
+        entity_type?: string | null;
+        actor_id?: string | null;
+        action?: string | null;
+        occurred_at__gte?: string | null;
+        occurred_at__lte?: string | null;
+        q?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description JSON page, or the CSV file with `?format=csv` */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Page_AuditEventRead_"];
+          "text/csv": unknown;
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   organization_dashboard_api_v1_organization_dashboard_get: {
     parameters: {
       query?: never;
@@ -10361,6 +10813,93 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  list_jobs_api_v1_organization_jobs_get: {
+    parameters: {
+      query?: {
+        page?: number;
+        page_size?: number;
+        status?: components["schemas"]["JobStatus"][];
+        type?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Page_JobRead_"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  retry_job_api_v1_organization_jobs__job_id__retry_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        job_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["JobRead"];
+        };
       };
       /** @description Validation or business-rule error */
       422: {
@@ -10674,6 +11213,46 @@ export interface operations {
       };
     };
   };
+  system_status_api_v1_organization_system_status_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SystemStatus"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   list_projects_api_v1_projects_get: {
     parameters: {
       query?: {
@@ -10923,6 +11502,59 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ProjectRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  project_audit_events_api_v1_projects__project_id__audit_events_get: {
+    parameters: {
+      query?: {
+        page?: number;
+        page_size?: number;
+        format?: "json" | "csv";
+        entity_type?: string | null;
+        actor_id?: string | null;
+        action?: string | null;
+        occurred_at__gte?: string | null;
+        occurred_at__lte?: string | null;
+        q?: string | null;
+      };
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description JSON page, or the CSV file with `?format=csv` */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Page_AuditEventRead_"];
+          "text/csv": unknown;
         };
       };
       /** @description Validation or business-rule error */

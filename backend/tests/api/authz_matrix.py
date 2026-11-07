@@ -234,6 +234,24 @@ def _requirement(f: Fixture, *, linked: bool = False) -> UUID:
         return ref.id
 
 
+def _finished_job(f: Fixture) -> UUID:
+    """A succeeded job of the probe organization: retrying it is a harmless 409."""
+    from sqlalchemy import text
+
+    job_id = uuid.uuid4()
+    with f.world.factory() as s:
+        s.execute(
+            text(
+                "INSERT INTO jobs (id, organization_id, type, payload, status, run_at, attempts, max_attempts,"
+                " created_at, finished_at) VALUES (:id, :org, 'probe.noop', '{}', 'succeeded', now(), 1, 5,"
+                " now(), now())"
+            ),
+            {"id": job_id, "org": f.org.id},
+        )
+        s.commit()
+    return job_id
+
+
 RQ = "/api/v1/requirements/{ref_id}"
 P = "/api/v1/projects/{project_id}"
 TC = "/api/v1/test-cases/{case_id}"
@@ -324,6 +342,21 @@ MATRIX: dict[tuple[str, str], Entry] = {
         "org:org.users.manage",
         lambda f: ("DELETE", f"/api/v1/organization/invitations/{_invitation(f)}", None),
     ),
+    ("GET", "/api/v1/organization/audit-events"): Entry(
+        "org:org.audit.view", lambda f: ("GET", "/api/v1/organization/audit-events?page_size=1", None)
+    ),
+    ("GET", "/api/v1/organization/access-review"): Entry(
+        "org:org.audit.view", lambda f: ("GET", "/api/v1/organization/access-review", None)
+    ),
+    ("GET", "/api/v1/organization/system-status"): Entry(
+        "org:org.manage", lambda f: ("GET", "/api/v1/organization/system-status", None)
+    ),
+    ("GET", "/api/v1/organization/jobs"): Entry(
+        "org:org.manage", lambda f: ("GET", "/api/v1/organization/jobs", None)
+    ),
+    ("POST", "/api/v1/organization/jobs/{job_id}/retry"): Entry(
+        "org:org.manage", lambda f: ("POST", f"/api/v1/organization/jobs/{_finished_job(f)}/retry", None)
+    ),
     ("GET", "/api/v1/organization/roles"): Entry(
         "auth", lambda f: ("GET", "/api/v1/organization/roles", None)
     ),
@@ -346,6 +379,10 @@ MATRIX: dict[tuple[str, str], Entry] = {
     ),
     ("GET", P + "/activity"): Entry(
         "project:project.view", lambda f: ("GET", P.format(project_id=f.project_id) + "/activity", None)
+    ),
+    ("GET", P + "/audit-events"): Entry(
+        "project:project.audit.view",
+        lambda f: ("GET", P.format(project_id=f.project_id) + "/audit-events?page_size=1", None),
     ),
     ("GET", P + "/members"): Entry(
         "project:project.view", lambda f: ("GET", P.format(project_id=f.project_id) + "/members", None)

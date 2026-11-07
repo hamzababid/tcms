@@ -224,6 +224,16 @@ class InvitationCreated(InvitationRead):
     accept_url: str = Field(description="Shown once (copy-link fallback when email is unavailable)")
 
 
+class ProjectRoleRead(BaseModel):
+    project_id: UUID
+    project_key: str
+    project_name: str
+    project_status: str
+    role_code: str
+    role_name: str
+    granted_at: datetime
+
+
 class OrgMemberRead(BaseModel):
     user: UserRef
     is_org_admin: bool
@@ -231,6 +241,7 @@ class OrgMemberRead(BaseModel):
     last_login_at: datetime | None
     joined_at: datetime
     projects: int
+    project_roles: list[ProjectRoleRead] = Field(default_factory=list, description="M8b: one per project")
 
 
 class OrgMemberPatch(_Model):

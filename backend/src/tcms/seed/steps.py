@@ -775,6 +775,41 @@ def seed_release_history(profile: str) -> str:
     return "No-go decision on SPARK v2.5; snapshots for the last 15 days"
 
 
+@step("a failed background job", profiles=("dev",))
+def seed_failed_job(profile: str) -> str:
+    """M8b: a failed job to see and retry on Administration › System (TCMS-139). Its type has no handler,
+    so a retry fails again at once and the row stays available for demos and E2E."""
+    from sqlalchemy import text
+
+    from tcms.core import ids
+
+    del profile
+    factory = session_factory(app_engine(get_settings()))
+    with factory() as s:
+        org = workspace_queries.organization_by_slug(s, ORG_SLUG)
+        if org is None:
+            return "no organization"
+        exists = s.execute(
+            text("SELECT 1 FROM jobs WHERE organization_id = :o AND type = 'seed.example'"), {"o": org.id}
+        ).first()
+        if exists:
+            return "a seed.example job already exists — nothing to do"
+        s.execute(
+            text(
+                "INSERT INTO jobs (id, organization_id, type, payload, status, run_at, attempts,"
+                " max_attempts, last_error, created_at, finished_at) VALUES (:id, :o, 'seed.example', '{}',"
+                " 'failed', now(), 1, 5, :err, now(), now())"
+            ),
+            {
+                "id": ids.new_id(),
+                "o": org.id,
+                "err": "PermanentJobError: no handler registered for job type 'seed.example'",
+            },
+        )
+        s.commit()
+    return "1 failed job (seed.example)"
+
+
 # Twice the year-one volume (docs/01 §8.2: 10× year one = 100k cases, 500k results, so year one = 10k / 50k),
 # loaded in about a minute. The full 10× data set is part of the M8 k6 run (known limitation L43).
 LARGE = {

@@ -495,7 +495,13 @@ def reset_user_mfa(uow: UnitOfWork, ctx: AccessContext, user_id: UUID, *, reason
 def revoke_user_sessions(uow: UnitOfWork, ctx: AccessContext, user_id: UUID) -> int:
     _, user = _target_member(uow, ctx, user_id)
     count = repo.revoke_sessions(uow.session, user.id, clock.now())
-    uow.audit(ctx, "session.revoked", AuditTarget("user", user.id, user.email), extra={"count": count})
+    uow.audit(
+        ctx,
+        "session.revoked",
+        AuditTarget("user", user.id, user.email),
+        summary=f"{ctx.principal.display_name} signed {user.email} out everywhere ({count} sessions)",
+        extra={"count": count},
+    )
     return count
 
 
