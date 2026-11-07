@@ -14,6 +14,7 @@ from tcms.api.v1 import (
     cycles,
     health,
     meta,
+    notifications,
     organization,
     plans,
     projects,
@@ -38,6 +39,7 @@ def install_modules() -> None:
     import tcms.bugs.service
     import tcms.execution.jobs
     import tcms.identity.jobs
+    import tcms.notifications.jobs
     import tcms.platform.attachments
     import tcms.platform.email
     import tcms.platform.transfers
@@ -84,6 +86,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         search,
         saved_views,
         reporting,
+        notifications,
         records,
     ):
         app.include_router(module.router, responses=PROBLEM_RESPONSES)

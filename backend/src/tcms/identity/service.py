@@ -397,6 +397,37 @@ def update_profile(
     return user
 
 
+def set_email_preferences(
+    uow: UnitOfWork, ctx: AccessContext, *, mentions: bool | None, digest: bool | None
+) -> dict[str, bool]:
+    """docs/02 §2.7 / M7 D13: opt out of mention emails and the daily assignment digest (own profile)."""
+    user = repo.user_by_id(uow.session, _uid(ctx), for_update=True)
+    assert user is not None
+    prefs = dict(user.preferences or {})
+    email = dict(prefs.get("email") or {})
+    changes: dict[str, list[bool]] = {}
+    for key, value in (("mentions", mentions), ("digest", digest)):
+        if value is not None and bool(email.get(key, True)) != value:
+            changes[f"email_{key}"] = [bool(email.get(key, True)), value]
+            email[key] = value
+    if changes:
+        prefs["email"] = email
+        user.preferences = prefs
+        user.updated_at, user.updated_by, user.row_version = clock.now(), user.id, user.row_version + 1
+        uow.audit(ctx, "user.updated", AuditTarget("user", user.id, user.email), changes=changes)
+    return {"mentions": bool(email.get("mentions", True)), "digest": bool(email.get("digest", True))}
+
+
+def mark_digest_sent(uow: UnitOfWork, user_id: UUID, *, local_date: str, at: str) -> None:
+    """Bookkeeping for the digest job (not audited: a system delivery record, like `last_login_at`)."""
+    user = repo.user_by_id(uow.session, user_id, for_update=True)
+    if user is None:
+        return
+    prefs = dict(user.preferences or {})
+    prefs["email"] = {**dict(prefs.get("email") or {}), "last_digest_on": local_date, "last_digest_at": at}
+    user.preferences = prefs
+
+
 # -- user administration (docs/02 §3.5, US-164) ---------------------------------------------------
 
 

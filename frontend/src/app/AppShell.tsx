@@ -31,6 +31,7 @@ import { MenuContent, MenuItem, MenuSeparator, MenuShortcut } from "@/components
 import { can, projectPermissions } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
+import { NotificationBell } from "@/features/notifications/Bell";
 import { GlobalSearch } from "@/features/search/GlobalSearch";
 
 import { Logo } from "./Logo";
@@ -565,6 +566,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <header className="flex h-[var(--topbar-height)] shrink-0 items-center gap-4 border-b border-border bg-surface px-6">
           <Breadcrumbs project={current} />
           <GlobalSearch project={current} />
+          {me ? <NotificationBell /> : null}
           {me ? <UserMenu me={me} /> : null}
         </header>
         <main id="main" className="min-h-0 flex-1 overflow-auto">

@@ -25,14 +25,14 @@ client → frontend → E2E → close-out. Q1 = a (D1) and Q2 = a (D17), answere
 - [x] 3.4 Reports pages (Quality dashboard + six reports with export).
 
 ## 4. Notifications and email (M7b)
-- [ ] 4.1 Notifications API, renderers, new events (retest, export ready), cleanup job.
-- [ ] 4.2 Preferences, mention email, digest job, templates.
-- [ ] 4.3 Bell, notification list, Profile › Notifications.
+- [x] 4.1 Notifications API, renderers, new events (retest, export ready), cleanup job.
+- [x] 4.2 Preferences, mention email, digest job, templates.
+- [x] 4.3 Bell, notification list, Profile › Notifications.
 
 ## 5. Performance
 - [x] 5.1 `large` seed profile (TM-4, 2× year one, L43); measure and log in `docs/ops/performance.md`.
 
 ## 6. E2E and close-out
-- [x] 6.1 `frontend/e2e/m7.spec.ts` (UJ-8, Overview, export, My Work); bell and opt-out in M7b.
+- [x] 6.1 `frontend/e2e/m7.spec.ts` (UJ-8, Overview, export, My Work); `m7b.spec.ts` (bell, opt-out).
 - [x] 6.2 Seed (SPARK decision, snapshots for 15 days); all gates; CHECKLIST; known limitations (closed L25, L26, matrix part of L38; L15, L16, L20, L33 close in M7b); local-setup.
 - [x] 6.3 Commit, push, PR(s); CI green; report.

@@ -82,7 +82,7 @@ flowchart TB
 - **Breadcrumbs** reflect the route; folder paths are clickable segments.
 - **Global search** (`/`): command-palette style overlay (§4.3).
 - **Sidebar** collapsible to icons (state remembered); items hidden when the user lacks `project.view`; Settings shown only with `project.configure` or `project.members.manage`.
-- **Notifications** bell: dropdown with latest 20, "mark all read", link to item.
+- **Notifications** bell: dropdown with latest 20, "mark all read", link to item. Implementation (M7): bell left of the user menu with a red unread badge (accessible name "Notifications, n unread"); unread items in bold; opening one marks it read; export notifications download the file. Email settings in Your account › Notifications (mention emails, daily summary).
 - **User menu**: profile, API tokens, sessions, MFA, theme (light/dark/system), keyboard shortcuts, sign out.
 
 ## 4. Global interaction patterns

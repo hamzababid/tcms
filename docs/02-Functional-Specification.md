@@ -75,7 +75,11 @@ In-app notifications (bell) are MVP; email is MVP for invitations, password rese
 | Case submitted for review | Reviewer (or all users with `testcase.approve` if none) | In-app |
 | Case approved / returned | Author | In-app |
 | Mentioned in a comment (`@user`) | Mentioned user | In-app + email (opt-out) |
-| Import/export finished | Initiator | In-app |
+| Import/export finished (background export ready) | Initiator | In-app |
+| Runs flagged Ready for retest (BR-21) | Assignee of the flagged runs (once per cycle) | In-app |
+| Bulk action or large cycle finished in the background | Initiator | In-app |
+
+M7 rules: the bell shows the unread count (refreshed every 60 s and when the window regains focus) and the latest 20; opening one marks it read and goes to the item; "Mark all read". Users switch mention emails and the daily digest off in Your account › Notifications (`users.preferences.email = {mentions, digest}`, default on); in-app notifications cannot be switched off. The digest goes out at 07:00 in the user's time zone when runs were assigned since the previous digest (or the last 24 h), at most once a day. Inactive users get no email. Notifications are kept 180 days.
 
 ## 3. Identity and access (AUTH)
 

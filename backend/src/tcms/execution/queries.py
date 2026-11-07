@@ -780,3 +780,21 @@ def search_cycles(s: Session, ctx: AccessContext, q: str, limit: int) -> list[Te
         .limit(limit)
     )
     return list(s.execute(stmt).scalars())
+
+
+def run_assignees(
+    s: Session, ctx: AccessContext, run_ids: list[UUID]
+) -> list[tuple[UUID, UUID | None, UUID, str]]:
+    """(run, assignee, cycle, cycle key) for notifications about runs (M7: Ready for retest)."""
+    if not run_ids:
+        return []
+    rows = s.execute(
+        select(TestRun.id, TestRun.assignee_id, TestCycle.id, TestCycle.key)
+        .join(TestCycle, TestCycle.id == TestRun.cycle_id)
+        .where(
+            TestRun.organization_id == ctx.principal.organization_id,
+            TestRun.project_id == ctx.pid,
+            TestRun.id.in_(run_ids),
+        )
+    ).all()
+    return [(r[0], r[1], r[2], r[3]) for r in rows]

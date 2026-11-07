@@ -124,6 +124,7 @@ flowchart TB
 | `defects` | defects, defect_links, defect_status_history, defect_watchers (unused since ADR-023) | — |
 | `requirements` | requirement_refs, requirement_ref_cases (ADR-024; baseline requirements tables unused) | `testdesign`, `workspace`, `platform` |
 | `reporting` | metric_snapshots, (read access to all via SQL views) | read-only queries over all; `platform` |
+| `notifications` | none (renders `platform.notifications` rows; M7) | read-only key lookups over all (like `reporting`); `identity` (recipients, email preferences); `platform` |
 | `integrations` | integration_connections, external_links, automation_imports (P2) | calls other modules' services |
 | `platform` | audit_events, jobs, attachments, attachment_links, comments, notifications, saved_views, data_transfers, idempotency_keys | none (leaf) |
 
