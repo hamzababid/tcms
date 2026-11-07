@@ -908,16 +908,43 @@ Zain opens Administration → Access review → exports XLSX.
 
 Validation errors: unknown enum value (with allowed values listed), missing title, step without action, text too long, unknown owner email (falls back to importer with warning), folder path too deep, duplicate key in file.
 
+Row-level error codes (each with row, column and message; the dry run lists at most 1,000):
+
+| Code | Meaning |
+|---|---|
+| `field_required` | No column mapped to Title (or Key for updates), or a case row without a title |
+| `invalid_value` | Value not allowed for the field; the message lists the allowed values |
+| `step_without_case` | A step row with no case above it |
+| `duplicate_key` | The same key twice in the file |
+| `key_exists` | Create-only mode and the key already exists |
+| `case_archived` | The key belongs to an archived case |
+| `folder_archived` / `folder_too_deep` | The folder path points into an archived folder or has more levels than allowed |
+| `too_many_rows` / `too_many_cases` | Over 50,000 rows or 5,000 cases (file-level) |
+| `unknown_case` | Requirement import: a linked case key that is not in the project |
+
+Rules settled in M8 (decision log D1–D8):
+
+- An unknown key (no such case in the project) creates a new case and adds a warning; the new case gets a new key.
+- An unknown owner email is a warning; the importer becomes the owner.
+- Folder paths use `/` only. Missing folders are created at commit, and only for rows without errors.
+- Imported text is unescaped: a leading `'` before `=`, `+`, `-` or `@` (added by our exports, §11.5) is removed.
+- Commit runs in one savepoint. If anything fails, the database changes, audit records, events and jobs of the commit are all discarded and the transfer is `failed` (AC-IMP-03).
+- Transfer statuses: `uploaded → validating → validated → committing → committed`, or `failed`. The import report (row → created/updated/unchanged/skipped, key, message) downloads from `GET /data-transfers/{id}/download`.
+
 ### 15.2 Export (FR-IMP-002/003/004)
 
-- Test cases: CSV/XLSX in the same row-per-step layout with a `Key` column so that the file re-imports as updates. Includes metadata, tags (comma-separated), latest version content (option: approved version).
-- Requirements: one row per requirement + linked case keys.
+- Test cases: CSV/XLSX in the same row-per-step layout with a `Key` column and the import's canonical headers, so the file re-imports as updates and an unchanged file is a no-op (AC-IMP-02). Includes metadata, tags (comma-separated), latest version content (option: approved version). Available from the repository header (current folder and filters) and from the bulk bar (selected cases).
+- Requirement references: one row per reference with Reference, Title, Link and Linked cases (comma-separated keys), the same layout the requirement import reads.
 - Bug links, cycles/runs, results: per §11.5.
-- Exports respect the user's permissions and current filters.
+- Exports respect the user's permissions and current filters. Up to 10,000 rows download directly; larger exports are written in the background and the user is notified (§11.5).
 
-### 15.3 Requirements import (FR-IMP-003 / FR-REQ-003)
+### 15.3 Requirement reference import (FR-IMP-003 / FR-REQ-003, ADR-024)
 
-Same mapping flow; columns: key (update), title, description, type, priority, acceptance criteria, owner email, status, target release name, parent key, linked case keys (comma-separated).
+Requirements are references to items in the team's own tool (ADR-024), so the import carries references, not full requirements. Same mapping flow; columns: **Reference** (required; matches an existing reference case-insensitively), **Title**, **Link** (http/https URL), **Linked cases** (comma-, semicolon- or newline-separated case keys).
+
+- A new reference is created; an existing one gets its title and link updated when the file gives them (empty cells keep the current value).
+- Linked case keys are added as links. The import never removes links: the file lists what must be linked, not everything that is.
+- An unknown case key is an `unknown_case` error on that row.
 
 **AC**
 

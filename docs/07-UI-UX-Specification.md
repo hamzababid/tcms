@@ -523,6 +523,15 @@ Validate: counts (create 3,980 · update 0 · errors 12) + error table (row, col
 Commit: progress bar → report link.
 ```
 
+As built (M8a, route `/p/{key}/import?entity=test_case|requirement&transfer={id}`):
+
+- **Entry points:** Import and Export buttons in the repository header; an Import link and an Export button on the Requirements page; Export in the case bulk bar (selected cases); Export on the Bugs page (bug-links report).
+- **1 Upload:** drop zone or file picker (`File to import`), CSV or XLSX up to 20 MB. A saved template can be chosen here.
+- **2 Map:** table `Column mapping` with one select per column (`Field for column {header}`), the first sample values, and per-value selects for enum fields when the column has 30 distinct values or fewer. Options: target folder, mode (update or create / create only), steps layout. "Save mapping as template" names and stores the mapping; an existing name is replaced.
+- **3 Validate:** a status line while the dry run runs, then `Validation counts` (Create · Update · Unchanged · Errors · New folders or Links to add), the list of folders to create, the `Import errors` table (row, column, message; first 1,000) with Download errors (CSV), and warnings. The Import button (`Import N cases`) stays disabled while errors exist until "Skip rows with errors" is checked.
+- **4 Import:** a status line ("You can leave this page; the bell tells you when it is done"), then the result counts, Download the import report, Open the repository (or Requirements) and Import another file. Finishing refreshes the cached repository and requirement lists.
+- The `transfer` search parameter reopens a running or finished import, so the `import.finished` notification links straight back to the result.
+
 ## 6. Visual design system
 
 ### 6.1 Direction

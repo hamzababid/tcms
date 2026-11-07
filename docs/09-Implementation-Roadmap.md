@@ -114,7 +114,7 @@ M6 can start in parallel with M4/M5 once M2 is done (separate module, different 
 | | |
 | --- | --- |
 | Scope | E14, E15 (UI), E17: case and requirement import wizard (mapping, dry run, commit, templates), exports; admin screens (users, invitations, security policy, audit log, access review, system status/jobs); performance tuning to NFR-PERF on large seed; security hardening (headers, ZAP, ASVS L2 review, dependency scan clean); accessibility pass; backup scripts and restore drill; production compose + Caddy; runbooks |
-| Deliverables | Production-ready release candidate |
+| Deliverables | Production-ready release candidate. Delivered in three PRs (product owner, 2026-11-07): **M8a** import and export (E14; `tcms.imports` joins the reporting layer, docs/03 §5.1; requirement import carries references per ADR-024), **M8b** administration (E15 UI, retention), **M8c** hardening (E17; the production compose is verified locally on `https://localhost` with Caddy's internal certificate, a real staging host in M9) |
 | Acceptance | TCMS-130…143 pass; performance log meets targets; no high findings |
 | Dependencies | M7 |
 
