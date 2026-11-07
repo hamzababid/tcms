@@ -517,6 +517,8 @@ Use service functions (not raw inserts) so rules and audit apply; batch flush ev
 
 `notifications` rows created by event handlers; email via `email.send` jobs; templates in `platform/email/templates/*.txt|html` (Jinja2, autoescape).
 
+M7: `platform.notifications.notify` writes the rows and, for `comment.mentioned`, enqueues `notifications.email` in the same transaction. The `tcms.notifications` package (layer of `reporting`) renders a row into `{title, url, project_key}` from its payload and SQL key lookups, sends mention emails (`notifications.email`, template `mention`) and the digest (`notifications.digest`, hourly at :05; a user is due when their local time is 07:xx and `preferences.email.last_digest_on` is not today; template `digest`; dedupe `digest:{user}:{local date}`). `notifications.cleanup` deletes rows older than 180 days (daily 03:30 UTC).
+
 ## 11. Frontend architecture
 
 ### 11.1 Routing (TanStack Router, file-based)

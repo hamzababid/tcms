@@ -340,6 +340,7 @@ Level: **U** unit, **I** integration, **A** API, **E** end-to-end, **P** perform
 | TCMS-115 | Manager dashboard widgets consistent with reports | A/E | M | FR-RPT-001 | Same numbers (`test_tcms_115_manager_dashboard_widgets`, E2E m7) |
 | TCMS-116 | Readiness rules evaluate and decision stored immutable | U/A/E | H | FR-RPT-006, ADR-025 | Snapshot stored; append-only (`test_ac_rel_01…03_*`, E2E UJ-8) |
 | TCMS-117 | Export cycle report XLSX with formula-injection protection | A | M | FR-RPT-005, A03 | Cells prefixed |
+| TCMS-117a | Notifications: bell count, mark read, retest notice, mention email and daily digest with opt-outs (AC-NTF-01…03) | U/A/E | M | 02 §2.7 | `test_ac_ntf_01…03_*`; E2E m7b |
 | TCMS-118 | Global search by exact key | E | M | FR-SRCH-001 | Jumps to item |
 | TCMS-119 | Text search grouped by type, scoped to my projects, < 500 ms p95 | A | M | FR-SRCH-001 | Scoped results |
 | TCMS-120 | Saved views private/shared and defaults | A/E | L | FR-SRCH-003 | Visible to members; default opens the list |

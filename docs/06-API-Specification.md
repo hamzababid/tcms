@@ -150,8 +150,10 @@ Legend: **Perm** = required permission (project scope unless prefixed `org.`); `
 | GET | `/me/sessions` | auth | Own active sessions | |
 | DELETE | `/me/sessions/{id}` | auth | Revoke own session | |
 | GET | `/me/work` | auth | My Work: runs grouped by cycle, reviews pending, my last 7 days | EXE-014 |
-| GET | `/me/notifications` | auth | Paginated; `?unread=true` | |
-| POST | `/me/notifications/read` | auth | `{ids[]}` or `{all: true}` | |
+| GET | `/me/notifications` | auth | Paginated (`page_size` ≤ 100, default 20), newest first; `?unread=true`; items `{id, type, title, url, project_key, created_at, read_at}` + `unread` | |
+| GET | `/me/notifications/unread-count` | auth | `{count}` (the bell polls it) | |
+| POST | `/me/notifications/read` | auth | `{ids[]}` or `{all: true}` → `{updated, unread}`; own notifications only | |
+| GET/PATCH | `/me/notification-preferences` | auth | `{mentions, digest}` email opt-outs (default true) | |
 
 ### 4.2 Organization administration
 
