@@ -276,3 +276,47 @@ def user_project_permissions(s: Session, org_id: UUID, project_id: UUID, user_id
     if member is None:
         return frozenset()
     return repo.role_permission_map(s).get(member.role_id, frozenset())
+
+
+# -- notification email preferences (docs/02 §2.7; M7 D13) ------------------------------------------
+
+
+@dataclass(frozen=True)
+class Recipient:
+    id: UUID
+    email: str
+    display_name: str
+    time_zone: str
+    is_active: bool
+    email_mentions: bool
+    email_digest: bool
+    last_digest_on: str | None
+    last_digest_at: str | None
+
+
+def _recipient(u: User) -> Recipient:
+    email = dict((u.preferences or {}).get("email") or {})
+    return Recipient(
+        u.id,
+        u.email,
+        u.display_name,
+        u.time_zone,
+        u.is_active,
+        bool(email.get("mentions", True)),
+        bool(email.get("digest", True)),
+        email.get("last_digest_on"),
+        email.get("last_digest_at"),
+    )
+
+
+def recipients(s: Session, user_ids: set[UUID]) -> dict[UUID, Recipient]:
+    if not user_ids:
+        return {}
+    rows = s.execute(select(User).where(User.id.in_(user_ids))).scalars().all()
+    return {u.id: _recipient(u) for u in rows}
+
+
+def digest_candidates(s: Session) -> list[Recipient]:
+    """Active users who have not switched the assignment digest off."""
+    rows = s.execute(select(User).where(User.is_active.is_(True))).scalars().all()
+    return [r for r in (_recipient(u) for u in rows) if r.email_digest]

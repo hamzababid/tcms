@@ -1,0 +1,10 @@
+Hello {{ display_name }},
+
+{{ total }} run{{ "" if total == 1 else "s" }} {{ "was" if total == 1 else "were" }} assigned to you since the last summary:
+{% for item in items %}
+- {{ item.title }}: {{ item.url }}
+{%- endfor %}
+
+Open My Work: {{ url }}
+
+This is your daily summary. Switch it off in {{ product }} under Your account › Notifications.

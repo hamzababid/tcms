@@ -1,0 +1,7 @@
+Hello {{ display_name }},
+
+{{ title }}
+
+Open it: {{ url }}
+
+You get this email because you were mentioned. Switch it off in {{ product }} under Your account › Notifications.

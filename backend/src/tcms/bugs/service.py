@@ -22,6 +22,7 @@ from tcms.core.uow import AuditTarget, UnitOfWork
 from tcms.execution import queries as exec_queries
 from tcms.execution import service as execution
 from tcms.execution.events import DraftDiscarding, ResultFinalizing
+from tcms.platform import notifications
 from tcms.testdesign import queries as testdesign_queries
 from tcms.workspace import queries as workspace_queries
 
@@ -226,7 +227,35 @@ def request_retest(uow: UnitOfWork, ctx: AccessContext, reference: str, *, dry_r
             extra={"reference": shown, "run_ids": [str(r) for r in flagged]},
             summary=f"{ctx.principal.display_name} marked {shown} ready for retest ({len(flagged)} run(s))",
         )
+        _notify_retest(uow, ctx, shown, flagged)
     return RetestOutcome(shown, len(run_ids), flagged)
+
+
+def _notify_retest(uow: UnitOfWork, ctx: AccessContext, reference: str, run_ids: list[UUID]) -> None:
+    """M7 / L33: each assignee hears once per cycle that their runs need a retest."""
+    groups: dict[tuple[UUID, UUID], tuple[str, int]] = {}
+    for _, assignee, cycle_id, cycle_key in exec_queries.run_assignees(uow.session, ctx, run_ids):
+        if assignee is None:
+            continue
+        key, n = groups.get((assignee, cycle_id), (cycle_key, 0))
+        groups[(assignee, cycle_id)] = (key, n + 1)
+    for (assignee, cycle_id), (cycle_key, n) in groups.items():
+        notifications.notify(
+            uow,
+            organization_id=ctx.principal.organization_id,
+            user_ids={assignee},
+            type="bug.retest_requested",
+            project_id=ctx.pid,
+            entity_type="test_cycle",
+            entity_id=cycle_id,
+            payload={
+                "reference": reference,
+                "cycle_key": cycle_key,
+                "count": n,
+                "by": ctx.principal.display_name,
+            },
+            exclude=ctx.principal.user_id,
+        )
 
 
 # -- execution events (docs/03 §5.4) ----------------------------------------------------------------

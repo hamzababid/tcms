@@ -30,6 +30,8 @@ SUBJECTS = {
     "invitation": "You're invited to {product}",
     "password_reset": "Reset your {product} password",
     "password_changed": "Your {product} password was changed",
+    "mention": "You were mentioned in {product}",
+    "digest": "Your {product} runs for today",
 }
 
 

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { ProfilePage } from "@/features/profile/ProfilePage";
 
-const TABS = ["profile", "sessions", "tokens", "security"];
+const TABS = ["profile", "sessions", "tokens", "security", "notifications"];
 
 export const Route = createFileRoute("/_app/profile")({
   validateSearch: (s: Record<string, unknown>): { tab?: string } =>

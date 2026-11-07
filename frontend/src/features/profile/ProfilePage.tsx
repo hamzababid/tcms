@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Tabs } from "@/components/ui/tabs";
+import { NotificationPreferencesTab } from "@/features/notifications/PreferencesTab";
 import { FormError } from "@/features/auth/AuthCard";
 import { MfaEnrollment } from "@/features/auth/MfaEnrollment";
 import { PASSWORD_HINT } from "@/features/auth/PasswordPages";
@@ -741,7 +742,7 @@ export function ProfilePage({ tab, onTab }: { tab: string; onTab: (t: string) =>
   return (
     <Page
       title="Your account"
-      subtitle="Profile, password, sessions, API tokens and two-step verification."
+      subtitle="Profile, password, sessions, API tokens, two-step verification and email notifications."
       width="full"
     >
       <Tabs
@@ -754,6 +755,7 @@ export function ProfilePage({ tab, onTab }: { tab: string; onTab: (t: string) =>
           { value: "sessions", label: "Sessions", content: <SessionsTab /> },
           { value: "tokens", label: "API tokens", content: <TokensTab /> },
           { value: "security", label: "Two-step verification", content: <SecurityTab /> },
+          { value: "notifications", label: "Notifications", content: <NotificationPreferencesTab /> },
         ]}
       />
     </Page>

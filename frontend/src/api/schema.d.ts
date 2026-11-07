@@ -873,6 +873,87 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/me/notification-preferences": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Preferences */
+    get: operations["get_preferences_api_v1_me_notification_preferences_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Patch Preferences
+     * @description US-171: opt out of mention emails and the daily digest (in-app notifications stay).
+     */
+    patch: operations["patch_preferences_api_v1_me_notification_preferences_patch"];
+    trace?: never;
+  };
+  "/api/v1/me/notifications": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Notifications
+     * @description The bell (US-170): newest first, each with a rendered title and link.
+     */
+    get: operations["list_notifications_api_v1_me_notifications_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/me/notifications/read": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Mark Read
+     * @description `{ids: [...]}` or `{all: true}`; only the caller's own notifications.
+     */
+    post: operations["mark_read_api_v1_me_notifications_read_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/me/notifications/unread-count": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Unread Count
+     * @description Polled by the bell every 60 s and on window focus.
+     */
+    get: operations["unread_count_api_v1_me_notifications_unread_count_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/me/sessions": {
     parameters: {
       query?: never;
@@ -3924,6 +4005,26 @@ export interface components {
       /** Title */
       title?: string | null;
     };
+    /** EmailPreferences */
+    EmailPreferences: {
+      /**
+       * Digest
+       * @description Daily 07:00 email of runs newly assigned to me
+       */
+      digest: boolean;
+      /**
+       * Mentions
+       * @description Email when someone mentions me (in-app always)
+       */
+      mentions: boolean;
+    };
+    /** EmailPreferencesPatch */
+    EmailPreferencesPatch: {
+      /** Digest */
+      digest?: boolean | null;
+      /** Mentions */
+      mentions?: boolean | null;
+    };
     /** EnvironmentCreate */
     EnvironmentCreate: {
       /** Description */
@@ -4413,6 +4514,23 @@ export interface components {
       /** Top Uncovered */
       top_uncovered: components["schemas"]["UncoveredRef"][];
     };
+    /** MarkRead */
+    MarkRead: {
+      /**
+       * All
+       * @default false
+       */
+      all: boolean;
+      /** Ids */
+      ids?: string[] | null;
+    };
+    /** MarkedRead */
+    MarkedRead: {
+      /** Unread */
+      unread: number;
+      /** Updated */
+      updated: number;
+    };
     /** MeResponse */
     MeResponse: {
       /** Is Org Admin */
@@ -4600,6 +4718,45 @@ export interface components {
       reason: string | null;
       /** Version No */
       version_no: number;
+    };
+    /** NotificationPage */
+    NotificationPage: {
+      /** Items */
+      items: components["schemas"]["NotificationRead"][];
+      /** Page */
+      page: number;
+      /** Page Size */
+      page_size: number;
+      /** Total */
+      total: number;
+      /** Unread */
+      unread: number;
+    };
+    /** NotificationRead */
+    NotificationRead: {
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Project Key */
+      project_key: string | null;
+      /** Read At */
+      read_at: string | null;
+      /** Title */
+      title: string;
+      /** Type */
+      type: string;
+      /**
+       * Url
+       * @description App path (or API download path for exports)
+       */
+      url: string | null;
     };
     /** OrgDashboard */
     OrgDashboard: {
@@ -6494,6 +6651,11 @@ export interface components {
       title: string | null;
       /** Url */
       url: string | null;
+    };
+    /** UnreadCount */
+    UnreadCount: {
+      /** Count */
+      count: number;
     };
     /** UserRef */
     UserRef: {
@@ -9041,6 +9203,218 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  get_preferences_api_v1_me_notification_preferences_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EmailPreferences"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  patch_preferences_api_v1_me_notification_preferences_patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["EmailPreferencesPatch"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EmailPreferences"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  list_notifications_api_v1_me_notifications_get: {
+    parameters: {
+      query?: {
+        unread?: boolean;
+        page?: number;
+        page_size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NotificationPage"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  mark_read_api_v1_me_notifications_read_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["MarkRead"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MarkedRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  unread_count_api_v1_me_notifications_unread_count_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UnreadCount"];
+        };
       };
       /** @description Validation or business-rule error */
       422: {

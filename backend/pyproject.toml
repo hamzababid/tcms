@@ -110,7 +110,7 @@ layers = [
   "tcms.main | tcms.seed",
   "tcms.api",
   "tcms.integrations",
-  "tcms.reporting",
+  "tcms.reporting | tcms.notifications",
   "tcms.bugs | tcms.defects",
   "tcms.execution",
   "tcms.planning",
@@ -125,75 +125,75 @@ layers = [
 [[tool.importlinter.contracts]]
 name = "identity: models and repository are private"
 type = "forbidden"
-source_modules = ["tcms.workspace", "tcms.testdesign", "tcms.planning", "tcms.execution", "tcms.defects", "tcms.bugs", "tcms.requirements", "tcms.reporting", "tcms.integrations", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
+source_modules = ["tcms.workspace", "tcms.testdesign", "tcms.planning", "tcms.execution", "tcms.defects", "tcms.bugs", "tcms.requirements", "tcms.reporting", "tcms.notifications", "tcms.integrations", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
 forbidden_modules = ["tcms.identity.models", "tcms.identity.repository"]
 allow_indirect_imports = true
 
 [[tool.importlinter.contracts]]
 name = "workspace: models and repository are private"
 type = "forbidden"
-source_modules = ["tcms.identity", "tcms.testdesign", "tcms.planning", "tcms.execution", "tcms.defects", "tcms.bugs", "tcms.requirements", "tcms.reporting", "tcms.integrations", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
+source_modules = ["tcms.identity", "tcms.testdesign", "tcms.planning", "tcms.execution", "tcms.defects", "tcms.bugs", "tcms.requirements", "tcms.reporting", "tcms.notifications", "tcms.integrations", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
 forbidden_modules = ["tcms.workspace.models", "tcms.workspace.repository"]
 allow_indirect_imports = true
 
 [[tool.importlinter.contracts]]
 name = "testdesign: models and repository are private"
 type = "forbidden"
-source_modules = ["tcms.identity", "tcms.workspace", "tcms.planning", "tcms.execution", "tcms.defects", "tcms.bugs", "tcms.requirements", "tcms.reporting", "tcms.integrations", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
+source_modules = ["tcms.identity", "tcms.workspace", "tcms.planning", "tcms.execution", "tcms.defects", "tcms.bugs", "tcms.requirements", "tcms.reporting", "tcms.notifications", "tcms.integrations", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
 forbidden_modules = ["tcms.testdesign.models", "tcms.testdesign.repository"]
 allow_indirect_imports = true
 
 [[tool.importlinter.contracts]]
 name = "planning: models and repository are private"
 type = "forbidden"
-source_modules = ["tcms.identity", "tcms.workspace", "tcms.testdesign", "tcms.execution", "tcms.defects", "tcms.bugs", "tcms.requirements", "tcms.reporting", "tcms.integrations", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
+source_modules = ["tcms.identity", "tcms.workspace", "tcms.testdesign", "tcms.execution", "tcms.defects", "tcms.bugs", "tcms.requirements", "tcms.reporting", "tcms.notifications", "tcms.integrations", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
 forbidden_modules = ["tcms.planning.models", "tcms.planning.repository"]
 allow_indirect_imports = true
 
 [[tool.importlinter.contracts]]
 name = "execution: models and repository are private"
 type = "forbidden"
-source_modules = ["tcms.identity", "tcms.workspace", "tcms.testdesign", "tcms.planning", "tcms.defects", "tcms.bugs", "tcms.requirements", "tcms.reporting", "tcms.integrations", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
+source_modules = ["tcms.identity", "tcms.workspace", "tcms.testdesign", "tcms.planning", "tcms.defects", "tcms.bugs", "tcms.requirements", "tcms.reporting", "tcms.notifications", "tcms.integrations", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
 forbidden_modules = ["tcms.execution.models", "tcms.execution.repository"]
 allow_indirect_imports = true
 
 [[tool.importlinter.contracts]]
 name = "defects: models and repository are private"
 type = "forbidden"
-source_modules = ["tcms.identity", "tcms.workspace", "tcms.testdesign", "tcms.planning", "tcms.execution", "tcms.bugs", "tcms.requirements", "tcms.reporting", "tcms.integrations", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
+source_modules = ["tcms.identity", "tcms.workspace", "tcms.testdesign", "tcms.planning", "tcms.execution", "tcms.bugs", "tcms.requirements", "tcms.reporting", "tcms.notifications", "tcms.integrations", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
 forbidden_modules = ["tcms.defects.models", "tcms.defects.repository"]
 allow_indirect_imports = true
 
 [[tool.importlinter.contracts]]
 name = "bugs: models and repository are private"
 type = "forbidden"
-source_modules = ["tcms.identity", "tcms.workspace", "tcms.testdesign", "tcms.planning", "tcms.execution", "tcms.defects", "tcms.requirements", "tcms.reporting", "tcms.integrations", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
+source_modules = ["tcms.identity", "tcms.workspace", "tcms.testdesign", "tcms.planning", "tcms.execution", "tcms.defects", "tcms.requirements", "tcms.reporting", "tcms.notifications", "tcms.integrations", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
 forbidden_modules = ["tcms.bugs.models", "tcms.bugs.repository"]
 allow_indirect_imports = true
 [[tool.importlinter.contracts]]
 name = "requirements: models and repository are private"
 type = "forbidden"
-source_modules = ["tcms.identity", "tcms.workspace", "tcms.testdesign", "tcms.planning", "tcms.execution", "tcms.defects", "tcms.reporting", "tcms.integrations", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
+source_modules = ["tcms.identity", "tcms.workspace", "tcms.testdesign", "tcms.planning", "tcms.execution", "tcms.defects", "tcms.reporting", "tcms.notifications", "tcms.integrations", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
 forbidden_modules = ["tcms.requirements.models", "tcms.requirements.repository"]
 allow_indirect_imports = true
 
 [[tool.importlinter.contracts]]
 name = "reporting: models and repository are private"
 type = "forbidden"
-source_modules = ["tcms.identity", "tcms.workspace", "tcms.testdesign", "tcms.planning", "tcms.execution", "tcms.defects", "tcms.bugs", "tcms.requirements", "tcms.integrations", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
+source_modules = ["tcms.identity", "tcms.workspace", "tcms.testdesign", "tcms.planning", "tcms.execution", "tcms.defects", "tcms.bugs", "tcms.requirements", "tcms.notifications", "tcms.integrations", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
 forbidden_modules = ["tcms.reporting.models", "tcms.reporting.repository"]
 allow_indirect_imports = true
 
 [[tool.importlinter.contracts]]
 name = "integrations: models and repository are private"
 type = "forbidden"
-source_modules = ["tcms.identity", "tcms.workspace", "tcms.testdesign", "tcms.planning", "tcms.execution", "tcms.defects", "tcms.bugs", "tcms.requirements", "tcms.reporting", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
+source_modules = ["tcms.identity", "tcms.workspace", "tcms.testdesign", "tcms.planning", "tcms.execution", "tcms.defects", "tcms.bugs", "tcms.requirements", "tcms.reporting", "tcms.notifications", "tcms.platform", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
 forbidden_modules = ["tcms.integrations.models", "tcms.integrations.repository"]
 allow_indirect_imports = true
 
 [[tool.importlinter.contracts]]
 name = "platform: models and repository are private"
 type = "forbidden"
-source_modules = ["tcms.identity", "tcms.workspace", "tcms.testdesign", "tcms.planning", "tcms.execution", "tcms.defects", "tcms.bugs", "tcms.requirements", "tcms.reporting", "tcms.integrations", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
+source_modules = ["tcms.identity", "tcms.workspace", "tcms.testdesign", "tcms.planning", "tcms.execution", "tcms.defects", "tcms.bugs", "tcms.requirements", "tcms.reporting", "tcms.notifications", "tcms.integrations", "tcms.api", "tcms.cli", "tcms.seed", "tcms.main"]
 forbidden_modules = ["tcms.platform.models", "tcms.platform.repository"]
 allow_indirect_imports = true

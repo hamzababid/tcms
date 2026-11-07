@@ -726,6 +726,20 @@ MATRIX: dict[tuple[str, str], Entry] = {
     ("GET", P + "/traceability"): Entry(
         "project:project.view", lambda f: ("GET", _p(f, "/traceability"), None)
     ),
+    # notifications and email preferences (M7b / E16): own data only
+    ("GET", "/api/v1/me/notifications"): Entry("auth", lambda f: ("GET", "/api/v1/me/notifications", None)),
+    ("GET", "/api/v1/me/notifications/unread-count"): Entry(
+        "auth", lambda f: ("GET", "/api/v1/me/notifications/unread-count", None)
+    ),
+    ("POST", "/api/v1/me/notifications/read"): Entry(
+        "auth", lambda f: ("POST", "/api/v1/me/notifications/read", {"all": True})
+    ),
+    ("GET", "/api/v1/me/notification-preferences"): Entry(
+        "auth", lambda f: ("GET", "/api/v1/me/notification-preferences", None)
+    ),
+    ("PATCH", "/api/v1/me/notification-preferences"): Entry(
+        "auth", lambda f: ("PATCH", "/api/v1/me/notification-preferences", {})
+    ),
     # reporting, readiness, decisions, exports (M7 / E13)
     ("GET", P + "/release-summaries"): Entry(
         "project:project.view", lambda f: ("GET", _p(f, "/release-summaries"), None)

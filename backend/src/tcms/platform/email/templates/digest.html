@@ -1,0 +1,8 @@
+<p><img src="{{ logo_url }}" alt="{{ product }}" height="32" style="height:32px;width:auto;border:0"></p>
+<p>Hello {{ display_name }},</p>
+<p>{{ total }} run{{ "" if total == 1 else "s" }} {{ "was" if total == 1 else "were" }} assigned to you since the last summary:</p>
+<ul>
+{% for item in items %}  <li><a href="{{ item.url }}">{{ item.title }}</a></li>
+{% endfor %}</ul>
+<p><a href="{{ url }}">Open My Work</a></p>
+<p style="color:#64748b;font-size:12px">This is your daily summary. Switch it off in {{ product }} under Your account › Notifications.</p>
