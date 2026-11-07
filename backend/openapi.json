@@ -811,6 +811,29 @@
         "title": "Body_upload_api_v1_attachments_post",
         "type": "object"
       },
+      "Body_upload_import_api_v1_projects__project_id__imports_post": {
+        "properties": {
+          "entity": {
+            "enum": [
+              "test_case",
+              "requirement"
+            ],
+            "title": "Entity",
+            "type": "string"
+          },
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file",
+          "entity"
+        ],
+        "title": "Body_upload_import_api_v1_projects__project_id__imports_post",
+        "type": "object"
+      },
       "BugLinkCreate": {
         "additionalProperties": false,
         "properties": {
@@ -3814,6 +3837,72 @@
         "title": "ExportAccepted",
         "type": "object"
       },
+      "ExportCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "case_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 5000,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Selected cases instead of filters",
+            "title": "Case Ids"
+          },
+          "entity": {
+            "enum": [
+              "test_case",
+              "requirement"
+            ],
+            "title": "Entity",
+            "type": "string"
+          },
+          "filters": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Repository list filters (test cases)",
+            "title": "Filters",
+            "type": "object"
+          },
+          "format": {
+            "default": "xlsx",
+            "enum": [
+              "csv",
+              "xlsx"
+            ],
+            "title": "Format",
+            "type": "string"
+          },
+          "include_archived": {
+            "default": false,
+            "title": "Include Archived",
+            "type": "boolean"
+          },
+          "version": {
+            "default": "latest",
+            "enum": [
+              "latest",
+              "approved"
+            ],
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entity"
+        ],
+        "title": "ExportCreate",
+        "type": "object"
+      },
       "ExportRequest": {
         "additionalProperties": false,
         "properties": {
@@ -3880,6 +3969,37 @@
           "changed"
         ],
         "title": "FieldDiffRead",
+        "type": "object"
+      },
+      "FieldInfo": {
+        "properties": {
+          "choices": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Choices",
+            "type": "array"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "step": {
+            "title": "Step",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "choices",
+          "step"
+        ],
+        "title": "FieldInfo",
         "type": "object"
       },
       "FinalizeRequest": {
@@ -4223,6 +4343,92 @@
           "summary"
         ],
         "title": "GroupProgress",
+        "type": "object"
+      },
+      "ImportOptions": {
+        "additionalProperties": false,
+        "properties": {
+          "mode": {
+            "default": "upsert",
+            "enum": [
+              "upsert",
+              "create_only"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "skip_error_rows": {
+            "default": false,
+            "title": "Skip Error Rows",
+            "type": "boolean"
+          },
+          "steps_layout": {
+            "default": "row_per_step",
+            "enum": [
+              "row_per_step",
+              "single_cell"
+            ],
+            "title": "Steps Layout",
+            "type": "string"
+          },
+          "target_folder_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Folder Id"
+          }
+        },
+        "title": "ImportOptions",
+        "type": "object"
+      },
+      "ImportUploaded": {
+        "properties": {
+          "entity": {
+            "enum": [
+              "test_case",
+              "requirement"
+            ],
+            "title": "Entity",
+            "type": "string"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/FieldInfo"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "file_name": {
+            "title": "File Name",
+            "type": "string"
+          },
+          "sheets": {
+            "items": {
+              "$ref": "#/components/schemas/SheetRead"
+            },
+            "title": "Sheets",
+            "type": "array"
+          },
+          "transfer_id": {
+            "format": "uuid",
+            "title": "Transfer Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "transfer_id",
+          "entity",
+          "file_name",
+          "sheets",
+          "fields"
+        ],
+        "title": "ImportUploaded",
         "type": "object"
       },
       "InvitationCreate": {
@@ -10290,6 +10496,64 @@
         "title": "SessionRead",
         "type": "object"
       },
+      "SheetRead": {
+        "properties": {
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "rows": {
+            "title": "Rows",
+            "type": "integer"
+          },
+          "sample": {
+            "items": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Sample",
+            "type": "array"
+          },
+          "suggested_mapping": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "column \u2192 field key ('' = ignore)",
+            "title": "Suggested Mapping",
+            "type": "object"
+          },
+          "values": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "description": "Distinct values of columns with 30 values or fewer",
+            "title": "Values",
+            "type": "object"
+          }
+        },
+        "required": [
+          "name",
+          "columns",
+          "rows",
+          "sample",
+          "suggested_mapping",
+          "values"
+        ],
+        "title": "SheetRead",
+        "type": "object"
+      },
       "Skipped": {
         "properties": {
           "key": {
@@ -10736,6 +11000,78 @@
         "title": "TagRead",
         "type": "object"
       },
+      "TemplateCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "entity": {
+            "enum": [
+              "test_case",
+              "requirement"
+            ],
+            "title": "Entity",
+            "type": "string"
+          },
+          "mapping": {
+            "additionalProperties": true,
+            "description": "{columns: {header: field}, value_maps, options}",
+            "title": "Mapping",
+            "type": "object"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entity",
+          "name",
+          "mapping"
+        ],
+        "title": "TemplateCreate",
+        "type": "object"
+      },
+      "TemplateRead": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "entity": {
+            "enum": [
+              "test_case",
+              "requirement"
+            ],
+            "title": "Entity",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "mapping": {
+            "additionalProperties": true,
+            "title": "Mapping",
+            "type": "object"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "entity",
+          "name",
+          "mapping",
+          "created_at"
+        ],
+        "title": "TemplateRead",
+        "type": "object"
+      },
       "TesterRead": {
         "properties": {
           "assigned": {
@@ -11145,6 +11481,49 @@
           "is_active"
         ],
         "title": "UserRef",
+        "type": "object"
+      },
+      "ValidateRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "mapping": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "column header \u2192 field key; '' ignores the column",
+            "title": "Mapping",
+            "type": "object"
+          },
+          "options": {
+            "$ref": "#/components/schemas/ImportOptions"
+          },
+          "sheet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sheet"
+          },
+          "value_maps": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "description": "field \u2192 file value \u2192 value",
+            "title": "Value Maps",
+            "type": "object"
+          }
+        },
+        "required": [
+          "mapping"
+        ],
+        "title": "ValidateRequest",
         "type": "object"
       },
       "VersionListItem": {
@@ -14520,9 +14899,73 @@
         ]
       }
     },
+    "/api/v1/data-transfers/{transfer_id}/commit": {
+      "post": {
+        "description": "Step 4 (AC-IMP-01/03): one transaction for the whole file, in the background.",
+        "operationId": "commit_import_api_v1_data_transfers__transfer_id__commit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "transfer_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Transfer Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Commit Import",
+        "tags": [
+          "import-export"
+        ]
+      }
+    },
     "/api/v1/data-transfers/{transfer_id}/download": {
       "get": {
-        "description": "docs/06 \u00a74.13: the initiator downloads a ready export within 7 days.",
+        "description": "docs/06 \u00a74.13: the initiator downloads a ready export or an import report within 7 days.",
         "operationId": "download_transfer_api_v1_data_transfers__transfer_id__download_get",
         "parameters": [
           {
@@ -14577,6 +15020,139 @@
         "summary": "Download Transfer",
         "tags": [
           "reporting"
+        ]
+      }
+    },
+    "/api/v1/data-transfers/{transfer_id}/errors": {
+      "get": {
+        "operationId": "import_errors_api_v1_data_transfers__transfer_id__errors_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "transfer_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Transfer Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/csv": {}
+            },
+            "description": "Row errors of the dry run"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Import Errors",
+        "tags": [
+          "import-export"
+        ]
+      }
+    },
+    "/api/v1/data-transfers/{transfer_id}/validate": {
+      "post": {
+        "description": "Step 3 (dry run, background): counts and row errors appear on `GET /data-transfers/{id}`.",
+        "operationId": "validate_import_api_v1_data_transfers__transfer_id__validate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "transfer_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Transfer Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Validate Import",
+        "tags": [
+          "import-export"
         ]
       }
     },
@@ -15264,6 +15840,62 @@
         "summary": "Ready",
         "tags": [
           "health"
+        ]
+      }
+    },
+    "/api/v1/import-mappings/{template_id}": {
+      "delete": {
+        "operationId": "delete_template_api_v1_import_mappings__template_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "template_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Template Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Delete Template",
+        "tags": [
+          "import-export"
         ]
       }
     },
@@ -18638,6 +19270,90 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/exports": {
+      "post": {
+        "description": "FR-IMP-002/003 (AC-IMP-02): cases in the import layout (one row per step, Key column) or requirement\nreferences with their linked case keys. \u2264 10,000 rows at once, more in the background.",
+        "operationId": "export_entity_api_v1_projects__project_id__exports_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {},
+              "text/csv": {}
+            },
+            "description": "The file"
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportAccepted"
+                }
+              }
+            },
+            "description": "Built in the background; notified when ready"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Export Entity",
+        "tags": [
+          "import-export"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}/folders": {
       "get": {
         "description": "US-043: full tree with counts including descendants.",
@@ -18784,6 +19500,239 @@
         "summary": "Create Folder",
         "tags": [
           "test-cases"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/import-mappings": {
+      "get": {
+        "operationId": "list_templates_api_v1_projects__project_id__import_mappings_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "entity",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "test_case",
+                    "requirement"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Entity"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TemplateRead"
+                  },
+                  "title": "Response List Templates Api V1 Projects  Project Id  Import Mappings Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "List Templates",
+        "tags": [
+          "import-export"
+        ]
+      },
+      "post": {
+        "description": "US-151: saving under an existing name replaces it.",
+        "operationId": "save_template_api_v1_projects__project_id__import_mappings_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Save Template",
+        "tags": [
+          "import-export"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/imports": {
+      "post": {
+        "description": "FR-IMP-001/003 step 1: CSV or XLSX \u2264 20 MB; returns sheets, headers, a sample and a suggested\nmapping.",
+        "operationId": "upload_import_api_v1_projects__project_id__imports_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_import_api_v1_projects__project_id__imports_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportUploaded"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation or business-rule error"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error (application/problem+json)"
+          }
+        },
+        "summary": "Upload Import",
+        "tags": [
+          "import-export"
         ]
       }
     },

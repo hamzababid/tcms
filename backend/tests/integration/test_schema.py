@@ -60,6 +60,7 @@ def test_migrated_schema_matches_docs_baseline(database: Database) -> None:
         "03_m1_additions.sql",
         "04_m5_bug_links.sql",
         "05_m6_requirement_refs.sql",
+        "06_m8_import_mappings.sql",
     ):
         database.psql(
             "-q", "-f", f"/schema/{name}", user="tcms_owner", db="tcms_reference", password=OWNER_PASSWORD
@@ -94,7 +95,9 @@ def test_app_role_privileges(app_engine: Engine) -> None:
             .scalars()
             .all()
         )
-        assert len(tables) == 55  # docs/schema/01_baseline.sql + 03_m1_additions.sql + 04/05 milestone files
+        assert (
+            len(tables) == 56
+        )  # docs/schema/01_baseline.sql + 03_m1_additions.sql + 04/05/06 milestone files
         for table in tables:
             privs = {
                 p: conn.execute(

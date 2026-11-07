@@ -8,19 +8,15 @@ injection guidance).
 
 from __future__ import annotations
 
-import csv
-import io
 from collections.abc import Iterable, Iterator
-from datetime import UTC, date, datetime
+from datetime import date
 from typing import Any, Literal
 from uuid import UUID
-
-from openpyxl import Workbook
 
 from tcms.core import clock
 from tcms.core.context import AccessContext, Principal, RequestMeta
 from tcms.core.uow import UnitOfWork
-from tcms.platform import notifications, storage, transfers
+from tcms.platform import notifications, spreadsheets, storage, transfers
 from tcms.platform.jobs.queue import JobInfo, job_handler
 from tcms.reporting import reports
 from tcms.reporting.queries import Scope
@@ -29,55 +25,25 @@ from tcms.reporting.reports import Column, Filters
 Format = Literal["csv", "xlsx"]
 SYNC_MAX = 10_000
 ASYNC_MAX = 500_000
-_FORMULA_START = ("=", "+", "-", "@", "\t", "\r")
-MEDIA = {
-    "csv": "text/csv; charset=utf-8",
-    "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-}
-
-
-def safe(value: Any) -> Any:
-    """AC-RPT-05: neutralise formula injection in text cells; numbers and dates pass through."""
-    if isinstance(value, str) and value.startswith(_FORMULA_START):
-        return "'" + value
-    return value
-
-
-def _cell(value: Any, kind: str) -> Any:
-    if value is None:
-        return ""
-    if isinstance(value, datetime):
-        return value.astimezone(UTC).replace(tzinfo=None) if kind == "datetime" else value.isoformat()
-    if isinstance(value, UUID):
-        return str(value)
-    return safe(value)
+MEDIA = spreadsheets.MEDIA
+safe = spreadsheets.safe
 
 
 def write_csv(columns: Iterable[Column], rows: Iterable[dict[str, Any]]) -> bytes:
     cols = list(columns)
-    buf = io.StringIO()
-    buf.write("\ufeff")  # Excel opens UTF-8 CSV correctly with a BOM
-    w = csv.writer(buf)
-    w.writerow([safe(c.label) for c in cols])
-    for row in rows:
-        values = []
-        for c in cols:
-            v = _cell(row.get(c.key), c.kind)
-            values.append(v.isoformat(sep=" ", timespec="seconds") + "Z" if isinstance(v, datetime) else v)
-        w.writerow(values)
-    return buf.getvalue().encode("utf-8")
+    return spreadsheets.write_csv(
+        [c.label for c in cols], ([row.get(c.key) for c in cols] for row in rows), [c.kind for c in cols]
+    )
 
 
 def write_xlsx(columns: Iterable[Column], rows: Iterable[dict[str, Any]], title: str) -> bytes:
     cols = list(columns)
-    wb = Workbook(write_only=True)
-    ws = wb.create_sheet(title=title[:31])
-    ws.append([safe(c.label) for c in cols])
-    for row in rows:
-        ws.append([_cell(row.get(c.key), c.kind) for c in cols])
-    out = io.BytesIO()
-    wb.save(out)
-    return out.getvalue()
+    return spreadsheets.write_xlsx(
+        [c.label for c in cols],
+        ([row.get(c.key) for c in cols] for row in rows),
+        title,
+        [c.kind for c in cols],
+    )
 
 
 def render(report: reports.Report, rows: Iterable[dict[str, Any]], fmt: Format) -> bytes:

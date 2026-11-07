@@ -137,3 +137,11 @@ def search(s: Session, ctx: AccessContext, q: str, limit: int) -> list[RefView]:
 
 def owning_project_of_ref(s: Session, ref_id: UUID) -> tuple[UUID, UUID] | None:
     return repo.owner_of(s, ref_id)
+
+
+def linked_case_ids(s: Session, ctx: AccessContext, ref_ids: list[UUID]) -> dict[UUID, set[UUID]]:
+    """Reference → its linked cases (M8 import/export)."""
+    out: dict[UUID, set[UUID]] = {r: set() for r in ref_ids}
+    for ref_id, case_id in repo.links_of_refs(s, ctx, ref_ids):
+        out.setdefault(ref_id, set()).add(case_id)
+    return out

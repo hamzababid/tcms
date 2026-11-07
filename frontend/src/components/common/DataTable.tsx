@@ -144,6 +144,12 @@ function FilterCell({
   // Remounted (key) when filters are cleared, so the local text starts from the column value.
   const [text, setText] = useState(typeof value === "string" ? value : "");
   const current = typeof value === "string" ? value : "";
+  // A saved view can set the column value after mount: take it, or the debounce below would clear it.
+  const [seen, setSeen] = useState(current);
+  if (current !== seen) {
+    setSeen(current);
+    setText(current);
+  }
   useEffect(() => {
     if (filter.kind !== "text" || text === current) return;
     const t = window.setTimeout(() => {

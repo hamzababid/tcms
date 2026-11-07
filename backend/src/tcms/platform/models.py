@@ -195,6 +195,25 @@ class DataTransfer(Base):
     expires_at: Mapped[datetime | None] = mapped_column(TS)
 
 
+class ImportMapping(Base):
+    """M8 import mapping templates per project (US-151)."""
+
+    __tablename__ = "import_mappings"
+    __audit_type__ = "import_mapping"
+    __table_args__ = (
+        _project_fk(),
+    )  # ux_import_mappings__project_entity_name: expression index (lower(name))
+
+    id: Mapped[UUID] = pk()
+    organization_id: Mapped[UUID] = mapped_column(UUIDT, nullable=False)
+    project_id: Mapped[UUID] = mapped_column(UUIDT, nullable=False)
+    entity: Mapped[str] = mapped_column(Text, nullable=False)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    mapping: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[datetime] = created_ts()
+    created_by: Mapped[UUID | None] = mapped_column(UUIDT)
+
+
 class IdempotencyKey(Base):
     __tablename__ = "idempotency_keys"
     __table_args__ = (Index("ix_idempotency_keys__created_at", "created_at"),)

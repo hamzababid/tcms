@@ -48,6 +48,7 @@ SQL_ONLY_INDEXES = frozenset(
         "ix_test_plans__name_trgm",
         "ux_saved_views__owner_name",
         "ux_metric_snapshots__scope_day",
+        "ux_import_mappings__project_entity_name",
     }
 )
 
