@@ -12,7 +12,7 @@ The backend reads its configuration from the environment (`tcms.core.config.Sett
 | `TCMS_SECRET_KEY` | — | ≥ 32 characters. Keys the recovery-code HMAC. `make env` generates a local value |
 | `TCMS_ENCRYPTION_KEYS` | — | `k1:base64(32 bytes)[,k0:oldkey]` AES-256-GCM key ring for TOTP secrets and MFA setup tokens; the first key encrypts, all decrypt (rotation). `make env` generates a local value |
 | `DATABASE_URL` | — | App connection as `tcms_app` |
-| `DATABASE_MAINTENANCE_URL` | — | Migrations and maintenance as `tcms_owner` |
+| `DATABASE_MAINTENANCE_URL` | — | Migrations and maintenance as `tcms_owner`. The worker also needs it: the daily audit retention purge (`audit.retention`, M8b) deletes as this role |
 | `DB_POOL_SIZE` / `DB_MAX_OVERFLOW` | `10` / `10` | SQLAlchemy pool per process |
 | `DB_STATEMENT_TIMEOUT_MS_API` / `_WORKER` | `15000` / `300000` | PostgreSQL `statement_timeout` (docs/03 §14) |
 | `S3_ENDPOINT_URL` | — | Empty for AWS S3; `http://minio:9000` locally |

@@ -1,6 +1,6 @@
 # Known limitations
 
-Current as of M8a (2026-11-07). Remove entries when resolved.
+Current as of M8b (2026-11-07). Remove entries when resolved.
 
 | # | Limitation | Impact | Plan |
 | --- | --- | --- | --- |
@@ -38,3 +38,6 @@ Current as of M8a (2026-11-07). Remove entries when resolved.
 | L51 | Import covers case content, metadata, folders, tags and steps, and requirement references with case links. Attachments, comments, case links and automation keys are not imported, and the export does not include them | Move those by hand after an import | When asked for |
 | L52 | Value mapping in the wizard is offered for columns with 30 distinct values or fewer; other columns rely on the built-in synonyms ("P1" → high and so on) | An unusual value in a wide column is reported as `invalid_value` and needs fixing in the file | When asked for |
 | L53 | An import commits in one transaction: 5,000 cases with 20,000 steps take about 41 s, and the project's case key sequence row stays locked until the import commits | Creating a case in that project waits for the import to finish | Within US-150's 2-minute target; revisit if larger files are needed |
+| L54 | Administration › System retries failed jobs but has no "discard" (docs/07 §5.13); a failed job stays listed until the 90-day job clean-up deletes it | A job that cannot succeed stays in the list | Add discard if the list gets noisy |
+| L55 | Installation jobs (no organization, e.g. the daily clean-ups) are listed and retryable by the administrators of every organization on the installation | Only matters for multi-organization installations; payloads are never shown | Restrict to an installation operator role if multi-tenant hosting is offered |
+| L56 | The audit log and access review CSV/XLSX are built in the request: the audit CSV stops at 100,000 events (`422 too_many_rows`), with no background export | Very wide date ranges need narrower filters | Move to the background export path if needed |

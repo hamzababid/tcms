@@ -9,7 +9,7 @@ Status per story: ✅ done (acceptance automated and passing) · 🟡 partial ·
 | US-001 Start the full stack with one command | ✅ | `make up && make migrate && make seed`: 66 s for a no-cache rebuild (base images cached); web :5173, api :8000, Mailpit :8025 (ports configurable). E2E `e2e/smoke.spec.ts` runs against the stack | Seed has no steps until M1 (L3). MinIO image source changed (L1) |
 | US-002 Errors are problem+json with a stable code | ✅ | `api/test_problems.py`: unknown route, validation error with field pointers, every `DomainError` subclass → status + code, `request_id`, 405, 500 without leaking details; E2E unknown route | — |
 | US-003 DB enforces immutability | ✅ | `integration/test_immutability.py` (`test_br_06_final_result_immutable_sql`, `test_br_01_version_content_immutable_sql`, `test_br_01_approval_columns_settable_once`, `test_br_26_audit_append_only_sql`, `test_br_07_single_draft_per_run`); `integration/test_schema.py::test_verify_sql_passes_as_app_role` (99_verify 35/35) | — |
-| US-004 Jobs run with retry and dead-letter | ✅ | `integration/test_jobs.py`: backoff then `dead`, permanent `failed`, unknown type, dedupe, stale requeue, SKIP LOCKED, scheduler once per period, admin retry (TCMS-139 backend part) | Admin UI for dead jobs: M8 |
+| US-004 Jobs run with retry and dead-letter | ✅ | `integration/test_jobs.py`: backoff then `dead`, permanent `failed`, unknown type, dedupe, stale requeue, SKIP LOCKED, scheduler once per period, admin retry (TCMS-139 backend part) | Admin UI for dead jobs: Administration › System (M8b) |
 | US-005 API client generated; CI fails on drift | ✅ | `make api-client-check` (CI job `openapi-drift`); verified failing after an unregenerated schema change | — |
 | US-006 Module boundaries enforced | ✅ | `lint-imports` (11 contracts); `unit/test_module_boundaries.py` proves private-model and upward imports fail | — |
 
@@ -271,6 +271,27 @@ refreshes cached folders and requirements after an import; a saved view's text f
 filter box's debounce after a reload (E2E TCMS-120 flake); the bell E2E checks its own notification
 instead of totals that parallel tests change. New limitations L51–L53.
 
+## M8b — Administration (branch `milestone/m8b-administration`)
+
+| Story | Status | Verified by | Notes |
+| --- | --- | --- | --- |
+| US-162 Audit log (organization and project) | ✅ | `test_us_162_audit_log_filters_csv_and_project_scope`; TCMS-130 `test_tcms_130_record_changes_are_audited`; E2E US-162…165, project audit log | Event dialog with changed fields and request context; CSV ≤ 100,000 events |
+| US-163 Access review | ✅ | TCMS-133 `test_tcms_133_access_review_one_row_per_user_and_scope`; E2E (XLSX download) | Organization row + one row per project; exports audited |
+| US-164 Users | ✅ | `test_us_164_members_list_project_roles`; existing M1 rules tests (last admin, self); E2E (disabled reasons, sign out everywhere) | Members API gained `project_roles` |
+| US-165 System status and jobs | ✅ | TCMS-139 `test_tcms_139_dead_job_listed_and_retried`; E2E (retry the seeded failed job) | No discard (failed jobs expire after 90 days); payloads never shown |
+| US-166 Audit retention | ✅ | `test_us_166_audit_retention_purges_old_events_as_the_owner`, `test_retention_cutoff_is_the_same_day_years_ago` | Daily, not monthly (design D9 note); worker needs `DATABASE_MAINTENANCE_URL` |
+| Roles page | ✅ | E2E (matrix) | Read-only |
+
+Also: authz matrix covers the six new routes (168 pass); TCMS-130 runs every write probe as the Org Admin, watches
+which tables each request changes and requires audit events for it (45 of 98 probes change a record; draft
+step edits are the documented exception). Seed adds one failed `seed.example` job. Fixed on the way: a quick
+"Link requirements" on a plan could show the empty list because invalidation reused the in-flight first load
+(the UJ-7 flake); the E2E admin signs in once in `auth.setup.ts` so specs do not compete for the TOTP code;
+`session.revoked` by an admin now reads "signed … out everywhere (n sessions)". The scheduler re-ran every
+recurring job on each 30-second tick once the period's job had finished (the dedupe index covers only queued and
+running jobs, so 9 schedules made about 26,000 jobs a day); it now skips a period that already has a job
+(`test_scheduler_does_not_rerun_a_finished_period`).
+
 ### M7–M9 — status
 
 | Milestone | Epics | Status | Notes |
@@ -280,5 +301,5 @@ instead of totals that parallel tests change. New limitations L51–L53.
 | M5 Bug links | E10 | ✅ done (merged, PR #12) | See the M5 section above (ADR-023) |
 | M6 Requirements, RTM, search | E11, E12 | ✅ done (merged, PR #13) | See the M6 section above (ADR-024) |
 | M7 Reporting & readiness | E13, E16 | ✅ done (merged, PR #14, PR #15) | See the M7 section above (ADR-025) |
-| M8 Import/export, admin UI, hardening | E14, E15 (UI), E17 | 🟡 M8a done (awaiting review); M8b, M8c not started | US-150…154 (M8a), US-162…166 (M8b), US-180…184 (M8c) |
+| M8 Import/export, admin UI, hardening | E14, E15 (UI), E17 | 🟡 M8a merged (PR #16); M8b done (awaiting review); M8c not started | US-150…154 (M8a), US-162…166 (M8b), US-180…184 (M8c) |
 | M9 Pilot & go-live | — | ⬜ not started | US-185 |
