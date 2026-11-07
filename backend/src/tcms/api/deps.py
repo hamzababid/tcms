@@ -26,7 +26,7 @@ from tcms.identity import rules as identity_rules
 from tcms.identity import service as identity
 from tcms.identity.errors import CsrfFailed, MfaEnrollmentRequired, MfaRequired, TokenScopeInsufficient
 from tcms.planning import queries as planning_queries
-from tcms.platform import attachments, comments, saved_views, transfers
+from tcms.platform import attachments, comments, import_mappings, saved_views, transfers
 from tcms.platform.audit import queries as audit_queries
 from tcms.requirements import queries as requirements_queries
 from tcms.testdesign import queries as testdesign_queries
@@ -238,6 +238,7 @@ ENTITY_PROJECT: dict[str, Callable[[Session, UUID], tuple[UUID, UUID] | None]] =
     "comment": comments.owner_of,
     "attachment": attachments.owner_of,
     "data_transfer": transfers.owner_of,
+    "import_mapping": import_mappings.owner_of,
 }
 
 

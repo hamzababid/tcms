@@ -1,15 +1,16 @@
 import { Link } from "@tanstack/react-router";
 import type { ColumnDef, ColumnFiltersState, PaginationState, SortingState } from "@tanstack/react-table";
-import { Bug, ExternalLink, RotateCcw } from "lucide-react";
+import { Bug, Download, ExternalLink, RotateCcw } from "lucide-react";
 import { useState } from "react";
 
 import type { Project } from "@/api/queries";
 import { DataTable, filterValue } from "@/components/common/DataTable";
-import { EmptyState, Page } from "@/components/common/feedback";
+import { EmptyState, errorMessage, Page, useToast } from "@/components/common/feedback";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/field";
+import { exportReport } from "@/features/reporting/api";
 import { SavedViewsMenu, useSavedViews } from "@/features/views/SavedViews";
 import { formatDateTime } from "@/lib/format";
 
@@ -18,6 +19,7 @@ import { BugChip, RetestDialog, trackerOf, whereText } from "./components";
 
 /** Bugs list (docs/02 §8.4; ADR-023): one row per bug reference linked in the project. */
 export function BugsPage({ project, canRetest }: { project: Project; canRetest: boolean }) {
+  const toast = useToast();
   const tracker = trackerOf(project);
   const [filters, setFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -150,6 +152,23 @@ export function BugsPage({ project, canRetest }: { project: Project; canRetest: 
       title="Bugs"
       subtitle={`Bugs linked from test runs and cases. They are reported and fixed in ${tracker.name}.`}
       width="full"
+      actions={
+        <Button
+          variant="secondary"
+          onClick={() => {
+            exportReport(project.id, "bug-links", "xlsx", {})
+              .then((out) => {
+                if ("transferId" in out)
+                  toast(`${out.rows.toLocaleString()} rows: the file is being prepared`);
+              })
+              .catch((err: unknown) => {
+                toast(errorMessage(err), "error");
+              });
+          }}
+        >
+          <Download aria-hidden="true" className="size-4" /> Export
+        </Button>
+      }
     >
       <DataTable
         label="Bugs"

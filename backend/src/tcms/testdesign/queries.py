@@ -733,3 +733,128 @@ def search_folders(s: Session, ctx: AccessContext, q: str, limit: int) -> list[S
         SearchHit(f.id, f.name, " / ".join(folder_path_names(s, ctx, f.id)))
         for f in s.execute(stmt).scalars()
     ]
+
+
+# -- import / export snapshots (M8, docs/02 §15) ----------------------------------------------------
+
+
+@dataclass(frozen=True)
+class CaseSnapshot:
+    """A case as the importer compares it and the exporter writes it."""
+
+    id: UUID
+    key: str
+    key_num: int
+    row_version: int
+    status: str
+    folder_id: UUID
+    folder_path: tuple[str, ...]
+    type: str
+    priority: str
+    design_technique: str | None
+    automation_status: str
+    estimated_minutes: int | None
+    owner_id: UUID
+    tags: tuple[str, ...]
+    version_no: int
+    content: rules.Content
+    content_hash: bytes
+
+
+def folder_paths(s: Session, ctx: AccessContext) -> dict[UUID, tuple[str, ...]]:
+    """Every folder of the project → its names from the top (archived included)."""
+    rows = repo.folders(s, ctx)
+    names = {f.id: f.name for f in rows}
+    return {f.id: tuple(names.get(UUID(x), "?") for x in f.path.strip("/").split("/")) for f in rows}
+
+
+def folder_archived(s: Session, ctx: AccessContext) -> dict[UUID, bool]:
+    return {f.id: f.archived_at is not None for f in repo.folders(s, ctx)}
+
+
+def case_snapshots(
+    s: Session,
+    ctx: AccessContext,
+    *,
+    keys: list[str] | None = None,
+    case_ids: list[UUID] | None = None,
+    version: str = "latest",
+) -> list[CaseSnapshot]:
+    """Cases by key or id (in key order) with metadata, tags and the latest (or approved) content."""
+    stmt = repo.case_list_stmt(ctx)
+    if keys is not None:
+        stmt = stmt.where(func.upper(TestCase.key).in_([k.upper() for k in keys]))
+    if case_ids is not None:
+        stmt = stmt.where(TestCase.id.in_(case_ids))
+    cases = list(s.execute(stmt.order_by(TestCase.key_num)).scalars())
+    if not cases:
+        return []
+    paths = folder_paths(s, ctx)
+    tags = repo.tag_names_of(s, [c.id for c in cases])
+    vid = {
+        c.id: (
+            c.approved_version_id if version == "approved" and c.approved_version_id else c.latest_version_id
+        )
+        for c in cases
+    }
+    versions = {
+        v.id: v
+        for v in s.execute(
+            select(TestCaseVersion).where(TestCaseVersion.id.in_([x for x in vid.values() if x]))
+        ).scalars()
+    }
+    steps = repo.steps_of(s, list(versions))
+    out = []
+    for c in cases:
+        v = versions.get(vid[c.id])
+        if v is None:
+            continue
+        content = rules.Content(
+            format=v.format,
+            title=v.title,
+            description=v.description,
+            preconditions=v.preconditions,
+            test_data=v.test_data,
+            expected_result=v.expected_result,
+            postconditions=v.postconditions,
+            text_body=v.text_body,
+            steps=tuple(
+                rules.StepContent(st.action, st.expected_result, st.data) for st in steps.get(v.id, [])
+            ),
+        )
+        out.append(
+            CaseSnapshot(
+                c.id,
+                c.key,
+                c.key_num,
+                c.row_version,
+                c.status.value,
+                c.folder_id,
+                paths.get(c.folder_id, ()),
+                c.type.value,
+                c.priority.value,
+                c.design_technique.value if c.design_technique else None,
+                c.automation_status.value,
+                c.estimated_minutes,
+                c.owner_id,
+                tuple(tags.get(c.id, [])),
+                v.version_no,
+                content,
+                v.content_hash,
+            )
+        )
+    return out
+
+
+def case_keys(
+    s: Session, ctx: AccessContext, *, keys: list[str] | None = None, ids: list[UUID] | None = None
+) -> dict[UUID, str]:
+    """id → key for the given keys (case-insensitive) or ids, archived cases included."""
+    stmt = select(TestCase.id, TestCase.key).where(
+        TestCase.organization_id == ctx.principal.organization_id, TestCase.project_id == ctx.pid
+    )
+    if keys is not None:
+        stmt = stmt.where(func.upper(TestCase.key).in_([k.upper() for k in keys]))
+    if ids is not None:
+        stmt = stmt.where(TestCase.id.in_(ids))
+    return {r[0]: r[1] for r in s.execute(stmt).all()}

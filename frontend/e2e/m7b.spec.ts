@@ -82,14 +82,27 @@ test("AC-NTF-01: runs assigned to Sana show in her bell; opening one marks it re
   );
   await sana.goto("/my-work");
   const bell = sana.getByRole("button", { name: /^Notifications/ });
-  await expect(bell).toHaveAccessibleName("Notifications, 1 unread");
+  // Other test files assign runs to Sana in parallel, so check this cycle's notification, not the totals.
+  await expect(bell).toHaveAccessibleName(/^Notifications, \d+ unread$/);
   await bell.click();
-  const item = sana.getByRole("list", { name: "Latest notifications" }).getByRole("button").first();
+  const item = sana
+    .getByRole("list", { name: "Latest notifications" })
+    .getByRole("button")
+    .filter({ hasText: `in ${cyc.cycle.key}` });
   await expect(item).toContainText(`1 run assigned to you in ${cyc.cycle.key}`);
   await expectAccessible(sana);
   await item.click();
   await expect(sana).toHaveURL(new RegExp(`/cycles/${cyc.cycle.key}$`));
-  await expect(bell).toHaveAccessibleName("Notifications");
+  await expect
+    .poll(async () => {
+      const page = await call<{ items: { title: string; read_at: string | null }[] }>(
+        sana,
+        "GET",
+        "/api/v1/me/notifications",
+      );
+      return page.items.find((n) => n.title.includes(cyc.cycle.key))?.read_at ?? null;
+    })
+    .not.toBeNull();
 });
 
 test("AC-NTF-02/03: Sana switches email notifications off in her account", async ({ browser }) => {

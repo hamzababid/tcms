@@ -658,6 +658,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/data-transfers/{transfer_id}/commit": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Commit Import
+     * @description Step 4 (AC-IMP-01/03): one transaction for the whole file, in the background.
+     */
+    post: operations["commit_import_api_v1_data_transfers__transfer_id__commit_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/data-transfers/{transfer_id}/download": {
     parameters: {
       query?: never;
@@ -667,11 +687,48 @@ export interface paths {
     };
     /**
      * Download Transfer
-     * @description docs/06 §4.13: the initiator downloads a ready export within 7 days.
+     * @description docs/06 §4.13: the initiator downloads a ready export or an import report within 7 days.
      */
     get: operations["download_transfer_api_v1_data_transfers__transfer_id__download_get"];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/data-transfers/{transfer_id}/errors": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Import Errors */
+    get: operations["import_errors_api_v1_data_transfers__transfer_id__errors_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/data-transfers/{transfer_id}/validate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Validate Import
+     * @description Step 3 (dry run, background): counts and row errors appear on `GET /data-transfers/{id}`.
+     */
+    post: operations["validate_import_api_v1_data_transfers__transfer_id__validate_post"];
     delete?: never;
     options?: never;
     head?: never;
@@ -833,6 +890,23 @@ export interface paths {
     put?: never;
     post?: never;
     delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/import-mappings/{template_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete Template */
+    delete: operations["delete_template_api_v1_import_mappings__template_id__delete"];
     options?: never;
     head?: never;
     patch?: never;
@@ -1517,6 +1591,27 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/projects/{project_id}/exports": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Export Entity
+     * @description FR-IMP-002/003 (AC-IMP-02): cases in the import layout (one row per step, Key column) or requirement
+     *     references with their linked case keys. ≤ 10,000 rows at once, more in the background.
+     */
+    post: operations["export_entity_api_v1_projects__project_id__exports_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/projects/{project_id}/folders": {
     parameters: {
       query?: never;
@@ -1532,6 +1627,48 @@ export interface paths {
     put?: never;
     /** Create Folder */
     post: operations["create_folder_api_v1_projects__project_id__folders_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/projects/{project_id}/import-mappings": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Templates */
+    get: operations["list_templates_api_v1_projects__project_id__import_mappings_get"];
+    put?: never;
+    /**
+     * Save Template
+     * @description US-151: saving under an existing name replaces it.
+     */
+    post: operations["save_template_api_v1_projects__project_id__import_mappings_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/projects/{project_id}/imports": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Upload Import
+     * @description FR-IMP-001/003 step 1: CSV or XLSX ≤ 20 MB; returns sheets, headers, a sample and a suggested
+     *     mapping.
+     */
+    post: operations["upload_import_api_v1_projects__project_id__imports_post"];
     delete?: never;
     options?: never;
     head?: never;
@@ -3162,6 +3299,16 @@ export interface components {
       /** File */
       file: string;
     };
+    /** Body_upload_import_api_v1_projects__project_id__imports_post */
+    Body_upload_import_api_v1_projects__project_id__imports_post: {
+      /**
+       * Entity
+       * @enum {string}
+       */
+      entity: "test_case" | "requirement";
+      /** File */
+      file: string;
+    };
     /** BugLinkCreate */
     BugLinkCreate: {
       /**
@@ -4166,6 +4313,43 @@ export interface components {
        */
       transfer_id: string;
     };
+    /** ExportCreate */
+    ExportCreate: {
+      /**
+       * Case Ids
+       * @description Selected cases instead of filters
+       */
+      case_ids?: string[] | null;
+      /**
+       * Entity
+       * @enum {string}
+       */
+      entity: "test_case" | "requirement";
+      /**
+       * Filters
+       * @description Repository list filters (test cases)
+       */
+      filters?: {
+        [key: string]: string;
+      };
+      /**
+       * Format
+       * @default xlsx
+       * @enum {string}
+       */
+      format: "csv" | "xlsx";
+      /**
+       * Include Archived
+       * @default false
+       */
+      include_archived: boolean;
+      /**
+       * Version
+       * @default latest
+       * @enum {string}
+       */
+      version: "latest" | "approved";
+    };
     /** ExportRequest */
     ExportRequest: {
       /**
@@ -4191,6 +4375,17 @@ export interface components {
       changed: boolean;
       /** Field */
       field: string;
+    };
+    /** FieldInfo */
+    FieldInfo: {
+      /** Choices */
+      choices: string[];
+      /** Key */
+      key: string;
+      /** Label */
+      label: string;
+      /** Step */
+      step: boolean;
     };
     /** FinalizeRequest */
     FinalizeRequest: {
@@ -4292,6 +4487,47 @@ export interface components {
       /** Name */
       name: string;
       summary: components["schemas"]["ExecutionSummaryRead"];
+    };
+    /** ImportOptions */
+    ImportOptions: {
+      /**
+       * Mode
+       * @default upsert
+       * @enum {string}
+       */
+      mode: "upsert" | "create_only";
+      /**
+       * Skip Error Rows
+       * @default false
+       */
+      skip_error_rows: boolean;
+      /**
+       * Steps Layout
+       * @default row_per_step
+       * @enum {string}
+       */
+      steps_layout: "row_per_step" | "single_cell";
+      /** Target Folder Id */
+      target_folder_id?: string | null;
+    };
+    /** ImportUploaded */
+    ImportUploaded: {
+      /**
+       * Entity
+       * @enum {string}
+       */
+      entity: "test_case" | "requirement";
+      /** Fields */
+      fields: components["schemas"]["FieldInfo"][];
+      /** File Name */
+      file_name: string;
+      /** Sheets */
+      sheets: components["schemas"]["SheetRead"][];
+      /**
+       * Transfer Id
+       * Format: uuid
+       */
+      transfer_id: string;
     };
     /** InvitationCreate */
     InvitationCreate: {
@@ -6373,6 +6609,31 @@ export interface components {
       /** User Agent */
       user_agent: string | null;
     };
+    /** SheetRead */
+    SheetRead: {
+      /** Columns */
+      columns: string[];
+      /** Name */
+      name: string;
+      /** Rows */
+      rows: number;
+      /** Sample */
+      sample: string[][];
+      /**
+       * Suggested Mapping
+       * @description column → field key ('' = ignore)
+       */
+      suggested_mapping: {
+        [key: string]: string;
+      };
+      /**
+       * Values
+       * @description Distinct values of columns with 30 values or fewer
+       */
+      values: {
+        [key: string]: string[];
+      };
+    };
     /** Skipped */
     Skipped: {
       /** Key */
@@ -6516,6 +6777,47 @@ export interface components {
       name: string;
       /** Usage */
       usage: number;
+    };
+    /** TemplateCreate */
+    TemplateCreate: {
+      /**
+       * Entity
+       * @enum {string}
+       */
+      entity: "test_case" | "requirement";
+      /**
+       * Mapping
+       * @description {columns: {header: field}, value_maps, options}
+       */
+      mapping: {
+        [key: string]: unknown;
+      };
+      /** Name */
+      name: string;
+    };
+    /** TemplateRead */
+    TemplateRead: {
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /**
+       * Entity
+       * @enum {string}
+       */
+      entity: "test_case" | "requirement";
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Mapping */
+      mapping: {
+        [key: string]: unknown;
+      };
+      /** Name */
+      name: string;
     };
     /** TesterRead */
     TesterRead: {
@@ -6670,6 +6972,28 @@ export interface components {
       id: string;
       /** Is Active */
       is_active: boolean;
+    };
+    /** ValidateRequest */
+    ValidateRequest: {
+      /**
+       * Mapping
+       * @description column header → field key; '' ignores the column
+       */
+      mapping: {
+        [key: string]: string;
+      };
+      options?: components["schemas"]["ImportOptions"];
+      /** Sheet */
+      sheet?: string | null;
+      /**
+       * Value Maps
+       * @description field → file value → value
+       */
+      value_maps?: {
+        [key: string]: {
+          [key: string]: string;
+        };
+      };
     };
     /** VersionListItem */
     VersionListItem: {
@@ -8619,6 +8943,48 @@ export interface operations {
       };
     };
   };
+  commit_import_api_v1_data_transfers__transfer_id__commit_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        transfer_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TransferRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   download_transfer_api_v1_data_transfers__transfer_id__download_get: {
     parameters: {
       query?: never;
@@ -8637,6 +9003,94 @@ export interface operations {
         };
         content: {
           "application/octet-stream": unknown;
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  import_errors_api_v1_data_transfers__transfer_id__errors_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        transfer_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Row errors of the dry run */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "text/csv": unknown;
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  validate_import_api_v1_data_transfers__transfer_id__validate_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        transfer_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ValidateRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TransferRead"];
         };
       };
       /** @description Validation or business-rule error */
@@ -9088,6 +9542,46 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ReadyStatus"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  delete_template_api_v1_import_mappings__template_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        template_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
         };
       };
       /** @description Error (application/problem+json) */
@@ -10982,6 +11476,63 @@ export interface operations {
       };
     };
   };
+  export_entity_api_v1_projects__project_id__exports_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ExportCreate"];
+      };
+    };
+    responses: {
+      /** @description The file */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
+          "text/csv": unknown;
+        };
+      };
+      /** @description Built in the background; notified when ready */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ExportAccepted"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   list_folders_api_v1_projects__project_id__folders_get: {
     parameters: {
       query?: {
@@ -11048,6 +11599,142 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["FolderRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  list_templates_api_v1_projects__project_id__import_mappings_get: {
+    parameters: {
+      query?: {
+        entity?: ("test_case" | "requirement") | null;
+      };
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TemplateRead"][];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  save_template_api_v1_projects__project_id__import_mappings_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["TemplateCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TemplateRead"];
+        };
+      };
+      /** @description Validation or business-rule error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Error (application/problem+json) */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+          "application/problem+json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  upload_import_api_v1_projects__project_id__imports_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        project_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "multipart/form-data": components["schemas"]["Body_upload_import_api_v1_projects__project_id__imports_post"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ImportUploaded"];
         };
       };
       /** @description Validation or business-rule error */

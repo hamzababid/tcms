@@ -1,4 +1,4 @@
-import { FolderPlus, Plus } from "lucide-react";
+import { Download, FolderPlus, Plus, Upload } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -10,6 +10,7 @@ import { ErrorState, PageHeader, Skeleton, errorMessage, useToast } from "@/comp
 import { Kbd } from "@/components/common/Tag";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/field";
+import { exportEntity } from "@/features/imports/api";
 import { can } from "@/lib/permissions";
 
 import { useFolders, useInvalidateCase, useResolvedCase, useTags, type Folder } from "./api";
@@ -212,6 +213,37 @@ export function RepositoryPage({
         title="Repository"
         actions={
           <>
+            {canCreate ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() =>
+                  void navigate({ to: "/p/$projectKey/import", params: { projectKey: project.key } })
+                }
+              >
+                <Upload aria-hidden="true" className="size-4" />
+                Import
+              </Button>
+            ) : null}
+            {can(perms, "data.export") ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  exportEntity(project.id, { entity: "test_case", format: "xlsx", filters: {} })
+                    .then((out) => {
+                      if ("rows" in out)
+                        toast(`${out.rows.toLocaleString()} rows: the file is being prepared`);
+                    })
+                    .catch((err: unknown) => {
+                      toast(errorMessage(err), "error");
+                    });
+                }}
+              >
+                <Download aria-hidden="true" className="size-4" />
+                Export
+              </Button>
+            ) : null}
             {canFolders ? (
               <Button
                 variant="secondary"

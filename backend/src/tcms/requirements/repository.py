@@ -137,3 +137,14 @@ def owner_of(s: Session, ref_id: UUID) -> tuple[UUID, UUID] | None:
         select(RequirementRef.organization_id, RequirementRef.project_id).where(RequirementRef.id == ref_id)
     ).first()
     return (row[0], row[1]) if row else None
+
+
+def links_of_refs(s: Session, ctx: AccessContext, ref_ids: Sequence[UUID]) -> list[tuple[UUID, UUID]]:
+    if not ref_ids:
+        return []
+    rows = s.execute(
+        select(RequirementRefCase.ref_id, RequirementRefCase.test_case_id).where(
+            RequirementRefCase.project_id == ctx.pid, RequirementRefCase.ref_id.in_(list(ref_ids))
+        )
+    ).all()
+    return [(r[0], r[1]) for r in rows]

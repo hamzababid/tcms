@@ -27,6 +27,7 @@ import { Route as AppPProjectKeyRouteImport } from './routes/_app/p.$projectKey'
 import { Route as AppPProjectKeyIndexRouteImport } from './routes/_app/p.$projectKey/index'
 import { Route as AppPProjectKeyActivityRouteImport } from './routes/_app/p.$projectKey/activity'
 import { Route as AppPProjectKeyBugsRouteImport } from './routes/_app/p.$projectKey/bugs'
+import { Route as AppPProjectKeyImportRouteImport } from './routes/_app/p.$projectKey/import'
 import { Route as AppPProjectKeyReportsRouteImport } from './routes/_app/p.$projectKey/reports'
 import { Route as AppPProjectKeyRepositoryRouteImport } from './routes/_app/p.$projectKey/repository'
 import { Route as AppPProjectKeyRequirementsRouteImport } from './routes/_app/p.$projectKey/requirements'
@@ -130,6 +131,11 @@ const AppPProjectKeyActivityRoute = AppPProjectKeyActivityRouteImport.update({
 const AppPProjectKeyBugsRoute = AppPProjectKeyBugsRouteImport.update({
   id: '/bugs',
   path: '/bugs',
+  getParentRoute: () => AppPProjectKeyRoute,
+} as any)
+const AppPProjectKeyImportRoute = AppPProjectKeyImportRouteImport.update({
+  id: '/import',
+  path: '/import',
   getParentRoute: () => AppPProjectKeyRoute,
 } as any)
 const AppPProjectKeyReportsRoute = AppPProjectKeyReportsRouteImport.update({
@@ -237,6 +243,7 @@ export interface FileRoutesByFullPath {
   '/p/$projectKey': typeof AppPProjectKeyRouteWithChildren
   '/p/$projectKey/activity': typeof AppPProjectKeyActivityRoute
   '/p/$projectKey/bugs': typeof AppPProjectKeyBugsRoute
+  '/p/$projectKey/import': typeof AppPProjectKeyImportRoute
   '/p/$projectKey/reports': typeof AppPProjectKeyReportsRoute
   '/p/$projectKey/repository': typeof AppPProjectKeyRepositoryRoute
   '/p/$projectKey/requirements': typeof AppPProjectKeyRequirementsRoute
@@ -270,6 +277,7 @@ export interface FileRoutesByTo {
   '/admin/security': typeof AppAdminSecurityRoute
   '/p/$projectKey/activity': typeof AppPProjectKeyActivityRoute
   '/p/$projectKey/bugs': typeof AppPProjectKeyBugsRoute
+  '/p/$projectKey/import': typeof AppPProjectKeyImportRoute
   '/p/$projectKey/reports': typeof AppPProjectKeyReportsRoute
   '/p/$projectKey/repository': typeof AppPProjectKeyRepositoryRoute
   '/p/$projectKey/requirements': typeof AppPProjectKeyRequirementsRoute
@@ -306,6 +314,7 @@ export interface FileRoutesById {
   '/_app/p/$projectKey': typeof AppPProjectKeyRouteWithChildren
   '/_app/p/$projectKey/activity': typeof AppPProjectKeyActivityRoute
   '/_app/p/$projectKey/bugs': typeof AppPProjectKeyBugsRoute
+  '/_app/p/$projectKey/import': typeof AppPProjectKeyImportRoute
   '/_app/p/$projectKey/reports': typeof AppPProjectKeyReportsRoute
   '/_app/p/$projectKey/repository': typeof AppPProjectKeyRepositoryRoute
   '/_app/p/$projectKey/requirements': typeof AppPProjectKeyRequirementsRoute
@@ -342,6 +351,7 @@ export interface FileRouteTypes {
     | '/p/$projectKey'
     | '/p/$projectKey/activity'
     | '/p/$projectKey/bugs'
+    | '/p/$projectKey/import'
     | '/p/$projectKey/reports'
     | '/p/$projectKey/repository'
     | '/p/$projectKey/requirements'
@@ -375,6 +385,7 @@ export interface FileRouteTypes {
     | '/admin/security'
     | '/p/$projectKey/activity'
     | '/p/$projectKey/bugs'
+    | '/p/$projectKey/import'
     | '/p/$projectKey/reports'
     | '/p/$projectKey/repository'
     | '/p/$projectKey/requirements'
@@ -410,6 +421,7 @@ export interface FileRouteTypes {
     | '/_app/p/$projectKey'
     | '/_app/p/$projectKey/activity'
     | '/_app/p/$projectKey/bugs'
+    | '/_app/p/$projectKey/import'
     | '/_app/p/$projectKey/reports'
     | '/_app/p/$projectKey/repository'
     | '/_app/p/$projectKey/requirements'
@@ -566,6 +578,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPProjectKeyBugsRouteImport
       parentRoute: typeof AppPProjectKeyRoute
     }
+    '/_app/p/$projectKey/import': {
+      id: '/_app/p/$projectKey/import'
+      path: '/import'
+      fullPath: '/p/$projectKey/import'
+      preLoaderRoute: typeof AppPProjectKeyImportRouteImport
+      parentRoute: typeof AppPProjectKeyRoute
+    }
     '/_app/p/$projectKey/reports': {
       id: '/_app/p/$projectKey/reports'
       path: '/reports'
@@ -677,6 +696,7 @@ declare module '@tanstack/react-router' {
 interface AppPProjectKeyRouteChildren {
   AppPProjectKeyActivityRoute: typeof AppPProjectKeyActivityRoute
   AppPProjectKeyBugsRoute: typeof AppPProjectKeyBugsRoute
+  AppPProjectKeyImportRoute: typeof AppPProjectKeyImportRoute
   AppPProjectKeyReportsRoute: typeof AppPProjectKeyReportsRoute
   AppPProjectKeyRepositoryRoute: typeof AppPProjectKeyRepositoryRoute
   AppPProjectKeyRequirementsRoute: typeof AppPProjectKeyRequirementsRoute
@@ -698,6 +718,7 @@ interface AppPProjectKeyRouteChildren {
 const AppPProjectKeyRouteChildren: AppPProjectKeyRouteChildren = {
   AppPProjectKeyActivityRoute: AppPProjectKeyActivityRoute,
   AppPProjectKeyBugsRoute: AppPProjectKeyBugsRoute,
+  AppPProjectKeyImportRoute: AppPProjectKeyImportRoute,
   AppPProjectKeyReportsRoute: AppPProjectKeyReportsRoute,
   AppPProjectKeyRepositoryRoute: AppPProjectKeyRepositoryRoute,
   AppPProjectKeyRequirementsRoute: AppPProjectKeyRequirementsRoute,

@@ -726,6 +726,28 @@ MATRIX: dict[tuple[str, str], Entry] = {
     ("GET", P + "/traceability"): Entry(
         "project:project.view", lambda f: ("GET", _p(f, "/traceability"), None)
     ),
+    # import wizard and exports (M8a / E14). Multipart upload and initiator-only transfer steps are covered by
+    # tests/api/test_imports.py (viewer 403, engineer folder permission, project.configure read).
+    ("POST", P + "/imports"): Entry("project:testcase.create"),
+    ("POST", "/api/v1/data-transfers/{transfer_id}/validate"): Entry("project:testcase.create"),
+    ("POST", "/api/v1/data-transfers/{transfer_id}/commit"): Entry("project:testcase.create"),
+    ("GET", "/api/v1/data-transfers/{transfer_id}/errors"): Entry("project:project.view"),
+    ("GET", P + "/import-mappings"): Entry(
+        "project:project.view", lambda f: ("GET", _p(f, "/import-mappings"), None)
+    ),
+    ("POST", P + "/import-mappings"): Entry(
+        "project:testcase.create",
+        lambda f: (
+            "POST",
+            _p(f, "/import-mappings"),
+            {"entity": "test_case", "name": f"T {uuid.uuid4().hex[:8]}", "mapping": {}},
+        ),
+    ),
+    ("DELETE", "/api/v1/import-mappings/{template_id}"): Entry("project:testcase.create"),
+    ("POST", P + "/exports"): Entry(
+        "project:data.export",
+        lambda f: ("POST", _p(f, "/exports"), {"entity": "requirement", "format": "csv"}),
+    ),
     # notifications and email preferences (M7b / E16): own data only
     ("GET", "/api/v1/me/notifications"): Entry("auth", lambda f: ("GET", "/api/v1/me/notifications", None)),
     ("GET", "/api/v1/me/notifications/unread-count"): Entry(

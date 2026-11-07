@@ -1,13 +1,15 @@
 import type { ColumnDef, ColumnFiltersState, PaginationState, SortingState } from "@tanstack/react-table";
-import { FileText, Plus } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Download, FileText, Plus, Upload } from "lucide-react";
 import { useState } from "react";
 
 import type { Project } from "@/api/queries";
 import { DataTable, filterValue } from "@/components/common/DataTable";
-import { EmptyState, Page } from "@/components/common/feedback";
+import { EmptyState, errorMessage, Page, useToast } from "@/components/common/feedback";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/field";
+import { exportEntity } from "@/features/imports/api";
 import { SavedViewsMenu, useSavedViews } from "@/features/views/SavedViews";
 import { formatDateTime } from "@/lib/format";
 
@@ -34,6 +36,7 @@ export function RequirementsPage({
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
   const [archived, setArchived] = useState(false);
   const [adding, setAdding] = useState(false);
+  const toast = useToast();
   const [open, setOpen] = useState<string | null>(null);
   const writable = project.status !== "archived";
   const views = useSavedViews(project.id, "requirement", { filters, setFilters, sorting, setSorting });
@@ -95,15 +98,37 @@ export function RequirementsPage({
       subtitle="References to the requirements and stories in your team's tool, and the cases that verify them."
       width="full"
       actions={
-        canManage && writable ? (
+        <>
+          {canManage && writable ? (
+            <Link
+              to="/p/$projectKey/import"
+              params={{ projectKey: project.key }}
+              search={{ entity: "requirement" }}
+              className="inline-flex h-8 items-center gap-1.5 rounded-control border border-border-control bg-surface px-3 text-[13px] font-medium text-ink hover:bg-surface-muted"
+            >
+              <Upload aria-hidden="true" className="size-4" /> Import
+            </Link>
+          ) : null}
           <Button
+            variant="secondary"
             onClick={() => {
-              setAdding(true);
+              exportEntity(project.id, { entity: "requirement", format: "xlsx" }).catch((err: unknown) => {
+                toast(errorMessage(err), "error");
+              });
             }}
           >
-            <Plus aria-hidden="true" className="size-4" /> Add requirements
+            <Download aria-hidden="true" className="size-4" /> Export
           </Button>
-        ) : undefined
+          {canManage && writable ? (
+            <Button
+              onClick={() => {
+                setAdding(true);
+              }}
+            >
+              <Plus aria-hidden="true" className="size-4" /> Add requirements
+            </Button>
+          ) : null}
+        </>
       }
     >
       <DataTable

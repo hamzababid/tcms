@@ -513,6 +513,8 @@ commit job: re-run validation (data may have changed), then within ONE transacti
 
 Use service functions (not raw inserts) so rules and audit apply; batch flush every 500 cases for memory.
 
+As built (M8a, package `tcms.imports`): `platform/spreadsheets.py` reads CSV/XLSX into sheets (values unescaped, §15.1 of docs/02) and writes exports. `fields.py` holds the field catalog, header synonyms and value parsing. `cases.build_plan(rows, mapping, options, context)` and `refs.build_plan` are pure functions over the rows and a `Context` loaded in one pass (existing keys, folder paths, members); they return the planned rows, row problems and warnings, and are unit-tested without a database. Job `import.validate` stores the summary and the first 1,000 errors on the transfer. Job `import.commit` rebuilds the plan; if it is no longer committable (data changed since the dry run) the transfer goes back to `validated` with the new errors. Otherwise it runs `cases.commit` or `refs.commit` inside `uow.savepoint()`: on any exception the savepoint rolls back the rows, and the audit records, domain events and jobs queued inside it are dropped, so the transfer ends `failed` with nothing imported (AC-IMP-03). On success it stores the report CSV, audits `import.committed` with counts (each case's own audit events carry `bulk_operation_id` = transfer id) and notifies the initiator. Measured: 5,000 cases with 20,000 steps validate in 0.6 s and commit in about 41 s (NFR-PERF-06; docs/ops/performance.md).
+
 ### 10.4 Notifications
 
 `notifications` rows created by event handlers; email via `email.send` jobs; templates in `platform/email/templates/*.txt|html` (Jinja2, autoescape).

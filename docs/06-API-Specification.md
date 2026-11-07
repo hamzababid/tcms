@@ -379,13 +379,18 @@ Comment and attachment notes (M2):
 
 | Method | Path | Perm | Description | FR |
 | --- | --- | --- | --- | --- |
-| POST | `/projects/{project_id}/imports` | testcase.create (cases) / requirement.manage (requirements) | multipart `file`, `entity`, → `{transfer_id, columns_detected, sheets}` | IMP-001/003 |
-| GET | `/projects/{project_id}/import-mappings` | project.view | Saved mapping templates | |
-| POST | `/data-transfers/{id}/validate` | as import | `{sheet?, mapping, options: {mode: upsert|create_only, target_folder_id, steps_layout: row_per_step|single_cell, skip_error_rows}}` → `202`; result in GET | IMP-001 |
-| POST | `/data-transfers/{id}/commit` | as import | `202` | IMP-001 |
-| POST | `/projects/{project_id}/exports` | data.export | `{entity: test_case|requirement|bug_link, format, filters, version: latest|approved}` | IMP-002/004 |
+| POST | `/projects/{project_id}/imports` | testcase.create (cases) / requirement.manage (requirements) | multipart `file` (CSV/XLSX ≤ 20 MB), `entity: test_case|requirement` → `201 {transfer_id, entity, file_name, sheets: [{name, columns, rows, sample, suggested_mapping, values}], fields: [{key, label, choices, step}]}` | IMP-001/003 |
+| GET | `/projects/{project_id}/import-mappings` | project.view | Saved mapping templates (`?entity=`) | US-151 |
+| POST | `/projects/{project_id}/import-mappings` | as import | `{entity, name, mapping}` → `201`; an existing name is replaced | US-151 |
+| DELETE | `/import-mappings/{id}` | as import | `204` | US-151 |
+| POST | `/data-transfers/{id}/validate` | as import (initiator) | `{sheet?, mapping: {header: field}, value_maps?: {field: {file value: value}}, options: {mode: upsert|create_only, target_folder_id, steps_layout: row_per_step|single_cell, skip_error_rows}}` → `202`; the dry run runs as job `import.validate`, counts and errors appear on GET | IMP-001 |
+| POST | `/data-transfers/{id}/commit` | as import (initiator) | `202`; job `import.commit`. `409 invalid_status` unless `validated`; `409 import_has_errors` while errors exist and `skip_error_rows` is off | IMP-001 |
+| GET | `/data-transfers/{id}/errors` | initiator | Dry-run row errors as CSV (Row, Column, Code, Message) | IMP-001 |
+| POST | `/projects/{project_id}/exports` | data.export | `{entity: test_case|requirement, format: csv|xlsx, filters?, case_ids?, version: latest|approved, include_archived}` → `200` file (≤ 10,000 rows) or `202 {transfer_id, rows}` with an `export.ready` notification. Bug links export via `POST /projects/{project_id}/reports/bug-links/export` (§4.12) | IMP-002/004 |
 | GET | `/data-transfers/{id}` | initiator or project.configure | Status, summary, errors; `download_url` when ready | |
-| GET | `/data-transfers/{id}/download` | initiator | Result file / import report | |
+| GET | `/data-transfers/{id}/download` | initiator | Export file, or the import report CSV once `committed` | |
+
+Import notes (M8): statuses `uploaded → validating → validated → committing → committed` or `failed`. The summary holds `counts` (`create`, `update`, `unchanged`, `error`, `folders_to_create` or `links_to_add`), `committable`, `warnings` and, after commit, `result`. Row error codes are listed in [02 §15.1](02-Functional-Specification.md). The initiator gets an `import.finished` or `import.failed` notification linking back to the wizard.
 
 ### 4.14 Health and meta
 

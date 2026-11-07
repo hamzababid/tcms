@@ -1,6 +1,6 @@
 # Known limitations
 
-Current as of M7b (2026-11-06). Remove entries when resolved.
+Current as of M8a (2026-11-07). Remove entries when resolved.
 
 | # | Limitation | Impact | Plan |
 | --- | --- | --- | --- |
@@ -13,7 +13,7 @@ Current as of M7b (2026-11-06). Remove entries when resolved.
 | L13 | TCMS-002 timing test runs serially (`-m timing`); under heavy parallel load wall-clock comparisons are noisy | — | — |
 | L14 | Repository tree speed (US-043: 2,000 folders < 1 s) and "counts may be cached for > 500 folders" are not measured or cached yet; counts are computed per request | Large trees untested | M8 large seed (TM-4) and k6 run; AC-EXE-09 (step saves) is covered by `test_ac_exe_09_…` meanwhile |
 | L18 | Attachments and pasted images need a saved case (the upload targets its ID); the new-case editor says so | One extra step for new cases | — |
-| L19 | The export bulk action is not built. "Add to plan" / "Add to cycle" work on selected cases, not on "Select all matching" (the requirement filters arrived in M6) | — | M8 (export) |
+| L19 | "Add to plan" / "Add to cycle" work on selected cases, not on "Select all matching" (Export does since M8a) | — | When asked for |
 | L20 | The design's "Keyboard shortcuts" footer (docs/design/Sidebar) and the `?` shortcut help are not rendered yet (the notification bell arrived in M7, global search in M6) | — | M8 |
 | L24 | The new-cycle dialog shows "added N · skipped M" with reasons **after** creating, not the "will add N, skip M" preview of docs/07 §5.8 (docs/06 has no dry-run endpoint) | One extra look after creating | Add a dry-run to docs/06 if the preview is wanted |
 | L27 | Runs are reordered with "Sort runs by folder / priority"; drag-and-drop reordering (`run_ids_in_order` is supported by the API) is not in the UI | — | When asked for |
@@ -24,7 +24,6 @@ Current as of M7b (2026-11-06). Remove entries when resolved.
 | L35 | The unused baseline defect tables (`defects`, `defect_links`, `defect_status_history`, `defect_watchers`) and the `defect.transition.*` permissions stay in the schema | No effect on users | Drop or reuse with the tracker connector |
 | L36 | Two simultaneous project creations with the same name return 500 instead of `409 name_taken` (race between the name check and the insert) | Rare; seen only in parallel E2E | Map the unique violation to 409 |
 | L37 | Assay does not read requirement titles or status from the team's tool (ADR-024); the title is a label typed or pasted in Assay | A renamed story keeps its old title until edited | Phase 2 requirements connector |
-| L38 | The requirements, bugs, cases and other lists have no export (the traceability matrix and cycle runs export through the Traceability and Cycle execution reports since M7) | — | M8 (export) |
 | L39 | The filter operators "is not" and "is empty" (docs/02 §12) are not offered on every list | Some negative filters need a saved view or the API | When asked for |
 | L40 | Saved views store filters, sort and screen state, not column visibility (which stays per browser) | Shared views open with the reader's own columns | When asked for |
 | L41 | Cycle "Add cases" has no Saved view tab (`saved_view_id` works for plans only) | Use the folder or filter tab | When asked for |
@@ -36,3 +35,6 @@ Current as of M7b (2026-11-06). Remove entries when resolved.
 | L48 | The bell refreshes its count every 60 s and on window focus; there is no push channel | A new notification can take up to a minute to show | Server-sent events if asked for |
 | L49 | The bell lists the latest 20 notifications; there is no full notification history page | Older ones stay in the database for 180 days but are not browsable | When asked for |
 | L50 | Email covers mentions and the daily assignment digest only (docs/02 §2.7); reviews, retests and exports are in-app only | — | — |
+| L51 | Import covers case content, metadata, folders, tags and steps, and requirement references with case links. Attachments, comments, case links and automation keys are not imported, and the export does not include them | Move those by hand after an import | When asked for |
+| L52 | Value mapping in the wizard is offered for columns with 30 distinct values or fewer; other columns rely on the built-in synonyms ("P1" → high and so on) | An unusual value in a wide column is reported as `invalid_value` and needs fixing in the file | When asked for |
+| L53 | An import commits in one transaction: 5,000 cases with 20,000 steps take about 41 s, and the project's case key sequence row stays locked until the import commits | Creating a case in that project waits for the import to finish | Within US-150's 2-minute target; revisit if larger files are needed |

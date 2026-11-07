@@ -125,8 +125,9 @@ flowchart TB
 | `requirements` | requirement_refs, requirement_ref_cases (ADR-024; baseline requirements tables unused) | `testdesign`, `workspace`, `platform` |
 | `reporting` | metric_snapshots, (read access to all via SQL views) | read-only queries over all; `platform` |
 | `notifications` | none (renders `platform.notifications` rows; M7) | read-only key lookups over all (like `reporting`); `identity` (recipients, email preferences); `platform` |
+| `imports` | none (uses `platform.data_transfers` and `platform.import_mappings`; M8) | `testdesign` and `requirements` services and queries (it writes through them, as the importing user); `identity`, `workspace` queries; `platform`. Same layer as `reporting` and `notifications`, independent of both |
 | `integrations` | integration_connections, external_links, automation_imports (P2) | calls other modules' services |
-| `platform` | audit_events, jobs, attachments, attachment_links, comments, notifications, saved_views, data_transfers, idempotency_keys | none (leaf) |
+| `platform` | audit_events, jobs, attachments, attachment_links, comments, notifications, saved_views, data_transfers, import_mappings, idempotency_keys | none (leaf) |
 
 Cross-cutting packages (not domains): `core` (config, db session, security primitives, errors, pagination, permissions registry), `api` (routers), `cli`.
 
@@ -144,6 +145,8 @@ flowchart BT
   reporting -.read-only.-> execution
   reporting -.read-only.-> bugs
   reporting -.read-only.-> requirements
+  imports --> testdesign
+  imports --> requirements
   integrations --> bugs
   integrations --> requirements
   integrations --> execution

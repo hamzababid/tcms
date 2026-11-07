@@ -9,6 +9,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Field, Select } from "@/components/ui/field";
 import { can } from "@/lib/permissions";
 
+import { exportEntity } from "@/features/imports/api";
 import { bulkLink } from "@/features/requirements/api";
 import { LinkRequirementsDialog } from "@/features/requirements/components";
 
@@ -70,6 +71,7 @@ export function BulkBar({
   const [action, setAction] = useState<Action | null>(null);
   const [addTo, setAddTo] = useState<"plan" | "cycle" | null>(null);
   const [linking, setLinking] = useState(false);
+  const toast = useToast();
   const available = (Object.entries(ACTIONS) as [Action, ActionSpec][]).filter(([, s]) =>
     can(perms, s.permission),
   );
@@ -119,6 +121,27 @@ export function BulkBar({
           }}
         >
           Link to requirement
+        </Button>
+      ) : null}
+      {can(perms, "data.export") ? (
+        <Button
+          variant="tint"
+          size="xs"
+          onClick={() => {
+            exportEntity(projectId, {
+              entity: "test_case",
+              format: "xlsx",
+              ...(selection.filter ? { filters: selection.filter } : { case_ids: selection.ids }),
+            })
+              .then((out) => {
+                if ("rows" in out) toast(`${out.rows.toLocaleString()} rows: the file is being prepared`);
+              })
+              .catch((err: unknown) => {
+                toast(errorMessage(err), "error");
+              });
+          }}
+        >
+          Export
         </Button>
       ) : null}
       {available.map(([a, s]) => (

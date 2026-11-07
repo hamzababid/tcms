@@ -97,8 +97,11 @@ def render(n: NotificationView, lk: Lookups) -> Rendered:
         return Rendered(title, cycle_url(ck), key)
     if t in ("test_case.review_requested", "test_case.approved", "test_case.returned"):
         ck = p.get("key") or (lk.cases.get(n.entity_id) if n.entity_id else None)
-        verb = {"test_case.review_requested": "asked you to review", "test_case.approved": "approved",
-                "test_case.returned": "returned"}[t]  # fmt: skip
+        verb = {
+            "test_case.review_requested": "asked you to review",
+            "test_case.approved": "approved",
+            "test_case.returned": "returned",
+        }[t]
         title = f"{by} {verb} {ck} v{p.get('version', '?')}"
         if t == "test_case.returned" and p.get("comment"):
             title += f": {p['comment']}"
@@ -115,4 +118,17 @@ def render(n: NotificationView, lk: Lookups) -> Rendered:
     if t == "export.ready":
         url = f"/api/v1/data-transfers/{n.entity_id}/download" if n.entity_id else None
         return Rendered(f"{p.get('title', 'Report')} export is ready ({p.get('rows', 0)} rows)", url, key)
+    if t == "import.finished":
+        done = ", ".join(f"{p[k]} {k}" for k in ("created", "updated", "unchanged", "skipped") if p.get(k))
+        return Rendered(
+            f"Import of {p.get('file_name', 'your file')} finished: {done or 'nothing to change'}",
+            f"{base}/import?transfer={n.entity_id}" if base else None,
+            key,
+        )
+    if t == "import.failed":
+        return Rendered(
+            f"Import of {p.get('file_name', 'your file')} failed: {p.get('reason', '')}",
+            f"{base}/import?transfer={n.entity_id}" if base else None,
+            key,
+        )
     return Rendered(t.replace("_", " ").replace(".", " · "), base, key)

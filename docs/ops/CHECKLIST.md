@@ -252,6 +252,25 @@ Also: authz matrix covers every new route (data-transfer routes are initiator-on
 test); `br_manifest`: BR-24 in M7. Seed: SPARK v2.5 has a No-go decision and 15 days of snapshots;
 `tcms seed --profile large` and `tcms seed-timing` (performance.md). Large seed is 2× year one (L43).
 
+## M8a — Import and export (branch `milestone/m8a-import-export`)
+
+Spec: `.kiro/specs/m8-import-admin-hardening/` (D1–D15). Product owner, 2026-11-07: M8 in three PRs (import/export,
+administration, hardening); requirement import carries references (reference, title, link, linked case keys).
+
+| Story | Status | Verified by | Notes |
+| --- | --- | --- | --- |
+| US-150 Import cases: mapping, dry run, commit | ✅ | US-150 `test_us_150_upload_suggests_a_mapping_and_value_lists`, AC-IMP-01 / TCMS-134 `test_ac_imp_01_tcms_134_dry_run_reports_row_errors_and_gates_commit`, AC-IMP-03 / TCMS-136 `test_ac_imp_03_tcms_136_a_failure_leaves_nothing`, `test_single_cell_steps_owner_fallback_and_folder_permission`, NFR-PERF-06 `test_nfr_perf_06_import_5000_cases_with_20000_steps` (41 s), unit `test_import_rules.py`; E2E TCMS-134 | `uow.savepoint()` discards rows, audit, events and jobs on failure |
+| US-151 Mapping templates | ✅ | `test_us_151_mapping_templates`; authz matrix | Saving under an existing name replaces it |
+| US-152 Re-importable case export | ✅ | AC-IMP-02 / TCMS-135 `test_ac_imp_02_tcms_135_export_then_reimport_is_a_no_op`; E2E AC-IMP-02 | Repository header (filters), bulk bar (selection or all matching); closes the export part of L19 |
+| US-153 Requirement references import/export | ✅ | US-153 `test_us_153_requirement_references_import_and_export`; E2E AC-IMP-02 | ADR-024 layout; links only added, never removed; closes L38 |
+| US-154 Export bug links, cycles, results | ✅ | Reports (M7): AC-RPT-04/05 tests; Bugs page Export (bug-links report) | Cycles and results via Cycle execution and Results history reports |
+
+Also: migration `0005_m8_import_mappings` (`docs/schema/06_m8_import_mappings.sql`); authz matrix covers
+every new route; `tcms.imports` is in the reporting layer (import-linter). Fixed on the way: the wizard
+refreshes cached folders and requirements after an import; a saved view's text filter was cleared by the
+filter box's debounce after a reload (E2E TCMS-120 flake); the bell E2E checks its own notification
+instead of totals that parallel tests change. New limitations L51–L53.
+
 ### M7–M9 — status
 
 | Milestone | Epics | Status | Notes |
@@ -260,6 +279,6 @@ test); `br_manifest`: BR-24 in M7. Seed: SPARK v2.5 has a No-go decision and 15 
 | M4 Execution runner | E09 | ✅ done (merged, PR #10) | See the M4 section above |
 | M5 Bug links | E10 | ✅ done (merged, PR #12) | See the M5 section above (ADR-023) |
 | M6 Requirements, RTM, search | E11, E12 | ✅ done (merged, PR #13) | See the M6 section above (ADR-024) |
-| M7 Reporting & readiness | E13, E16 | ✅ M7a merged (PR #14); M7b done (awaiting review) | See the M7a section above (ADR-025) |
-| M8 Import/export, admin UI, hardening | E14, E15 (UI), E17 | ⬜ not started | US-150…154, US-162…166, US-180…184 |
+| M7 Reporting & readiness | E13, E16 | ✅ done (merged, PR #14, PR #15) | See the M7 section above (ADR-025) |
+| M8 Import/export, admin UI, hardening | E14, E15 (UI), E17 | 🟡 M8a done (awaiting review); M8b, M8c not started | US-150…154 (M8a), US-162…166 (M8b), US-180…184 (M8c) |
 | M9 Pilot & go-live | — | ⬜ not started | US-185 |

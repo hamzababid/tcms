@@ -163,6 +163,24 @@ class UnitOfWork:
     def after_commit(self, fn: Callable[[], None]) -> None:
         self._after_commit.append(fn)
 
+    @contextmanager
+    def savepoint(self) -> Iterator[None]:
+        """All-or-nothing part of a transaction: on an exception the database changes **and** the audit
+        records, events and jobs queued inside are dropped, then the exception propagates (M8 import
+        commit, AC-IMP-03)."""
+        marks = (len(self._audit), len(self._events), len(self._jobs))
+        nested = self.session.begin_nested()
+        try:
+            yield
+            self.session.flush()
+            nested.commit()
+        except BaseException:
+            nested.rollback()
+            del self._audit[marks[0] :]
+            del self._events[marks[1] :]
+            del self._jobs[marks[2] :]
+            raise
+
     @property
     def pending_audit(self) -> list[AuditRecord]:
         return list(self._audit)

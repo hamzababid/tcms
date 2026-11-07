@@ -731,7 +731,9 @@ def get_transfer(
         created_at=t.created_at,
         finished_at=t.finished_at,
         expires_at=t.expires_at,
-        download_url=f"/api/v1/data-transfers/{t.id}/download" if t.status == "ready" else None,
+        download_url=f"/api/v1/data-transfers/{t.id}/download"
+        if t.status in ("ready", "committed") and t.result_object_key
+        else None,
     )
 
 
@@ -743,9 +745,9 @@ def get_transfer(
 def download_transfer(
     transfer_id: UUID, ctx: AccessContext = TransferCtx, uow: UnitOfWork = Depends(get_read_uow)
 ) -> StreamingResponse:
-    """docs/06 §4.13: the initiator downloads a ready export within 7 days."""
+    """docs/06 §4.13: the initiator downloads a ready export or an import report within 7 days."""
     t = _transfer(uow, ctx, transfer_id, initiator_only=True)
-    if t.status != "ready" or not t.result_object_key:
+    if t.status not in ("ready", "committed") or not t.result_object_key:
         raise NotFound("The file is not ready or has expired")
     st = transfers.store()
     obj = st.client.get_object(Bucket=st.bucket, Key=t.result_object_key)

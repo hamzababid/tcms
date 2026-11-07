@@ -54,3 +54,18 @@ Rerun after the change (same data):
 | Report: case inventory, page 1 | 6 ms | 8 ms |
 | Report: tester activity, page 1 | 162 ms | 163 ms |
 | Execution summary, project | 26 ms | 26 ms |
+
+## 2026-11-07 — M8a, import of 5,000 cases (NFR-PERF-06, P5), Apple Silicon, Docker Desktop
+
+Measured by `test_nfr_perf_06_import_5000_cases_with_20000_steps`
+(`uv run pytest -m timing tests/api/test_imports.py`): an XLSX with 5,000 cases, 20,000 steps and 160
+new folders (20 areas with 7 modules each), imported into an empty project through the API and the job runner.
+
+| Step | Time | Target |
+| --- | --- | --- |
+| Dry run (`import.validate`) | 0.6 s | — |
+| Commit (`import.commit`, one transaction) | 40.4 s | — |
+| Dry run + commit | 41.0 s | < 2 min (NFR-PERF-06, US-150) |
+
+The commit writes each case through the test design service, so rules, versions and audit apply to every
+case. While it runs, the project's case key sequence stays locked (known limitation L53).
