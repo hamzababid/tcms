@@ -221,7 +221,7 @@ Every story also meets the Definition of Done in [09 §7](09-Implementation-Road
 | US-163 | As an Org Admin, I export an access review | M | S | FR-AUD-004 | TCMS-133 |
 | US-164 | As an Org Admin, I manage users (deactivate, reset MFA, revoke sessions, admin flag) | M | M | 02 §3.5 | TCMS-011; last admin protected |
 | US-165 | As an Org Admin, I see system status and retry dead jobs | M | S | 03 §15 | TCMS-139 |
-| US-166 | As the system, audit retention purge runs monthly under maintenance role | M | S | NFR-CMP-01 | Purge writes its own event |
+| US-166 | As the system, audit retention purge runs monthly under maintenance role (built daily, M8b) | M | S | NFR-CMP-01 | Purge writes its own event |
 
 ## E16 — Notifications and email (M7)
 

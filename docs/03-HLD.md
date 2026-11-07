@@ -350,7 +350,7 @@ sequenceDiagram
 | `metrics.snapshot` | Nightly 00:15 UTC; on demand |
 | `attachments.gc` | Daily: delete objects of discarded drafts and orphan uploads > 24 h |
 | `sessions.cleanup` | Hourly |
-| `audit.retention` | Monthly |
+| `audit.retention` | Daily 02:30 UTC (M8b; deletes as `tcms_owner` on `DATABASE_MAINTENANCE_URL`, writes `audit.purged` only when something was deleted) |
 | `jira.*`, `automation.import` | Phase 2 |
 
 ## 11. File storage
