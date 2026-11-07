@@ -71,6 +71,13 @@ This prints a one-time setup link (7 days). The admin sets a password, then must
 | `make schema-check` | Migrated schema == `docs/schema` baseline; `alembic check`; `99_verify.sql` as `tcms_app` |
 
 Source code is bind-mounted: the API reloads on backend changes and Vite hot-reloads the frontend.
+The worker does not reload: after changing job handlers (imports, exports, notifications) run
+`docker compose restart worker`. After pulling a branch with a new migration (M8a adds
+`0005_m8_import_mappings`) run `docker compose run --rm migrate`.
+
+To try an import locally, sign in as Ayesha, open a project's Repository and choose **Import**; any
+export from **Export** re-imports as a no-op. The import timing test runs with
+`uv run pytest -m timing tests/api/test_imports.py` (about 45 s).
 
 ## Resetting
 
