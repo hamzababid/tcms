@@ -464,6 +464,14 @@ Integrations (P2): Jira connections — status, last sync, errors, [Test], [Conf
 System: version, migration head, job queue (queued, running, dead) with retry/discard, storage usage.
 ```
 
+As built (M8b): the sidebar has one **Administration** link (`/admin`, opens the first tab the user may see); the tab bar is a `navigation "Administration"` above each page and shows tabs by permission (Users, Invitations, Roles: `org.users.manage`; Security, System: `org.manage`; Audit log, Access review: `org.audit.view`). Integrations (P2) is not shown.
+
+- **Users** (`/admin/users`): Name (You, Org admin tags), Email, Status, Two-step, Projects (one `KEY Role` tag per project), Last sign-in, and an actions menu per row: Make/Remove organization admin, Reset two-step verification… (reason prompt), Sign out everywhere, Deactivate…/Reactivate. Blocked actions stay in the menu, disabled, with the reason under the label ("You cannot deactivate yourself", "The last organization administrator", "Not set up"). Invite someone opens Invitations.
+- **Roles** (`/admin/roles`): table `Role permissions`, one row per project permission (plain label and code) and one column per system role; a note on what organization administrators can do. The unused bug-status permissions (ADR-023) are not listed.
+- **Audit log** (`/admin/audit`): server-side table `Audit events` (When, Project, By, Event, Type, Action) with filters date range, project, person, text and record type; Export CSV uses the current filters. A row opens a dialog (the "drawer") with When, By, Action, Record, Project, a `Changed fields` table (Field, Before, After) and the request context. The project audit log (`/p/{key}/audit`, QA Managers) is the same screen without the Project column, opened from **Audit log** on the project's Activity page.
+- **Access review** (`/admin/access-review`): table with Person, Scope (Organization or the project), Role, Two-step, Granted by, Granted, Last sign-in; Export XLSX and Export CSV.
+- **System** (`/admin/system`): Version (application, environment, schema revision, audit retention), Health (database, schema, file storage), Files (attachment count and size), Background jobs (counts by status, oldest waiting job, last finished job) and a `Failed jobs` table (Job, Status: Failed or Gave up, Attempts, Last error, Stopped, Retry). The page refreshes every 30 s. Discard is not offered: failed jobs are deleted after 90 days (docs/05 §9).
+
 Project settings: General (name, description, key read-only), Options (approval, self-approval, only-assignee-executes, module depth, require a bug link for failures, bug tracker name and address, attachment limit), Members (table + add), Environments, Releases, Tags, Import/Export, Danger zone (archive project).
 
 ### 5.14 My Work

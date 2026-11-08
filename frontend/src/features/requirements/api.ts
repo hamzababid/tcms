@@ -197,7 +197,11 @@ export async function removePlanRequirement(planId: string, refId: string) {
 export function useInvalidateRequirements() {
   const qc = useQueryClient();
   return () => {
-    void qc.invalidateQueries({ queryKey: reqKeys.all });
+    // Cancel first: invalidating a query whose first load is still in flight reuses that request, which
+    // read the data from before this write (the plan tab stayed empty after a quick link).
+    void qc
+      .cancelQueries({ queryKey: reqKeys.all })
+      .then(() => qc.invalidateQueries({ queryKey: reqKeys.all }));
     void qc.invalidateQueries({ queryKey: ["plan"] });
     void qc.invalidateQueries({ queryKey: ["case"] });
   };

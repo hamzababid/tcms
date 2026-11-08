@@ -161,7 +161,7 @@ Legend: **Perm** = required permission (project scope unless prefixed `org.`); `
 | --- | --- | --- | --- |
 | GET | `/organization` | auth | Organization summary |
 | PATCH | `/organization` | org.manage | Name, settings (security policy, limits) |
-| GET | `/organization/members` | org.users.manage | Users with status, MFA, last login, project roles |
+| GET | `/organization/members` | org.users.manage | Users with status, MFA, last login, `projects` (count) and `project_roles: [{project_id, project_key, project_name, project_status, role_code, role_name, granted_at}]` (M8b) |
 | POST | `/organization/invitations` | org.users.manage | `{email, is_org_admin?, project_id?, role_code?}` → invitation + `accept_url` (returned only here, for the copy-link fallback) |
 | GET | `/organization/invitations` | org.users.manage | Pending invitations |
 | DELETE | `/organization/invitations/{id}` | org.users.manage | Revoke |
@@ -171,12 +171,12 @@ Legend: **Perm** = required permission (project scope unless prefixed `org.`); `
 | POST | `/organization/members/{user_id}/revoke-sessions` | org.users.manage | |
 | PATCH | `/organization/members/{user_id}` | org.users.manage | `{is_org_admin}` |
 | GET | `/organization/roles` | auth | Roles and permissions (read-only in MVP) |
-| GET | `/organization/access-review` | org.audit.view | `?format=json|csv|xlsx` (FR-AUD-004) |
-| GET | `/organization/audit-events` | org.audit.view | Filters: actor_id, action, entity_type, project_id, occurred_at__gte/lte |
+| GET | `/organization/access-review` | org.audit.view | `?format=json|csv|xlsx` (FR-AUD-004). JSON rows `{user_id, email, name, active, org_admin, mfa_enrolled, project_id, project_key, project_name, role_code (org_admin, org_member or a project role), role_name, granted_by, granted_at, last_sign_in}`; files are audited as `export.created` |
+| GET | `/organization/audit-events` | org.audit.view | Filters: actor_id, action, entity_type, project_id, occurred_at__gte/lte, q; `page`, `page_size` ≤ 200 → `Page[{id, occurred_at, project_id, project_key, actor_type, actor_id, actor_display, action, entity_type, entity_id, entity_key, changes, summary, context}]`. `?format=csv` returns the matching events (≤ 100,000, else `422 too_many_rows`), audited as `export.created`. An inverted date range returns an empty page |
 | GET | `/organization/dashboard` | auth: `org.reports.view` sees every active project, others their own | Per project: active cycles, execution summary of open cycles, failed runs, bugs on failing runs, last activity (ADR-023 replaced open defects) |
-| GET | `/organization/system-status` | org.manage | Version, migration head, job queue stats |
-| GET | `/organization/jobs` | org.manage | `?status=dead` |
-| POST | `/organization/jobs/{id}/retry` | org.manage | |
+| GET | `/organization/system-status` | org.manage | `{version, environment, migration_current, migration_head, checks: {database, migrations, storage}, jobs: {counts per status, oldest_due_at, last_succeeded_at}, attachments: {files, bytes}, audit_retention_years, checked_at}` |
+| GET | `/organization/jobs` | org.manage | `?status=` (repeatable; default `failed` and `dead`), `?type=`, paged → `Page[{id, type, status, attempts, max_attempts, last_error (≤ 2,000 chars), run_at, created_at, finished_at, system}]`. Lists the organization's jobs and installation jobs (`organization_id` null, `system: true`); payloads are never returned |
+| POST | `/organization/jobs/{id}/retry` | org.manage | Failed or dead job → `queued` with `attempts` 0; `409 invalid_status` otherwise; audited `job.retried` |
 
 ### 4.3 Projects, members, environments, releases
 
@@ -365,7 +365,7 @@ Dashboard filters (§11.1): `release_id`, `cycle_ids` (comma list), `environment
 | GET | `/attachments/{id}` | project.view | Metadata |
 | GET | `/attachments/{id}/content` | project.view | File stream (or 302 presigned) |
 | DELETE | `/attachments/{id}/links/{entity_type}/{entity_id}` | per [02 §9.2](02-Functional-Specification.md) | Unlink (object GC when unlinked everywhere) |
-| GET | `/projects/{project_id}/audit-events` | project.audit.view | Filters as org audit; `?format=csv` |
+| GET | `/projects/{project_id}/audit-events` | project.audit.view | Filters and response as the organization audit log (no `project_id` filter); `?format=csv`. Unlike `/activity` it includes `project.admin_accessed` markers |
 | GET | `/audit-events/entity/{entity_type}/{entity_id}` | project.view | Record history |
 
 Comment and attachment notes (M2):

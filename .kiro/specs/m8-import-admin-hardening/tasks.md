@@ -10,9 +10,9 @@ Q1 = a, Q2 = a, Q3 = a (product owner, 2026-11-06). This branch is M8a; M8b and 
 - [x] a.5 Frontend: import wizard (4 steps), templates, repository Import/Export, bulk Export, Bugs/Requirements Export buttons; E2E.
 
 ## M8b — Administration
-- [ ] b.1 API: access review (json/csv/xlsx), org and project audit events (+csv), system status, jobs list/retry, members with project roles; TCMS-130, 133, 139.
-- [ ] b.2 Audit retention job on the maintenance engine (D9).
-- [ ] b.3 Frontend: Users, Roles, Audit log (drawer, CSV), Access review, System; project Audit tab; E2E.
+- [x] b.1 API: access review (json/csv/xlsx), org and project audit events (+csv), system status, jobs list/retry, members with project roles; TCMS-130, 133, 139.
+- [x] b.2 Audit retention job on the maintenance engine (D9).
+- [x] b.3 Frontend: Users, Roles, Audit log (drawer, CSV), Access review, System; project Audit tab; E2E.
 
 ## M8c — Hardening
 - [ ] c.1 Security headers, rate limit, OpenAPI auth in prod, L36; CI scans; ZAP baseline nightly; authenticated scan + ASVS L2 checklist.

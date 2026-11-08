@@ -844,7 +844,7 @@ Step-result edits during a draft are **not** individual audit events (too noisy)
 
 ### 13.2 Protection (BR-26)
 
-- Insert-only at the database level (no UPDATE/DELETE privilege for the application role; trigger raises on update/delete). Retention purge (older than `audit_retention_years`) runs under a separate maintenance role and itself writes an audit event.
+- Insert-only at the database level (no UPDATE/DELETE privilege for the application role; trigger raises on update/delete). Retention purge (older than `audit_retention_years`) runs under a separate maintenance role and itself writes an audit event. As built (M8b): job `audit.retention` runs daily at 02:30 UTC per organization, deletes events from before the same calendar day `audit_retention_years` ago in batches of 10,000 as `tcms_owner`, and records `audit.purged` (system actor, `context.before`, `context.count`) in the same transaction; a day with nothing to delete writes nothing.
 - P2: hash chain per organization (`prev_hash`, `hash`) and verification job (FR-AUD-005).
 
 ### 13.3 Views
@@ -852,6 +852,7 @@ Step-result edits during a draft are **not** individual audit events (too noisy)
 - Record **History** tab on cases, plans, cycles, runs, requirements.
 - Project audit log (`project.audit.view`) and organization audit log (`org.audit.view`) with filters: actor, action, entity type, date range; CSV export.
 - Access review export (FR-AUD-004): one row per user × scope: email, name, active, org admin, MFA enrolled, project, role, granted by, granted at, last sign-in.
+- As built (M8b): the organization log has a Project column and filter; the project log (QA Manager) shows that project's events including admin-access markers the Activity feed hides. Both export CSV (When, Project, Actor, Actor type, Action, Record type, Record, Summary, Changes, IP, Request) of up to 100,000 matching events, newest first; more is a `422 too_many_rows` asking to narrow the filters. The access review has an organization row per user (role "Org admin" or "Member", granted at = joined) and one row per project membership; deactivated users stay listed. Audit-log and access-review exports are themselves audited (`export.created`). An event opens a detail view with the changed fields (before → after) and the request context (request id, IP, user agent).
 
 ## 14. End-to-end workflows
 

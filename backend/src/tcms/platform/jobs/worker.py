@@ -10,11 +10,13 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 import structlog
+from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from tcms.core import clock
 from tcms.core.uow import unit_of_work
 from tcms.platform.jobs import queue
+from tcms.platform.models import Job
 
 log = structlog.get_logger()
 
@@ -41,10 +43,18 @@ def schedule(job_type: str, *, period: timedelta, offset: timedelta = timedelta(
 
 
 def run_scheduler_tick(factory: sessionmaker[Session], *, now: datetime | None = None) -> None:
+    """Enqueue each schedule's job for the current period unless that period already has one. The unique
+    dedupe index only covers queued and running jobs, so a period whose job already finished is skipped
+    here; otherwise every tick (30 s) would run it again."""
     current = now or clock.now()
     with unit_of_work(factory) as uow:
-        for s in SCHEDULES:
-            uow.enqueue_job(s.job_type, {}, dedupe_key=s.bucket(current))
+        buckets = {s.bucket(current): s for s in SCHEDULES}
+        done = set(
+            uow.session.execute(select(Job.dedupe_key).where(Job.dedupe_key.in_(list(buckets)))).scalars()
+        )
+        for key, s in buckets.items():
+            if key not in done:
+                uow.enqueue_job(s.job_type, {}, dedupe_key=key)
 
 
 def run_one(factory: sessionmaker[Session], worker_id: str) -> bool:

@@ -49,6 +49,20 @@ def worker() -> None:
     from tcms.platform import transfers
 
     transfers.configure(store)
+    from tcms.core.db import make_engine
+    from tcms.workspace import retention
+
+    # Audit retention deletes as tcms_owner (M8 D9); one connection is enough for a daily purge.
+    retention.configure(
+        session_factory(
+            make_engine(
+                settings.database_maintenance_url,
+                statement_timeout_ms=settings.db_statement_timeout_ms_worker,
+                pool_size=1,
+                max_overflow=0,
+            )
+        )
+    )
     w = Worker(
         session_factory(app_engine(settings, worker=True)),
         concurrency=settings.worker_concurrency,

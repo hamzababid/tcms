@@ -20,7 +20,6 @@ import {
   PlayCircle,
   Settings,
   Shield,
-  UserPlus,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
@@ -31,6 +30,7 @@ import { MenuContent, MenuItem, MenuSeparator, MenuShortcut } from "@/components
 import { can, projectPermissions } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
+import { adminTabsFor } from "@/features/admin/AdminTabs";
 import { NotificationBell } from "@/features/notifications/Bell";
 import { GlobalSearch } from "@/features/search/GlobalSearch";
 
@@ -226,6 +226,16 @@ interface Crumb {
   mono?: boolean;
 }
 
+const ADMIN_CRUMBS: [string, string][] = [
+  ["users", "Users"],
+  ["invitations", "Invitations"],
+  ["roles", "Roles"],
+  ["security", "Security policy"],
+  ["audit", "Audit log"],
+  ["access-review", "Access review"],
+  ["system", "System"],
+];
+
 function useCrumbs(project: Project | undefined): Crumb[] {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const crumbs: Crumb[] = [];
@@ -262,6 +272,7 @@ function useCrumbs(project: Project | undefined): Crumb[] {
       }
     }
     if (path.includes("/settings")) crumbs.push({ label: "Settings" });
+    if (path.endsWith("/audit")) crumbs.push({ label: "Audit log" });
     if (path.includes("/repository") || path.includes("/cases/")) {
       crumbs.push({ label: "Repository", to: "/p/$projectKey/repository", params });
     }
@@ -286,8 +297,9 @@ function useCrumbs(project: Project | undefined): Crumb[] {
   else if (path.startsWith("/org")) crumbs.push({ label: "Organization dashboard" });
   else if (path.startsWith("/profile")) crumbs.push({ label: "Your account" });
   else if (path.startsWith("/admin")) {
-    crumbs.push({ label: "Administration" });
-    crumbs.push({ label: path.includes("security") ? "Security policy" : "Invitations" });
+    crumbs.push({ label: "Administration", to: "/admin" });
+    const tab = ADMIN_CRUMBS.find(([segment]) => path.startsWith(`/admin/${segment}`));
+    if (tab) crumbs.push({ label: tab[1] });
   }
   // The last crumb is the current page.
   const last = crumbs.at(-1);
@@ -404,7 +416,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     () => (current ? projectPermissions(me, current.id) : new Set<string>()),
     [me, current],
   );
-  const isAdmin = Boolean(me?.org_permissions.includes("org.users.manage"));
+  const isAdmin = adminTabsFor(me?.org_permissions ?? []).length > 0;
 
   const toggle = () => {
     setCollapsed((c) => {
@@ -531,16 +543,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <NavLink item={{ to: "/org", label: "Dashboard", icon: LayoutDashboard }} collapsed={collapsed} />
           <NavLink item={{ to: "/projects", label: "Projects", icon: FolderKanban }} collapsed={collapsed} />
           {isAdmin ? (
-            <>
-              <NavLink
-                item={{ to: "/admin/invitations", label: "Invitations", icon: UserPlus }}
-                collapsed={collapsed}
-              />
-              <NavLink
-                item={{ to: "/admin/security", label: "Security policy", icon: Shield }}
-                collapsed={collapsed}
-              />
-            </>
+            <NavLink item={{ to: "/admin", label: "Administration", icon: Shield }} collapsed={collapsed} />
           ) : null}
         </NavSection>
         <div className="mt-auto border-t border-sidebar-raised pt-2">

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Literal
 
 import structlog
@@ -44,10 +45,22 @@ def _expected_head(state: AppState) -> str | None:
     return ScriptDirectory.from_config(cfg).get_current_head()
 
 
-@router.get("/ready", response_model=ReadyStatus, responses={503: {"model": ReadyStatus}})
-def ready(state: AppState = Depends(app_state)) -> JSONResponse:
+@dataclass(frozen=True)
+class Checks:
+    checks: dict[str, CheckResult]
+    migration_current: str | None
+    migration_head: str | None
+
+    @property
+    def ok(self) -> bool:
+        return all(c.ok for c in self.checks.values())
+
+
+def run_checks(state: AppState) -> Checks:
+    """Database, migration head and object storage (readiness; also the System page, US-165)."""
     checks: dict[str, CheckResult] = {}
     current: str | None = None
+    head: str | None = None
     try:
         with state.session_factory() as session:
             current = session.execute(text("select version_num from alembic_version")).scalar_one_or_none()
@@ -73,6 +86,11 @@ def ready(state: AppState = Depends(app_state)) -> JSONResponse:
     except Exception as exc:
         log.warning("health.storage_failed", error=str(exc).splitlines()[0])
         checks["storage"] = CheckResult(ok=False, detail="object storage unreachable")
-    ok = all(c.ok for c in checks.values())
-    body = ReadyStatus(status="ok" if ok else "unavailable", checks=checks)
-    return JSONResponse(body.model_dump(), status_code=200 if ok else 503)
+    return Checks(checks, current, head)
+
+
+@router.get("/ready", response_model=ReadyStatus, responses={503: {"model": ReadyStatus}})
+def ready(state: AppState = Depends(app_state)) -> JSONResponse:
+    result = run_checks(state)
+    body = ReadyStatus(status="ok" if result.ok else "unavailable", checks=result.checks)
+    return JSONResponse(body.model_dump(), status_code=200 if result.ok else 503)

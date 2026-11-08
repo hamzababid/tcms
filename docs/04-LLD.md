@@ -487,6 +487,8 @@ def send_email(job: Job, uow: UnitOfWork) -> None: ...
 
 Retry backoff: `min(2 ** attempts * 30s, 4h)`; after `max_attempts` → `dead`. Handlers must be idempotent (use dedupe keys or check state).
 
+Recurring jobs (`worker.schedule(type, period=, offset=)`) get the dedupe key `schedule:{type}:{period number}`. The unique dedupe index covers only queued and running jobs, so the 30-second scheduler tick also skips a period whose key exists in any state (M8b fix: before, a finished period was enqueued again on every tick).
+
 ### 10.2 Attachments
 
 ```
@@ -499,6 +501,14 @@ upload(ctx, entity_type, entity_id, file):
 ```
 
 Draft-attempt attachments are linked to `test_step_result` rows; on discard, links removed and objects queued for GC.
+
+### 10.2b Administration reads and the retention purge (M8b)
+
+- `platform/audit/queries.events(s, org_id, page, project_id=, filters=)` and `export_events(…, limit=)` serve both audit logs; `AuditFilter` gained `project_id`. The activity feed (`project_activity`) still hides `project.admin_accessed`; the audit logs do not.
+- `platform/jobs/admin.py`: `stats`, `jobs`, `job` and `retry(uow, ctx, job_id)` (requires `org.manage`, `409 invalid_status` unless failed or dead, audits `job.retried`, then `queue.retry_dead`). Visibility is `organization_id = :org OR organization_id IS NULL`; rows never carry the payload.
+- `workspace/access_review.rows(s, org_id)` joins `identity.queries.org_members` and the new `org_memberships` with the project list; `HEADER`/`KINDS` drive the CSV and XLSX.
+- `api/v1/health.run_checks(state)` holds the readiness checks; `/health/ready` and `/organization/system-status` both call it. The version comes from `core/version.py`.
+- Retention: `workspace/retention.py` (job `audit.retention`, daily 02:30 UTC) reads each organization's `audit_retention_years`, computes the cutoff as the same calendar day that many years ago, and calls `platform/audit/retention.purge` (batches of 10,000) on a session from the maintenance factory. `tcms worker` configures that factory from `DATABASE_MAINTENANCE_URL` (pool of one); without it the job fails permanently with a message naming the variable. The `audit.purged` record is written with the same maintenance session, so the delete and its record commit together.
 
 ### 10.3 Import pipeline
 

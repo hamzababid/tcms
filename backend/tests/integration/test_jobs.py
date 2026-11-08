@@ -175,3 +175,23 @@ def test_scheduler_enqueues_once_per_period(
     run_scheduler_tick(session_factory, now=T0 + timedelta(hours=1, minutes=1))
     with app_engine.connect() as conn:
         assert conn.execute(text("SELECT count(*) FROM jobs")).scalar_one() == 2
+
+
+def test_scheduler_does_not_rerun_a_finished_period(
+    session_factory: sessionmaker[Session], app_engine: Engine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A period whose job already finished is not enqueued again (M8b fix: the dedupe index covers only
+    queued and running jobs, so every daily schedule ran again on each 30 s tick)."""
+    from tcms.platform.jobs import worker
+
+    monkeypatch.setattr(worker, "SCHEDULES", [Schedule("test.succeeds", timedelta(days=1))])
+    run_scheduler_tick(session_factory, now=T0)
+    with app_engine.begin() as conn:
+        conn.execute(text("UPDATE jobs SET status = 'succeeded', finished_at = now()"))
+    run_scheduler_tick(session_factory, now=T0 + timedelta(seconds=30))
+    run_scheduler_tick(session_factory, now=T0 + timedelta(hours=5))
+    with app_engine.connect() as conn:
+        assert conn.execute(text("SELECT count(*) FROM jobs")).scalar_one() == 1
+    run_scheduler_tick(session_factory, now=T0 + timedelta(days=1, minutes=1))
+    with app_engine.connect() as conn:
+        assert conn.execute(text("SELECT count(*) FROM jobs")).scalar_one() == 2

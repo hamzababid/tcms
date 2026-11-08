@@ -381,6 +381,16 @@ def metadata(uow: UnitOfWork, org_id: UUID, attachment_id: UUID) -> AttachmentRo
     return _row(row[0], row[1]) if row else None
 
 
+def usage(s: Session, org_id: UUID) -> tuple[int, int]:
+    """(files, bytes) stored for the organization, deleted files excluded (System page)."""
+    n, size = s.execute(
+        select(func.count(), func.coalesce(func.sum(Attachment.size_bytes), 0)).where(
+            Attachment.organization_id == org_id, Attachment.deleted_at.is_(None)
+        )
+    ).one()
+    return int(n), int(size)
+
+
 def content_disposition(kind: str, file_name: str) -> str:
     """RFC 6266 header with an ASCII fallback and the UTF-8 name."""
     ascii_name = file_name.encode("ascii", "replace").decode().replace('"', "_").replace("?", "_")

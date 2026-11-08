@@ -1,5 +1,9 @@
-import { useActivity, useMembers, type Project } from "@/api/queries";
+import { Link } from "@tanstack/react-router";
+
+import { useActivity, useMe, useMembers, type Project } from "@/api/queries";
 import { Page } from "@/components/common/feedback";
+import { Button } from "@/components/ui/button";
+import { can, projectPermissions } from "@/lib/permissions";
 
 import { AuditTable, useAuditState } from "./AuditTable";
 
@@ -8,6 +12,8 @@ export function ActivityPage({ project }: { project: Project }) {
   const state = useAuditState();
   const activity = useActivity(project.id, state.query);
   const members = useMembers(project.id);
+  const me = useMe();
+  const canAudit = can(projectPermissions(me.data, project.id), "project.audit.view");
   return (
     <Page
       title="Activity"
@@ -18,6 +24,15 @@ export function ActivityPage({ project }: { project: Project }) {
           : "Everything that changed in this project, newest first."
       }
       width="full"
+      actions={
+        canAudit ? (
+          <Button variant="secondary" size="sm" asChild>
+            <Link to="/p/$projectKey/audit" params={{ projectKey: project.key }}>
+              Audit log
+            </Link>
+          </Button>
+        ) : undefined
+      }
     >
       <AuditTable
         label="Project activity"
