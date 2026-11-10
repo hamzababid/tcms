@@ -1,10 +1,10 @@
 import { useNavigate } from "@tanstack/react-router";
-import type { ColumnDef, ColumnFiltersState, PaginationState, SortingState } from "@tanstack/react-table";
+import type { ColumnDef, ColumnFiltersState, SortingState } from "@tanstack/react-table";
 import { PlayCircle, Plus } from "lucide-react";
 import { useState } from "react";
 
 import { useEnvironments, useReleases, type Project } from "@/api/queries";
-import { DataTable, filterValue, sortParam } from "@/components/common/DataTable";
+import { DataTable, filterValue, sortParam, usePaging } from "@/components/common/DataTable";
 import { EmptyState, Page } from "@/components/common/feedback";
 import { ProgressBar } from "@/components/common/ProgressBar";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -25,7 +25,6 @@ export function CyclesPage({ project, canManage }: { project: Project; canManage
   const [filters, setFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([{ id: "key", desc: true }]);
   const views = useSavedViews(project.id, "test_cycle", { filters, setFilters, sorting, setSorting });
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 25 });
   const [showArchived, setShowArchived] = useState(false);
   const [creating, setCreating] = useState(false);
   const writable = canManage && project.status !== "archived";
@@ -34,9 +33,7 @@ export function CyclesPage({ project, canManage }: { project: Project; canManage
   const status = filterValue(filters, "status");
   const env = filterValue(filters, "environment");
   const release = filterValue(filters, "release");
-  const query: CycleQuery = {
-    page: pagination.pageIndex + 1,
-    page_size: pagination.pageSize,
+  const where = {
     sort: sortParam(sorting) ?? "-key",
     ...(q ? { q } : {}),
     ...(status ? { status } : {}),
@@ -44,6 +41,8 @@ export function CyclesPage({ project, canManage }: { project: Project; canManage
     ...(release ? { release_id: release } : {}),
     ...(showArchived ? { include_archived: true } : {}),
   };
+  const [pagination, setPagination] = usePaging(JSON.stringify(where));
+  const query: CycleQuery = { ...where, page: pagination.pageIndex + 1, page_size: pagination.pageSize };
   const cycles = useCycles(project.id, query);
 
   const columns: ColumnDef<CycleListItem>[] = [
@@ -190,7 +189,6 @@ export function CyclesPage({ project, canManage }: { project: Project; canManage
               checked={showArchived}
               onChange={(e) => {
                 setShowArchived(e.target.checked);
-                setPagination((p) => ({ ...p, pageIndex: 0 }));
               }}
             />
           </span>
@@ -236,10 +234,7 @@ export function CyclesPage({ project, canManage }: { project: Project; canManage
           sorting,
           onSortingChange: setSorting,
           filters,
-          onFiltersChange: (f) => {
-            setFilters(f);
-            setPagination((p) => ({ ...p, pageIndex: 0 }));
-          },
+          onFiltersChange: setFilters,
         }}
       />
       {creating ? (

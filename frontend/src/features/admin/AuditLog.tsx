@@ -78,7 +78,7 @@ function AuditLog({
   projectId?: string;
   csvPath: string;
 }) {
-  const state = useAuditState(50);
+  const state = useAuditState();
   const project = filterValue(state.filters, "project");
   const query: OrgAuditQuery = { ...state.query, ...(project ? { project_id: project } : {}) };
   const events = useAuditEvents(query, projectId);
@@ -193,8 +193,6 @@ function AuditLog({
           total: events.data?.total ?? 0,
           pagination: state.pagination,
           onPaginationChange: state.setPagination,
-          sorting: state.sorting,
-          onSortingChange: state.setSorting,
           filters: state.filters,
           onFiltersChange: state.setFilters,
         }}

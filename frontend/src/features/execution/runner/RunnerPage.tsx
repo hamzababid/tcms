@@ -243,6 +243,12 @@ export function RunnerPage({
             {queue.data?.items.length === 0 ? (
               <li className="p-2 text-ink-muted">Nothing left in this queue.</li>
             ) : null}
+            {queue.data && queue.data.total > queue.data.items.length ? (
+              <li className="p-2 text-xs text-ink-secondary">
+                The first {queue.data.items.length} of {queue.data.total.toLocaleString()} runs. Next and
+                Shift+N go through all of them; the cycle page lists every run.
+              </li>
+            ) : null}
           </ol>
         </aside>
         <main className="min-w-0 flex-1 overflow-y-auto bg-ground px-5 py-5">

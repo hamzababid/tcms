@@ -1,10 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import type { ColumnDef, ColumnFiltersState, PaginationState, SortingState } from "@tanstack/react-table";
+import type { ColumnDef, ColumnFiltersState, SortingState } from "@tanstack/react-table";
 import { Bug, Download, ExternalLink, RotateCcw } from "lucide-react";
 import { useState } from "react";
 
 import type { Project } from "@/api/queries";
-import { DataTable, filterValue } from "@/components/common/DataTable";
+import { DataTable, filterValue, usePaging } from "@/components/common/DataTable";
 import { EmptyState, errorMessage, Page, useToast } from "@/components/common/feedback";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -24,17 +24,13 @@ export function BugsPage({ project, canRetest }: { project: Project; canRetest: 
   const [filters, setFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
   const views = useSavedViews(project.id, "bug", { filters, setFilters, sorting, setSorting });
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
   const [failing, setFailing] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
   const [retest, setRetest] = useState<string | null>(null);
   const q = filterValue(filters, "reference");
-  const query: BugQuery = {
-    page: pagination.pageIndex + 1,
-    page_size: pagination.pageSize,
-    ...(q ? { q } : {}),
-    ...(failing ? { failing: true } : {}),
-  };
+  const where = { ...(q ? { q } : {}), ...(failing ? { failing: true } : {}) };
+  const [pagination, setPagination] = usePaging(JSON.stringify(where));
+  const query: BugQuery = { ...where, page: pagination.pageIndex + 1, page_size: pagination.pageSize };
   const bugs = useBugs(project.id, query);
   const writable = canRetest && project.status !== "archived";
 
@@ -187,7 +183,6 @@ export function BugsPage({ project, canRetest }: { project: Project; canRetest: 
               checked={failing}
               onChange={(e) => {
                 setFailing(e.target.checked);
-                setPagination((p) => ({ ...p, pageIndex: 0 }));
               }}
             />
           </span>
@@ -216,13 +211,8 @@ export function BugsPage({ project, canRetest }: { project: Project; canRetest: 
           total: bugs.data?.total ?? 0,
           pagination,
           onPaginationChange: setPagination,
-          sorting,
-          onSortingChange: setSorting,
           filters,
-          onFiltersChange: (f) => {
-            setFilters(f);
-            setPagination((p) => ({ ...p, pageIndex: 0 }));
-          },
+          onFiltersChange: setFilters,
         }}
       />
       <ReferenceDialog

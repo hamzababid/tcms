@@ -241,6 +241,47 @@ def test_us_074_plan_cases_list(world: World) -> None:
     assert item["results"] == []  # no cycles yet
 
 
+def test_us_074_plan_cases_search_filters_and_paging(world: World) -> None:
+    sp = Space(world)
+    plan = sp.create_plan(name="Filter plan")
+    ids = [sp.case(t) for t in ("Login works", "Logout clears the session", "Export to CSV")]
+    sp.admin.post(f"/api/v1/test-plans/{plan['id']}/cases", json={"case_ids": [str(c) for c, _ in ids]})
+    url = f"/api/v1/test-plans/{plan['id']}/cases"
+
+    def keys(**params: Any) -> tuple[list[str], int]:
+        r = sp.admin.get(url, params=params)
+        assert r.status_code == 200, r.text
+        return [i["key"] for i in r.json()["items"]], r.json()["total"]
+
+    assert keys(q="LOG") == ([ids[0][1], ids[1][1]], 2), "title, any case"
+    assert keys(q=ids[2][1]) == ([ids[2][1]], 1), "case key"
+    first = sp.admin.get(url).json()["items"][0]
+    other = "deprecated" if first["status"] != "deprecated" else "draft"
+    assert keys(status=first["status"])[1] == 3
+    assert keys(status=other) == ([], 0)
+    priority = first["priority"]
+    assert keys(priority=priority)[1] == 3
+    assert keys(page=2, page_size=1, q="log") == ([ids[1][1]], 2), "pages the filtered list"
+    assert sp.admin.get(url, params={"status": "nonsense"}).status_code == 422
+
+
+def test_us_161_record_history_takes_the_case_history_filters(world: World) -> None:
+    sp = Space(world)
+    plan = sp.create_plan(name="History plan")
+    r = sp.admin.patch(
+        f"/api/v1/test-plans/{plan['id']}", json={"row_version": plan["row_version"], "name": "Renamed plan"}
+    )
+    assert r.status_code == 200, r.text
+    url = f"/api/v1/audit-events/entity/test_plan/{plan['id']}"
+    everything = sp.admin.get(url).json()
+    assert everything["total"] >= 2
+    oldest = everything["items"][-1]["action"]
+    created = sp.admin.get(url, params={"action": oldest}).json()
+    assert created["total"] == 1, oldest
+    assert sp.admin.get(url, params={"q": "no such words"}).json()["total"] == 0
+    assert sp.admin.get(url, params={"occurred_at__lte": "2000-01-01"}).json()["total"] == 0
+
+
 # -- archive --------------------------------------------------------------------------------------
 
 

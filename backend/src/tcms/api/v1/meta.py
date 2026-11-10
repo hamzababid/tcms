@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from uuid import UUID
 
 from fastapi import APIRouter, Query
@@ -43,10 +44,16 @@ def record_history(
     entity_id: UUID,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=50, ge=1, le=200),
+    actor_id: UUID | None = None,
+    action: str | None = Query(default=None, max_length=100),
+    occurred_at__gte: date | None = None,
+    occurred_at__lte: date | None = None,
+    q: str | None = Query(default=None, max_length=200),
     auth: Authenticated = Auth,
     uow: UnitOfWork = ReadUow,
 ) -> Page[ws.ActivityItem]:
-    """US-161: a record's history. Project records need `project.view`; org-level ones `org.audit.view`."""
+    """US-161: a record's history, filters as the case history (docs/06 §4.12). Project records need
+    `project.view`; org-level ones `org.audit.view`."""
     s = uow.session
     projects = audit_queries.entity_projects(s, auth.organization_id, entity_type, entity_id)
     if not projects:
@@ -60,7 +67,18 @@ def record_history(
             if perms is None or "project.view" not in perms:
                 raise NotFound()
     rows, total = audit_queries.entity_history(
-        s, auth.organization_id, entity_type, entity_id, PageParams(page=page, page_size=page_size)
+        s,
+        auth.organization_id,
+        entity_type,
+        entity_id,
+        PageParams(page=page, page_size=page_size),
+        filters=audit_queries.AuditFilter(
+            actor_id=actor_id,
+            action=action,
+            occurred_from=occurred_at__gte,
+            occurred_to=occurred_at__lte,
+            q=q,
+        ),
     )
     return Page[ws.ActivityItem](
         items=[ws.ActivityItem.model_validate(vars(r)) for r in rows],

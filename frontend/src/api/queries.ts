@@ -106,20 +106,20 @@ export const useResolvedKey = (pid: string, key: string) =>
       ),
   });
 
-/** A record's audit history (US-161; docs/06 §4.12): pages only, newest first. */
+/** A record's audit history (US-161; docs/06 §4.12): newest first, filters as the case history. */
 export const useRecordHistory = (
   entityType: string,
   entityId: string,
-  page: { page: number; page_size: number },
+  query: Omit<AuditQuery, "entity_type">,
 ) =>
   useQuery({
-    queryKey: ["history", entityType, entityId, page] as const,
+    queryKey: ["history", entityType, entityId, query] as const,
     placeholderData: keepPreviousData,
     queryFn: async () =>
       must(
         (
           await api.GET("/api/v1/audit-events/entity/{entity_type}/{entity_id}", {
-            params: { path: { entity_type: entityType, entity_id: entityId }, query: page },
+            params: { path: { entity_type: entityType, entity_id: entityId }, query },
           })
         ).data,
       ),

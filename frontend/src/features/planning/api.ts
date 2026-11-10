@@ -73,7 +73,15 @@ export const usePlan = (id: string | undefined) =>
       ),
   });
 
-export const usePlanCases = (id: string | undefined, page: { page: number; page_size: number }) =>
+export interface PlanCaseQuery {
+  page: number;
+  page_size: number;
+  q?: string;
+  status?: components["schemas"]["CaseStatus"][];
+  priority?: components["schemas"]["PriorityLevel"][];
+}
+
+export const usePlanCases = (id: string | undefined, page: PlanCaseQuery) =>
   useQuery({
     queryKey: planKeys.cases(id ?? "", page),
     enabled: Boolean(id),

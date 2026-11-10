@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ApiError } from "@/api/client";
 import type { Project } from "@/api/queries";
 import { errorMessage, useToast } from "@/components/common/feedback";
+import { Pager, usePaging } from "@/components/common/DataTable";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
@@ -626,11 +627,12 @@ export function PlanRequirements({
 }) {
   const toast = useToast();
   const invalidate = useInvalidateRequirements();
+  const [pagination, setPagination] = usePaging(`${planId} ${releaseId ?? ""}`);
   const refs = useRequirements(project.id, {
     plan_id: planId,
     ...(releaseId ? { release_id: releaseId } : {}),
-    page: 1,
-    page_size: 200,
+    page: pagination.pageIndex + 1,
+    page_size: pagination.pageSize,
   });
   const [adding, setAdding] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
@@ -656,63 +658,72 @@ export function PlanRequirements({
       </div>
       {refs.isPending ? (
         <p className="text-[13px] text-ink-secondary">Loading…</p>
-      ) : rows.length === 0 ? (
+      ) : (refs.data?.total ?? 0) === 0 ? (
         <p className="rounded-card border border-dashed border-border px-4 py-6 text-center text-[13px] text-ink-secondary">
           No requirements on this plan yet.
         </p>
       ) : (
-        <table aria-label="Plan requirements" className="w-full text-left text-[13px]">
-          <thead className="text-xs text-ink-secondary">
-            <tr>
-              <th className="py-1.5 pr-3 font-medium">Requirement</th>
-              <th className="w-20 py-1.5 pr-3 text-right font-medium">Cases</th>
-              <th className="w-40 py-1.5 pr-3 font-medium">Status</th>
-              <th className="w-24 py-1.5" />
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id} className="border-t border-border">
-                <td className="py-2 pr-3">
-                  <button
-                    type="button"
-                    className="min-w-0 text-left hover:underline"
-                    onClick={() => {
-                      setOpen(r.id);
-                    }}
-                  >
-                    <RefLink r={r} />
-                  </button>
-                </td>
-                <td className="tabular py-2 pr-3 text-right">{r.case_count}</td>
-                <td className="py-2 pr-3">
-                  {r.status ? <StatusBadge kind="requirement" status={r.status} /> : null}
-                </td>
-                <td className="py-2 text-right">
-                  {canManage ? (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Remove ${r.reference} from the plan`}
+        <div className="rounded-card border border-border bg-surface">
+          <table aria-label="Plan requirements" className="w-full text-left text-[13px]">
+            <thead className="text-xs text-ink-secondary">
+              <tr>
+                <th className="py-1.5 pl-4 pr-3 font-medium">Requirement</th>
+                <th className="w-20 py-1.5 pr-3 text-right font-medium">Cases</th>
+                <th className="w-40 py-1.5 pr-3 font-medium">Status</th>
+                <th className="w-24 py-1.5 pr-4" />
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id} className="border-t border-border">
+                  <td className="py-2 pl-4 pr-3">
+                    <button
+                      type="button"
+                      className="min-w-0 text-left hover:underline"
                       onClick={() => {
-                        removePlanRequirement(planId, r.id)
-                          .then(() => {
-                            invalidate();
-                            toast(`Removed ${r.reference}`);
-                          })
-                          .catch((e: unknown) => {
-                            toast(errorMessage(e), "error");
-                          });
+                        setOpen(r.id);
                       }}
                     >
-                      <X aria-hidden="true" className="size-3.5" />
-                    </Button>
-                  ) : null}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                      <RefLink r={r} />
+                    </button>
+                  </td>
+                  <td className="tabular py-2 pr-3 text-right">{r.case_count}</td>
+                  <td className="py-2 pr-3">
+                    {r.status ? <StatusBadge kind="requirement" status={r.status} /> : null}
+                  </td>
+                  <td className="py-2 pr-4 text-right">
+                    {canManage ? (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Remove ${r.reference} from the plan`}
+                        onClick={() => {
+                          removePlanRequirement(planId, r.id)
+                            .then(() => {
+                              invalidate();
+                              toast(`Removed ${r.reference}`);
+                            })
+                            .catch((e: unknown) => {
+                              toast(errorMessage(e), "error");
+                            });
+                        }}
+                      >
+                        <X aria-hidden="true" className="size-3.5" />
+                      </Button>
+                    ) : null}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <Pager
+            label="Plan requirements"
+            total={refs.data?.total ?? 0}
+            pagination={pagination}
+            onChange={setPagination}
+            noun={["requirement", "requirements"]}
+          />
+        </div>
       )}
       {adding ? (
         <LinkRequirementsDialog

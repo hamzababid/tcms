@@ -85,6 +85,8 @@ export interface TraceQuery {
   status?: string;
   uncovered?: boolean;
   q?: string;
+  page?: number;
+  page_size?: number;
 }
 
 export const useTraceability = (pid: string, query: TraceQuery) =>

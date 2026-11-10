@@ -301,11 +301,13 @@ def traceability(
     status_: str | None = Query(default=None, alias="status", description="Comma list of statuses"),
     uncovered: bool = False,
     q: str | None = Query(default=None, max_length=100),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=50, ge=1, le=200),
     ctx: AccessContext = Depends(project_context),
     uow: UnitOfWork = ReadUow,
 ) -> s.TraceabilityRead:
     """FR-REQ-004 / TCMS-112 (docs/02 §10.4): the summary covers every reference in scope; the rows follow
-    the filters."""
+    the filters and are paged (`total` rows match). Cases and bugs are read for the page only."""
     ctx.require("project.view")
     rows = coverage.coverage_rows(uow.session, ctx, _release(uow, ctx, release_id))
     summary = _coverage(coverage.summary(rows))
@@ -317,11 +319,17 @@ def traceability(
     if q and q.strip():
         needle = q.strip().upper()
         rows = [r for r in rows if needle in r.reference.upper() or needle in (r.title or "").upper()]
-    cases, bugs = _trace_cases(uow, ctx, rows, release_id)
     views = {v.id: v for v in rq.refs_by_ids(uow.session, ctx, [r.ref_id for r in rows])}
+    rows = [r for r in rows if r.ref_id in views]
+    total = len(rows)
+    rows = rows[(page - 1) * page_size : page * page_size]
+    cases, bugs = _trace_cases(uow, ctx, rows, release_id)
     return s.TraceabilityRead(
         release_id=release_id,
         summary=summary,
+        page=page,
+        page_size=page_size,
+        total=total,
         rows=[
             s.TraceRow(
                 requirement=_read(views[r.ref_id], r.status),
@@ -331,6 +339,5 @@ def traceability(
                 bugs=bugs.get(r.ref_id, []),
             )
             for r in rows
-            if r.ref_id in views
         ],
     )

@@ -1,12 +1,12 @@
 import { Link } from "@tanstack/react-router";
-import type { ColumnDef, ColumnFiltersState, PaginationState, SortingState } from "@tanstack/react-table";
+import type { ColumnDef, ColumnFiltersState, SortingState } from "@tanstack/react-table";
 import { AlertTriangle, ChevronDown, Lock, MoreHorizontal, Play, Plus } from "lucide-react";
 import { useState, type KeyboardEvent, type MouseEvent } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
 import { api } from "@/api/client";
 import { useMembers, type Me, type Project } from "@/api/queries";
-import { DataTable, filterValue, sortParam } from "@/components/common/DataTable";
+import { DataTable, filterValue, sortParam, usePaging } from "@/components/common/DataTable";
 import { ConfirmDialog, PromptDialog } from "@/components/common/dialogs";
 import { Card, ErrorState, PageHeader, Skeleton, errorMessage, useToast } from "@/components/common/feedback";
 import { PriorityIcon } from "@/components/common/PriorityIcon";
@@ -208,7 +208,7 @@ export function CycleDetail({
               {
                 value: "history",
                 label: "History",
-                content: <RecordHistory entityType="test_cycle" entityId={c.id} />,
+                content: <RecordHistory projectId={project.id} entityType="test_cycle" entityId={c.id} />,
               },
             ]}
           />
@@ -604,7 +604,6 @@ function RunsSection({
   const [filters, setFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
   const views = useSavedViews(project.id, "test_run", { filters, setFilters, sorting, setSorting });
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
   const [needsRetest, setNeedsRetest] = useState(false);
   const [showSuperseded, setShowSuperseded] = useState(false);
 
@@ -620,14 +619,14 @@ function RunsSection({
     if (v) filter[param] = v;
   }
   if (needsRetest) filter.needs_retest = "true";
-  const query: RunQuery = {
+  const where = {
     ...filter,
-    ...(needsRetest ? { needs_retest: true } : {}),
     ...(showSuperseded ? { include_superseded: true } : {}),
     sort: sortParam(sorting, { case: "key" }) ?? "position",
-    page: pagination.pageIndex + 1,
-    page_size: pagination.pageSize,
   };
+  // A new filter, toggle, sort or saved view starts on page 1.
+  const [pagination, setPagination] = usePaging(JSON.stringify(where));
+  const query: RunQuery = { ...where, page: pagination.pageIndex + 1, page_size: pagination.pageSize };
   const runs = useRuns(c.id, query, c.runs_pending);
   const items = runs.data?.items ?? [];
   // Bugs column (docs/07 §5.8): distinct references linked to any attempt of each run.
@@ -971,7 +970,6 @@ function RunsSection({
                 checked={needsRetest}
                 onChange={(e) => {
                   setNeedsRetest(e.target.checked);
-                  setPagination((p) => ({ ...p, pageIndex: 0 }));
                 }}
               />
               {c.superseded_runs > 0 ? (
@@ -1089,10 +1087,7 @@ function RunsSection({
             sorting,
             onSortingChange: setSorting,
             filters,
-            onFiltersChange: (f) => {
-              setFilters(f);
-              setPagination((p) => ({ ...p, pageIndex: 0 }));
-            },
+            onFiltersChange: setFilters,
           }}
         />
       )}

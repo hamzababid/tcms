@@ -62,15 +62,15 @@ export const useSystemStatus = () =>
     queryFn: async () => must((await api.GET("/api/v1/organization/system-status")).data),
   });
 
-export const useJobs = (statuses: JobStatus[], page: number, pageSize = 25) =>
+export const useJobs = (statuses: JobStatus[], page: number, pageSize: number, type?: string) =>
   useQuery({
-    queryKey: adminKeys.jobs(statuses, page),
+    queryKey: [...adminKeys.jobs(statuses, page), pageSize, type ?? ""] as const,
     placeholderData: keepPreviousData,
     queryFn: async () =>
       must(
         (
           await api.GET("/api/v1/organization/jobs", {
-            params: { query: { status: statuses, page, page_size: pageSize } },
+            params: { query: { status: statuses, page, page_size: pageSize, ...(type ? { type } : {}) } },
           })
         ).data,
       ),

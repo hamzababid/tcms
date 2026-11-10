@@ -280,7 +280,8 @@ def list_jobs(
     ctx: AccessContext = Depends(org_context),
     uow: UnitOfWork = ReadUow,
 ) -> Page[s.JobRead]:
-    """TCMS-139: failed and dead jobs by default (`?status=` repeats), newest first."""
+    """TCMS-139: failed and dead jobs by default (`?status=` repeats), newest first; `type` matches part of
+    the job type."""
     ctx.require("org.manage")
     rows, total = jobs_admin.jobs(
         uow.session,

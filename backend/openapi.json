@@ -11834,6 +11834,14 @@
       },
       "TraceabilityRead": {
         "properties": {
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
           "release_id": {
             "anyOf": [
               {
@@ -11855,11 +11863,19 @@
           },
           "summary": {
             "$ref": "#/components/schemas/CoverageRead"
+          },
+          "total": {
+            "description": "Rows matching the filters (the summary counts every reference)",
+            "title": "Total",
+            "type": "integer"
           }
         },
         "required": [
           "release_id",
           "summary",
+          "page",
+          "page_size",
+          "total",
           "rows"
         ],
         "title": "TraceabilityRead",
@@ -12935,7 +12951,7 @@
     },
     "/api/v1/audit-events/entity/{entity_type}/{entity_id}": {
       "get": {
-        "description": "US-161: a record's history. Project records need `project.view`; org-level ones `org.audit.view`.",
+        "description": "US-161: a record's history, filters as the case history (docs/06 \u00a74.12). Project records need\n`project.view`; org-level ones `org.audit.view`.",
         "operationId": "record_history_api_v1_audit_events_entity__entity_type___entity_id__get",
         "parameters": [
           {
@@ -12978,6 +12994,91 @@
               "minimum": 1,
               "title": "Page Size",
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "actor_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Actor Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "action",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Action"
+            }
+          },
+          {
+            "in": "query",
+            "name": "occurred_at__gte",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Occurred At  Gte"
+            }
+          },
+          {
+            "in": "query",
+            "name": "occurred_at__lte",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Occurred At  Lte"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
             }
           }
         ],
@@ -17923,7 +18024,7 @@
     },
     "/api/v1/organization/jobs": {
       "get": {
-        "description": "TCMS-139: failed and dead jobs by default (`?status=` repeats), newest first.",
+        "description": "TCMS-139: failed and dead jobs by default (`?status=` repeats), newest first; `type` matches part of\nthe job type.",
         "operationId": "list_jobs_api_v1_organization_jobs_get",
         "parameters": [
           {
@@ -23419,7 +23520,7 @@
     },
     "/api/v1/projects/{project_id}/traceability": {
       "get": {
-        "description": "FR-REQ-004 / TCMS-112 (docs/02 \u00a710.4): the summary covers every reference in scope; the rows follow\nthe filters.",
+        "description": "FR-REQ-004 / TCMS-112 (docs/02 \u00a710.4): the summary covers every reference in scope; the rows follow\nthe filters and are paged (`total` rows match). Cases and bugs are read for the page only.",
         "operationId": "traceability_api_v1_projects__project_id__traceability_get",
         "parameters": [
           {
@@ -23492,6 +23593,29 @@
                 }
               ],
               "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
             }
           }
         ],
@@ -27788,7 +27912,7 @@
         ]
       },
       "get": {
-        "description": "US-074 / docs/02 \u00a76.2: each case with its status in every cycle created from the plan.",
+        "description": "US-074 / docs/02 \u00a76.2: each case with its status in every cycle created from the plan; `q`, `status`\nand `priority` narrow the list (repeat `status`/`priority` for several values).",
         "operationId": "list_plan_cases_api_v1_test_plans__plan_id__cases_get",
         "parameters": [
           {
@@ -27822,6 +27946,51 @@
               "minimum": 1,
               "title": "Page Size",
               "type": "integer"
+            }
+          },
+          {
+            "description": "Part of the case key or title",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Part of the case key or title",
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "$ref": "#/components/schemas/CaseStatus"
+              },
+              "title": "Status",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "priority",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "$ref": "#/components/schemas/PriorityLevel"
+              },
+              "title": "Priority",
+              "type": "array"
             }
           }
         ],

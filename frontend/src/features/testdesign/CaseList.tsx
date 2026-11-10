@@ -1,8 +1,8 @@
-import type { ColumnDef, ColumnFiltersState, PaginationState, SortingState } from "@tanstack/react-table";
-import { useMemo, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
+import type { ColumnDef, ColumnFiltersState, SortingState } from "@tanstack/react-table";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
 
 import type { ProjectMember } from "@/api/queries";
-import { DataTable, filterValue, rangeValue, sortParam } from "@/components/common/DataTable";
+import { DataTable, filterValue, rangeValue, sortParam, usePaging } from "@/components/common/DataTable";
 import { EmptyState } from "@/components/common/feedback";
 import { PriorityIcon } from "@/components/common/PriorityIcon";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -80,22 +80,31 @@ export function CaseList({
   const [includeSubfolders, setIncludeSubfolders] = useState(true);
   const [filters, setFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([{ id: "key", desc: false }]);
-  // The page belongs to one folder: opening another folder starts on page 1.
-  const [page, setPage] = useState<{ folder: string | null; p: PaginationState }>({
-    folder: folderId,
-    p: { pageIndex: 0, pageSize: 50 },
-  });
-  const pagination = page.folder === folderId ? page.p : { ...page.p, pageIndex: 0 };
-  const setPagination = (p: PaginationState) => {
-    setPage({ folder: folderId, p });
-  };
-
-  // Requirement filter (L19, ADR-024): cases linked to a reference; saved with the view.
+  // Requirement filter (L19, ADR-024): cases linked to a reference; saved with the view. The box is
+  // debounced like the column filters, so typing does not send a request per key.
   const [requirement, setRequirement] = useState("");
+  const [requirementText, setRequirementText] = useState("");
+  const [seenRequirement, setSeenRequirement] = useState("");
+  if (requirement !== seenRequirement) {
+    // A saved view (or the debounce below) set the value: show it in the box.
+    setSeenRequirement(requirement);
+    setRequirementText(requirement);
+  }
+  useEffect(() => {
+    if (requirementText === requirement) return;
+    const t = window.setTimeout(() => {
+      setRequirement(requirementText);
+    }, 300);
+    return () => {
+      window.clearTimeout(t);
+    };
+  }, [requirementText, requirement]);
   const params = {
     ...caseParams(folderId, includeSubfolders, filters),
     ...(requirement.trim() ? { requirement: requirement.trim() } : {}),
   };
+  // Another folder, filter, toggle, sort or saved view starts on page 1.
+  const [pagination, setPagination] = usePaging(JSON.stringify({ params, sorting }));
   const views = useSavedViews(projectId, "test_case", {
     filters,
     setFilters,
@@ -363,9 +372,9 @@ export function CaseList({
               aria-label="Requirement"
               placeholder="Requirement, e.g. SPK-120"
               className="h-7 w-48 text-[12.5px]"
-              value={requirement}
+              value={requirementText}
               onChange={(e) => {
-                setRequirement(e.target.value);
+                setRequirementText(e.target.value);
               }}
             />
             {folderId ? (

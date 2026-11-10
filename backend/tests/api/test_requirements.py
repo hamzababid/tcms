@@ -219,6 +219,20 @@ def test_traceability_shows_bugs_of_the_release(world: World) -> None:
     assert {b["reference"] for b in _rows_by_ref(sp.trace())["R-9"]["bugs"]} == {"BUG-1", "BUG-2"}
 
 
+def test_traceability_rows_are_paged_and_the_summary_is_not(world: World) -> None:
+    sp = Req(world)
+    sp.add("TR-1, TR-2, TR-3")
+    first = sp.trace(page_size=2)
+    assert (len(first["rows"]), first["total"], first["page"], first["page_size"]) == (2, 3, 1, 2)
+    assert first["summary"]["total"] == 3, "the summary counts every reference in scope"
+    second = sp.trace(page_size=2, page=2)
+    assert len(second["rows"]) == 1
+    seen = {r["requirement"]["reference"] for r in first["rows"] + second["rows"]}
+    assert seen == {"TR-1", "TR-2", "TR-3"}
+    narrowed = sp.trace(q="TR-2", page_size=2)
+    assert (narrowed["total"], narrowed["summary"]["total"]) == (1, 3)
+
+
 def test_edit_archive_restore_and_permissions(world: World) -> None:
     sp = Req(world)
     ref = sp.add("SPK-300")["references"][0]

@@ -6,8 +6,11 @@ import { EmptyState, ErrorState, Page, Skeleton } from "@/components/common/feed
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Input, Select } from "@/components/ui/field";
+import { Pager, usePaging } from "@/components/common/DataTable";
+import { MoreList } from "@/components/common/MoreList";
 import { safeUrl } from "@/features/bugs/api";
 import { formatDateTime } from "@/lib/format";
+import { useDebounced } from "@/lib/useDebounced";
 
 import { STATUS_LABEL, useTraceability, type Coverage, type RefStatus, type TraceQuery } from "./api";
 import { LatestMark, RefLink, RequirementDialog } from "./components";
@@ -35,12 +38,15 @@ export function TraceabilityPage({
   const [q, setQ] = useState("");
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [detail, setDetail] = useState<string | null>(null);
-  const query: TraceQuery = {
+  const search = useDebounced(q.trim());
+  const where = {
     ...(releaseId ? { release_id: releaseId } : {}),
     ...(status ? { status } : {}),
     ...(uncovered ? { uncovered: true } : {}),
-    ...(q.trim() ? { q: q.trim() } : {}),
+    ...(search ? { q: search } : {}),
   };
+  const [pagination, setPagination] = usePaging(JSON.stringify(where));
+  const query: TraceQuery = { ...where, page: pagination.pageIndex + 1, page_size: pagination.pageSize };
   const trace = useTraceability(project.id, query);
   const s = trace.data?.summary;
   const writable = project.status !== "archived";
@@ -128,136 +134,147 @@ export function TraceabilityPage({
       ) : trace.data.rows.length === 0 ? (
         <EmptyState text="No requirements match. Add references on the Requirements page or a plan's Requirements tab." />
       ) : (
-        <div className="overflow-x-auto rounded-card border border-border bg-surface">
-          <table aria-label="Traceability matrix" className="w-full text-left text-[13px]">
-            <thead className="bg-ground text-xs text-ink-secondary">
-              <tr>
-                <th className="px-3 py-2 font-medium">Requirement</th>
-                <th className="w-20 px-3 py-2 text-right font-medium">Cases</th>
-                <th className="w-40 px-3 py-2 font-medium">Status in release</th>
-                <th className="px-3 py-2 font-medium">Latest results</th>
-                <th className="w-48 px-3 py-2 font-medium">Bugs</th>
-              </tr>
-            </thead>
-            <tbody>
-              {trace.data.rows.map((row) => {
-                const r = row.requirement;
-                const expanded = open.has(r.id);
-                return (
-                  <Fragment key={r.id}>
-                    <tr className="h-11 border-t border-border">
-                      <td className="px-3">
-                        <span className="flex min-w-0 items-center gap-1.5">
-                          <button
-                            type="button"
-                            aria-expanded={expanded}
-                            aria-label={`${expanded ? "Collapse" : "Expand"} ${r.reference}`}
-                            disabled={row.linked_cases === 0}
-                            className="rounded p-0.5 text-ink-muted hover:bg-surface-muted disabled:opacity-30"
-                            onClick={() => {
-                              toggle(r.id);
-                            }}
-                          >
-                            {expanded ? (
-                              <ChevronDown aria-hidden="true" className="size-4" />
-                            ) : (
-                              <ChevronRight aria-hidden="true" className="size-4" />
-                            )}
-                          </button>
-                          <RefLink r={r} />
-                          <Button
-                            variant="link"
-                            size="xs"
-                            onClick={() => {
-                              setDetail(r.id);
-                            }}
-                          >
-                            Details
-                          </Button>
-                        </span>
-                      </td>
-                      <td
-                        className={`tabular px-3 text-right ${row.linked_cases === 0 ? "text-danger" : ""}`}
-                      >
-                        {row.linked_cases}
-                      </td>
-                      <td className="px-3">
-                        <StatusBadge kind="requirement" status={row.status_in_release} />
-                      </td>
-                      <td className="px-3">
-                        {row.cases.length ? (
-                          <span className="flex flex-wrap gap-1.5">
-                            {row.cases.map((c) => (
-                              <LatestMark key={c.id} c={c} project={project} />
-                            ))}
-                          </span>
-                        ) : canLink && writable ? (
-                          <Button
-                            variant="link"
-                            size="xs"
-                            onClick={() => {
-                              setDetail(r.id);
-                            }}
-                          >
-                            <Plus aria-hidden="true" className="size-3.5" /> Link cases
-                          </Button>
-                        ) : (
-                          <span className="text-ink-muted">—</span>
-                        )}
-                      </td>
-                      <td className="px-3">
-                        {row.bugs.length ? (
-                          <span className="flex flex-wrap gap-1.5">
-                            {row.bugs.map((b) => {
-                              const href = safeUrl(b.url);
-                              return href ? (
-                                <a
-                                  key={b.reference}
-                                  href={href}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="font-mono text-xs text-[var(--status-fail-fg)] hover:underline"
-                                >
-                                  {b.reference}
-                                </a>
+        <div className="rounded-card border border-border bg-surface">
+          <div className="overflow-x-auto">
+            <table aria-label="Traceability matrix" className="w-full text-left text-[13px]">
+              <thead className="bg-ground text-xs text-ink-secondary">
+                <tr>
+                  <th className="px-3 py-2 font-medium">Requirement</th>
+                  <th className="w-20 px-3 py-2 text-right font-medium">Cases</th>
+                  <th className="w-40 px-3 py-2 font-medium">Status in release</th>
+                  <th className="px-3 py-2 font-medium">Latest results</th>
+                  <th className="w-48 px-3 py-2 font-medium">Bugs</th>
+                </tr>
+              </thead>
+              <tbody>
+                {trace.data.rows.map((row) => {
+                  const r = row.requirement;
+                  const expanded = open.has(r.id);
+                  return (
+                    <Fragment key={r.id}>
+                      <tr className="h-11 border-t border-border">
+                        <td className="px-3">
+                          <span className="flex min-w-0 items-center gap-1.5">
+                            <button
+                              type="button"
+                              aria-expanded={expanded}
+                              aria-label={`${expanded ? "Collapse" : "Expand"} ${r.reference}`}
+                              disabled={row.linked_cases === 0}
+                              className="rounded p-0.5 text-ink-muted hover:bg-surface-muted disabled:opacity-30"
+                              onClick={() => {
+                                toggle(r.id);
+                              }}
+                            >
+                              {expanded ? (
+                                <ChevronDown aria-hidden="true" className="size-4" />
                               ) : (
-                                <span
-                                  key={b.reference}
-                                  className="font-mono text-xs text-[var(--status-fail-fg)]"
-                                >
-                                  {b.reference}
-                                </span>
-                              );
-                            })}
+                                <ChevronRight aria-hidden="true" className="size-4" />
+                              )}
+                            </button>
+                            <RefLink r={r} />
+                            <Button
+                              variant="link"
+                              size="xs"
+                              onClick={() => {
+                                setDetail(r.id);
+                              }}
+                            >
+                              Details
+                            </Button>
                           </span>
-                        ) : (
-                          <span className="text-ink-muted">—</span>
-                        )}
-                      </td>
-                    </tr>
-                    {expanded
-                      ? row.cases.map((c) => (
-                          <tr key={c.id} className="h-9 border-t border-border bg-ground/60 text-[12.5px]">
-                            <td className="px-3 pl-10" colSpan={2}>
-                              <span className="font-mono">{c.key}</span>{" "}
-                              <span className="text-ink-secondary">{c.title}</span>
-                            </td>
-                            <td className="px-3">
-                              <StatusBadge kind="execution" status={c.latest?.status ?? "not_run"} />
-                            </td>
-                            <td className="px-3 text-ink-secondary" colSpan={2}>
-                              {c.latest
-                                ? `${c.latest.cycle_key} · ${formatDateTime(c.latest.finished_at)} · ${c.latest.executed_by?.display_name ?? "—"}`
-                                : "No result in the release"}
-                            </td>
-                          </tr>
-                        ))
-                      : null}
-                  </Fragment>
-                );
-              })}
-            </tbody>
-          </table>
+                        </td>
+                        <td
+                          className={`tabular px-3 text-right ${row.linked_cases === 0 ? "text-danger" : ""}`}
+                        >
+                          {row.linked_cases}
+                        </td>
+                        <td className="px-3">
+                          <StatusBadge kind="requirement" status={row.status_in_release} />
+                        </td>
+                        <td className="px-3">
+                          {row.cases.length ? (
+                            <MoreList
+                              max={6}
+                              label={`Latest results for ${r.reference}`}
+                              items={row.cases.map((c) => ({
+                                key: c.id,
+                                node: <LatestMark c={c} project={project} />,
+                              }))}
+                            />
+                          ) : canLink && writable ? (
+                            <Button
+                              variant="link"
+                              size="xs"
+                              onClick={() => {
+                                setDetail(r.id);
+                              }}
+                            >
+                              <Plus aria-hidden="true" className="size-3.5" /> Link cases
+                            </Button>
+                          ) : (
+                            <span className="text-ink-muted">—</span>
+                          )}
+                        </td>
+                        <td className="px-3">
+                          {row.bugs.length ? (
+                            <MoreList
+                              max={4}
+                              label={`Bugs for ${r.reference}`}
+                              items={row.bugs.map((b) => {
+                                const href = safeUrl(b.url);
+                                const node = href ? (
+                                  <a
+                                    href={href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-mono text-xs text-[var(--status-fail-fg)] hover:underline"
+                                  >
+                                    {b.reference}
+                                  </a>
+                                ) : (
+                                  <span className="font-mono text-xs text-[var(--status-fail-fg)]">
+                                    {b.reference}
+                                  </span>
+                                );
+                                return { key: b.reference, node };
+                              })}
+                            />
+                          ) : (
+                            <span className="text-ink-muted">—</span>
+                          )}
+                        </td>
+                      </tr>
+                      {expanded
+                        ? row.cases.map((c) => (
+                            <tr key={c.id} className="h-9 border-t border-border bg-ground/60 text-[12.5px]">
+                              <td className="px-3 pl-10" colSpan={2}>
+                                <span className="font-mono">{c.key}</span>{" "}
+                                <span className="text-ink-secondary">{c.title}</span>
+                              </td>
+                              <td className="px-3">
+                                <StatusBadge kind="execution" status={c.latest?.status ?? "not_run"} />
+                              </td>
+                              <td className="px-3 text-ink-secondary" colSpan={2}>
+                                {c.latest
+                                  ? `${c.latest.cycle_key} · ${formatDateTime(c.latest.finished_at)} · ${c.latest.executed_by?.display_name ?? "—"}`
+                                  : "No result in the release"}
+                              </td>
+                            </tr>
+                          ))
+                        : null}
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <Pager
+            label="Traceability matrix"
+            total={trace.data.total}
+            pagination={pagination}
+            onChange={setPagination}
+            noun={["requirement", "requirements"]}
+          />
         </div>
       )}
       <p className="mt-3 text-xs text-ink-secondary">

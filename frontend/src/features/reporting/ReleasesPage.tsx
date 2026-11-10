@@ -1,10 +1,12 @@
 /** Releases list and release page with readiness and decisions (docs/07 §5.15; FR-RPT-006, UJ-8). */
 import { Link } from "@tanstack/react-router";
+import type { ColumnDef } from "@tanstack/react-table";
 import { useState } from "react";
 
 import { useReleases, type Project } from "@/api/queries";
 import { Card, EmptyState, ErrorState, Page, Skeleton } from "@/components/common/feedback";
 import { ProgressBar } from "@/components/common/ProgressBar";
+import { DataTable, Pager, usePaging } from "@/components/common/DataTable";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Tabs } from "@/components/ui/tabs";
@@ -28,76 +30,123 @@ const RELEASE_STATUS: Record<string, string> = {
   archived: "Archived",
 };
 
+type ReleaseSummary = NonNullable<ReturnType<typeof useReleaseSummaries>["data"]>[number];
+
 export function ReleasesPage({ project }: { project: Project }) {
   const list = useReleaseSummaries(project.id);
+  const columns: ColumnDef<ReleaseSummary>[] = [
+    {
+      id: "name",
+      header: "Release",
+      accessorKey: "name",
+      cell: (c) => {
+        const r = c.row.original;
+        return (
+          <div>
+            <Link
+              to="/p/$projectKey/releases/$releaseId"
+              params={{ projectKey: project.key, releaseId: r.id }}
+              className="font-medium text-accent-ink hover:underline"
+            >
+              {r.name}
+            </Link>
+            <div className="text-xs text-ink-secondary">
+              {r.plan_count} plans · {r.cycle_count} cycles
+            </div>
+          </div>
+        );
+      },
+      meta: { fixed: true, filter: { kind: "text", placeholder: "Release name" } },
+    },
+    {
+      id: "status",
+      header: "Status",
+      accessorKey: "status",
+      cell: (c) => RELEASE_STATUS[c.row.original.status] ?? c.row.original.status,
+      meta: {
+        width: "w-32",
+        filter: {
+          kind: "select",
+          options: Object.entries(RELEASE_STATUS).map(([value, label]) => ({ value, label })),
+        },
+      },
+    },
+    {
+      id: "target_date",
+      header: "Target",
+      accessorFn: (r) => r.target_date ?? "",
+      cell: (c) => formatDate(c.row.original.target_date),
+      meta: { width: "w-36", filter: { kind: "daterange" } },
+    },
+    {
+      id: "execution",
+      header: "Execution",
+      enableSorting: false,
+      cell: (c) => (
+        <div>
+          <ProgressBar counts={c.row.original.summary} />
+          <div className="tabular mt-1 text-xs text-ink-secondary">
+            {formatRate(c.row.original.summary.execution_progress)}
+          </div>
+        </div>
+      ),
+      meta: { width: "w-64" },
+    },
+    {
+      id: "ready",
+      header: "Readiness",
+      accessorFn: (r) => (r.ready ? "ready" : "not_ready"),
+      cell: (c) => <ReadyBadge ready={c.row.original.ready} />,
+      meta: {
+        width: "w-32",
+        filter: {
+          kind: "select",
+          options: [
+            { value: "ready", label: "Ready" },
+            { value: "not_ready", label: "Not ready" },
+          ],
+        },
+      },
+    },
+    {
+      id: "decision",
+      header: "Latest decision",
+      accessorFn: (r) => r.latest_decision?.decided_at ?? "",
+      cell: (c) => {
+        const d = c.row.original.latest_decision;
+        return d ? (
+          <span>
+            <strong>{DECISION_LABEL[d.decision]}</strong>{" "}
+            <span className="text-xs text-ink-secondary">{formatDate(d.decided_at)}</span>
+          </span>
+        ) : (
+          <span className="text-ink-muted">—</span>
+        );
+      },
+      meta: { width: "w-44" },
+    },
+  ];
   return (
     <Page
       title="Releases"
       subtitle="Execution and readiness per release, and the go/no-go decisions recorded for it. Create and edit releases in Settings."
       width="full"
     >
-      {list.isPending ? (
-        <Skeleton rows={5} />
-      ) : list.isError ? (
+      {list.isError ? (
         <ErrorState error={list.error} onRetry={() => void list.refetch()} />
-      ) : list.data.length === 0 ? (
-        <EmptyState text="No releases yet. A QA Manager creates them in Project settings › Releases." />
       ) : (
-        <div className="overflow-x-auto rounded-card border border-border bg-surface">
-          <table aria-label="Releases" className="w-full text-left text-[13px]">
-            <thead className="bg-ground text-xs text-ink-secondary">
-              <tr>
-                <th className="px-3 py-2 font-medium">Release</th>
-                <th className="px-3 py-2 font-medium">Status</th>
-                <th className="px-3 py-2 font-medium">Target</th>
-                <th className="w-64 px-3 py-2 font-medium">Execution</th>
-                <th className="px-3 py-2 font-medium">Readiness</th>
-                <th className="px-3 py-2 font-medium">Latest decision</th>
-              </tr>
-            </thead>
-            <tbody>
-              {list.data.map((r) => (
-                <tr key={r.id} className="h-12 border-t border-border">
-                  <td className="px-3">
-                    <Link
-                      to="/p/$projectKey/releases/$releaseId"
-                      params={{ projectKey: project.key, releaseId: r.id }}
-                      className="font-medium text-accent-ink hover:underline"
-                    >
-                      {r.name}
-                    </Link>
-                    <div className="text-xs text-ink-secondary">
-                      {r.plan_count} plans · {r.cycle_count} cycles
-                    </div>
-                  </td>
-                  <td className="px-3">{RELEASE_STATUS[r.status] ?? r.status}</td>
-                  <td className="px-3">{formatDate(r.target_date)}</td>
-                  <td className="px-3">
-                    <ProgressBar counts={r.summary} />
-                    <div className="tabular mt-1 text-xs text-ink-secondary">
-                      {formatRate(r.summary.execution_progress)}
-                    </div>
-                  </td>
-                  <td className="px-3">
-                    <ReadyBadge ready={r.ready} />
-                  </td>
-                  <td className="px-3">
-                    {r.latest_decision ? (
-                      <span>
-                        <strong>{DECISION_LABEL[r.latest_decision.decision]}</strong>{" "}
-                        <span className="text-xs text-ink-secondary">
-                          {formatDate(r.latest_decision.decided_at)}
-                        </span>
-                      </span>
-                    ) : (
-                      <span className="text-ink-muted">—</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          label="Releases"
+          columns={columns}
+          data={list.data ?? []}
+          getRowId={(r) => r.id}
+          loading={list.isPending}
+          noun={["release", "releases"]}
+          emptyText="No releases match these filters."
+          empty={
+            <EmptyState text="No releases yet. A QA Manager creates them in Project settings › Releases." />
+          }
+        />
       )}
     </Page>
   );
@@ -244,52 +293,80 @@ function ReadinessTab({ r }: { r: NonNullable<ReturnType<typeof useReleaseReadin
 }
 
 function PlansTab({ project, releaseId }: { project: Project; releaseId: string }) {
-  const plans = usePlans(project.id, { release_id: releaseId, page: 1, page_size: 100 });
+  const [pagination, setPagination] = usePaging(releaseId);
+  const plans = usePlans(project.id, {
+    release_id: releaseId,
+    page: pagination.pageIndex + 1,
+    page_size: pagination.pageSize,
+  });
   if (plans.isPending) return <Skeleton />;
   if (plans.isError) return <ErrorState error={plans.error} />;
-  if (plans.data.items.length === 0) return <EmptyState text="No plans in this release." />;
+  if (plans.data.total === 0) return <EmptyState text="No plans in this release." />;
   return (
-    <ul className="divide-y divide-border rounded-card border border-border bg-surface">
-      {plans.data.items.map((p) => (
-        <li key={p.id} className="flex items-center justify-between gap-3 px-4 py-3 text-[13px]">
-          <Link
-            to="/p/$projectKey/plans/$planKey"
-            params={{ projectKey: project.key, planKey: p.key }}
-            className="hover:underline"
-          >
-            <span className="font-mono text-xs text-accent-ink">{p.key}</span> {p.name}
-          </Link>
-          <span className="text-xs text-ink-secondary">{p.case_count} cases</span>
-        </li>
-      ))}
-    </ul>
+    <div className="rounded-card border border-border bg-surface">
+      <ul aria-label="Plans in the release" className="divide-y divide-border">
+        {plans.data.items.map((p) => (
+          <li key={p.id} className="flex items-center justify-between gap-3 px-4 py-3 text-[13px]">
+            <Link
+              to="/p/$projectKey/plans/$planKey"
+              params={{ projectKey: project.key, planKey: p.key }}
+              className="hover:underline"
+            >
+              <span className="font-mono text-xs text-accent-ink">{p.key}</span> {p.name}
+            </Link>
+            <span className="text-xs text-ink-secondary">{p.case_count} cases</span>
+          </li>
+        ))}
+      </ul>
+      <Pager
+        label="Plans in the release"
+        total={plans.data.total}
+        pagination={pagination}
+        onChange={setPagination}
+        noun={["plan", "plans"]}
+      />
+    </div>
   );
 }
 
 function CyclesTab({ project, releaseId }: { project: Project; releaseId: string }) {
-  const cycles = useCycles(project.id, { release_id: releaseId, page: 1, page_size: 100 });
+  const [pagination, setPagination] = usePaging(releaseId);
+  const cycles = useCycles(project.id, {
+    release_id: releaseId,
+    page: pagination.pageIndex + 1,
+    page_size: pagination.pageSize,
+  });
   if (cycles.isPending) return <Skeleton />;
   if (cycles.isError) return <ErrorState error={cycles.error} />;
-  if (cycles.data.items.length === 0) return <EmptyState text="No cycles in this release." />;
+  if (cycles.data.total === 0) return <EmptyState text="No cycles in this release." />;
   return (
-    <ul className="divide-y divide-border rounded-card border border-border bg-surface">
-      {cycles.data.items.map((c) => (
-        <li
-          key={c.id}
-          className="grid items-center gap-3 px-4 py-3 text-[13px] md:grid-cols-[minmax(0,2fr)_auto_minmax(0,2fr)]"
-        >
-          <Link
-            to="/p/$projectKey/cycles/$cycleKey"
-            params={{ projectKey: project.key, cycleKey: c.key }}
-            className="truncate hover:underline"
+    <div className="rounded-card border border-border bg-surface">
+      <ul aria-label="Cycles in the release" className="divide-y divide-border">
+        {cycles.data.items.map((c) => (
+          <li
+            key={c.id}
+            className="grid items-center gap-3 px-4 py-3 text-[13px] md:grid-cols-[minmax(0,2fr)_auto_minmax(0,2fr)]"
           >
-            <span className="font-mono text-xs text-accent-ink">{c.key}</span> {c.name}
-          </Link>
-          <StatusBadge kind="cycle" status={c.status} />
-          <ProgressBar counts={c.summary} />
-        </li>
-      ))}
-    </ul>
+            <Link
+              to="/p/$projectKey/cycles/$cycleKey"
+              params={{ projectKey: project.key, cycleKey: c.key }}
+              className="truncate hover:underline"
+            >
+              <span className="font-mono text-xs text-accent-ink">{c.key}</span> {c.name}
+            </Link>
+            <StatusBadge kind="cycle" status={c.status} />
+            <ProgressBar counts={c.summary} />
+          </li>
+        ))}
+      </ul>
+      <Pager
+        label="Cycles in the release"
+        total={cycles.data.total}
+        pagination={pagination}
+        onChange={setPagination}
+        noun={["cycle", "cycles"]}
+      />
+    </div>
   );
 }
 

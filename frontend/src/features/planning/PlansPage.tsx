@@ -1,10 +1,10 @@
 import { useNavigate } from "@tanstack/react-router";
-import type { ColumnDef, ColumnFiltersState, PaginationState, SortingState } from "@tanstack/react-table";
+import type { ColumnDef, ColumnFiltersState, SortingState } from "@tanstack/react-table";
 import { ClipboardList, Plus } from "lucide-react";
 import { useState } from "react";
 
 import { useMembers, useReleases, type Project } from "@/api/queries";
-import { DataTable, filterValue, sortParam } from "@/components/common/DataTable";
+import { DataTable, filterValue, sortParam, usePaging } from "@/components/common/DataTable";
 import { EmptyState, Page } from "@/components/common/feedback";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,6 @@ export function PlansPage({ project, canManage }: { project: Project; canManage:
   const releases = useReleases(project.id);
   const [filters, setFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([{ id: "key", desc: true }]);
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 25 });
   const [showArchived, setShowArchived] = useState(false);
   const [creating, setCreating] = useState(false);
   const writable = canManage && project.status !== "archived";
@@ -33,16 +32,18 @@ export function PlansPage({ project, canManage }: { project: Project; canManage:
   const status = filterValue(filters, "status");
   const type = filterValue(filters, "type");
   const owner = filterValue(filters, "owner");
-  const query: PlanQuery = {
-    page: pagination.pageIndex + 1,
-    page_size: pagination.pageSize,
+  const release = filterValue(filters, "release");
+  const where = {
     sort: sortParam(sorting) ?? "-key",
     ...(q ? { q } : {}),
     ...(status ? { status } : {}),
     ...(type ? { type } : {}),
     ...(owner ? { owner_id: owner } : {}),
+    ...(release ? { release_id: release } : {}),
     ...(showArchived ? { include_archived: true } : {}),
   };
+  const [pagination, setPagination] = usePaging(JSON.stringify(where));
+  const query: PlanQuery = { ...where, page: pagination.pageIndex + 1, page_size: pagination.pageSize };
   const plans = usePlans(project.id, query);
   const releaseName = (id: string | null) =>
     id ? (releases.data?.find((r) => r.id === id)?.name ?? "—") : "—";
@@ -93,7 +94,13 @@ export function PlansPage({ project, canManage }: { project: Project; canManage:
       header: "Release",
       enableSorting: false,
       accessorFn: (r) => releaseName(r.release_id),
-      meta: { width: "w-36" },
+      meta: {
+        width: "w-36",
+        filter: {
+          kind: "select",
+          options: (releases.data ?? []).map((r) => ({ value: r.id, label: r.name })),
+        },
+      },
     },
     {
       id: "owner",
@@ -176,7 +183,6 @@ export function PlansPage({ project, canManage }: { project: Project; canManage:
               checked={showArchived}
               onChange={(e) => {
                 setShowArchived(e.target.checked);
-                setPagination((p) => ({ ...p, pageIndex: 0 }));
               }}
             />
           </span>
@@ -222,10 +228,7 @@ export function PlansPage({ project, canManage }: { project: Project; canManage:
           sorting,
           onSortingChange: setSorting,
           filters,
-          onFiltersChange: (f) => {
-            setFilters(f);
-            setPagination((p) => ({ ...p, pageIndex: 0 }));
-          },
+          onFiltersChange: setFilters,
         }}
       />
       {creating ? (

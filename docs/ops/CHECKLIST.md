@@ -308,6 +308,21 @@ replica with `least_conn` in Caddy, passive health checks only, keep-alive order
 shared cycle lock when starting attempts (docs/ops/performance.md). Security fixes from the review: SMTP
 certificate check, no client-supplied `X-Forwarded-For`, made-up tokens capped, `returnTo` same-origin only,
 NUL characters → 422.
+## Follow-up: consistent lists (branch `fix/table-paging-filters`)
+Every list now pages, filters and searches the same way (docs/07 §4.1). Shared `Pager` footer (rows per page
+10/25/50/100, default 50) on the traceability matrix, reports, release Plans/Cycles tabs and the plan
+Requirements tab, which had none or a fixed 50 with Previous/Next only; the organization dashboard and the
+Releases list moved to the shared table. `usePaging` sends every filter, toggle, sort, folder or saved-view
+change back to page 1 (Show superseded, the archived toggle on Requirements, the case Requirement box and
+include-subfolders did not), and a page past the end moves to the last page. No dead sort buttons on lists the
+API cannot sort (failed jobs, history, bugs, requirements). New filters: Failed jobs (status, job type), plan
+cases (key/title, status, priority; API `q/status/priority`), plan and cycle History (as the case history; API
+filters on `/audit-events/entity/...`), Plans (release). Traceability is paged by the API (`page`, `page_size`,
+`total`; cases and bugs read for the page only) and its search is debounced. Users: a person in many projects
+shows two project chips and "+N more" (matches of the Projects filter first), so rows stay short and the footer
+is on screen. Verified by `tests/api` (`test_traceability_rows_are_paged_…`, `test_us_074_plan_cases_search_…`,
+`test_us_161_record_history_…`, jobs `type` in TCMS-139), `DataTable.test.tsx` (default size, no-sort server
+mode, past-the-end, `usePaging`), E2E `tables.spec.ts`. Open: L62 (My Work not paged), L63 (200-item pickers).
 ### M7–M9 — status
 
 | Milestone | Epics | Status | Notes |

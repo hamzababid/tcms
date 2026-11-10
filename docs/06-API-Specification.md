@@ -179,7 +179,7 @@ Legend: **Perm** = required permission (project scope unless prefixed `org.`); `
 | GET | `/organization/audit-events` | org.audit.view | Filters: actor_id, action, entity_type, project_id, occurred_at__gte/lte, q; `page`, `page_size` ≤ 200 → `Page[{id, occurred_at, project_id, project_key, actor_type, actor_id, actor_display, action, entity_type, entity_id, entity_key, changes, summary, context}]`. `?format=csv` returns the matching events (≤ 100,000, else `422 too_many_rows`), audited as `export.created`. An inverted date range returns an empty page |
 | GET | `/organization/dashboard` | auth: `org.reports.view` sees every active project, others their own | Per project: active cycles, execution summary of open cycles, failed runs, bugs on failing runs, last activity (ADR-023 replaced open defects) |
 | GET | `/organization/system-status` | org.manage | `{version, environment, migration_current, migration_head, checks: {database, migrations, storage}, jobs: {counts per status, oldest_due_at, last_succeeded_at}, attachments: {files, bytes}, audit_retention_years, checked_at}` |
-| GET | `/organization/jobs` | org.manage | `?status=` (repeatable; default `failed` and `dead`), `?type=`, paged → `Page[{id, type, status, attempts, max_attempts, last_error (≤ 2,000 chars), run_at, created_at, finished_at, system}]`. Lists the organization's jobs and installation jobs (`organization_id` null, `system: true`); payloads are never returned |
+| GET | `/organization/jobs` | org.manage | `?status=` (repeatable; default `failed` and `dead`), `?type=` (part of the job type, case-insensitive), paged → `Page[{id, type, status, attempts, max_attempts, last_error (≤ 2,000 chars), run_at, created_at, finished_at, system}]`. Lists the organization's jobs and installation jobs (`organization_id` null, `system: true`); payloads are never returned |
 | POST | `/organization/jobs/{id}/retry` | org.manage | Failed or dead job → `queued` with `attempts` 0; `409 invalid_status` otherwise; audited `job.retried` |
 
 ### 4.3 Projects, members, environments, releases
@@ -258,7 +258,7 @@ Bulk response: `200 {bulk_operation_id, updated, skipped: [{key, code, detail}]}
 | PATCH | `/test-plans/{id}` | plan.manage | Fields + `row_version` | |
 | POST | `/test-plans/{id}/cases` | plan.manage | `{case_ids? , folder_ids?, include_subfolders?, tags?, saved_view_id?}` → `{added, skipped[]}` | PLN-002 |
 | DELETE | `/test-plans/{id}/cases` | plan.manage | `{case_ids}` | |
-| GET | `/test-plans/{id}/cases` | project.view | Paginated with latest results per cycle | |
+| GET | `/test-plans/{id}/cases` | project.view | Paginated with latest results per cycle; `?q=` (part of the key or title), `?status=`, `?priority=` (repeatable) | |
 | POST/DELETE | `/test-plans/{id}/requirements` | plan.manage | `{requirement_ids}` | PLN-003 |
 | POST | `/test-plans/{id}/clone` | plan.manage | `{name?}` | PLN-006 |
 | POST | `/test-plans/{id}/archive` | plan.manage | | |
@@ -331,7 +331,7 @@ Bugs live in each team's tracker; these endpoints store references to them ([02 
 | GET / POST | `/test-cases/{id}/requirements` | view / requirement.link | POST `{references}` (unknown ones are registered) → `{count, created}` | REQ-002 |
 | POST | `/projects/{project_id}/requirements/link-cases` | requirement.link | Bulk `{references, test_case_ids}` | REQ-002 |
 | POST / DELETE | `/test-plans/{id}/requirements` | plan.manage | POST `{references}`; DELETE `{requirement_ids}` (reference ids) | PLN-003 |
-| GET | `/projects/{project_id}/traceability` | project.view | `?release_id=&status=&uncovered=&q=` → `{release_id, summary, rows[]}` (§5.8) | REQ-004 |
+| GET | `/projects/{project_id}/traceability` | project.view | `?release_id=&status=&uncovered=&q=&page=&page_size=` → `{release_id, summary, page, page_size, total, rows[]}` (§5.8); the summary counts every reference in scope, `rows` is one page of the filtered list (`total` rows) | REQ-004 |
 | GET | `/projects/{project_id}/coverage` | project.view | `?release_id=` → summary metrics (BR-23) | REQ-005 |
 
 Test case list filters gain `requirement` (a reference) and `has_requirements` (bool).
@@ -370,7 +370,7 @@ Dashboard filters (§11.1): `release_id`, `cycle_ids` (comma list), `environment
 | GET | `/attachments/{id}/content` | project.view | File stream (or 302 presigned) |
 | DELETE | `/attachments/{id}/links/{entity_type}/{entity_id}` | per [02 §9.2](02-Functional-Specification.md) | Unlink (object GC when unlinked everywhere) |
 | GET | `/projects/{project_id}/audit-events` | project.audit.view | Filters and response as the organization audit log (no `project_id` filter); `?format=csv`. Unlike `/activity` it includes `project.admin_accessed` markers |
-| GET | `/audit-events/entity/{entity_type}/{entity_id}` | project.view | Record history |
+| GET | `/audit-events/entity/{entity_type}/{entity_id}` | project.view | Record history, paged; `?actor_id=&action=&occurred_at__gte=&occurred_at__lte=&q=` as the case history |
 
 Comment and attachment notes (M2):
 
