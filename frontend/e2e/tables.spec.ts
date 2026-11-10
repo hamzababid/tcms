@@ -63,6 +63,17 @@ test("Administration lists page and filter like every other list", async ({ brow
   await expect(jobs).toContainText("seed.example");
 });
 
+test("the repository with the case panel open does not scroll the page", async ({ browser }) => {
+  const page = await as(browser, "ayesha");
+  await page.goto("/p/SPARK/repository");
+  await page.locator("tbody tr[data-case]").first().click();
+  await expect(page.getByRole("complementary", { name: /details/ })).toBeVisible();
+  // Screen-reader-only labels in compact cells used to hang off the page and give it a blank scroll.
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight))
+    .toBeLessThanOrEqual(0);
+});
+
 test("organization dashboard, releases and traceability have the shared filters and pager", async ({
   browser,
 }) => {

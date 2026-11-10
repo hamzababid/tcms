@@ -601,7 +601,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           {me ? <NotificationBell /> : null}
           {me ? <UserMenu me={me} /> : null}
         </header>
-        <main id="main" className="min-h-0 flex-1 overflow-auto">
+        <main id="main" className="relative min-h-0 flex-1 overflow-auto">
           {children}
         </main>
       </div>

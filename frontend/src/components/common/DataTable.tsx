@@ -511,7 +511,11 @@ export function DataTable<T>({
       ) : nothingAtAll ? (
         <div className="p-6">{empty}</div>
       ) : (
-        <div className={cn("min-w-0 overflow-auto", fill && "min-h-0 flex-1")}>
+        <div
+          // `relative`: screen-reader-only labels (position absolute) in the cells are placed inside this
+          // scroll area; without it they hang off the page and give it a blank scroll (case panel open).
+          className={cn("relative min-w-0 overflow-auto", fill && "min-h-0 flex-1")}
+        >
           <table aria-label={label} className="w-full border-collapse text-[13px]" aria-busy={loading}>
             <thead className="sticky top-0 z-10 bg-ground">
               <tr className="shadow-[inset_0_-1px_0_var(--border)]">
