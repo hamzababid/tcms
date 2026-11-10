@@ -81,7 +81,11 @@ Detail endpoints accept `?include=` for expensive sub-resources (e.g. `GET /runs
 
 ### 2.10 Rate limits
 
-Auth endpoints: 20/min/IP. General: 600/min/user. Responses include `RateLimit-Limit`, `RateLimit-Remaining`, `RateLimit-Reset`; exceeded → `429 rate_limited` with `Retry-After`.
+Auth endpoints: 20/min/IP. General: 600/min per caller (the session or API token; the client IP for anonymous requests), counted in each API process, so N replicas allow up to N × 600 (docs/03 §13). Health endpoints are not limited. Responses include `RateLimit-Limit`, `RateLimit-Remaining`, `RateLimit-Reset`; exceeded → `429 rate_limited` with `Retry-After`. An IP that sends more than 600 rejected credentials (401) in a minute gets `429` for any credential not accepted in the last hour, until the minute ends (made-up tokens do not get a fresh budget each).
+
+### 2.10a Response headers (M8c)
+
+Every API response carries `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'` (attachment downloads keep `sandbox`, §4.12), `Referrer-Policy: strict-origin-when-cross-origin`, `Cross-Origin-Opener-Policy` and `Cross-Origin-Resource-Policy: same-origin`, `Permissions-Policy`, and `Cache-Control: no-store` unless the route sets its own. Production adds `Strict-Transport-Security`. Text containing NUL (0x00) characters is rejected with `422 validation_error`.
 
 ### 2.11 Versioning and compatibility
 

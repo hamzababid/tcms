@@ -390,6 +390,8 @@ flowchart TB
 - Upgrade: pull images → run `migrate` → rolling restart api/worker (migrations backward-compatible per expand/contract).
 - Backups: nightly `pg_dump -Fc` to off-host storage, 30 daily + 12 monthly; object storage versioning enabled; quarterly restore drill (NFR-REL-03).
 - Scaling path: add api replicas behind Caddy; add worker replicas; move PostgreSQL to a managed service; S3 for storage.
+- API process model (M8c, `deploy/docker-compose.prod.yml`): each api replica is one gunicorn process with one Uvicorn worker (`API_REPLICAS`, default 2). Caddy discovers the replicas through Docker DNS (`dynamic a api 8000`) and sends each request to the one with the fewest requests in flight (`lb_policy least_conn`), with passive health checks only. Several workers in one container did not share load evenly, and active health checks took busy replicas out of rotation (docs/ops/performance.md). Keep-alive: Caddy 60 s < gunicorn 75 s, so Caddy never reuses a connection gunicorn is closing.
+- TLS and headers at the edge (`deploy/Caddyfile`): Let's Encrypt, HSTS, the SPA's CSP; Caddy trusts no forwarded headers from clients and sets `X-Forwarded-For`, which gunicorn trusts (`--forwarded-allow-ips`).
 
 ### 12.3 Local development
 
@@ -406,11 +408,11 @@ flowchart TB
 | A05 Security misconfiguration | Secure headers (CSP `default-src 'self'`), debug off in prod, OpenAPI docs UI disabled in prod (JSON schema kept), least-privileged DB role |
 | A06 Vulnerable components | Dependabot/Renovate; `pip-audit`, `npm audit` in CI; image scanning (Trivy) |
 | A07 Identification & auth failures | Lockout, rate limits, MFA, session timeouts, secure cookies, reset flow hardening |
-| A08 Software & data integrity | Signed/pinned dependencies (lock files), CI-built images only; append-only audit; defusedxml for XML |
+| A08 Software & data integrity | Signed/pinned dependencies (lock files), CI-built images only, third-party images pinned by digest; append-only audit; XML (XLSX imports) parsed by the standard library, which does not resolve external entities (`defusedxml` is a follow-up, docs/ops/asvs-l2.md V1.5.1) |
 | A09 Logging & monitoring failures | Audit events + structured logs; security events alertable; log retention 90 days |
 | A10 SSRF | Outbound HTTP only from integrations to configured hosts (allow-list from connection config); no user-supplied URL fetches |
 
-Additional: upload controls (§11); rate limiting (per-IP for auth, per-user 600 req/min general; auth endpoints: fixed one-minute windows per IP in the `auth_rate_limits` table; the general per-user limit is in-memory per worker process); dependency on no third-party CDN at runtime.
+Additional: upload controls (§11); rate limiting (per-IP for auth, per-caller 600 req/min general; auth endpoints: fixed one-minute windows per IP in the `auth_rate_limits` table; the general limit is in-memory per api process, `tcms.api.security`, so N replicas allow up to N × 600, plus a per-IP cap on rejected credentials); response security headers on every API response and the SPA's CSP at Caddy (docs/06 §2.10a); OpenAPI JSON needs a session in production; dependency on no third-party CDN at runtime. Verification: docs/ops/asvs-l2.md (ASVS 5.0 L2) and docs/ops/security-review.md.
 
 ## 14. Scalability and performance
 
@@ -425,7 +427,7 @@ Additional: upload controls (§11); rate limiting (per-IP for auth, per-user 600
 
 ## 15. Observability
 
-- Logs: JSON to stdout (`timestamp, level, request_id, user_id, org_id, route, status, duration_ms`); no request bodies; secrets redacted.
+- Logs: JSON to stdout (`timestamp, level, request_id, user_id, org_id, route, status, duration_ms`); no request bodies; secrets redacted. As of M8c the request log has no `user_id`/`org_id` yet and `/metrics` below is not built (docs/ops/asvs-l2.md V16, M9).
 - Request ID: `X-Request-ID` accepted or generated, returned in responses and problem details.
 - Health: `/api/v1/health/live` (process up), `/api/v1/health/ready` (DB reachable, migrations at head, S3 reachable).
 - Metrics: `/metrics` (Prometheus format, internal network only): request counts/latency by route, job queue depth/age, failed jobs, login failures.

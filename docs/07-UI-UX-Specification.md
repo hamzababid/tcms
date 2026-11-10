@@ -620,6 +620,7 @@ AppShell, Sidebar, Breadcrumbs, ProjectSwitcher, CommandPalette, DataTable, Filt
 | Lists | `J/K`, `X`, `Enter`, `Esc` | Move, select, open, close panel |
 | Repository | `C` | New case in current folder |
 | Repository | `F` | New folder |
+| Repository tree | `↑/↓`, `←/→`, `Enter`, `Shift+F10`, `Alt+↑/↓` | Move, collapse/expand, select, folder actions menu, reorder (the tree is one tab stop) |
 | Case editor | `Ctrl+S`, `Ctrl+Shift+S` | Save, save & new |
 | Case editor | `Enter` (in expected), `Alt+↑/↓`, `Ctrl+D`, `Ctrl+Backspace` | New step, reorder, duplicate, delete |
 | Runner | `Space` | Start attempt |

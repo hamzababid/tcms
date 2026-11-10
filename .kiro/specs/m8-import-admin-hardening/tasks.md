@@ -15,9 +15,9 @@ Q1 = a, Q2 = a, Q3 = a (product owner, 2026-11-06). This branch is M8a; M8b and 
 - [x] b.3 Frontend: Users, Roles, Audit log (drawer, CSV), Access review, System; project Audit tab; E2E.
 
 ## M8c — Hardening
-- [ ] c.1 Security headers, rate limit, OpenAPI auth in prod, L36; CI scans; ZAP baseline nightly; authenticated scan + ASVS L2 checklist.
-- [ ] c.2 Production compose + Caddy + runbook; forwarded IPs (L8); pin images (L1).
-- [ ] c.3 Backup/restore scripts and drill (TCMS-141); health-ready test (TCMS-140).
-- [ ] c.4 10× seed loader; k6 P1–P6; tuning; folder tree (L14); performance log (TCMS-142).
-- [ ] c.5 Keyboard-only E2E (TCMS-143), `?` help (L20), accessibility fixes.
-- [ ] c.6 Close-out: checklist, known limitations, PR(s), CI green, report.
+- [x] c.1 Security headers, rate limit, OpenAPI auth in prod, L36; CI scans; ZAP baseline nightly; authenticated scan + ASVS L2 checklist.
+- [x] c.2 Production compose + Caddy + runbook; forwarded IPs (L8); pin images (L1).
+- [x] c.3 Backup/restore scripts and drill (TCMS-141); health-ready test (TCMS-140).
+- [x] c.4 10× seed loader; k6 P1–P6; tuning; folder tree (L14); performance log (TCMS-142).
+- [x] c.5 Keyboard-only E2E (TCMS-143), `?` help (L20), accessibility fixes.
+- [x] c.6 Close-out: checklist, known limitations, PR(s), CI green, report.
