@@ -1,0 +1,2 @@
+# Trivy ignore file (CI `images` job, M8 D14). One CVE ID per line, each with a matching entry in
+# security/exceptions.md (reason, owner, expiry). Empty means no accepted exceptions.

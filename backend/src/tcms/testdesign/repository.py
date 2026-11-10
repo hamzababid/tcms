@@ -30,6 +30,27 @@ def _scope(stmt: Any, model: Any, ctx: AccessContext) -> Any:
 # -- folders --------------------------------------------------------------------------------------
 
 
+def folder_rows(s: Session, ctx: AccessContext) -> list[Any]:
+    """The tree's columns only (no ORM objects): 1,220 folders in a few ms instead of ~30 (M8c, P1)."""
+    stmt = select(
+        Folder.id,
+        Folder.parent_id,
+        Folder.name,
+        Folder.description,
+        Folder.position,
+        Folder.depth,
+        Folder.case_count,
+        Folder.archived_at,
+        Folder.row_version,
+        Folder.path,
+    )
+    return list(
+        s.execute(
+            _scope(stmt, Folder, ctx).order_by(Folder.depth, Folder.position, func.lower(Folder.name))
+        ).all()
+    )
+
+
 def folders(s: Session, ctx: AccessContext) -> list[Folder]:
     return list(
         s.execute(

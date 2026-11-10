@@ -19,3 +19,8 @@ test-results/
 .vite/
 coverage.json
 frontend/e2e/.auth/
+
+# Production deployment (M8c): secrets, backups and the real env file stay on the host
+deploy/secrets/
+deploy/backups/
+deploy/prod.env

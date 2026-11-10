@@ -16,13 +16,14 @@ import {
   GitCompare,
   FolderKanban,
   FolderTree,
+  Keyboard,
   ListTodo,
   PlayCircle,
   Settings,
   Shield,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { api } from "@/api/client";
 import { useMe, useProjects, type Me, type Project } from "@/api/queries";
@@ -35,6 +36,7 @@ import { NotificationBell } from "@/features/notifications/Bell";
 import { GlobalSearch } from "@/features/search/GlobalSearch";
 
 import { Logo } from "./Logo";
+import { ShortcutHelp, useShortcutHelpKey } from "./ShortcutHelp";
 
 const COLLAPSED_KEY = "assay.sidebarCollapsed";
 
@@ -412,6 +414,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   const projects = useProjects().data;
   const current = useCurrentProject(projects);
   const [collapsed, setCollapsed] = useState(readCollapsed);
+  const [keysOpen, setKeysOpen] = useState(false);
+  const openKeys = useCallback(() => {
+    setKeysOpen(true);
+  }, []);
+  useShortcutHelpKey(openKeys);
   const perms = useMemo(
     () => (current ? projectPermissions(me, current.id) : new Set<string>()),
     [me, current],
@@ -516,7 +523,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <nav
         aria-label="Primary"
         className={cn(
-          "flex shrink-0 flex-col gap-5 bg-sidebar px-3 py-4 text-sidebar-ink transition-[width] duration-150",
+          // Scrolls on short windows instead of letting the last items overflow the dark background.
+          "flex shrink-0 flex-col gap-5 overflow-y-auto bg-sidebar px-3 py-4 text-sidebar-ink transition-[width] duration-150",
           collapsed ? "w-16" : "w-[var(--sidebar-width)]",
         )}
       >
@@ -546,7 +554,28 @@ export function AppShell({ children }: { children: ReactNode }) {
             <NavLink item={{ to: "/admin", label: "Administration", icon: Shield }} collapsed={collapsed} />
           ) : null}
         </NavSection>
-        <div className="mt-auto border-t border-sidebar-raised pt-2">
+        <div className="mt-auto flex flex-col gap-0.5 border-t border-sidebar-raised pt-2">
+          <button
+            type="button"
+            onClick={openKeys}
+            className={cn(
+              "flex h-8 w-full items-center gap-2 rounded-control px-2.5 text-xs text-sidebar-label transition-colors hover:bg-sidebar-raised hover:text-sidebar-ink",
+              collapsed && "justify-center px-0",
+            )}
+            aria-label="Keyboard shortcuts"
+            aria-keyshortcuts="?"
+            title={collapsed ? "Keyboard shortcuts (?)" : undefined}
+          >
+            <Keyboard aria-hidden="true" className="size-4" />
+            {collapsed ? null : (
+              <>
+                Keyboard shortcuts
+                <span className="ml-auto rounded border border-sidebar-line px-1 font-mono text-[11px]">
+                  ?
+                </span>
+              </>
+            )}
+          </button>
           <button
             type="button"
             onClick={toggle}
@@ -576,6 +605,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           {children}
         </main>
       </div>
+      <ShortcutHelp open={keysOpen} onOpenChange={setKeysOpen} />
     </div>
   );
 }

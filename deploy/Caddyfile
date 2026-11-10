@@ -1,0 +1,61 @@
+# Reverse proxy and TLS for the production stack (docs/03 §12, M8 D10, docs/ops/deploy.md).
+# TCMS_SITE_ADDRESS: the public host name (Let's Encrypt via ACME) or `localhost` for the local drill.
+# CADDY_GLOBAL_OPTIONS: `local_certs` makes Caddy use its own CA (local drill); empty on a real host.
+{
+	{$CADDY_GLOBAL_OPTIONS}
+	admin off
+	# No trusted_proxies: Caddy is the edge, so it replaces any X-Forwarded-For a client sends with the
+	# connection's address (the api trusts that header from Caddy only). If a load balancer sits in front,
+	# add `servers { trusted_proxies static <its address range> }` here (docs/ops/deploy.md).
+}
+
+{$TCMS_SITE_ADDRESS} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		Cross-Origin-Opener-Policy "same-origin"
+		-Server
+	}
+
+	# The API sets its own headers (default-src 'none'; attachment downloads: sandbox).
+	handle /api/* {
+		request_body {
+			max_size 110MB
+		}
+		# Every api replica runs one process; Caddy sends each request to the replica with the fewest in
+		# flight. (Several gunicorn workers in one container did not share the load: a worker's event loop
+		# accepts connections faster than its GIL-bound threads serve them, so one worker did most of the work
+		# while the others idled; M8c load test, docs/ops/performance.md.)
+		reverse_proxy {
+			dynamic a api 8000 {
+				refresh 10s
+			}
+			lb_policy least_conn
+			lb_try_duration 10s
+			# Passive checks only: an active probe answered late by a busy single-process replica took it
+			# out of rotation and stalled requests for up to a minute (M8c P3).
+			fail_duration 30s
+			max_fails 3
+			header_up X-Forwarded-Proto {scheme}
+			transport http {
+				keepalive 60s
+			}
+		}
+	}
+
+	# The single-page app. Inline styles are used by Radix and Recharts; scripts are same-origin only.
+	handle {
+		header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+		reverse_proxy web:8080
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

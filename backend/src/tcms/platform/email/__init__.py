@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import smtplib
+import ssl
 from email.message import EmailMessage
 from typing import Any
 
@@ -66,7 +67,9 @@ def send_email(job: JobInfo, uow: UnitOfWork) -> None:
     msg.add_alternative(html, subtype="html")
     with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=15) as smtp:
         if settings.smtp_starttls:
-            smtp.starttls()
+            # Verify the server's certificate and host name: without a context, smtplib accepts any
+            # certificate (ASVS 12.3.2; reset links and the SMTP password travel on this connection).
+            smtp.starttls(context=ssl.create_default_context())
         if settings.smtp_user and settings.smtp_password:
             smtp.login(settings.smtp_user, settings.smtp_password.get_secret_value())
         smtp.send_message(msg)

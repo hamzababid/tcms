@@ -11,6 +11,7 @@ import io
 from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import IO, TYPE_CHECKING, Any
 from uuid import UUID
 
@@ -137,3 +138,44 @@ def store(client: S3Client, bucket: str, key: str, stream: IO[bytes], *, max_byt
 
 def check_bucket(client: S3Client, bucket: str) -> None:
     client.head_bucket(Bucket=bucket)
+
+
+def _local(directory: Path, key: str) -> Path:
+    target = (directory / key).resolve()
+    if directory.resolve() not in target.parents:
+        raise ValueError(f"object key escapes the backup directory: {key!r}")
+    return target
+
+
+def mirror_down(client: Any, bucket: str, directory: Path) -> tuple[int, int]:
+    """Download objects missing from `directory` (backups). Returns (copied, already there)."""
+    copied = kept = 0
+    for page in client.get_paginator("list_objects_v2").paginate(Bucket=bucket):
+        for obj in page.get("Contents", []):
+            target = _local(directory, obj["Key"])
+            if target.exists() and target.stat().st_size == obj["Size"]:
+                kept += 1
+                continue
+            target.parent.mkdir(parents=True, exist_ok=True)
+            partial = target.with_name(target.name + ".part")
+            client.download_file(bucket, obj["Key"], str(partial))
+            partial.replace(target)
+            copied += 1
+    return copied, kept
+
+
+def mirror_up(client: Any, bucket: str, directory: Path) -> tuple[int, int]:
+    """Upload files from `directory` that the bucket lacks (restore). Returns (uploaded, already there)."""
+    present: dict[str, int] = {}
+    for page in client.get_paginator("list_objects_v2").paginate(Bucket=bucket):
+        present.update({o["Key"]: o["Size"] for o in page.get("Contents", [])})
+    uploaded = kept = 0
+    root = directory.resolve()
+    for path in sorted(p for p in root.rglob("*") if p.is_file() and not p.name.endswith(".part")):
+        key = path.relative_to(root).as_posix()
+        if present.get(key) == path.stat().st_size:
+            kept += 1
+            continue
+        client.upload_file(str(path), bucket, key)
+        uploaded += 1
+    return uploaded, kept

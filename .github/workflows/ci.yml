@@ -80,13 +80,43 @@ jobs:
       - name: generated client equals committed client
         run: make api-client-check
 
-  images:
-    needs: [backend-tests, frontend-tests, openapi-drift]
+  dependency-audit:
+    # docs/08 §4, M8 D14: known vulnerabilities in runtime dependencies fail the build.
+    # Accepted exceptions (with expiry) live in security/exceptions.md and are passed as --ignore-vuln.
+    needs: lint
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
-      - run: docker build -f backend/Dockerfile --target runtime -t assay-backend:${{ github.sha }} .
-      - run: docker build -f frontend/Dockerfile --target runtime -t assay-web:${{ github.sha }} .
+      - uses: astral-sh/setup-uv@v6
+        with: { version: "${{ env.UV_VERSION }}", enable-cache: true, cache-dependency-glob: backend/uv.lock }
+      - uses: pnpm/action-setup@v4
+        with: { version: "${{ env.PNPM_VERSION }}" }
+      - uses: actions/setup-node@v5
+        with: { node-version: "${{ env.NODE_VERSION }}", cache: pnpm, cache-dependency-path: frontend/pnpm-lock.yaml }
+      - name: pip-audit (runtime dependencies from uv.lock)
+        run: |
+          cd backend
+          uv export --frozen --no-dev --no-hashes --no-emit-project > /tmp/requirements.txt
+          uvx --python 3.12 --from "pip-audit>=2.9,<3" pip-audit --requirement /tmp/requirements.txt --disable-pip --no-deps --strict
+      - name: pnpm audit (production dependencies, high and critical)
+        run: cd frontend && pnpm install --frozen-lockfile && pnpm audit --prod --audit-level high
+  images:
+    needs: [backend-tests, frontend-tests, openapi-drift, dependency-audit]
+    runs-on: ubuntu-24.04
+    env:
+      # Pinned by digest (the trivy-action and image releases were compromised in March 2026).
+      TRIVY: aquasec/trivy:0.76.2@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb
+    steps:
+      - uses: actions/checkout@v5
+      - run: docker build --pull -f backend/Dockerfile --target runtime -t assay-backend:${{ github.sha }} .
+      - run: docker build --pull -f frontend/Dockerfile --target runtime -t assay-web:${{ github.sha }} .
+      - name: Trivy (HIGH and CRITICAL with a fix available fail the build)
+        run: |
+          for image in assay-backend assay-web; do
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD/security:/security:ro" "$TRIVY" \
+              image --quiet --severity HIGH,CRITICAL --ignore-unfixed --ignorefile /security/trivyignore \
+              --exit-code 1 "$image:${{ github.sha }}"
+          done
 
   e2e:
     needs: images

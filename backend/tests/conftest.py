@@ -21,7 +21,9 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 BACKEND = REPO_ROOT / "backend"
 SCHEMA_DIR = REPO_ROOT / "docs" / "schema"
 PG_IMAGE = "postgres:16"
-MINIO_IMAGE = "cgr.dev/chainguard/minio:latest"  # Docker Hub no longer publishes minio/minio
+MINIO_IMAGE = (  # Docker Hub no longer publishes minio/minio; same digest as deploy/ (L1)
+    "cgr.dev/chainguard/minio@sha256:a1ac4589a5f8136b616e667b48a0bea9719bb10bd45799ea946f24bbedfafde4"
+)
 
 APP_PASSWORD = "change-me-app"  # placeholders from docs/schema/00_roles.sql (test containers only)
 OWNER_PASSWORD = "change-me-owner"
@@ -133,6 +135,14 @@ def db_session(app_engine: Engine) -> Iterator[Session]:
         session.close()
         trans.rollback()
         connection.close()
+
+
+@pytest.fixture(autouse=True)
+def _fresh_report_cache() -> None:
+    """Dashboard figures are cached a minute per process (reporting/cache.py); tests start without."""
+    from tcms.reporting import cache
+
+    cache.clear()
 
 
 @pytest.fixture

@@ -87,6 +87,26 @@ def links_of_case(s: Session, ctx: AccessContext, case_id: UUID) -> list[BugLink
     return list(s.execute(stmt).scalars())
 
 
+def link_refs_of_cases(s: Session, ctx: AccessContext, case_ids: Sequence[UUID]) -> list[Any]:
+    """(test_case_id, run_id, reference_norm, reference, url) of every link on the cases, oldest last, in
+    chunks of 5,000 ids (traceability: one query per chunk instead of one per case; M8c P3)."""
+    out: list[Any] = []
+    ids = list(case_ids)
+    for i in range(0, len(ids), 5000):
+        out += s.execute(
+            select(
+                BugLink.test_case_id, BugLink.run_id, BugLink.reference_norm, BugLink.reference, BugLink.url
+            )
+            .where(
+                BugLink.organization_id == ctx.principal.organization_id,
+                BugLink.project_id == ctx.pid,
+                BugLink.test_case_id.in_(ids[i : i + 5000]),
+            )
+            .order_by(BugLink.test_case_id, BugLink.created_at.desc(), BugLink.id)
+        ).all()
+    return out
+
+
 def links_of_reference(s: Session, ctx: AccessContext, reference_norm: str) -> list[BugLink]:
     stmt = (
         _scope(ctx).where(BugLink.reference_norm == reference_norm).order_by(BugLink.created_at, BugLink.id)

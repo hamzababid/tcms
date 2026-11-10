@@ -47,7 +47,8 @@ const SHORTCUTS: [string, string][] = [
   ["Space", "Start the attempt"],
   ["A", "Attach evidence to the focused step"],
   ["Ctrl + Enter", "Finish the run"],
-  ["Shift + N", "Next run in the queue"],
+  ["Shift + N / P", "Next or previous run in the queue"],
+  ["D", "Link a bug to the focused step"],
   ["Esc", "Leave a text field"],
   ["?", "This help"],
 ];
@@ -101,8 +102,9 @@ export function RunnerPage({
   const queue = useRuns(run.data?.cycle.id, queueQuery(used));
 
   const next = run.data?.queue?.next_run_id ?? null;
+  const previous = run.data?.queue?.previous_run_id ?? null;
   useEffect(() => {
-    // Shift+N next run, ? help (docs/02 §7.4) — page level, not while typing.
+    // Shift+N / Shift+P next or previous run, ? help (docs/02 §7.4, docs/07 §10) — not while typing.
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
       if (t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable)) return;
@@ -110,6 +112,9 @@ export function RunnerPage({
       if (e.shiftKey && e.key.toLowerCase() === "n" && next) {
         e.preventDefault();
         onRun(next);
+      } else if (e.shiftKey && e.key.toLowerCase() === "p" && previous) {
+        e.preventDefault();
+        onRun(previous);
       } else if (e.key === "?" && !run.data?.draft) {
         e.preventDefault();
         setHelp(true);
@@ -119,7 +124,7 @@ export function RunnerPage({
     return () => {
       window.removeEventListener("keydown", onKey);
     };
-  }, [next, onRun, run.data?.draft]);
+  }, [next, previous, onRun, run.data?.draft]);
 
   if (run.isPending)
     return (

@@ -39,39 +39,33 @@ class FolderNode:
 
 def folder_tree(s: Session, ctx: AccessContext, *, include_archived: bool) -> list[FolderNode]:
     """Counts include descendants (docs/02 §5.1); archived folders hide their subtree unless requested."""
-    folders = repo.folders(s, ctx)
-    totals: dict[UUID, int] = {f.id: 0 for f in folders}
-    by_id = {f.id: f for f in folders}
-    for f in folders:
-        for segment in f.path.strip("/").split("/"):
-            ancestor = UUID(segment)
-            if ancestor in totals:
-                totals[ancestor] += f.case_count
-    archived_ids = {f.id for f in folders if f.archived_at is not None}
-
-    def hidden(f: Folder) -> bool:
-        return any(UUID(seg) in archived_ids for seg in f.path.strip("/").split("/"))
-
-    return (
-        [
+    rows = repo.folder_rows(s, ctx)
+    totals: dict[str, int] = {str(r.id): 0 for r in rows}
+    archived: set[str] = {str(r.id) for r in rows if r.archived_at is not None}
+    out: list[FolderNode] = []
+    for r in rows:
+        segments = r.path.strip("/").split("/")
+        for seg in segments:
+            if seg in totals:
+                totals[seg] += r.case_count
+    for r in rows:
+        if not include_archived and archived and any(seg in archived for seg in r.path.strip("/").split("/")):
+            continue
+        out.append(
             FolderNode(
-                f.id,
-                f.parent_id,
-                f.name,
-                f.description,
-                f.position,
-                f.depth,
-                f.case_count,
-                totals[f.id],
-                f.archived_at is not None,
-                f.row_version,
+                r.id,
+                r.parent_id,
+                r.name,
+                r.description,
+                r.position,
+                r.depth,
+                r.case_count,
+                totals[str(r.id)],
+                r.archived_at is not None,
+                r.row_version,
             )
-            for f in folders
-            if include_archived or not hidden(f)
-        ]
-        if by_id
-        else []
-    )
+        )
+    return out
 
 
 def folder_path_names(s: Session, ctx: AccessContext, folder_id: UUID) -> list[str]:

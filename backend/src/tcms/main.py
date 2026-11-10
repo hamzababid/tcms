@@ -8,6 +8,7 @@ from tcms import platform
 from tcms.api.deps import AppState
 from tcms.api.middleware import RequestContextMiddleware
 from tcms.api.problems import PROBLEM_RESPONSES, install_problem_handlers
+from tcms.api.security import RateLimitMiddleware, SecurityHeadersMiddleware
 from tcms.api.v1 import (
     administration,
     auth,
@@ -61,7 +62,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(
         title=f"{settings.tcms_product_name} API",
         version=API_VERSION,
-        openapi_url="/api/v1/openapi.json",
+        # Production serves the schema to signed-in callers only (route below; docs/06 §4.14).
+        openapi_url=None if settings.is_production else "/api/v1/openapi.json",
         docs_url=None if settings.is_production else "/api/v1/docs",
         redoc_url=None,
     )
@@ -74,6 +76,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.tcms = AppState(
         settings=settings, session_factory=session_factory(app_engine(settings)), store=store
     )
+    # Starlette runs the last-added middleware first: request context wraps the limit and the headers.
+    if settings.rate_limit_per_min > 0:
+        app.add_middleware(RateLimitMiddleware, limit=settings.rate_limit_per_min)
+    app.add_middleware(SecurityHeadersMiddleware, hsts=settings.is_production)
     app.add_middleware(RequestContextMiddleware)
     install_problem_handlers(app)
     for module in (
@@ -97,4 +103,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         records,
     ):
         app.include_router(module.router, responses=PROBLEM_RESPONSES)
+    if settings.is_production:
+        from fastapi.responses import JSONResponse
+
+        from tcms.api.deps import Auth
+
+        @app.get("/api/v1/openapi.json", include_in_schema=False, dependencies=[Auth])
+        def openapi_for_signed_in() -> JSONResponse:
+            return JSONResponse(app.openapi())
+
     return app

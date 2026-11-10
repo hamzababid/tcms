@@ -11,9 +11,9 @@ from fastapi import APIRouter, Depends, Header, Query, Request, Response, status
 from fastapi.responses import JSONResponse
 
 from tcms.api.deps import (
+    ReadUow,
+    Uow,
     app_state,
-    get_read_uow,
-    get_uow,
     project_context,
     project_context_from,
     resolve_row_version,
@@ -231,7 +231,7 @@ def _folder_read(n: tq.FolderNode) -> s.FolderRead:
 def list_folders(
     include_archived: bool = False,
     ctx: AccessContext = Depends(project_context),
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> list[s.FolderRead]:
     """US-043: full tree with counts including descendants."""
     ctx.require("project.view")
@@ -251,7 +251,7 @@ def _node(uow: UnitOfWork, ctx: AccessContext, folder_id: UUID) -> s.FolderRead:
 def create_folder(
     body: s.FolderCreate,
     ctx: AccessContext = Depends(project_context),
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
     guard: Idempotency = Depends(idempotency("create_folder")),
 ) -> Any:
     if (replay := guard.replay(body)) is not None:
@@ -271,7 +271,7 @@ def patch_folder(
     body: s.FolderPatch,
     if_match: str | None = Header(default=None, alias="If-Match"),
     ctx: AccessContext = FolderCtx,
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> s.FolderRead:
     service.update_folder(
         uow,
@@ -292,7 +292,7 @@ def move_folder(
     body: s.FolderMove,
     if_match: str | None = Header(default=None, alias="If-Match"),
     ctx: AccessContext = FolderCtx,
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> s.FolderRead:
     """AC-TD-01/02."""
     service.move_folder(
@@ -308,27 +308,21 @@ def move_folder(
 
 
 @router.post("/folders/{folder_id}/archive", response_model=s.FolderRead)
-def archive_folder(
-    folder_id: UUID, ctx: AccessContext = FolderCtx, uow: UnitOfWork = Depends(get_uow)
-) -> s.FolderRead:
+def archive_folder(folder_id: UUID, ctx: AccessContext = FolderCtx, uow: UnitOfWork = Uow) -> s.FolderRead:
     service.set_folder_archived(uow, ctx, folder_id, archived=True)
     uow.session.flush()
     return _node(uow, ctx, folder_id)
 
 
 @router.post("/folders/{folder_id}/restore", response_model=s.FolderRead)
-def restore_folder(
-    folder_id: UUID, ctx: AccessContext = FolderCtx, uow: UnitOfWork = Depends(get_uow)
-) -> s.FolderRead:
+def restore_folder(folder_id: UUID, ctx: AccessContext = FolderCtx, uow: UnitOfWork = Uow) -> s.FolderRead:
     service.set_folder_archived(uow, ctx, folder_id, archived=False)
     uow.session.flush()
     return _node(uow, ctx, folder_id)
 
 
 @router.delete("/folders/{folder_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_folder(
-    folder_id: UUID, ctx: AccessContext = FolderCtx, uow: UnitOfWork = Depends(get_uow)
-) -> None:
+def delete_folder(folder_id: UUID, ctx: AccessContext = FolderCtx, uow: UnitOfWork = Uow) -> None:
     """BR-15 / AC-TD-03."""
     service.delete_folder(uow, ctx, folder_id)
 
@@ -360,7 +354,7 @@ def list_cases(
         default=None, description="With (true) or without (false) references"
     ),
     ctx: AccessContext = Depends(project_context),
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> Page[s.CaseListItem]:
     """US-043 / FR-SRCH-002: filters and sorts of docs/06 §4.4 (operators per §2.6)."""
     ctx.require("project.view")
@@ -406,7 +400,7 @@ def list_cases(
 def create_case(
     body: s.CaseCreate,
     ctx: AccessContext = Depends(project_context),
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
     guard: Idempotency = Depends(idempotency("create_case")),
 ) -> Any:
     """US-050/051: version 1, key allocated (TCMS-033)."""
@@ -439,7 +433,7 @@ def get_case(
     response: Response,
     version: int | None = Query(default=None, ge=1),
     ctx: AccessContext = CaseCtx,
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> s.CaseRead:
     ctx.require("project.view")
     out = case_read(uow, ctx, case_id, version_no=version)
@@ -454,7 +448,7 @@ def patch_case(
     response: Response,
     if_match: str | None = Header(default=None, alias="If-Match"),
     ctx: AccessContext = CaseCtx,
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> s.CaseRead:
     """Metadata only (BR-01, AC-TD-10): audited, no new version."""
     fields = {k: getattr(body, k) for k in body.model_fields_set if k != "row_version"}
@@ -473,7 +467,7 @@ def put_content(
     body: s.ContentUpdate,
     if_match: str | None = Header(default=None, alias="If-Match"),
     ctx: AccessContext = CaseCtx,
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> s.SaveResponse:
     """BR-01/02, AC-TD-11/13: a new version only when content changed (docs/04 §3.2)."""
     result = service.update_content(
@@ -490,7 +484,7 @@ def put_content(
 
 @router.get("/test-cases/{case_id}/versions", response_model=list[s.VersionListItem])
 def list_versions(
-    case_id: UUID, ctx: AccessContext = CaseCtx, uow: UnitOfWork = Depends(get_read_uow)
+    case_id: UUID, ctx: AccessContext = CaseCtx, uow: UnitOfWork = ReadUow
 ) -> list[s.VersionListItem]:
     """US-053 / FR-TD-004."""
     ctx.require("project.view")
@@ -525,7 +519,7 @@ def list_versions(
 
 @router.get("/test-cases/{case_id}/versions/{version_no}", response_model=s.VersionRead)
 def get_version(
-    case_id: UUID, version_no: int, ctx: AccessContext = CaseCtx, uow: UnitOfWork = Depends(get_read_uow)
+    case_id: UUID, version_no: int, ctx: AccessContext = CaseCtx, uow: UnitOfWork = ReadUow
 ) -> s.VersionRead:
     ctx.require("project.view")
     return case_read(uow, ctx, case_id, version_no=version_no).version
@@ -537,7 +531,7 @@ def compare(
     from_: int = Query(alias="from", ge=1),
     to: int = Query(ge=1),
     ctx: AccessContext = CaseCtx,
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> s.CompareRead:
     """AC-TD-12: field diffs and steps aligned by position."""
     ctx.require("project.view")
@@ -568,7 +562,7 @@ def restore_version(
     body: s.RestoreVersionRequest,
     if_match: str | None = Header(default=None, alias="If-Match"),
     ctx: AccessContext = CaseCtx,
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> s.SaveResponse:
     """US-054 / FR-TD-005."""
     result = service.restore_version(
@@ -584,7 +578,7 @@ def restore_version(
 
 @router.post("/test-cases/{case_id}/submit", response_model=s.CaseRead)
 def submit(
-    case_id: UUID, body: s.SubmitRequest, ctx: AccessContext = CaseCtx, uow: UnitOfWork = Depends(get_uow)
+    case_id: UUID, body: s.SubmitRequest, ctx: AccessContext = CaseCtx, uow: UnitOfWork = Uow
 ) -> s.CaseRead:
     """US-065."""
     service.submit_for_review(uow, ctx, case_id, reviewer_id=body.reviewer_id, comment=body.comment)
@@ -598,7 +592,7 @@ def approve(
     body: s.ApproveRequest,
     if_match: str | None = Header(default=None, alias="If-Match"),
     ctx: AccessContext = CaseCtx,
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> s.CaseRead:
     """US-066, AC-TD-21 (self-approval)."""
     service.approve(
@@ -610,7 +604,7 @@ def approve(
 
 @router.post("/test-cases/{case_id}/return", response_model=s.CaseRead)
 def return_case(
-    case_id: UUID, body: s.ReturnRequest, ctx: AccessContext = CaseCtx, uow: UnitOfWork = Depends(get_uow)
+    case_id: UUID, body: s.ReturnRequest, ctx: AccessContext = CaseCtx, uow: UnitOfWork = Uow
 ) -> s.CaseRead:
     """US-066, AC-TD-22."""
     service.return_case(uow, ctx, case_id, comment=body.comment)
@@ -623,7 +617,7 @@ def _lifecycle(action: Literal["deprecate", "archive", "restore"]) -> Any:
         case_id: UUID,
         body: s.LifecycleRequest,
         ctx: AccessContext = CaseCtx,
-        uow: UnitOfWork = Depends(get_uow),
+        uow: UnitOfWork = Uow,
     ) -> s.CaseRead:
         service.change_lifecycle(uow, ctx, case_id, action=action, reason=body.reason)
         uow.session.flush()
@@ -641,7 +635,7 @@ for _action in ("deprecate", "archive", "restore"):
 
 
 @router.delete("/test-cases/{case_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_case(case_id: UUID, ctx: AccessContext = CaseCtx, uow: UnitOfWork = Depends(get_uow)) -> None:
+def delete_case(case_id: UUID, ctx: AccessContext = CaseCtx, uow: UnitOfWork = Uow) -> None:
     """US-069 / BR-14: `409 case_has_runs` once the case was in a cycle."""
     service.delete_case(uow, ctx, case_id)
 
@@ -654,7 +648,7 @@ def duplicate(
     body: s.DuplicateRequest,
     request: Request,
     ctx: AccessContext = CaseCtx,
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> s.SaveResponse:
     """US-057 / FR-TD-009 (TCMS-044)."""
     result = service.duplicate_case(
@@ -666,7 +660,7 @@ def duplicate(
 
 @router.get("/test-cases/{case_id}/executions", response_model=list[s.ExecutionRead])
 def executions(
-    case_id: UUID, ctx: AccessContext = CaseCtx, uow: UnitOfWork = Depends(get_read_uow)
+    case_id: UUID, ctx: AccessContext = CaseCtx, uow: UnitOfWork = ReadUow
 ) -> list[s.ExecutionRead]:
     """US-058 / FR-TD-013: runs across cycles with the pinned version (cycles arrive in M3)."""
     ctx.require("project.view")
@@ -700,7 +694,7 @@ def history(
     occurred_at__lte: date | None = None,
     q: str | None = Query(default=None, max_length=200),
     ctx: AccessContext = CaseCtx,
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> Page[ws.ActivityItem]:
     """FR-AUD-002 for a case; filters as audit events (docs/06 §4.12) plus `q`."""
     ctx.require("project.view")
@@ -728,7 +722,7 @@ def history(
 
 @router.post("/test-cases/{case_id}/links", response_model=s.CaseRead)
 def add_link(
-    case_id: UUID, body: s.LinkRequest, ctx: AccessContext = CaseCtx, uow: UnitOfWork = Depends(get_uow)
+    case_id: UUID, body: s.LinkRequest, ctx: AccessContext = CaseCtx, uow: UnitOfWork = Uow
 ) -> s.CaseRead:
     """FR-TD-012."""
     service.add_link(uow, ctx, case_id, target_case_id=body.target_case_id, link_type=body.link_type)
@@ -738,7 +732,7 @@ def add_link(
 
 @router.delete("/test-cases/{case_id}/links", response_model=s.CaseRead)
 def remove_link(
-    case_id: UUID, body: s.LinkRequest, ctx: AccessContext = CaseCtx, uow: UnitOfWork = Depends(get_uow)
+    case_id: UUID, body: s.LinkRequest, ctx: AccessContext = CaseCtx, uow: UnitOfWork = Uow
 ) -> s.CaseRead:
     service.remove_link(uow, ctx, case_id, target_case_id=body.target_case_id, link_type=body.link_type)
     uow.session.flush()
@@ -750,9 +744,7 @@ def remove_link(
     response_model=s.BulkResponse,
     responses={202: {"model": s.BulkResponse, "description": "Queued (more than 200 cases)"}},
 )
-def bulk(
-    body: s.BulkRequest, ctx: AccessContext = Depends(project_context), uow: UnitOfWork = Depends(get_uow)
-) -> Any:
+def bulk(body: s.BulkRequest, ctx: AccessContext = Depends(project_context), uow: UnitOfWork = Uow) -> Any:
     """US-044 / FR-TD-010: ≤ 200 cases now, more as a job; each case audited with the shared bulk id."""
     ctx.require(service.bulk_permission(body.action))
     if (body.case_ids is None) == (body.filter is None):
@@ -796,9 +788,7 @@ def bulk(
 
 
 @router.get("/projects/{project_id}/tags", response_model=list[s.TagRead])
-def list_tags(
-    ctx: AccessContext = Depends(project_context), uow: UnitOfWork = Depends(get_read_uow)
-) -> list[s.TagRead]:
+def list_tags(ctx: AccessContext = Depends(project_context), uow: UnitOfWork = ReadUow) -> list[s.TagRead]:
     """US-045: system tags always exist."""
     ctx.require("project.view")
     return [
@@ -808,7 +798,7 @@ def list_tags(
 
 @router.post("/projects/{project_id}/tags", response_model=s.TagRead, status_code=status.HTTP_201_CREATED)
 def create_tag(
-    body: s.TagCreate, ctx: AccessContext = Depends(project_context), uow: UnitOfWork = Depends(get_uow)
+    body: s.TagCreate, ctx: AccessContext = Depends(project_context), uow: UnitOfWork = Uow
 ) -> s.TagRead:
     t = service.create_tag(uow, ctx, body.name)
     return s.TagRead(id=t.id, name=t.name, is_system=t.is_system, usage=0)
@@ -818,7 +808,7 @@ def create_tag(
 def delete_tag(
     tag_id: UUID,
     ctx: AccessContext = Depends(project_context_from("tag", "tag_id")),
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> None:
     """Only unused, non-system tags."""
     service.delete_tag(uow, ctx, tag_id)
@@ -831,7 +821,7 @@ def delete_tag(
 def resolve(
     key: str = Query(min_length=1, max_length=40),
     ctx: AccessContext = Depends(project_context),
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> s.ResolveRead:
     """`SPARK-TC-12`, `TC-12`, `12` → case; `SPARK-PL-3` / `PL-3` → plan; `SPARK-CY-1` / `CY-1` → cycle
     (docs/04 §11.1). A bare number is a test case. More entity types arrive with their milestones."""

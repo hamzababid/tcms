@@ -1616,6 +1616,12 @@ wheels = [
 ]
 
 [[package]]
+name = "psycopg-c"
+version = "3.3.7"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/61/82/d1d9cde5ae2bd2292e05a139fcbb8956d6a38495f5e4dfe706b7f00ccf8d/psycopg_c-3.3.7.tar.gz", hash = "sha256:cf63d929860ce5203a86d9e3089a516c399bb32d621d3c0f210044a1d46054a1", size = 700584, upload-time = "2026-11-03T03:58:09.681Z" }
+
+[[package]]
 name = "pycparser"
 version = "3.12"
 source = { registry = "https://pypi.org/simple" }
@@ -2180,7 +2186,7 @@ dependencies = [
     { name = "gunicorn" },
     { name = "jinja2" },
     { name = "openpyxl" },
-    { name = "psycopg", extra = ["binary"] },
+    { name = "psycopg" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "pyotp" },
@@ -2199,6 +2205,7 @@ dev = [
     { name = "hypothesis" },
     { name = "import-linter" },
     { name = "mypy" },
+    { name = "psycopg", extra = ["binary"] },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-xdist" },
@@ -2206,6 +2213,9 @@ dev = [
     { name = "schemathesis" },
     { name = "testcontainers", extra = ["minio"] },
     { name = "types-openpyxl" },
+]
+speedups = [
+    { name = "psycopg-c" },
 ]
 
 [package.metadata]
@@ -2220,7 +2230,7 @@ requires-dist = [
     { name = "gunicorn", specifier = ">=26.2.0" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "openpyxl", specifier = ">=3.1.5" },
-    { name = "psycopg", extras = ["binary"], specifier = ">=3.3.7" },
+    { name = "psycopg", specifier = ">=3.3.7" },
     { name = "pydantic", specifier = ">=2.14.2" },
     { name = "pydantic-settings", specifier = ">=2.16.2" },
     { name = "pyotp", specifier = ">=2.10.0" },
@@ -2239,6 +2249,7 @@ dev = [
     { name = "hypothesis", specifier = ">=6.170.14" },
     { name = "import-linter", specifier = ">=2.15" },
     { name = "mypy", specifier = ">=2.4.1" },
+    { name = "psycopg", extras = ["binary"], specifier = ">=3.3.7" },
     { name = "pytest", specifier = ">=9.2.0" },
     { name = "pytest-cov", specifier = ">=7.1.0" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
@@ -2247,6 +2258,7 @@ dev = [
     { name = "testcontainers", extras = ["minio", "postgres"], specifier = ">=4.15.0" },
     { name = "types-openpyxl", specifier = ">=3.1.5.20261017" },
 ]
+speedups = [{ name = "psycopg-c", specifier = "==3.3.7" }]
 
 [[package]]
 name = "testcontainers"

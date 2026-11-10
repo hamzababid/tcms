@@ -1,0 +1,10 @@
+# Local drill of the production stack (M8 D3): Caddy's own certificate on https://localhost and Mailpit
+# for mail. Use together with docker-compose.prod.yml and deploy/local.env (docs/ops/deploy.md §Local drill).
+services:
+  mailpit:
+    image: axllent/mailpit@sha256:aef2aacc11f075ec0fb6874275ee4a421e688e11a96ebb296134d1735c7761ce
+    ports:
+      - "127.0.0.1:${TCMS_MAILPIT_PORT:-8026}:8025"
+  api:
+    depends_on:
+      mailpit: { condition: service_started }

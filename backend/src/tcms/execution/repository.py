@@ -23,10 +23,16 @@ def _scope(stmt: Any, model: Any, ctx: AccessContext) -> Any:
 # -- cycles ---------------------------------------------------------------------------------------
 
 
-def cycle(s: Session, ctx: AccessContext, cycle_id: UUID, *, for_update: bool = False) -> TestCycle | None:
+def cycle(
+    s: Session, ctx: AccessContext, cycle_id: UUID, *, for_update: bool = False, for_share: bool = False
+) -> TestCycle | None:
+    """`for_share` (FOR SHARE) lets many attempts start at once while still blocking a concurrent close,
+    which takes FOR UPDATE (M8c P2). A locking read refreshes the row already in the session."""
     stmt = _scope(select(TestCycle), TestCycle, ctx).where(TestCycle.id == cycle_id)
     if for_update:
-        stmt = stmt.with_for_update()
+        stmt = stmt.with_for_update().execution_options(populate_existing=True)
+    elif for_share:
+        stmt = stmt.with_for_update(read=True).execution_options(populate_existing=True)
     return s.execute(stmt).scalar_one_or_none()
 
 

@@ -118,8 +118,33 @@ def storage_init() -> None:
         click.echo(f"storage: bucket {settings.s3_bucket} created")
 
 
+@main.command("storage-backup")
+@click.argument("directory", type=click.Path(file_okay=False, path_type=Path))
+def storage_backup(directory: Path) -> None:
+    """Copy every stored object not yet in DIRECTORY (deploy/backup.sh). Objects never change after upload
+    (random keys), so a copy that has a key is complete; deleted objects stay in the copy."""
+    from tcms.platform import storage
+
+    settings = get_settings()
+    copied, kept = storage.mirror_down(storage.make_client(settings), settings.s3_bucket, directory)
+    click.echo(f"storage-backup: {copied} copied, {kept} already in {directory}")
+
+
+@main.command("storage-restore")
+@click.argument("directory", type=click.Path(file_okay=False, exists=True, path_type=Path))
+def storage_restore(directory: Path) -> None:
+    """Upload every object in DIRECTORY that the bucket does not have (deploy/restore.sh)."""
+    from tcms.platform import storage
+
+    settings = get_settings()
+    uploaded, kept = storage.mirror_up(storage.make_client(settings), settings.s3_bucket, directory)
+    click.echo(f"storage-restore: {uploaded} uploaded, {kept} already in {settings.s3_bucket}")
+
+
 @main.command()
-@click.option("--profile", type=click.Choice(["dev", "e2e", "large"]), default="dev", show_default=True)
+@click.option(
+    "--profile", type=click.Choice(["dev", "e2e", "large", "xlarge"]), default="dev", show_default=True
+)
 def seed(profile: str) -> None:
     """Load demo data for local development (never in production)."""
     from tcms.seed import run

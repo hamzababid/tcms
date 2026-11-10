@@ -11,9 +11,9 @@ from tcms.api.deps import (
     SESSION_COOKIE,
     Auth,
     PublicAuth,
+    ReadUow,
+    Uow,
     app_state,
-    get_read_uow,
-    get_uow,
     policy_loader,
     request_meta,
     user_context,
@@ -86,7 +86,7 @@ def logout(
     response: Response,
     auth: identity.Authenticated = Auth,
     ctx: AccessContext = Depends(user_context),
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> None:
     if auth.session_id is not None:
         identity.logout(uow, ctx, auth.session_id)
@@ -94,7 +94,7 @@ def logout(
 
 
 @router.get("/auth/me", response_model=s.MeResponse)
-def me(auth: identity.Authenticated = Auth, uow: UnitOfWork = Depends(get_read_uow)) -> s.MeResponse:
+def me(auth: identity.Authenticated = Auth, uow: UnitOfWork = ReadUow) -> s.MeResponse:
     data = identity_queries.me(uow.session, auth)
     org = workspace_queries.organization(uow.session, auth.organization_id)
     assert org is not None
@@ -125,7 +125,7 @@ def me(auth: identity.Authenticated = Auth, uow: UnitOfWork = Depends(get_read_u
 
 @router.patch("/auth/me", response_model=s.UserRef)
 def update_me(
-    body: s.ProfilePatch, ctx: AccessContext = Depends(user_context), uow: UnitOfWork = Depends(get_uow)
+    body: s.ProfilePatch, ctx: AccessContext = Depends(user_context), uow: UnitOfWork = Uow
 ) -> s.UserRef:
     user = identity.update_profile(uow, ctx, display_name=body.display_name, time_zone=body.time_zone)
     return s.UserRef(id=user.id, display_name=user.display_name, email=user.email, is_active=user.is_active)
@@ -136,7 +136,7 @@ def change_password(
     body: s.PasswordChangeRequest,
     auth: identity.Authenticated = Auth,
     ctx: AccessContext = Depends(user_context),
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> None:
     identity.change_password(
         uow,
@@ -148,17 +148,13 @@ def change_password(
 
 
 @router.post("/auth/password/forgot", status_code=status.HTTP_202_ACCEPTED, dependencies=PublicAuth)
-def forgot_password(
-    body: s.ForgotPasswordRequest, request: Request, uow: UnitOfWork = Depends(get_uow)
-) -> None:
+def forgot_password(body: s.ForgotPasswordRequest, request: Request, uow: UnitOfWork = Uow) -> None:
     """Always 202 (no account enumeration)."""
     identity.forgot_password(uow, app_state(request).settings, email=body.email, meta=request_meta(request))
 
 
 @router.post("/auth/password/reset", status_code=status.HTTP_204_NO_CONTENT, dependencies=PublicAuth)
-def reset_password(
-    body: s.ResetPasswordRequest, request: Request, uow: UnitOfWork = Depends(get_uow)
-) -> None:
+def reset_password(body: s.ResetPasswordRequest, request: Request, uow: UnitOfWork = Uow) -> None:
     identity.reset_password(
         uow,
         token=body.token,
@@ -170,7 +166,7 @@ def reset_password(
 
 @router.post("/auth/mfa/setup", response_model=s.MfaSetupResponse)
 def mfa_setup(
-    request: Request, ctx: AccessContext = Depends(user_context), uow: UnitOfWork = Depends(get_uow)
+    request: Request, ctx: AccessContext = Depends(user_context), uow: UnitOfWork = Uow
 ) -> s.MfaSetupResponse:
     out = identity.mfa_setup(uow, app_state(request).settings, ctx)
     return s.MfaSetupResponse(secret=out.secret, otpauth_uri=out.otpauth_uri, setup_token=out.setup_token)
@@ -182,7 +178,7 @@ def mfa_enable(
     request: Request,
     auth: identity.Authenticated = Auth,
     ctx: AccessContext = Depends(user_context),
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> s.RecoveryCodesResponse:
     codes = identity.mfa_enable(
         uow,
@@ -201,7 +197,7 @@ def mfa_disable(
     request: Request,
     auth: identity.Authenticated = Auth,
     ctx: AccessContext = Depends(user_context),
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> None:
     identity.mfa_disable(
         uow, app_state(request).settings, ctx, password=body.password, code=body.code, policy=auth.policy
@@ -213,14 +209,14 @@ def regenerate_recovery_codes(
     body: s.PasswordConfirmRequest,
     request: Request,
     ctx: AccessContext = Depends(user_context),
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> s.RecoveryCodesResponse:
     codes = identity.regenerate_recovery_codes(uow, app_state(request).settings, ctx, password=body.password)
     return s.RecoveryCodesResponse(recovery_codes=codes)
 
 
 @router.get("/auth/invitations/{token}", response_model=s.InvitationInfo, dependencies=PublicAuth)
-def invitation_info(token: str, uow: UnitOfWork = Depends(get_read_uow)) -> s.InvitationInfo:
+def invitation_info(token: str, uow: UnitOfWork = ReadUow) -> s.InvitationInfo:
     inv = identity.invitation_for_token(uow, token)
     org = workspace_queries.organization(uow.session, inv.organization_id)
     if org is None:
@@ -250,7 +246,7 @@ def accept_invitation(
     body: s.AcceptInvitationRequest,
     request: Request,
     response: Response,
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> s.LoginResponse:
     issued = identity.accept_invitation(
         uow,
@@ -271,9 +267,7 @@ def accept_invitation(
 
 
 @router.get("/me/sessions", response_model=list[s.SessionRead])
-def my_sessions(
-    auth: identity.Authenticated = Auth, uow: UnitOfWork = Depends(get_read_uow)
-) -> list[s.SessionRead]:
+def my_sessions(auth: identity.Authenticated = Auth, uow: UnitOfWork = ReadUow) -> list[s.SessionRead]:
     return [
         s.SessionRead(
             id=row.id,
@@ -290,7 +284,7 @@ def my_sessions(
 
 @router.delete("/me/sessions/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
 def revoke_my_session(
-    session_id: UUID, ctx: AccessContext = Depends(user_context), uow: UnitOfWork = Depends(get_uow)
+    session_id: UUID, ctx: AccessContext = Depends(user_context), uow: UnitOfWork = Uow
 ) -> None:
     identity.revoke_own_session(uow, ctx, session_id)
 
@@ -313,9 +307,7 @@ def _token_read(t: object) -> dict[str, object]:
 
 
 @router.get("/me/api-tokens", response_model=list[s.ApiTokenRead])
-def my_tokens(
-    auth: identity.Authenticated = Auth, uow: UnitOfWork = Depends(get_read_uow)
-) -> list[s.ApiTokenRead]:
+def my_tokens(auth: identity.Authenticated = Auth, uow: UnitOfWork = ReadUow) -> list[s.ApiTokenRead]:
     return [
         s.ApiTokenRead.model_validate(_token_read(t))
         for t in identity_queries.api_tokens_of(uow.session, auth.user_id)
@@ -327,7 +319,7 @@ def create_token(
     body: s.ApiTokenCreate,
     auth: identity.Authenticated = Auth,
     ctx: AccessContext = Depends(user_context),
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> s.ApiTokenCreated:
     if (
         body.project_id is not None
@@ -346,7 +338,5 @@ def create_token(
 
 
 @router.delete("/me/api-tokens/{token_id}", status_code=status.HTTP_204_NO_CONTENT)
-def revoke_token(
-    token_id: UUID, ctx: AccessContext = Depends(user_context), uow: UnitOfWork = Depends(get_uow)
-) -> None:
+def revoke_token(token_id: UUID, ctx: AccessContext = Depends(user_context), uow: UnitOfWork = Uow) -> None:
     identity.revoke_api_token(uow, ctx, token_id)

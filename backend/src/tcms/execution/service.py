@@ -1073,7 +1073,17 @@ def start_attempt(
     s = uow.session
     me = _uid(ctx)
     run_ = _run(uow, ctx, run_id, for_update=True)
-    cycle = _cycle(uow, ctx, run_.cycle_id, for_update=True)
+    # A shared lock keeps the cycle open (BR-11: close takes FOR UPDATE) without making every tester of
+    # the cycle wait for the others; only the first execution, which activates the cycle (BR-30), takes
+    # the exclusive lock. Peek first so no transaction has to upgrade a shared lock (deadlock).
+    peek = _cycle(uow, ctx, run_.cycle_id)
+    if peek.status == CycleStatus.planned:
+        cycle = _cycle(uow, ctx, run_.cycle_id, for_update=True)
+    else:
+        found = repo.cycle(s, ctx, run_.cycle_id, for_share=True)
+        if found is None:
+            raise NotFound()
+        cycle = found
     _open(cycle)
     if run_.superseded_by_run_id is not None:
         raise RunSuperseded()

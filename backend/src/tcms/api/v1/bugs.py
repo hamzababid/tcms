@@ -6,7 +6,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Response, status
 
-from tcms.api.deps import get_read_uow, get_uow, project_context, project_context_from, settings_dep
+from tcms.api.deps import (
+    ReadUow,
+    Uow,
+    project_context,
+    project_context_from,
+    settings_dep,
+)
 from tcms.bugs import queries as bq
 from tcms.bugs import schemas as s
 from tcms.bugs import service
@@ -64,7 +70,7 @@ def _one(uow: UnitOfWork, ctx: AccessContext, link_id: UUID) -> s.BugLinkRead:
     "/results/{result_id}/bug-links", response_model=s.BugLinkRead, status_code=status.HTTP_201_CREATED
 )
 def link_to_result(
-    result_id: UUID, body: s.BugLinkCreate, ctx: AccessContext = ResultCtx, uow: UnitOfWork = Depends(get_uow)
+    result_id: UUID, body: s.BugLinkCreate, ctx: AccessContext = ResultCtx, uow: UnitOfWork = Uow
 ) -> s.BugLinkRead:
     """BR-20 / AC-BUG-01, 02, 06: link a bug to an attempt (and step); draft or final."""
     row = service.link_to_result(
@@ -77,7 +83,7 @@ def link_to_result(
     "/test-cases/{case_id}/bug-links", response_model=s.BugLinkRead, status_code=status.HTTP_201_CREATED
 )
 def link_to_case(
-    case_id: UUID, body: s.CaseBugLinkCreate, ctx: AccessContext = CaseCtx, uow: UnitOfWork = Depends(get_uow)
+    case_id: UUID, body: s.CaseBugLinkCreate, ctx: AccessContext = CaseCtx, uow: UnitOfWork = Uow
 ) -> s.BugLinkRead:
     """docs/02 §8.2 (TCMS-102): a bug found outside execution, linked to the case."""
     row = service.link_to_case(uow, ctx, case_id, reference=body.reference, url=body.url, title=body.title)
@@ -85,18 +91,14 @@ def link_to_case(
 
 
 @router.get("/test-cases/{case_id}/bug-links", response_model=list[s.BugLinkRead])
-def case_links(
-    case_id: UUID, ctx: AccessContext = CaseCtx, uow: UnitOfWork = Depends(get_read_uow)
-) -> list[s.BugLinkRead]:
+def case_links(case_id: UUID, ctx: AccessContext = CaseCtx, uow: UnitOfWork = ReadUow) -> list[s.BugLinkRead]:
     """Case Bugs tab: direct links and links through its runs."""
     ctx.require("project.view")
     return _reads(uow, ctx, bq.links_of_case(uow.session, ctx, case_id))
 
 
 @router.get("/runs/{run_id}/bug-links", response_model=list[s.BugLinkRead])
-def run_links(
-    run_id: UUID, ctx: AccessContext = RunCtx, uow: UnitOfWork = Depends(get_read_uow)
-) -> list[s.BugLinkRead]:
+def run_links(run_id: UUID, ctx: AccessContext = RunCtx, uow: UnitOfWork = ReadUow) -> list[s.BugLinkRead]:
     ctx.require("project.view")
     return _reads(uow, ctx, bq.links_of_run(uow.session, ctx, run_id))
 
@@ -106,7 +108,7 @@ def cycle_links(
     cycle_id: UUID,
     recent: bool = Query(default=False, description="Only the most recent distinct references (suggestions)"),
     ctx: AccessContext = CycleCtx,
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> list[s.BugLinkRead]:
     """Cycle detail Bugs column (docs/07 §5.8) or link-popover suggestions (`recent=true`)."""
     ctx.require("project.view")
@@ -116,7 +118,7 @@ def cycle_links(
 
 @router.patch("/bug-links/{link_id}", response_model=s.BugLinkRead)
 def patch_link(
-    link_id: UUID, body: s.BugLinkPatch, ctx: AccessContext = LinkCtx, uow: UnitOfWork = Depends(get_uow)
+    link_id: UUID, body: s.BugLinkPatch, ctx: AccessContext = LinkCtx, uow: UnitOfWork = Uow
 ) -> s.BugLinkRead:
     """Correct URL or title: the person who linked it, or `defect.edit` (TCMS-107)."""
     fields = {k: getattr(body, k) for k in body.model_fields_set}
@@ -125,7 +127,7 @@ def patch_link(
 
 
 @router.delete("/bug-links/{link_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_link(link_id: UUID, ctx: AccessContext = LinkCtx, uow: UnitOfWork = Depends(get_uow)) -> Response:
+def delete_link(link_id: UUID, ctx: AccessContext = LinkCtx, uow: UnitOfWork = Uow) -> Response:
     service.remove_link(uow, ctx, link_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -138,7 +140,7 @@ def list_bugs(
     cycle_id: UUID | None = None,
     failing: bool = Query(default=False, description="Only bugs linked to runs that are failed now"),
     ctx: AccessContext = Depends(project_context),
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> Page[s.BugSummaryRead]:
     """docs/02 §8.4 (TCMS-105): one row per reference."""
     ctx.require("project.view")
@@ -152,7 +154,7 @@ def list_bugs(
 def reference_links(
     reference: str = Query(min_length=1, max_length=100),
     ctx: AccessContext = Depends(project_context),
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> list[s.BugLinkRead]:
     """Every link of one reference (Bugs list detail). The reference is a query parameter because tracker
     keys may contain `#` or `/`."""
@@ -162,7 +164,7 @@ def reference_links(
 
 @router.post("/projects/{project_id}/bugs/retest", response_model=s.RetestResponse)
 def request_retest(
-    body: s.RetestRequest, ctx: AccessContext = Depends(project_context), uow: UnitOfWork = Depends(get_uow)
+    body: s.RetestRequest, ctx: AccessContext = Depends(project_context), uow: UnitOfWork = Uow
 ) -> s.RetestResponse:
     """BR-21 / AC-BUG-03 (TCMS-103): flag the eligible linked runs; `dry_run` previews the count."""
     out = service.request_retest(uow, ctx, body.reference, dry_run=body.dry_run)
@@ -179,7 +181,7 @@ def bug_report(
     result_id: UUID,
     step_id: UUID | None = None,
     ctx: AccessContext = ResultCtx,
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
     settings: Settings = Depends(settings_dep),
 ) -> s.BugReportRead:
     """ "Copy bug details" (docs/02 §8.2): Markdown for the team's tracker, with a link back to the run."""

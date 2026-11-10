@@ -1,6 +1,6 @@
 import * as Menu from "@radix-ui/react-dropdown-menu";
 import { ChevronDown, ChevronRight, Folder as FolderIcon, MoreHorizontal, Search } from "lucide-react";
-import { useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
 
 import { cn } from "@/lib/utils";
 import { MenuContent, MenuItem, MenuShortcut } from "@/components/ui/menu";
@@ -81,6 +81,7 @@ export function FolderTree({
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [dragging, setDragging] = useState<string | null>(null);
+  const [menuFor, setMenuFor] = useState<{ id: string; fromKeyboard: boolean } | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const tree = useMemo(() => buildTree(folders), [folders]);
   const byId = useMemo(() => new Map(folders.map((f) => [f.id, f])), [folders]);
@@ -137,8 +138,13 @@ export function FolderTree({
   const onKey = (e: KeyboardEvent, index: number, row: Row) => {
     const id = row.node.folder.id;
     const hasChildren = row.node.children.length > 0;
+    // Keys inside the open folder menu (a portal, but React events still bubble here) belong to it.
+    if ((e.target as HTMLElement).closest("[role=menu]")) return;
     if (canManage && e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
       reorder(row.node.folder, e.key === "ArrowUp" ? -1 : 1);
+    } else if (canManage && (e.key === "ContextMenu" || (e.shiftKey && e.key === "F10"))) {
+      // The row's "…" button is not a tab stop (one stop per tree, TCMS-143); this opens its menu.
+      setMenuFor({ id, fromKeyboard: true });
     } else if (e.key === "ArrowDown") focusRow(index + 1);
     else if (e.key === "ArrowUp") focusRow(index - 1);
     else if (e.key === "ArrowRight" && hasChildren) toggle(id, true);
@@ -247,6 +253,7 @@ export function FolderTree({
               aria-selected={selected}
               aria-expanded={row.node.children.length ? open : undefined}
               aria-level={row.depth + 1}
+              aria-keyshortcuts={canManage ? "Shift+F10" : undefined}
               tabIndex={selected ? 0 : -1}
               draggable={canManage}
               onDragStart={(e) => {
@@ -312,6 +319,11 @@ export function FolderTree({
               {canManage ? (
                 <FolderMenu
                   folder={f}
+                  open={menuFor?.id === f.id}
+                  fromKeyboard={menuFor?.id === f.id && menuFor.fromKeyboard}
+                  onOpenChange={(o) => {
+                    setMenuFor(o ? { id: f.id, fromKeyboard: false } : null);
+                  }}
                   actions={actions}
                   canUp={siblingsOf(f)[0]?.id !== f.id}
                   canDown={siblingsOf(f).at(-1)?.id !== f.id}
@@ -330,21 +342,41 @@ export function FolderTree({
 
 function FolderMenu({
   folder,
+  open,
+  fromKeyboard,
+  onOpenChange,
   actions,
   canUp,
   canDown,
   onReorder,
 }: {
   folder: Folder;
+  open: boolean;
+  fromKeyboard: boolean;
+  onOpenChange: (open: boolean) => void;
   actions: FolderActions;
   canUp: boolean;
   canDown: boolean;
   onReorder: (delta: number) => void;
 }) {
+  const trigger = useRef<HTMLButtonElement>(null);
+  const content = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    // Opened from the row with Shift+F10: start on the first item, as a keyboard-opened menu does.
+    if (!open || !fromKeyboard) return;
+    const t = window.requestAnimationFrame(() => {
+      content.current?.querySelector<HTMLElement>("[role=menuitem]:not([data-disabled])")?.focus();
+    });
+    return () => {
+      window.cancelAnimationFrame(t);
+    };
+  }, [open, fromKeyboard]);
   return (
-    <Menu.Root>
+    <Menu.Root open={open} onOpenChange={onOpenChange}>
       <Menu.Trigger
+        ref={trigger}
         aria-label={`Folder actions for ${folder.name}`}
+        tabIndex={-1}
         onClick={(e) => {
           e.stopPropagation();
         }}
@@ -354,7 +386,15 @@ function FolderMenu({
       </Menu.Trigger>
       <MenuContent
         align="end"
-
+        ref={content}
+        onCloseAutoFocus={(e) => {
+          // Back to the folder row (the tree's tab stop), not the hidden "…" button.
+          const row = trigger.current?.closest<HTMLElement>("[role=treeitem]");
+          if (row) {
+            e.preventDefault();
+            row.focus();
+          }
+        }}
         onClick={(e) => {
           e.stopPropagation();
         }}

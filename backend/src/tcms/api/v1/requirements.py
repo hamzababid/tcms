@@ -6,7 +6,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Response, status
 
-from tcms.api.deps import get_read_uow, get_uow, project_context, project_context_from
+from tcms.api.deps import (
+    ReadUow,
+    Uow,
+    project_context,
+    project_context_from,
+)
 from tcms.bugs import queries as bug_queries
 from tcms.core.context import AccessContext
 from tcms.core.errors import FieldError, NotFound, ValidationFailed
@@ -126,7 +131,7 @@ def list_requirements(
     release_id: UUID | None = Query(default=None, description="Only references in scope; status in it"),
     include_archived: bool = False,
     ctx: AccessContext = Depends(project_context),
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> Page[s.RequirementRefRead]:
     """R-120: natural order (SPK-2 before SPK-10); each item carries its status (release or all cycles)."""
     ctx.require("project.view")
@@ -156,7 +161,7 @@ def list_requirements(
 def add_requirements(
     body: s.RequirementRefsCreate,
     ctx: AccessContext = Depends(project_context),
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> s.RefsCreated:
     """R-120 / AC-REQ-06: add one or many references; existing ones are returned, not duplicated."""
     out = service.add_refs(uow, ctx, text=body.references, url=body.url, title=body.title)
@@ -170,7 +175,7 @@ def get_requirement(
     ref_id: UUID,
     release_id: UUID | None = None,
     ctx: AccessContext = RefCtx,
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> s.RequirementDetail:
     """The reference with its cases (latest result in the release) and the plans that list it."""
     ctx.require("project.view")
@@ -189,7 +194,7 @@ def get_requirement(
 
 @router.patch("/requirements/{ref_id}", response_model=s.RequirementRefRead)
 def patch_requirement(
-    ref_id: UUID, body: s.RequirementRefPatch, ctx: AccessContext = RefCtx, uow: UnitOfWork = Depends(get_uow)
+    ref_id: UUID, body: s.RequirementRefPatch, ctx: AccessContext = RefCtx, uow: UnitOfWork = Uow
 ) -> s.RequirementRefRead:
     service.update_ref(uow, ctx, ref_id, fields={k: getattr(body, k) for k in body.model_fields_set})
     uow.session.flush()
@@ -198,7 +203,7 @@ def patch_requirement(
 
 @router.post("/requirements/{ref_id}/archive", response_model=s.RequirementRefRead)
 def archive_requirement(
-    ref_id: UUID, ctx: AccessContext = RefCtx, uow: UnitOfWork = Depends(get_uow)
+    ref_id: UUID, ctx: AccessContext = RefCtx, uow: UnitOfWork = Uow
 ) -> s.RequirementRefRead:
     service.set_archived(uow, ctx, ref_id, archived=True)
     uow.session.flush()
@@ -207,7 +212,7 @@ def archive_requirement(
 
 @router.post("/requirements/{ref_id}/restore", response_model=s.RequirementRefRead)
 def restore_requirement(
-    ref_id: UUID, ctx: AccessContext = RefCtx, uow: UnitOfWork = Depends(get_uow)
+    ref_id: UUID, ctx: AccessContext = RefCtx, uow: UnitOfWork = Uow
 ) -> s.RequirementRefRead:
     service.set_archived(uow, ctx, ref_id, archived=False)
     uow.session.flush()
@@ -219,7 +224,7 @@ def restore_requirement(
 
 @router.post("/requirements/{ref_id}/test-cases", response_model=s.LinkCount)
 def link_cases(
-    ref_id: UUID, body: s.CaseIdsRequest, ctx: AccessContext = RefCtx, uow: UnitOfWork = Depends(get_uow)
+    ref_id: UUID, body: s.CaseIdsRequest, ctx: AccessContext = RefCtx, uow: UnitOfWork = Uow
 ) -> s.LinkCount:
     """R-121 / TCMS-110: link cases to the reference (idempotent); folders and tags expand to their cases."""
     case_ids = list(body.test_case_ids)
@@ -236,9 +241,7 @@ def link_cases(
 
 
 @router.delete("/requirements/{ref_id}/test-cases/{case_id}", status_code=status.HTTP_204_NO_CONTENT)
-def unlink_case(
-    ref_id: UUID, case_id: UUID, ctx: AccessContext = RefCtx, uow: UnitOfWork = Depends(get_uow)
-) -> Response:
+def unlink_case(ref_id: UUID, case_id: UUID, ctx: AccessContext = RefCtx, uow: UnitOfWork = Uow) -> Response:
     service.unlink(uow, ctx, ref_id, case_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -248,7 +251,7 @@ def case_requirements(
     case_id: UUID,
     release_id: UUID | None = None,
     ctx: AccessContext = CaseCtx,
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> list[s.RequirementRefRead]:
     """Case page Requirements tab."""
     ctx.require("project.view")
@@ -259,7 +262,7 @@ def case_requirements(
 
 @router.post("/test-cases/{case_id}/requirements", response_model=s.LinkCount)
 def link_case_to_requirements(
-    case_id: UUID, body: s.ReferencesRequest, ctx: AccessContext = CaseCtx, uow: UnitOfWork = Depends(get_uow)
+    case_id: UUID, body: s.ReferencesRequest, ctx: AccessContext = CaseCtx, uow: UnitOfWork = Uow
 ) -> s.LinkCount:
     """From the case: references by text; unknown ones are registered (D12)."""
     ensured, count = service.link_references(uow, ctx, text=body.references, case_ids=[case_id])
@@ -270,7 +273,7 @@ def link_case_to_requirements(
 def bulk_link(
     body: s.LinkCasesRequest,
     ctx: AccessContext = Depends(project_context),
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> s.LinkCount:
     """Repository bulk action "Link selected to requirement…" (TCMS-110)."""
     ensured, count = service.link_references(uow, ctx, text=body.references, case_ids=body.test_case_ids)
@@ -284,7 +287,7 @@ def bulk_link(
 def get_coverage(
     release_id: UUID | None = None,
     ctx: AccessContext = Depends(project_context),
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> s.CoverageRead:
     """FR-REQ-005 / BR-23: coverage metrics for the release (or across all cycles)."""
     ctx.require("project.view")
@@ -299,7 +302,7 @@ def traceability(
     uncovered: bool = False,
     q: str | None = Query(default=None, max_length=100),
     ctx: AccessContext = Depends(project_context),
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> s.TraceabilityRead:
     """FR-REQ-004 / TCMS-112 (docs/02 §10.4): the summary covers every reference in scope; the rows follow
     the filters."""

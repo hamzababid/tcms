@@ -4,7 +4,12 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query
 
-from tcms.api.deps import Auth, get_read_uow, get_uow, user_context
+from tcms.api.deps import (
+    Auth,
+    ReadUow,
+    Uow,
+    user_context,
+)
 from tcms.core.context import AccessContext
 from tcms.core.errors import FieldError, ValidationFailed
 from tcms.core.uow import UnitOfWork
@@ -24,7 +29,7 @@ def list_notifications(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     auth: Authenticated = Auth,
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> s.NotificationPage:
     """The bell (US-170): newest first, each with a rendered title and link."""
     rows, total = notifications.list_for(
@@ -55,15 +60,13 @@ def list_notifications(
 
 
 @router.get("/me/notifications/unread-count", response_model=s.UnreadCount)
-def unread_count(auth: Authenticated = Auth, uow: UnitOfWork = Depends(get_read_uow)) -> s.UnreadCount:
+def unread_count(auth: Authenticated = Auth, uow: UnitOfWork = ReadUow) -> s.UnreadCount:
     """Polled by the bell every 60 s and on window focus."""
     return s.UnreadCount(count=notifications.unread_count(uow, auth.organization_id, auth.user_id))
 
 
 @router.post("/me/notifications/read", response_model=s.MarkedRead)
-def mark_read(
-    body: s.MarkRead, auth: Authenticated = Auth, uow: UnitOfWork = Depends(get_uow)
-) -> s.MarkedRead:
+def mark_read(body: s.MarkRead, auth: Authenticated = Auth, uow: UnitOfWork = Uow) -> s.MarkedRead:
     """`{ids: [...]}` or `{all: true}`; only the caller's own notifications."""
     if body.all == (body.ids is not None):
         raise ValidationFailed(errors=[FieldError("ids", "field_required", "Give ids or all: true")])
@@ -76,9 +79,7 @@ def mark_read(
 
 
 @router.get("/me/notification-preferences", response_model=s.EmailPreferences)
-def get_preferences(
-    auth: Authenticated = Auth, uow: UnitOfWork = Depends(get_read_uow)
-) -> s.EmailPreferences:
+def get_preferences(auth: Authenticated = Auth, uow: UnitOfWork = ReadUow) -> s.EmailPreferences:
     me = identity_queries.recipients(uow.session, {auth.user_id})[auth.user_id]
     return s.EmailPreferences(mentions=me.email_mentions, digest=me.email_digest)
 
@@ -87,7 +88,7 @@ def get_preferences(
 def patch_preferences(
     body: s.EmailPreferencesPatch,
     ctx: AccessContext = Depends(user_context),
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> s.EmailPreferences:
     """US-171: opt out of mention emails and the daily digest (in-app notifications stay)."""
     out = identity.set_email_preferences(uow, ctx, mentions=body.mentions, digest=body.digest)

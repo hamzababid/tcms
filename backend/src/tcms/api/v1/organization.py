@@ -7,7 +7,14 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, Request, Response, status
 
-from tcms.api.deps import Auth, app_state, get_read_uow, get_uow, org_context, resolve_row_version
+from tcms.api.deps import (
+    Auth,
+    ReadUow,
+    Uow,
+    app_state,
+    org_context,
+    resolve_row_version,
+)
 from tcms.core import clock
 from tcms.core.context import AccessContext
 from tcms.core.errors import NotFound
@@ -32,7 +39,7 @@ def _org_read(org: Any, ctx: AccessContext) -> ws.OrganizationRead:
 
 @router.get("", response_model=ws.OrganizationRead)
 def get_organization(
-    response: Response, ctx: AccessContext = Depends(org_context), uow: UnitOfWork = Depends(get_read_uow)
+    response: Response, ctx: AccessContext = Depends(org_context), uow: UnitOfWork = ReadUow
 ) -> ws.OrganizationRead:
     org = workspace_queries.organization(uow.session, ctx.principal.organization_id)
     if org is None:
@@ -47,7 +54,7 @@ def patch_organization(
     response: Response,
     if_match: str | None = Header(default=None, alias="If-Match"),
     ctx: AccessContext = Depends(org_context),
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> ws.OrganizationRead:
     """US-021."""
     settings = body.settings.model_dump(exclude_none=True) if body.settings else None
@@ -64,7 +71,7 @@ def patch_organization(
 
 @router.get("/members", response_model=list[ids.OrgMemberRead])
 def list_members(
-    ctx: AccessContext = Depends(org_context), uow: UnitOfWork = Depends(get_read_uow)
+    ctx: AccessContext = Depends(org_context), uow: UnitOfWork = ReadUow
 ) -> list[ids.OrgMemberRead]:
     """US-164: with each member's project roles (M8b)."""
     ctx.require("org.users.manage")
@@ -103,16 +110,12 @@ def list_members(
 
 
 @router.post("/members/{user_id}/deactivate", status_code=status.HTTP_204_NO_CONTENT)
-def deactivate(
-    user_id: UUID, ctx: AccessContext = Depends(org_context), uow: UnitOfWork = Depends(get_uow)
-) -> None:
+def deactivate(user_id: UUID, ctx: AccessContext = Depends(org_context), uow: UnitOfWork = Uow) -> None:
     identity.deactivate_user(uow, ctx, user_id)
 
 
 @router.post("/members/{user_id}/reactivate", status_code=status.HTTP_204_NO_CONTENT)
-def reactivate(
-    user_id: UUID, ctx: AccessContext = Depends(org_context), uow: UnitOfWork = Depends(get_uow)
-) -> None:
+def reactivate(user_id: UUID, ctx: AccessContext = Depends(org_context), uow: UnitOfWork = Uow) -> None:
     identity.reactivate_user(uow, ctx, user_id)
 
 
@@ -121,14 +124,14 @@ def reset_mfa(
     user_id: UUID,
     body: ids.ResetMfaRequest,
     ctx: AccessContext = Depends(org_context),
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> None:
     identity.reset_user_mfa(uow, ctx, user_id, reason=body.reason)
 
 
 @router.post("/members/{user_id}/revoke-sessions", response_model=ids.RevokedCount)
 def revoke_sessions(
-    user_id: UUID, ctx: AccessContext = Depends(org_context), uow: UnitOfWork = Depends(get_uow)
+    user_id: UUID, ctx: AccessContext = Depends(org_context), uow: UnitOfWork = Uow
 ) -> ids.RevokedCount:
     return ids.RevokedCount(revoked=identity.revoke_user_sessions(uow, ctx, user_id))
 
@@ -138,7 +141,7 @@ def patch_member(
     user_id: UUID,
     body: ids.OrgMemberPatch,
     ctx: AccessContext = Depends(org_context),
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> None:
     identity.set_org_admin(uow, ctx, user_id, is_org_admin=body.is_org_admin)
 
@@ -167,7 +170,7 @@ def _invitation_read(inv: identity_queries.InvitationRow, uow: UnitOfWork) -> id
 
 @router.get("/invitations", response_model=list[ids.InvitationRead])
 def list_invitations(
-    ctx: AccessContext = Depends(org_context), uow: UnitOfWork = Depends(get_read_uow)
+    ctx: AccessContext = Depends(org_context), uow: UnitOfWork = ReadUow
 ) -> list[ids.InvitationRead]:
     ctx.require("org.users.manage")
     return [
@@ -181,7 +184,7 @@ def create_invitation(
     body: ids.InvitationCreate,
     request: Request,
     ctx: AccessContext = Depends(org_context),
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> ids.InvitationCreated:
     """US-015. `accept_url` is returned once (review G12)."""
     project = None
@@ -205,13 +208,13 @@ def create_invitation(
 
 @router.delete("/invitations/{invitation_id}", status_code=status.HTTP_204_NO_CONTENT)
 def revoke_invitation(
-    invitation_id: UUID, ctx: AccessContext = Depends(org_context), uow: UnitOfWork = Depends(get_uow)
+    invitation_id: UUID, ctx: AccessContext = Depends(org_context), uow: UnitOfWork = Uow
 ) -> None:
     identity.revoke_invitation(uow, ctx, invitation_id)
 
 
 @router.get("/roles", response_model=list[ids.RoleRead])
-def roles(_: object = Auth, uow: UnitOfWork = Depends(get_read_uow)) -> list[ids.RoleRead]:
+def roles(_: object = Auth, uow: UnitOfWork = ReadUow) -> list[ids.RoleRead]:
     """Read-only in the MVP (docs/02 §3.2)."""
     return [
         ids.RoleRead(code=r.code, name=r.name, permissions=sorted(r.permissions))
