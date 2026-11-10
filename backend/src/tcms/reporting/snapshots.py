@@ -13,7 +13,7 @@ attempt is "not run".
 from __future__ import annotations
 
 from datetime import UTC, date, datetime, time, timedelta
-from typing import Any
+from typing import Any, Final
 from uuid import UUID
 
 from sqlalchemy import text
@@ -24,7 +24,7 @@ from tcms.core.context import AccessContext, Principal, RequestMeta
 from tcms.core.uow import UnitOfWork
 from tcms.platform.jobs.queue import JobInfo, job_handler
 from tcms.platform.jobs.worker import schedule
-from tcms.reporting import coverage
+from tcms.reporting import cache, coverage
 
 COUNTERS = (
     "total", "na", "passed", "failed", "blocked", "skipped", "not_run", "in_progress",
@@ -206,8 +206,18 @@ def trend(
     today = clock.now().astimezone(UTC).date()
     days = stored(s, ctx, release_id=release_id, lo=lo, hi=min(hi, today - timedelta(days=1)))
     if lo <= today <= hi:
-        days[today] = counters(s, ctx, today, release_id=release_id)
+        days[today] = _live_today(s, ctx, today, release_id)
     return sorted(days.items())
+
+
+LIVE_TTL_SECONDS: Final = 300.0
+
+
+def _live_today(s: Session, ctx: AccessContext, today: date, release_id: UUID | None) -> dict[str, int]:
+    """Today's counters scan every run of the scope (2.5 s at 10× year one, M8c P3): each process keeps
+    them for five minutes (reporting/cache.py), so the trend's last point may be up to five minutes old."""
+    key = ("live", ctx.principal.organization_id, ctx.pid, release_id, today)
+    return dict(cache.cached(key, LIVE_TTL_SECONDS, lambda: counters(s, ctx, today, release_id=release_id)))
 
 
 def _project_ctx(org_id: UUID, project_id: UUID) -> AccessContext:

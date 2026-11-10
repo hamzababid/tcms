@@ -38,6 +38,7 @@ def make_settings(base: Settings, **overrides: Any) -> Settings:
         "tcms_encryption_keys": "k1:" + base64.b64encode(b"\x01" * 32).decode(),
         "tcms_base_url": "https://testserver",
         "rate_limit_auth_per_min": 100_000,
+        "rate_limit_per_min": 0,  # tested on its own app (tests/api/test_security.py)
         "session_cookie_secure": True,
         **overrides,
     }

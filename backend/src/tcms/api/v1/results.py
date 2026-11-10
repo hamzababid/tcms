@@ -9,7 +9,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 
-from tcms.api.deps import Auth, get_read_uow, get_uow, project_context_from
+from tcms.api.deps import (
+    Auth,
+    ReadUow,
+    Uow,
+    project_context_from,
+)
 from tcms.api.v1.cycles import result_read, run_read, summary_read
 from tcms.core import clock
 from tcms.core.context import AccessContext
@@ -45,7 +50,7 @@ def start_attempt(
     run_id: UUID,
     body: s.StartAttemptRequest | None = None,
     ctx: AccessContext = RunCtx,
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> Any:
     """US-090/095/096 (TCMS-070, 077, 078, 084, 085): start, retest or correct (`corrects_result_id`).
     201 with a new draft, 200 with the caller's existing draft, 409 `draft_exists` for someone else's."""
@@ -58,16 +63,14 @@ def start_attempt(
 
 
 @router.get("/results/{result_id}", response_model=s.ResultRead)
-def get_result(
-    result_id: UUID, ctx: AccessContext = ResultCtx, uow: UnitOfWork = Depends(get_read_uow)
-) -> s.ResultRead:
+def get_result(result_id: UUID, ctx: AccessContext = ResultCtx, uow: UnitOfWork = ReadUow) -> s.ResultRead:
     ctx.require("project.view")
     return result_read(uow, ctx, eq.result_detail(uow.session, ctx, result_id))
 
 
 @router.patch("/results/{result_id}", response_model=s.ResultRead)
 def patch_result(
-    result_id: UUID, body: s.AttemptPatch, ctx: AccessContext = ResultCtx, uow: UnitOfWork = Depends(get_uow)
+    result_id: UUID, body: s.AttemptPatch, ctx: AccessContext = ResultCtx, uow: UnitOfWork = Uow
 ) -> s.ResultRead:
     """Draft comment, build and duration (executor or cycle.manage)."""
     fields = {k: getattr(body, k) for k in body.model_fields_set}
@@ -81,7 +84,7 @@ def patch_step(
     step_id: UUID,
     body: s.StepPatch,
     ctx: AccessContext = ResultCtx,
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> s.StepResultRead:
     """US-090 / FR-EXE-006: one step's status, actual result or comment; saved as typed (AC-EXE-09)."""
     fields = {k: getattr(body, k) for k in body.model_fields_set}
@@ -104,7 +107,7 @@ def pass_remaining(
     result_id: UUID,
     body: s.BulkStepsRequest,
     ctx: AccessContext = ResultCtx,
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> s.CountResponse:
     """ "Pass all remaining" (docs/02 §7.4): `{status: passed, only_not_run: true}`."""
     del body  # the only accepted shape
@@ -116,7 +119,7 @@ def finalize(
     result_id: UUID,
     body: s.FinalizeRequest,
     ctx: AccessContext = ResultCtx,
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> s.FinalizeResponse:
     """US-091/092/096/098 (TCMS-071…075, 079, 080, 089, 090): roll-up (BR-09), reasons (BR-10)."""
     done = service.finalize_attempt(
@@ -132,7 +135,7 @@ def finalize(
 
 
 @router.delete("/results/{result_id}", status_code=status.HTTP_204_NO_CONTENT)
-def discard(result_id: UUID, ctx: AccessContext = ResultCtx, uow: UnitOfWork = Depends(get_uow)) -> None:
+def discard(result_id: UUID, ctx: AccessContext = ResultCtx, uow: UnitOfWork = Uow) -> None:
     """Discard a draft (executor or cycle.manage); a final attempt answers 409 immutable_record."""
     service.discard_attempt(uow, ctx, result_id)
 
@@ -141,7 +144,7 @@ def discard(result_id: UUID, ctx: AccessContext = ResultCtx, uow: UnitOfWork = D
 
 
 @router.get("/me/work", response_model=s.MyWorkRead)
-def my_work(auth: Authenticated = Auth, uow: UnitOfWork = Depends(get_read_uow)) -> s.MyWorkRead:
+def my_work(auth: Authenticated = Auth, uow: UnitOfWork = ReadUow) -> s.MyWorkRead:
     """US-099 / FR-EXE-014 (docs/07 §5.14): my runs in planned and active cycles of my active projects,
     cases awaiting my review, what I finished today and in the last 7 days, my failed / blocked runs and
     runs to retest, and the bugs I linked (M7 R-142)."""

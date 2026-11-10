@@ -9,7 +9,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Response, status
 from pydantic import BaseModel, ConfigDict, Field
 
-from tcms.api.deps import get_read_uow, get_uow, project_context, project_context_from
+from tcms.api.deps import (
+    ReadUow,
+    Uow,
+    project_context,
+    project_context_from,
+)
 from tcms.core.context import AccessContext
 from tcms.core.enums import ViewVisibility
 from tcms.core.uow import UnitOfWork
@@ -77,7 +82,7 @@ def _read(v: Any, ctx: AccessContext) -> SavedViewRead:
 def list_saved_views(
     entity_type: str | None = Query(default=None, max_length=40),
     ctx: AccessContext = Depends(project_context),
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> list[SavedViewRead]:
     """Mine and shared; the first `is_default` entry is the view to open the list with."""
     ctx.require("project.view")
@@ -88,7 +93,7 @@ def list_saved_views(
     "/projects/{project_id}/saved-views", response_model=SavedViewRead, status_code=status.HTTP_201_CREATED
 )
 def create_saved_view(
-    body: SavedViewCreate, ctx: AccessContext = Depends(project_context), uow: UnitOfWork = Depends(get_uow)
+    body: SavedViewCreate, ctx: AccessContext = Depends(project_context), uow: UnitOfWork = Uow
 ) -> SavedViewRead:
     v = views.create(
         uow,
@@ -104,7 +109,7 @@ def create_saved_view(
 
 @router.patch("/saved-views/{view_id}", response_model=SavedViewRead)
 def patch_saved_view(
-    view_id: UUID, body: SavedViewPatch, ctx: AccessContext = ViewCtx, uow: UnitOfWork = Depends(get_uow)
+    view_id: UUID, body: SavedViewPatch, ctx: AccessContext = ViewCtx, uow: UnitOfWork = Uow
 ) -> SavedViewRead:
     fields: dict[str, Any] = {}
     for k in body.model_fields_set:
@@ -116,8 +121,6 @@ def patch_saved_view(
 
 
 @router.delete("/saved-views/{view_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_saved_view(
-    view_id: UUID, ctx: AccessContext = ViewCtx, uow: UnitOfWork = Depends(get_uow)
-) -> Response:
+def delete_saved_view(view_id: UUID, ctx: AccessContext = ViewCtx, uow: UnitOfWork = Uow) -> Response:
     views.delete_view(uow, ctx, view_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

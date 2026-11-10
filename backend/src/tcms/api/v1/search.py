@@ -8,7 +8,11 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 
-from tcms.api.deps import Auth, get_read_uow, request_meta
+from tcms.api.deps import (
+    Auth,
+    ReadUow,
+    request_meta,
+)
 from tcms.bugs import queries as bug_queries
 from tcms.core.context import AccessContext, Principal, RequestMeta
 from tcms.core.enums import ProjectStatus
@@ -87,7 +91,7 @@ def search(
     limit: int = Query(default=5, ge=1, le=50),
     auth: Authenticated = Auth,
     meta: RequestMeta = Depends(request_meta),
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> SearchRead:
     """US-130 / TCMS-118/119: exact keys first, then text; grouped by type, `limit` per group."""
     wanted = [t for t in ALL_TYPES if not types or t in {x.strip() for x in types.split(",")}]

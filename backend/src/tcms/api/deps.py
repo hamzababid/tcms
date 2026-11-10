@@ -66,6 +66,14 @@ def get_read_uow(request: Request) -> Iterator[UnitOfWork]:
         yield uow
 
 
+# The commit must finish before the response leaves (read-your-writes across API replicas): FastAPI's
+# default "request" scope runs the code after `yield` once the response has been sent, so a client could
+# read from another replica before the write was committed (M8c load test: a folder created with 201 was
+# "not found" by the next request).
+Uow = Depends(get_uow, scope="function")
+ReadUow = Depends(get_read_uow, scope="function")
+
+
 def _client_ip(request: Request) -> str | None:
     """Only real IP addresses are stored (sessions.ip / login_attempts.ip are `inet`)."""
     import ipaddress

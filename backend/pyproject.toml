@@ -17,7 +17,7 @@ dependencies = [
     "gunicorn>=26.2.0",
     "jinja2>=3.1.6",
     "openpyxl>=3.1.5",
-    "psycopg[binary]>=3.3.7",
+    "psycopg>=3.3.7",
     "pydantic>=2.14.2",
     "pydantic-settings>=2.16.2",
     "pyotp>=2.10.0",
@@ -37,7 +37,14 @@ requires = ["uv_build>=0.13.7,<0.14.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
+# The C implementation of psycopg, compiled against Debian's libpq in the image's build stage (Dockerfile):
+# the pure-Python fallback doubled the time to read large result sets (M8c load test). Must equal the
+# psycopg version.
+speedups = ["psycopg-c==3.3.7"]
 dev = [
+    # Bundled libpq for local machines and CI; the runtime image uses Debian's libpq5 instead (Trivy: the
+    # wheel vendors AlmaLinux 8 libraries with open CVEs).
+    "psycopg[binary]>=3.3.7",
     "boto3-stubs[s3]>=1.43.123",
     "httpx>=0.28.1",
     "hypothesis>=6.170.14",

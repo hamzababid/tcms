@@ -214,9 +214,8 @@ def references_for_cases(
     """Distinct bug references per case (traceability, docs/02 §10.4). With `run_ids`, attempt links count
     only when their run is in the set (the release's runs); direct case links always count."""
     out: dict[UUID, dict[str, tuple[str, str | None]]] = {}
-    for case_id in case_ids:
-        for row in repo.links_of_case(s, ctx, case_id):
-            if run_ids is not None and row.run_id is not None and row.run_id not in run_ids:
-                continue
-            out.setdefault(case_id, {}).setdefault(row.reference_norm, (row.reference, row.url))
+    for row in repo.link_refs_of_cases(s, ctx, case_ids):
+        if run_ids is not None and row.run_id is not None and row.run_id not in run_ids:
+            continue
+        out.setdefault(row.test_case_id, {}).setdefault(row.reference_norm, (row.reference, row.url))
     return {k: list(v.values()) for k, v in out.items()}

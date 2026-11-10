@@ -7,6 +7,8 @@ from datetime import date
 from typing import Any
 from uuid import UUID
 
+from sqlalchemy.exc import IntegrityError
+
 from tcms.core import clock, ids
 from tcms.core.concurrency import check_row_version
 from tcms.core.context import AccessContext
@@ -159,8 +161,19 @@ def create_project(
         updated_at=now,
         updated_by=ctx.principal.user_id,
     )
-    s.add(project)
-    s.flush()
+    # L36: a parallel request can pass the checks above too; the unique indexes decide, and the loser gets
+    # the same 409 as the checks instead of a 500.
+    try:
+        with s.begin_nested():
+            s.add(project)
+            s.flush()
+    except IntegrityError as exc:
+        constraint = getattr(getattr(exc.orig, "diag", None), "constraint_name", "") or ""
+        if constraint == "ux_projects__organization_id_key":
+            raise ProjectKeyTaken(f"Project key {key} is already used") from None
+        if constraint == "ux_projects__organization_id_lower_name":
+            raise NameTaken("A project with this name already exists") from None
+        raise
     for entity in rules.KEY_ENTITIES:
         s.add(KeySequence(project_id=project.id, entity=entity, next_value=1))
     for env_name in rules.DEFAULT_ENVIRONMENTS:

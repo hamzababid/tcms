@@ -9,7 +9,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from sqlalchemy.exc import DBAPIError
+from sqlalchemy.exc import DataError, DBAPIError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from tcms.core.errors import DomainError
@@ -152,6 +152,18 @@ def install_problem_handlers(app: FastAPI) -> None:
             log.error("db.immutable_record_surfaced", error=message.splitlines()[0])
             return problem_response(
                 request, status=409, code="immutable_record", title="This record cannot be changed"
+            )
+        if isinstance(exc, DataError):
+            # A value the database cannot store, e.g. a NUL character in text (found by the M8c
+            # authenticated ZAP scan): the client's input, not a server fault.
+            log.warning("db.data_error", error=message.splitlines()[0] if message else "")
+            nul = "NUL" in message
+            return problem_response(
+                request,
+                status=422,
+                code="validation_error",
+                title="Validation failed",
+                detail="Text must not contain NUL (0x00) characters." if nul else "A value cannot be stored.",
             )
         log.exception("db.error")
         return problem_response(request, status=500, code="internal_error", title="Internal error")

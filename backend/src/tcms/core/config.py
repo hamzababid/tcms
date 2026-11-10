@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+from collections.abc import Mapping
 from enum import StrEnum
 from functools import lru_cache
 from pathlib import Path
@@ -56,6 +58,7 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     session_cookie_secure: bool = True
     rate_limit_auth_per_min: int = 20
+    rate_limit_per_min: int = 600  # per session, API token or (anonymous) client IP; 0 turns it off
     feature_flags: str = ""
 
     migrations_path: Path = _BACKEND_ROOT / "migrations"
@@ -84,6 +87,18 @@ class Settings(BaseSettings):
         return f"{parts.scheme}://{parts.netloc}"
 
 
+def secret_file_values(environ: Mapping[str, str] | None = None) -> dict[str, str]:
+    """`NAME_FILE=/run/secrets/x` sets setting `name` from that file (production compose, docs/ops/deploy.md):
+    secrets stay out of the environment and `docker inspect`. A trailing newline is dropped."""
+    env = os.environ if environ is None else environ
+    out: dict[str, str] = {}
+    for name in Settings.model_fields:
+        path = env.get(f"{name.upper()}_FILE")
+        if path:
+            out[name] = Path(path).read_text(encoding="utf-8").rstrip("\r\n")
+    return out
+
+
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    return Settings(**secret_file_values())  # type: ignore[arg-type]

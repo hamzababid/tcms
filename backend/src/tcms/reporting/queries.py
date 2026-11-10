@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session
 
 from tcms.core import clock
 from tcms.core.context import AccessContext
+from tcms.reporting import cache as _cache  # noqa: F401  (session memo reset)
 from tcms.reporting.metrics import BugMetrics, ExecutionSummary, RepositoryMetrics
 
 EXECUTED = ("passed", "failed", "blocked")
@@ -130,7 +131,16 @@ def _with_runs(ctx: AccessContext, scope: Scope, body: str) -> tuple[Any, dict[s
 
 
 def status_counts(s: Session, ctx: AccessContext, scope: Scope) -> tuple[dict[str, int], int]:
-    """(counts by current run status, runs needing retest)."""
+    """(counts by current run status, runs needing retest); remembered for the session (M8c P3)."""
+    memo: dict[object, tuple[dict[str, int], int]] = s.info.setdefault("status_counts", {})
+    key = (ctx.principal.organization_id, ctx.pid, scope)
+    if key not in memo:
+        memo[key] = _status_counts(s, ctx, scope)
+    counts, retest = memo[key]
+    return dict(counts), retest
+
+
+def _status_counts(s: Session, ctx: AccessContext, scope: Scope) -> tuple[dict[str, int], int]:
     stmt, params = _with_runs(
         ctx, scope, "SELECT status, count(*), count(*) FILTER (WHERE needs_retest) FROM rs GROUP BY status"
     )

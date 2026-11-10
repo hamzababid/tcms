@@ -26,6 +26,16 @@ export function Dialog({
       <D.Portal>
         <D.Overlay className="fixed inset-0 z-40 bg-[rgb(15_23_42/0.45)]" />
         <D.Content
+          onOpenAutoFocus={(e) => {
+            // Keyboard users land in the first field, not on the header's Close button (TCMS-143).
+            const field = (e.currentTarget as HTMLElement | null)?.querySelector<HTMLElement>(
+              "[data-dialog-body] :is(input:not([type=hidden]), textarea, select):not(:disabled)",
+            );
+            if (field) {
+              e.preventDefault();
+              field.focus();
+            }
+          }}
           className={cn(
             "fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100vh-48px)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-[var(--radius-auth)] border border-border bg-surface shadow-[var(--shadow-dialog)] focus:outline-none",
             wide ? "w-[min(720px,calc(100vw-32px))]" : "w-[min(480px,calc(100vw-32px))]",
@@ -47,7 +57,9 @@ export function Dialog({
               <X className="size-4" aria-hidden="true" />
             </D.Close>
           </div>
-          <div className="min-h-0 overflow-y-auto px-6 pb-5">{children}</div>
+          <div data-dialog-body className="min-h-0 overflow-y-auto px-6 pb-5">
+            {children}
+          </div>
           {footer ? (
             <div className="flex justify-end gap-2 rounded-b-[var(--radius-auth)] border-t border-border bg-ground px-6 py-3">
               {footer}

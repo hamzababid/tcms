@@ -39,7 +39,7 @@ def test_ready_when_all_dependencies_up(database: Database, minio: dict[str, str
 
 
 @pytest.mark.integration
-def test_ready_fails_when_database_down(minio: dict[str, str], bucket: str) -> None:
+def test_tcms_140_ready_fails_when_database_down(minio: dict[str, str], bucket: str) -> None:
     """TCMS-140."""
     unreachable = "postgresql+psycopg://tcms_app:x@127.0.0.1:1/tcms"
     with TestClient(create_app(_settings(unreachable, minio, bucket))) as c:

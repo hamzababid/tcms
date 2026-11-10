@@ -36,7 +36,8 @@ export function NotificationBell() {
       <P.Trigger asChild>
         <button
           type="button"
-          aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"}
+          // The name contains the badge text, so "99+" must be in it too (axe label-content-name-mismatch).
+          aria-label={unread ? `Notifications, ${unread > 99 ? "99+" : unread} unread` : "Notifications"}
           className="relative flex size-8 items-center justify-center rounded-control text-ink-secondary hover:bg-surface-muted hover:text-ink"
         >
           <BellIcon aria-hidden="true" className="size-[18px]" />

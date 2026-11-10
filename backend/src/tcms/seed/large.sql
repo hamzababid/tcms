@@ -1,6 +1,5 @@
--- Large seed (TM-4, docs/08 §3; M7 D16): one project at twice the year-one volume ({cases} cases, {attempts} runs)
--- for timing dashboards,
--- readiness and reports. Bulk SQL instead of services (services would take hours for 500k attempts);
+-- Large seeds (TM-4, docs/08 §3; M7 D16, M8 D12): one project with {cases} cases and {attempts} runs
+-- (`large`: twice year one; `xlarge`: 10× year one) for timing dashboards, readiness, reports and k6. Bulk SQL instead of services (services would take hours for 500k attempts);
 -- every row satisfies the schema's constraints and triggers. Parameters: :org, :pid, :key, :owner,
 -- :env, :users (uuid[]). Run in one transaction by `tcms seed --profile large`.
 SET LOCAL statement_timeout = 0;

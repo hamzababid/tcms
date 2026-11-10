@@ -4,7 +4,7 @@ import { MfaPage } from "@/features/auth/MfaPage";
 
 export const Route = createFileRoute("/login_/mfa")({
   validateSearch: (s: Record<string, unknown>): { returnTo?: string } =>
-    typeof s.returnTo === "string" && s.returnTo.startsWith("/") ? { returnTo: s.returnTo } : {},
+    typeof s.returnTo === "string" && /^\/(?![/\\])/.test(s.returnTo) ? { returnTo: s.returnTo } : {}, // same-origin path only, never "//host"
   component: function Mfa() {
     const { returnTo } = Route.useSearch();
     return <MfaPage returnTo={returnTo} />;

@@ -8,7 +8,14 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile, status
 from fastapi.responses import StreamingResponse
 
-from tcms.api.deps import Auth, app_state, get_read_uow, get_uow, project_context_for, project_context_from
+from tcms.api.deps import (
+    Auth,
+    ReadUow,
+    Uow,
+    app_state,
+    project_context_for,
+    project_context_from,
+)
 from tcms.core.context import AccessContext
 from tcms.core.errors import NotFound
 from tcms.core.uow import UnitOfWork
@@ -69,7 +76,7 @@ def list_comments(
     entity_type: CommentEntity,
     entity_id: UUID,
     auth: Authenticated = Auth,
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> list[s.CommentRead]:
     """Oldest first; deleted comments keep their place with `body: null` (FR-COL-001)."""
     ctx = project_context_for(request, auth, entity_type, entity_id)
@@ -80,7 +87,7 @@ def list_comments(
 
 @router.post("/comments", response_model=s.CommentRead, status_code=status.HTTP_201_CREATED)
 def add_comment(
-    body: s.CommentCreate, request: Request, auth: Authenticated = Auth, uow: UnitOfWork = Depends(get_uow)
+    body: s.CommentCreate, request: Request, auth: Authenticated = Auth, uow: UnitOfWork = Uow
 ) -> s.CommentRead:
     """Mentions use `@[Name](user:<uuid>)`; only project members are notified."""
     ctx = project_context_for(request, auth, body.entity_type, body.entity_id)
@@ -94,7 +101,7 @@ def edit_comment(
     comment_id: UUID,
     body: s.CommentPatch,
     ctx: AccessContext = Depends(project_context_from("comment", "comment_id")),
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> s.CommentRead:
     """Author only, within 15 minutes."""
     row = comments.edit_comment(uow, ctx, comment_id, body.body, members=_members(uow, ctx))
@@ -105,7 +112,7 @@ def edit_comment(
 def delete_comment(
     comment_id: UUID,
     ctx: AccessContext = Depends(project_context_from("comment", "comment_id")),
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> None:
     comments.delete_comment(uow, ctx, comment_id)
 
@@ -145,7 +152,7 @@ def upload(
     entity_type: AttachmentEntity = Form(),
     entity_id: UUID = Form(),
     auth: Authenticated = Auth,
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> s.AttachmentRead:
     """Limit: the project's `attachment_max_mb` (≤ org cap); type is sniffed, not trusted (docs/02 §9.2)."""
     ctx = project_context_for(request, auth, entity_type, entity_id)
@@ -176,7 +183,7 @@ def _attachment(uow: UnitOfWork, ctx: AccessContext, attachment_id: UUID) -> att
 
 @router.get("/attachments/{attachment_id}", response_model=s.AttachmentRead)
 def get_attachment(
-    attachment_id: UUID, ctx: AccessContext = AttachmentCtx, uow: UnitOfWork = Depends(get_read_uow)
+    attachment_id: UUID, ctx: AccessContext = AttachmentCtx, uow: UnitOfWork = ReadUow
 ) -> s.AttachmentRead:
     row = _attachment(uow, ctx, attachment_id)
     return attachment_read(row, _refs(uow, {row.uploaded_by}))
@@ -192,7 +199,7 @@ def attachment_content(
     attachment_id: UUID,
     download: bool = Query(default=False, description="Force `Content-Disposition: attachment`"),
     ctx: AccessContext = AttachmentCtx,
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> StreamingResponse:
     """Images and PDFs inline, everything else as a download; always sandboxed (docs/03 §9)."""
     att = _attachment(uow, ctx, attachment_id)
@@ -220,7 +227,7 @@ def unlink(
     entity_type: AttachmentEntity,
     entity_id: UUID,
     ctx: AccessContext = AttachmentCtx,
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> None:
     """Uploader or holder of the record's write permission; BR-28 blocks approved step evidence."""
     attachments.unlink(uow, ctx, attachment_id, _record(uow, ctx, entity_type, entity_id))

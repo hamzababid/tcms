@@ -9,8 +9,8 @@ from fastapi import APIRouter, Depends, File, Form, Response, UploadFile, status
 from fastapi.responses import JSONResponse
 
 from tcms.api.deps import (
-    get_read_uow,
-    get_uow,
+    ReadUow,
+    Uow,
     project_context,
     project_context_allow_archived,
     project_context_from,
@@ -46,7 +46,7 @@ def upload_import(
     file: UploadFile = File(),
     entity: s.Entity = Form(),
     ctx: AccessContext = Depends(project_context),
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> s.ImportUploaded:
     """FR-IMP-001/003 step 1: CSV or XLSX ≤ 20 MB; returns sheets, headers, a sample and a suggested
     mapping."""
@@ -83,7 +83,7 @@ def validate_import(
     transfer_id: UUID,
     body: s.ValidateRequest,
     ctx: AccessContext = TransferCtx,
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> rs.TransferRead:
     """Step 3 (dry run, background): counts and row errors appear on `GET /data-transfers/{id}`."""
     service.request_validation(
@@ -105,7 +105,7 @@ def validate_import(
     status_code=status.HTTP_202_ACCEPTED,
 )
 def commit_import(
-    transfer_id: UUID, ctx: AccessContext = TransferCtx, uow: UnitOfWork = Depends(get_uow)
+    transfer_id: UUID, ctx: AccessContext = TransferCtx, uow: UnitOfWork = Uow
 ) -> rs.TransferRead:
     """Step 4 (AC-IMP-01/03): one transaction for the whole file, in the background."""
     service.request_commit(uow, ctx, transfer_id)
@@ -118,9 +118,7 @@ def commit_import(
     responses={200: {"content": {"text/csv": {}}, "description": "Row errors of the dry run"}},
     response_class=Response,
 )
-def import_errors(
-    transfer_id: UUID, ctx: AccessContext = TransferCtx, uow: UnitOfWork = Depends(get_read_uow)
-) -> Response:
+def import_errors(transfer_id: UUID, ctx: AccessContext = TransferCtx, uow: UnitOfWork = ReadUow) -> Response:
     t = transfers.get(uow.session, ctx.principal.organization_id, transfer_id)
     if t is None or t.project_id != ctx.pid or t.created_by != ctx.principal.user_id:
         raise NotFound()
@@ -148,7 +146,7 @@ def _tread(t: import_mappings.TemplateView) -> s.TemplateRead:
 def list_templates(
     entity: s.Entity | None = None,
     ctx: AccessContext = Depends(project_context),
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> list[s.TemplateRead]:
     ctx.require("project.view")
     return [_tread(t) for t in import_mappings.list_for(uow, ctx, entity)]
@@ -160,16 +158,14 @@ def list_templates(
     status_code=status.HTTP_201_CREATED,
 )
 def save_template(
-    body: s.TemplateCreate, ctx: AccessContext = Depends(project_context), uow: UnitOfWork = Depends(get_uow)
+    body: s.TemplateCreate, ctx: AccessContext = Depends(project_context), uow: UnitOfWork = Uow
 ) -> s.TemplateRead:
     """US-151: saving under an existing name replaces it."""
     return _tread(service.save_template(uow, ctx, entity=body.entity, name=body.name, mapping=body.mapping))
 
 
 @router.delete("/import-mappings/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_template(
-    template_id: UUID, ctx: AccessContext = TemplateCtx, uow: UnitOfWork = Depends(get_uow)
-) -> Response:
+def delete_template(template_id: UUID, ctx: AccessContext = TemplateCtx, uow: UnitOfWork = Uow) -> Response:
     service.delete_template(uow, ctx, template_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -187,7 +183,7 @@ def delete_template(
 def export_entity(
     body: s.ExportCreate,
     ctx: AccessContext = Depends(project_context_allow_archived),
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> Response:
     """FR-IMP-002/003 (AC-IMP-02): cases in the import layout (one row per step, Key column) or requirement
     references with their linked case keys. ≤ 10,000 rows at once, more in the background."""

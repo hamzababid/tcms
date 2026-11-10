@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 
 from tcms.core.context import AccessContext
 from tcms.core.references import natural_key
+from tcms.reporting import cache as _cache  # noqa: F401  (session memo reset)
 from tcms.reporting.metrics import RequirementCoverage
 from tcms.requirements import rules
 
@@ -100,7 +101,23 @@ def coverage_rows(
     until: datetime | None = None,
 ) -> list[RefCoverage]:
     """Every reference in scope (or the given ones) with its cases' latest results and its status.
-    `until` reads results finished before that instant (daily snapshots, D5)."""
+    `until` reads results finished before that instant (daily snapshots, D5). Remembered for the rest of
+    the session: a dashboard asks for the same release several times (M8c P3)."""
+    memo: dict[object, list[RefCoverage]] = s.info.setdefault("coverage_rows", {})
+    key = (ctx.principal.organization_id, ctx.pid, release_id, tuple(ref_ids) if ref_ids else None, until)
+    if key not in memo:
+        memo[key] = _coverage_rows(s, ctx, release_id, ref_ids, until=until)
+    return memo[key]
+
+
+def _coverage_rows(
+    s: Session,
+    ctx: AccessContext,
+    release_id: UUID | None,
+    ref_ids: list[UUID] | None,
+    *,
+    until: datetime | None,
+) -> list[RefCoverage]:
     ids = scope_ids(s, ctx, release_id) if ref_ids is None else ref_ids
     if not ids:
         return []

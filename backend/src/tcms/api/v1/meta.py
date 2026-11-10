@@ -4,9 +4,12 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Query
 
-from tcms.api.deps import Auth, get_read_uow
+from tcms.api.deps import (
+    Auth,
+    ReadUow,
+)
 from tcms.core.enums import PG_TYPES
 from tcms.core.errors import NotFound
 from tcms.core.pagination import Page, PageParams
@@ -41,7 +44,7 @@ def record_history(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=50, ge=1, le=200),
     auth: Authenticated = Auth,
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> Page[ws.ActivityItem]:
     """US-161: a record's history. Project records need `project.view`; org-level ones `org.audit.view`."""
     s = uow.session

@@ -153,168 +153,166 @@ export function StepGrid({
 
   return (
     <div>
-      <div
-        ref={grid}
-        role="table"
-        aria-label="Steps"
-        className="overflow-hidden rounded-card border border-border bg-surface"
-      >
-        <div
-          role="row"
-          className={cn(
-            "grid border-b border-border bg-ground text-[12.5px] font-medium text-ink-secondary",
-            cols,
-          )}
-        >
-          <div role="columnheader" className="px-2 py-2">
-            #
-          </div>
-          <div role="columnheader" className="px-2 py-2">
-            Action *
-          </div>
-          <div role="columnheader" className="px-2 py-2">
-            Expected result
-          </div>
-          {showData ? (
-            <div role="columnheader" className="px-2 py-2">
-              Data
-            </div>
-          ) : null}
-          <div role="columnheader" className="sr-only">
-            Actions
-          </div>
-        </div>
-        {steps.map((s, i) => (
-          // Drop target for drag reordering; Alt+↑/↓ is the keyboard alternative.
-          // eslint-disable-next-line jsx-a11y/interactive-supports-focus
+      <div className="overflow-hidden rounded-card border border-border bg-surface">
+        {/* The table holds rows only; "Add step" sits below it (axe aria-required-children). */}
+        <div ref={grid} role="table" aria-label="Steps">
           <div
-            key={s.key}
             role="row"
             className={cn(
-              "grid border-t border-rule first-of-type:border-t-0 focus-within:bg-[#f8faff]",
+              "grid border-b border-border bg-ground text-[12.5px] font-medium text-ink-secondary",
               cols,
-              dragKey === s.key && "opacity-50",
             )}
-            onDragOver={(e) => {
-              if (dragKey) e.preventDefault();
-            }}
-            onDrop={(e) => {
-              e.preventDefault();
-              const from = steps.findIndex((x) => x.key === dragKey);
-              if (from >= 0 && from !== i) move(from, i - from, "action");
-              setDragKey(null);
-            }}
           >
-            <div role="cell" className="flex items-start gap-0.5 px-1 py-2 text-xs text-ink-muted">
-              <span
-                draggable
-                onDragStart={(e) => {
-                  e.dataTransfer.effectAllowed = "move";
-                  setDragKey(s.key);
-                }}
-                onDragEnd={() => {
-                  setDragKey(null);
-                }}
-                className="cursor-grab"
-                aria-hidden="true"
-              >
-                <GripVertical className="size-3.5" />
-              </span>
-              {i + 1}
+            <div role="columnheader" className="px-2 py-2">
+              #
             </div>
-            <div role="cell" className="py-1">
-              <MarkdownEditor
-                aria-label={`Step ${i + 1} action`}
-                aria-invalid={Boolean(errors[i])}
-                data-step={s.key}
-                data-col="action"
-                rows={1}
-                value={s.action}
-                className={cell}
-                onChange={(e) => {
-                  update(i, { action: e.target.value });
-                }}
-                onKeyDown={(e) => {
-                  onKey(e, i, "action");
-                }}
-                onPaste={(e) => {
-                  onPaste(e, i);
-                }}
-              />
-              {errors[i] ? <p className="px-2 text-xs text-danger">{errors[i]}</p> : null}
+            <div role="columnheader" className="px-2 py-2">
+              Action *
             </div>
-            <div role="cell" className="py-1">
-              <MarkdownEditor
-                aria-label={`Step ${i + 1} expected result`}
-                data-step={s.key}
-                data-col="expected_result"
-                rows={1}
-                value={s.expected_result}
-                className={cell}
-                onChange={(e) => {
-                  update(i, { expected_result: e.target.value });
-                }}
-                onKeyDown={(e) => {
-                  onKey(e, i, "expected_result");
-                }}
-              />
-              {stepAttachments &&
-              s.id &&
-              (stepAttachments.byStep[s.id]?.length || stepAttachments.canUpload) ? (
-                <div className="px-2 pb-1">
-                  <AttachmentList
-                    attachments={stepAttachments.byStep[s.id] ?? []}
-                    entityType="test_case_step"
-                    entityId={s.id}
-                    canUpload={stepAttachments.canUpload}
-                    canRemove={() => stepAttachments.canUpload}
-                    maxMb={stepAttachments.maxMb}
-                    onChanged={stepAttachments.onChanged}
-                    compact
-                    label={`step ${i + 1}`}
+            <div role="columnheader" className="px-2 py-2">
+              Expected result
+            </div>
+            {showData ? (
+              <div role="columnheader" className="px-2 py-2">
+                Data
+              </div>
+            ) : null}
+            <div role="columnheader" className="sr-only">
+              Actions
+            </div>
+          </div>
+          {steps.map((s, i) => (
+            // Drop target for drag reordering; Alt+↑/↓ is the keyboard alternative.
+            // eslint-disable-next-line jsx-a11y/interactive-supports-focus
+            <div
+              key={s.key}
+              role="row"
+              className={cn(
+                "grid border-t border-rule first-of-type:border-t-0 focus-within:bg-[#f8faff]",
+                cols,
+                dragKey === s.key && "opacity-50",
+              )}
+              onDragOver={(e) => {
+                if (dragKey) e.preventDefault();
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                const from = steps.findIndex((x) => x.key === dragKey);
+                if (from >= 0 && from !== i) move(from, i - from, "action");
+                setDragKey(null);
+              }}
+            >
+              <div role="cell" className="flex items-start gap-0.5 px-1 py-2 text-xs text-ink-muted">
+                <span
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.effectAllowed = "move";
+                    setDragKey(s.key);
+                  }}
+                  onDragEnd={() => {
+                    setDragKey(null);
+                  }}
+                  className="cursor-grab"
+                  aria-hidden="true"
+                >
+                  <GripVertical className="size-3.5" />
+                </span>
+                {i + 1}
+              </div>
+              <div role="cell" className="py-1">
+                <MarkdownEditor
+                  aria-label={`Step ${i + 1} action`}
+                  aria-invalid={Boolean(errors[i])}
+                  data-step={s.key}
+                  data-col="action"
+                  rows={1}
+                  value={s.action}
+                  className={cell}
+                  onChange={(e) => {
+                    update(i, { action: e.target.value });
+                  }}
+                  onKeyDown={(e) => {
+                    onKey(e, i, "action");
+                  }}
+                  onPaste={(e) => {
+                    onPaste(e, i);
+                  }}
+                />
+                {errors[i] ? <p className="px-2 text-xs text-danger">{errors[i]}</p> : null}
+              </div>
+              <div role="cell" className="py-1">
+                <MarkdownEditor
+                  aria-label={`Step ${i + 1} expected result`}
+                  data-step={s.key}
+                  data-col="expected_result"
+                  rows={1}
+                  value={s.expected_result}
+                  className={cell}
+                  onChange={(e) => {
+                    update(i, { expected_result: e.target.value });
+                  }}
+                  onKeyDown={(e) => {
+                    onKey(e, i, "expected_result");
+                  }}
+                />
+                {stepAttachments &&
+                s.id &&
+                (stepAttachments.byStep[s.id]?.length || stepAttachments.canUpload) ? (
+                  <div className="px-2 pb-1">
+                    <AttachmentList
+                      attachments={stepAttachments.byStep[s.id] ?? []}
+                      entityType="test_case_step"
+                      entityId={s.id}
+                      canUpload={stepAttachments.canUpload}
+                      canRemove={() => stepAttachments.canUpload}
+                      maxMb={stepAttachments.maxMb}
+                      onChanged={stepAttachments.onChanged}
+                      compact
+                      label={`step ${i + 1}`}
+                    />
+                  </div>
+                ) : null}
+              </div>
+              {showData ? (
+                <div role="cell" className="py-1">
+                  <MarkdownEditor
+                    aria-label={`Step ${i + 1} data`}
+                    data-step={s.key}
+                    data-col="data"
+                    rows={1}
+                    value={s.data}
+                    className={cell}
+                    onChange={(e) => {
+                      update(i, { data: e.target.value });
+                    }}
+                    onKeyDown={(e) => {
+                      onKey(e, i, "data");
+                    }}
                   />
                 </div>
               ) : null}
-            </div>
-            {showData ? (
-              <div role="cell" className="py-1">
-                <MarkdownEditor
-                  aria-label={`Step ${i + 1} data`}
-                  data-step={s.key}
-                  data-col="data"
-                  rows={1}
-                  value={s.data}
-                  className={cell}
-                  onChange={(e) => {
-                    update(i, { data: e.target.value });
+              <div role="cell" className="flex items-start justify-center py-2">
+                <StepMenu
+                  n={i + 1}
+                  first={i === 0}
+                  last={i === steps.length - 1}
+                  onUp={() => {
+                    move(i, -1, "action");
                   }}
-                  onKeyDown={(e) => {
-                    onKey(e, i, "data");
+                  onDown={() => {
+                    move(i, 1, "action");
+                  }}
+                  onDuplicate={() => {
+                    duplicate(i);
+                  }}
+                  onDelete={() => {
+                    remove(i);
                   }}
                 />
               </div>
-            ) : null}
-            <div role="cell" className="flex items-start justify-center py-2">
-              <StepMenu
-                n={i + 1}
-                first={i === 0}
-                last={i === steps.length - 1}
-                onUp={() => {
-                  move(i, -1, "action");
-                }}
-                onDown={() => {
-                  move(i, 1, "action");
-                }}
-                onDuplicate={() => {
-                  duplicate(i);
-                }}
-                onDelete={() => {
-                  remove(i);
-                }}
-              />
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
         <div className="border-t border-border px-2 py-1.5">
           <Button
             variant="ghost"

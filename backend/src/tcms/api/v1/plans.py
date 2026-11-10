@@ -7,7 +7,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, Query, Request, Response, status
 
-from tcms.api.deps import get_read_uow, get_uow, project_context, project_context_from, resolve_row_version
+from tcms.api.deps import (
+    ReadUow,
+    Uow,
+    project_context,
+    project_context_from,
+    resolve_row_version,
+)
 from tcms.api.idempotency import Idempotency, idempotency
 from tcms.core.context import AccessContext
 from tcms.core.errors import InvalidInclude, NotFound
@@ -138,7 +144,7 @@ def list_plans(
     owner_id: UUID | None = None,
     include_archived: bool = False,
     ctx: AccessContext = Depends(project_context),
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> Page[s.PlanListItem]:
     """US-070 / FR-PLN-001: filters status, type, release_id, owner_id, q."""
     ctx.require("project.view")
@@ -177,7 +183,7 @@ def list_plans(
 def create_plan(
     body: s.PlanCreate,
     ctx: AccessContext = Depends(project_context),
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
     guard: Idempotency = Depends(idempotency("create_plan")),
 ) -> Any:
     """US-070 / FR-PLN-001/005 (TCMS-050)."""
@@ -196,7 +202,7 @@ def get_plan(
     response: Response,
     include: str | None = Query(default=None, max_length=100),
     ctx: AccessContext = PlanCtx,
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> s.PlanRead:
     """`?include=cases,requirements,cycles` (docs/06 §4.5)."""
     ctx.require("project.view")
@@ -212,7 +218,7 @@ def patch_plan(
     response: Response,
     if_match: str | None = Header(default=None, alias="If-Match"),
     ctx: AccessContext = PlanCtx,
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> s.PlanRead:
     fields = {k: getattr(body, k) for k in body.model_fields_set if k != "row_version"}
     if fields.get("exit_rules") is not None:
@@ -230,7 +236,7 @@ def patch_plan(
 
 @router.post("/test-plans/{plan_id}/cases", response_model=s.AddCasesResponse)
 def add_cases(
-    plan_id: UUID, body: s.AddCasesRequest, ctx: AccessContext = PlanCtx, uow: UnitOfWork = Depends(get_uow)
+    plan_id: UUID, body: s.AddCasesRequest, ctx: AccessContext = PlanCtx, uow: UnitOfWork = Uow
 ) -> s.AddCasesResponse:
     """FR-PLN-002 / BR-13 (TCMS-051): `{added, skipped[]}`."""
     result = service.add_cases(
@@ -250,7 +256,7 @@ def add_cases(
 
 @router.delete("/test-plans/{plan_id}/cases", response_model=s.CountResponse)
 def remove_cases(
-    plan_id: UUID, body: s.CaseIdsRequest, ctx: AccessContext = PlanCtx, uow: UnitOfWork = Depends(get_uow)
+    plan_id: UUID, body: s.CaseIdsRequest, ctx: AccessContext = PlanCtx, uow: UnitOfWork = Uow
 ) -> s.CountResponse:
     """Removing cases does not change existing cycles (docs/02 §6.2)."""
     return s.CountResponse(count=service.remove_cases(uow, ctx, plan_id, case_ids=body.case_ids))
@@ -262,7 +268,7 @@ def list_plan_cases(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=50, ge=1, le=200),
     ctx: AccessContext = PlanCtx,
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> Page[s.PlanCaseItem]:
     """US-074 / docs/02 §6.2: each case with its status in every cycle created from the plan."""
     ctx.require("project.view")
@@ -296,7 +302,7 @@ def link_requirements(
     plan_id: UUID,
     body: s.RequirementRefsRequest,
     ctx: AccessContext = PlanCtx,
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> s.CountResponse:
     """FR-PLN-003 / R-122 (ADR-024): requirement references the plan must cover; new ones are registered."""
     return s.CountResponse(count=service.link_requirements(uow, ctx, plan_id, references=body.references))
@@ -307,7 +313,7 @@ def unlink_requirements(
     plan_id: UUID,
     body: s.RequirementIdsRequest,
     ctx: AccessContext = PlanCtx,
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> s.CountResponse:
     return s.CountResponse(
         count=service.unlink_requirements(uow, ctx, plan_id, requirement_ids=body.requirement_ids)
@@ -316,7 +322,7 @@ def unlink_requirements(
 
 @router.post("/test-plans/{plan_id}/clone", response_model=s.PlanRead, status_code=status.HTTP_201_CREATED)
 def clone_plan(
-    plan_id: UUID, body: s.CloneRequest, ctx: AccessContext = PlanCtx, uow: UnitOfWork = Depends(get_uow)
+    plan_id: UUID, body: s.CloneRequest, ctx: AccessContext = PlanCtx, uow: UnitOfWork = Uow
 ) -> s.PlanRead:
     """US-073 / FR-PLN-006: everything except cycles; draft; "Copy of …"."""
     clone = service.clone_plan(uow, ctx, plan_id, name=body.name)
@@ -325,9 +331,7 @@ def clone_plan(
 
 
 @router.post("/test-plans/{plan_id}/archive", response_model=s.PlanRead)
-def archive_plan(
-    plan_id: UUID, ctx: AccessContext = PlanCtx, uow: UnitOfWork = Depends(get_uow)
-) -> s.PlanRead:
+def archive_plan(plan_id: UUID, ctx: AccessContext = PlanCtx, uow: UnitOfWork = Uow) -> s.PlanRead:
     service.archive_plan(uow, ctx, plan_id)
     uow.session.flush()
     return plan_read(uow, ctx, plan_id)

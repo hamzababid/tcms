@@ -25,6 +25,8 @@ The backend reads its configuration from the environment (`tcms.core.config.Sett
 | `LOG_LEVEL` | `INFO` | JSON logs to stdout |
 | `SESSION_COOKIE_SECURE` | `true` | `false` only for local http |
 | `RATE_LIMIT_AUTH_PER_MIN` | `20` | Public auth endpoints per client IP per minute (`auth_rate_limits` table) |
+| `RATE_LIMIT_PER_MIN` | `600` | All other `/api/` requests per caller (session, API token, or address when anonymous) per minute, in each API process; health checks exempt; `0` turns it off (tests). Also caps rejected credentials per address (M8c) |
+| `NAME_FILE` (any setting) | — | Read the setting from a file, e.g. `TCMS_SECRET_KEY_FILE=/run/secrets/tcms_secret_key` (Docker secrets, production compose). If both are set, the file wins |
 | `FEATURE_FLAGS` | empty | Phase 2 gates |
 | `MIGRATIONS_PATH` | `backend/migrations` | Where Alembic scripts live (the image keeps the repository layout) |
 | `ALEMBIC_DATABASE_URL` | — | Overrides `DATABASE_MAINTENANCE_URL` for a single Alembic run (used by tests) |
@@ -44,3 +46,13 @@ The backend reads its configuration from the environment (`tcms.core.config.Sett
 | `POSTGRES_PASSWORD` | Superuser password of the local db container |
 | `TCMS_DB_OWNER_PASSWORD`, `TCMS_DB_APP_PASSWORD`, `TCMS_DB_READONLY_PASSWORD` | Role passwords set by `ops/db/init-roles.sh` on the first start of the db volume |
 | `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD` | Local MinIO credentials (also used as S3 keys) |
+
+## Production compose only (`deploy/prod.env`, docs/ops/deploy.md)
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `TCMS_SITE_ADDRESS` | — | Host name Caddy serves and gets a certificate for (`localhost` in the local drill) |
+| `CADDY_GLOBAL_OPTIONS` | empty | `local_certs` for the local drill (Caddy's own CA) |
+| `API_REPLICAS` | `2` | API containers (one process each) behind Caddy |
+| `PG_SHARED_BUFFERS`, `PG_EFFECTIVE_CACHE_SIZE`, `PG_WORK_MEM`, `PG_MAX_CONNECTIONS`, `PG_LOG_MIN_DURATION_MS` | `2GB`, `5GB`, `32MB`, `200`, `1000` | PostgreSQL settings (sized for 8 GB RAM) |
+| `TCMS_BACKUP_DIR` | `./backups` | Where `deploy/backup.sh` writes |

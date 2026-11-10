@@ -158,11 +158,11 @@ Data: staging `large` profile (§3). Tool: k6. Targets from NFR-PERF.
 | P1 Browse repository | 30 VUs: tree, list folder, open case, search | p95 < 300 ms API; tree < 1 s |
 | P2 Execution | 50 VUs each executing runs: start, 10 step PATCHes (2 s think time), finalize | p95 step save < 200 ms; 0 errors; no lost updates (post-check counts) |
 | P3 Dashboards | 10 VUs: manager dashboard, quality dashboard, traceability for a 5,000-requirement release | p95 < 2 s |
-| P4 Mixed soak | 50 VUs mixed P1–P3 for 2 h | No memory growth > 10%; error rate < 0.1% |
+| P4 Mixed soak | 50 VUs mixed P1–P3 for 2 h (staging; 20 min on a developer machine, M8 D13) | No memory growth > 10% after warm-up; error rate < 0.1% |
 | P5 Background | Import 5,000 cases / 20,000 steps; export 100,000 runs | Import < 2 min; export completes; API p95 unaffected (< +20%) |
 | P6 Cycle creation | Create cycle with 5,000 runs | Job completes < 60 s |
 
-Each release records results in a performance log; regressions > 20% block release.
+Each release records results in a performance log; regressions > 20% block release. Scripts: `perf/p1-browse.js` … `perf/p6-cycle.js` against the `xlarge` seed (how to run: docs/ops/performance.md).
 
 ## 10. Data integrity testing
 

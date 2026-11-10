@@ -11,8 +11,8 @@ from fastapi.responses import JSONResponse, StreamingResponse
 
 from tcms.api.deps import (
     Auth,
-    get_read_uow,
-    get_uow,
+    ReadUow,
+    Uow,
     org_context,
     project_context,
     project_context_allow_archived,
@@ -28,6 +28,7 @@ from tcms.identity.schemas import UserRef
 from tcms.identity.service import Authenticated
 from tcms.platform import transfers
 from tcms.platform.attachments import content_disposition
+from tcms.reporting import cache as report_cache
 from tcms.reporting import coverage, exports, queries, readiness, reports, snapshots
 from tcms.reporting import schemas as rs
 from tcms.reporting.metrics import ExecutionSummary, Rate, RequirementCoverage
@@ -145,7 +146,7 @@ def _readiness_read(
 def release_summaries(
     include_archived: bool = False,
     ctx: AccessContext = Depends(project_context),
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> list[rs.ReleaseListItem]:
     """Releases page (docs/07 §5.15): each release with its execution summary, readiness and latest"
     " decision."""
@@ -185,7 +186,7 @@ def release_summaries(
 
 @router.get("/releases/{release_id}/readiness", response_model=rs.ReadinessRead)
 def release_readiness(
-    release_id: UUID, ctx: AccessContext = ReleaseCtx, uow: UnitOfWork = Depends(get_read_uow)
+    release_id: UUID, ctx: AccessContext = ReleaseCtx, uow: UnitOfWork = ReadUow
 ) -> rs.ReadinessRead:
     """FR-RPT-006 / docs/02 §11.4 (D1: per plan over its own cycles; defaults when no plan has rules)."""
     ctx.require("project.view")
@@ -195,7 +196,7 @@ def release_readiness(
 
 @router.get("/test-plans/{plan_id}/readiness", response_model=rs.ReadinessRead)
 def plan_readiness(
-    plan_id: UUID, ctx: AccessContext = PlanCtx, uow: UnitOfWork = Depends(get_read_uow)
+    plan_id: UUID, ctx: AccessContext = PlanCtx, uow: UnitOfWork = ReadUow
 ) -> rs.ReadinessRead:
     """L25: the plan Overview shows its exit rules as met / not met."""
     ctx.require("project.view")
@@ -212,7 +213,7 @@ def plan_readiness(
 
 @router.get("/releases/{release_id}/decisions", response_model=list[rs.DecisionDetail])
 def list_decisions(
-    release_id: UUID, ctx: AccessContext = ReleaseCtx, uow: UnitOfWork = Depends(get_read_uow)
+    release_id: UUID, ctx: AccessContext = ReleaseCtx, uow: UnitOfWork = ReadUow
 ) -> list[rs.DecisionDetail]:
     """Decision timeline, newest first, each with its frozen snapshot."""
     ctx.require("project.view")
@@ -229,7 +230,7 @@ def record_decision(
     release_id: UUID,
     body: rs.DecisionCreate,
     ctx: AccessContext = ReleaseCtx,
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> rs.DecisionDetail:
     """TCMS-116 / AC-REL-03: go, go with risks (risks required) or no-go; the readiness snapshot is computed
     here and stored with the decision (append-only)."""
@@ -310,7 +311,7 @@ class _Filters:
 def execution_summary(
     f: _Filters = Depends(),
     ctx: AccessContext = Depends(project_context),
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> ExecutionSummaryRead:
     """docs/06 §5.7 for any filter of docs/02 §11.1 (BR-24)."""
     ctx.require("project.view")
@@ -321,7 +322,7 @@ def execution_summary(
 def manager_dashboard(
     f: _Filters = Depends(),
     ctx: AccessContext = Depends(project_context),
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> rs.ManagerDashboard:
     """FR-RPT-001 / docs/02 §11.3: every widget of the project Overview in one response (TCMS-115)."""
     ctx.require("project.view")
@@ -414,7 +415,7 @@ def quality_dashboard(
     date_from: date | None = None,
     date_to: date | None = None,
     ctx: AccessContext = Depends(project_context),
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> rs.QualityDashboard:
     """FR-RPT-003 / docs/02 §11.3: trends from daily snapshots plus today live (D5)."""
     ctx.require("project.view")
@@ -454,27 +455,37 @@ def quality_dashboard(
         rs.ModuleBugs(folder_id=i, name=n, references=c)
         for i, n, c in queries.bugs_by_module(se, ctx, scope, depth)
     ]
-    quality = []
     org = ctx.principal.organization_id
-    recent = [r for r in workspace_queries.releases(se, org, ctx.pid) if r.status.value != "archived"]
-    recent.sort(key=lambda r: r.released_at or r.created_at, reverse=True)
-    for r in recent[:6]:
-        rscope = Scope(release_id=r.id)
-        summ = queries.summary(se, ctx, rscope)
-        snap = snapshots.at_or_before(se, ctx, r.id, r.released_at.date()) if r.released_at else None
-        cov = coverage.summary(coverage.coverage_rows(se, ctx, r.id))
-        quality.append(
-            rs.ReleaseQuality(
-                release=Ref(id=r.id, name=r.name),
-                status=r.status.value,
-                released_at=r.released_at,
-                pass_rate_applicable=rate_read(summ.pass_rate_applicable),
-                failed_at_release=snap["failed"] if snap else None,
-                bug_references=queries.bug_metrics(se, ctx, rscope).linked,
-                coverage=rate_read(cov.coverage),
-                regression=summary_read(queries.summary(se, ctx, Scope(release_id=r.id, tag="regression"))),
+
+    def release_quality() -> list[rs.ReleaseQuality]:
+        quality = []
+        recent = [r for r in workspace_queries.releases(se, org, ctx.pid) if r.status.value != "archived"]
+        recent.sort(key=lambda r: r.released_at or r.created_at, reverse=True)
+        for r in recent[:6]:
+            rscope = Scope(release_id=r.id)
+            summ = queries.summary(se, ctx, rscope)
+            snap = snapshots.at_or_before(se, ctx, r.id, r.released_at.date()) if r.released_at else None
+            cov = coverage.summary(coverage.coverage_rows(se, ctx, r.id))
+            quality.append(
+                rs.ReleaseQuality(
+                    release=Ref(id=r.id, name=r.name),
+                    status=r.status.value,
+                    released_at=r.released_at,
+                    pass_rate_applicable=rate_read(summ.pass_rate_applicable),
+                    failed_at_release=snap["failed"] if snap else None,
+                    bug_references=queries.bug_metrics(se, ctx, rscope).linked,
+                    coverage=rate_read(cov.coverage),
+                    regression=summary_read(
+                        queries.summary(se, ctx, Scope(release_id=r.id, tag="regression"))
+                    ),
+                )
             )
-        )
+        return quality
+
+    # Six releases × four whole-release scans (~1 s at 10× year one): kept five minutes per process (M8c P3).
+    quality = report_cache.cached(
+        ("release-quality", org, ctx.pid), snapshots.LIVE_TTL_SECONDS, release_quality
+    )
     return rs.QualityDashboard(
         release=Ref(id=rel.id, name=rel.name) if rel is not None else None,
         date_from=lo,
@@ -492,9 +503,7 @@ def quality_dashboard(
     response_model=rs.RefreshRead,
     status_code=status.HTTP_202_ACCEPTED,
 )
-def refresh_metrics(
-    ctx: AccessContext = Depends(project_context), uow: UnitOfWork = Depends(get_uow)
-) -> rs.RefreshRead:
+def refresh_metrics(ctx: AccessContext = Depends(project_context), uow: UnitOfWork = Uow) -> rs.RefreshRead:
     """docs/06 §4.10: enqueue today's snapshot; one per project per 10 minutes (dedupe key)."""
     ctx.require("project.view")
     now = clock.now()
@@ -512,7 +521,7 @@ def refresh_metrics(
 def organization_dashboard(
     auth: Authenticated = Auth,
     ctx: AccessContext = Depends(org_context),
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> rs.OrgDashboard:
     """FR-WS-008 / US-146: Org Admins (org.reports.view) see every active project; others their own."""
     from tcms.core.context import AccessContext as Ctx
@@ -613,7 +622,7 @@ def run_report(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=50, ge=1, le=200),
     ctx: AccessContext = Depends(project_context),
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> rs.ReportRead:
     """FR-RPT-004: `cycle-execution`, `results-history`, `bug-links`, `traceability`, `tester-activity`,
     `case-inventory`; filters per report (D9), unknown filters → 400."""
@@ -644,7 +653,7 @@ def export_report(
     report: str,
     body: rs.ExportRequest,
     ctx: AccessContext = Depends(project_context_allow_archived),
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> Response:
     """FR-RPT-005 / AC-RPT-04/05 / TCMS-117: CSV or XLSX with formula-injection protection."""
     ctx.require("data.export")
@@ -716,7 +725,7 @@ def _transfer(
 
 @router.get("/data-transfers/{transfer_id}", response_model=rs.TransferRead)
 def get_transfer(
-    transfer_id: UUID, ctx: AccessContext = TransferCtx, uow: UnitOfWork = Depends(get_read_uow)
+    transfer_id: UUID, ctx: AccessContext = TransferCtx, uow: UnitOfWork = ReadUow
 ) -> rs.TransferRead:
     """docs/06 §4.13: initiator or project.configure."""
     t = _transfer(uow, ctx, transfer_id, initiator_only=False)
@@ -743,7 +752,7 @@ def get_transfer(
     responses={200: {"content": {"application/octet-stream": {}}, "description": "The export file"}},
 )
 def download_transfer(
-    transfer_id: UUID, ctx: AccessContext = TransferCtx, uow: UnitOfWork = Depends(get_read_uow)
+    transfer_id: UUID, ctx: AccessContext = TransferCtx, uow: UnitOfWork = ReadUow
 ) -> StreamingResponse:
     """docs/06 §4.13: the initiator downloads a ready export or an import report within 7 days."""
     t = _transfer(uow, ctx, transfer_id, initiator_only=True)

@@ -9,7 +9,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request, Response
 
-from tcms.api.deps import app_state, get_read_uow, get_uow, org_context, project_context
+from tcms.api.deps import (
+    ReadUow,
+    Uow,
+    app_state,
+    org_context,
+    project_context,
+)
 from tcms.api.v1.health import run_checks
 from tcms.core import clock
 from tcms.core.context import AccessContext
@@ -157,7 +163,7 @@ def org_audit_events(
     format: Literal["json", "csv"] = "json",
     filters: audit_queries.AuditFilter = Depends(_filters),
     ctx: AccessContext = Depends(org_context),
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> Any:
     """US-162 / FR-AUD-002: every event of the organization, newest first; CSV up to 100,000 events."""
     ctx.require("org.audit.view")
@@ -184,7 +190,7 @@ def project_audit_events(
     format: Literal["json", "csv"] = "json",
     filters: audit_queries.AuditFilter = Depends(_filters),
     ctx: AccessContext = Depends(project_context),
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> Any:
     """docs/06 §4.12: the project's audit log (`project.audit.view`), filters as the organization log."""
     ctx.require("project.audit.view")
@@ -220,7 +226,7 @@ def project_audit_events(
 def get_access_review(
     format: Literal["json", "csv", "xlsx"] = "json",
     ctx: AccessContext = Depends(org_context),
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> Any:
     """US-163 / FR-AUD-004 / TCMS-133: one row per user × scope (organization, then each project)."""
     ctx.require("org.audit.view")
@@ -241,7 +247,7 @@ def get_access_review(
 
 @router.get("/organization/system-status", response_model=s.SystemStatus)
 def system_status(
-    request: Request, ctx: AccessContext = Depends(org_context), uow: UnitOfWork = Depends(get_read_uow)
+    request: Request, ctx: AccessContext = Depends(org_context), uow: UnitOfWork = ReadUow
 ) -> s.SystemStatus:
     """US-165: version, migration head, database and storage checks, job queue and stored files."""
     ctx.require("org.manage")
@@ -272,7 +278,7 @@ def list_jobs(
     status: list[JobStatus] = Query(default=[JobStatus.failed, JobStatus.dead]),
     type: str | None = Query(default=None, max_length=100),
     ctx: AccessContext = Depends(org_context),
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> Page[s.JobRead]:
     """TCMS-139: failed and dead jobs by default (`?status=` repeats), newest first."""
     ctx.require("org.manage")
@@ -289,9 +295,7 @@ def list_jobs(
 
 
 @router.post("/organization/jobs/{job_id}/retry", response_model=s.JobRead)
-def retry_job(
-    job_id: UUID, ctx: AccessContext = Depends(org_context), uow: UnitOfWork = Depends(get_uow)
-) -> s.JobRead:
+def retry_job(job_id: UUID, ctx: AccessContext = Depends(org_context), uow: UnitOfWork = Uow) -> s.JobRead:
     """Put a failed or dead job back in the queue with a fresh attempt budget; `409 invalid_status`
     otherwise."""
     return s.JobRead(**vars(jobs_admin.retry(uow, ctx, job_id)))

@@ -292,6 +292,22 @@ recurring job on each 30-second tick once the period's job had finished (the ded
 running jobs, so 9 schedules made about 26,000 jobs a day); it now skips a period that already has a job
 (`test_scheduler_does_not_rerun_a_finished_period`).
 
+## M8c — Hardening (branch `milestone/m8c-hardening`)
+| Story | Status | Verified by | Notes |
+| --- | --- | --- | --- |
+| US-180 Production deployment | ✅ (local drill) | Drill log in docs/ops/deploy.md: stack from scratch on `https://localhost`, E2E suite against it, production-mode checks (OpenAPI 401, docs off, seed refused, bootstrap) | `deploy/`: compose with digests, Caddy (TLS, HSTS, CSP), secrets as files (`NAME_FILE`), runbook. Staging host with a real domain in M9 (M8 D3) |
+| US-181 Backups and restore | ✅ | TCMS-141 drill (deploy.md): restore in 18 s, integrity checks ok, counts equal, E2E 52/52 after restore | `deploy/backup.sh`, `restore.sh`, `integrity.sql`; `tcms storage-backup/restore` |
+| US-182 Performance | 🟡 | TCMS-142: k6 P1–P6 on the `xlarge` seed (docs/ops/performance.md) | P1, P2 (step saves), P3, P5, P6 and the 2,000-folder tree meet their targets; P4: 0 errors and +0.1 % memory, but latency over target under the mixed load. Measured on a 12-core laptop, not the 4 vCPU host (L59, L60, M9) |
+| US-183 Security | ✅ | `tests/api/test_security.py` (headers, L9 limit, rejected-credential cap, production OpenAPI, L36 race, NUL → 422); TCMS-137 `tests/integration/test_storage.py`; TCMS-138 `Markdown.test.tsx`; CI pip-audit, pnpm audit, Trivy; nightly ZAP baseline; authenticated ZAP API scan and ASVS L2 review (docs/ops/security-review.md, asvs-l2.md) | No high or medium findings open. ASVS: 135 met, 40 partial, 14 not met of 189 (owners listed, L61) |
+| US-184 Accessibility | ✅ | TCMS-143 `e2e/m8c.spec.ts` (repository and runner with the keyboard only, `?` help); axe in every E2E journey | Fixed: dialogs focus their first field; the folder tree is one tab stop (folder actions on Shift+F10); step grid table structure; keycap contrast; bell label with "99+"; sidebar scrolls on short windows |
+| TCMS-140 Health ready | ✅ | `test_tcms_140_ready_fails_when_database_down` | 503 when the database is down |
+Also: `?` opens the shortcut list everywhere (the runner keeps its own), with a "Keyboard shortcuts" entry in the
+sidebar (L20); Shift+P goes to the previous run in the runner (docs/07 §10). Load-test fixes: one process per API
+replica with `least_conn` in Caddy, passive health checks only, keep-alive ordering, commit before the response
+(`Depends(get_uow, scope="function")`), psycopg-c, traceability and folder tree queries, quality dashboard cache,
+shared cycle lock when starting attempts (docs/ops/performance.md). Security fixes from the review: SMTP
+certificate check, no client-supplied `X-Forwarded-For`, made-up tokens capped, `returnTo` same-origin only,
+NUL characters → 422.
 ### M7–M9 — status
 
 | Milestone | Epics | Status | Notes |
@@ -301,5 +317,5 @@ running jobs, so 9 schedules made about 26,000 jobs a day); it now skips a perio
 | M5 Bug links | E10 | ✅ done (merged, PR #12) | See the M5 section above (ADR-023) |
 | M6 Requirements, RTM, search | E11, E12 | ✅ done (merged, PR #13) | See the M6 section above (ADR-024) |
 | M7 Reporting & readiness | E13, E16 | ✅ done (merged, PR #14, PR #15) | See the M7 section above (ADR-025) |
-| M8 Import/export, admin UI, hardening | E14, E15 (UI), E17 | 🟡 M8a merged (PR #16); M8b done (awaiting review); M8c not started | US-150…154 (M8a), US-162…166 (M8b), US-180…184 (M8c) |
+| M8 Import/export, admin UI, hardening | E14, E15 (UI), E17 | 🟡 M8a merged (PR #16); M8b merged (PR #17); M8c done (awaiting review) | US-150…154 (M8a), US-162…166 (M8b), US-180…184 (M8c); US-182 partial until the M9 host run |
 | M9 Pilot & go-live | — | ⬜ not started | US-185 |

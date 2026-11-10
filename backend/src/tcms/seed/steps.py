@@ -143,7 +143,7 @@ def _seed(profile: str) -> str:
     return f"ACME Energy with {len(users)} users and projects {', '.join(keys)}"
 
 
-@step("organization, users and projects", profiles=("dev", "e2e", "large"))
+@step("organization, users and projects", profiles=("dev", "e2e", "large", "xlarge"))
 def seed_workspace(profile: str) -> str:
     return _seed(profile)
 
@@ -810,8 +810,9 @@ def seed_failed_job(profile: str) -> str:
     return "1 failed job (seed.example)"
 
 
-# Twice the year-one volume (docs/01 §8.2: 10× year one = 100k cases, 500k results, so year one = 10k / 50k),
-# loaded in about a minute. The full 10× data set is part of the M8 k6 run (known limitation L43).
+# docs/01 §8.2: 10× year one = 100k cases and 500k results, so year one = 10k / 50k.
+# `large` is twice year one (dashboard timings in a minute); `xlarge` is the full 10× set for the k6 run
+# (docs/08 §3, TM-4; closes L43). Both use the same bulk SQL (large.sql).
 LARGE = {
     "cases": 20_000,
     "releases": 20,
@@ -824,16 +825,26 @@ LARGE = {
     "bug_refs": 800,
     "requirements": 1_000,
 }
+XLARGE = {
+    **LARGE,
+    "cases": 100_000,
+    "cycles_per_release": 100,
+    "stride": 397,  # 250 × 397 < 100,000
+    "attempts": 500_000,
+    "bug_links": 20_000,
+    "bug_refs": 4_000,
+    "requirements": 5_000,
+}
 
 
-@step("large dataset (TM-4)", profiles=("large",))
+@step("large dataset (TM-4)", profiles=("large", "xlarge"))
 def seed_large(profile: str) -> str:
     """docs/08 §3 / M7 D16: SPARK at 10× year-one volume, written with bulk SQL (see large.sql)."""
     from importlib.resources import files
 
     from sqlalchemy import text
 
-    del profile
+    sizes = XLARGE if profile == "xlarge" else LARGE
     factory = session_factory(app_engine(get_settings()))
     with factory() as s:
         ctx = _spark_manager_ctx(s)
@@ -853,7 +864,7 @@ def seed_large(profile: str) -> str:
                 {"p": ctx.pid},
             ).scalars()
         )
-    script = files("tcms.seed").joinpath("large.sql").read_text().format(**LARGE)
+    script = files("tcms.seed").joinpath("large.sql").read_text().format(**sizes)
     body = "\n".join(line for line in script.splitlines() if not line.lstrip().startswith("--"))
     params = {
         "org": ctx.principal.organization_id,
@@ -872,4 +883,4 @@ def seed_large(profile: str) -> str:
     return (
         "SPARK: {cases:,} cases, 1,220 folders, {releases} releases, {cycles:,} cycles, {attempts:,} runs,"
         " {bug_links:,} bug links, {requirements:,} requirements"
-    ).format(**LARGE, cycles=LARGE["releases"] * LARGE["cycles_per_release"])
+    ).format(**sizes, cycles=sizes["releases"] * sizes["cycles_per_release"])

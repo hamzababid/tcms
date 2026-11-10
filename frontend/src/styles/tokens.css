@@ -28,7 +28,7 @@
   --accent-ink: #3730a3; /* text on tint */
   --accent-border: #c7d2fe;
   --accent-border-strong: #a5b4fc;
-  --accent-soft: #6366f1; /* kbd inside primary buttons */
+  --accent-soft: #5d60ef; /* kbd inside primary buttons; #6366f1 was 4.47:1 with white (M8c axe) */
   --avatar-bg: #e0e7ff;
   --link: #4338ca;
   --link-hover: #3730a3;

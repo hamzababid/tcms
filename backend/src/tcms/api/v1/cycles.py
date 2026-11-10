@@ -8,7 +8,13 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Header, Query, Request, Response, status
 from fastapi.responses import JSONResponse
 
-from tcms.api.deps import get_read_uow, get_uow, project_context, project_context_from, resolve_row_version
+from tcms.api.deps import (
+    ReadUow,
+    Uow,
+    project_context,
+    project_context_from,
+    resolve_row_version,
+)
 from tcms.api.idempotency import Idempotency, idempotency
 from tcms.api.v1.records import attachment_read
 from tcms.api.v1.test_cases import version_read
@@ -194,7 +200,7 @@ def list_cycles(
     owner_id: UUID | None = None,
     include_archived: bool = False,
     ctx: AccessContext = Depends(project_context),
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> Page[s.CycleListItem]:
     """US-080 / FR-EXE-001: each item has its ExecutionSummary."""
     ctx.require("project.view")
@@ -215,7 +221,7 @@ def list_cycles(
 def create_cycle(
     body: s.CycleCreate,
     ctx: AccessContext = Depends(project_context),
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
     guard: Idempotency = Depends(idempotency("create_cycle")),
 ) -> Any:
     """US-080 / FR-EXE-001/002, BR-03 (AC-PLN-01, TCMS-052/054, TCMS-025b)."""
@@ -245,7 +251,7 @@ def create_cycle(
 
 @router.get("/cycles/{cycle_id}", response_model=s.CycleRead)
 def get_cycle(
-    cycle_id: UUID, response: Response, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Depends(get_read_uow)
+    cycle_id: UUID, response: Response, ctx: AccessContext = CycleCtx, uow: UnitOfWork = ReadUow
 ) -> s.CycleRead:
     """US-083 / FR-EXE-013: cycle, ExecutionSummary and progress by assignee and folder."""
     ctx.require("project.view")
@@ -261,7 +267,7 @@ def patch_cycle(
     response: Response,
     if_match: str | None = Header(default=None, alias="If-Match"),
     ctx: AccessContext = CycleCtx,
-    uow: UnitOfWork = Depends(get_uow),
+    uow: UnitOfWork = Uow,
 ) -> s.CycleRead:
     fields = {k: getattr(body, k) for k in body.model_fields_set if k != "row_version"}
     service.update_cycle(
@@ -274,9 +280,7 @@ def patch_cycle(
 
 
 @router.post("/cycles/{cycle_id}/start", response_model=s.CycleRead)
-def start_cycle(
-    cycle_id: UUID, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Depends(get_uow)
-) -> s.CycleRead:
+def start_cycle(cycle_id: UUID, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Uow) -> s.CycleRead:
     service.start_cycle(uow, ctx, cycle_id)
     uow.session.flush()
     return cycle_read(uow, ctx, cycle_id)
@@ -284,7 +288,7 @@ def start_cycle(
 
 @router.post("/cycles/{cycle_id}/close", response_model=s.CycleRead)
 def close_cycle(
-    cycle_id: UUID, body: s.CloseRequest, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Depends(get_uow)
+    cycle_id: UUID, body: s.CloseRequest, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Uow
 ) -> s.CycleRead:
     """US-084 (TCMS-058): `409 draft_exists` lists the drafts unless `discard_drafts`."""
     service.close_cycle(uow, ctx, cycle_id, discard_drafts=body.discard_drafts)
@@ -294,7 +298,7 @@ def close_cycle(
 
 @router.post("/cycles/{cycle_id}/reopen", response_model=s.CycleRead)
 def reopen_cycle(
-    cycle_id: UUID, body: s.ReopenRequest, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Depends(get_uow)
+    cycle_id: UUID, body: s.ReopenRequest, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Uow
 ) -> s.CycleRead:
     """US-084 / BR-11 (TCMS-059)."""
     service.reopen_cycle(uow, ctx, cycle_id, reason=body.reason)
@@ -303,9 +307,7 @@ def reopen_cycle(
 
 
 @router.post("/cycles/{cycle_id}/archive", response_model=s.CycleRead)
-def archive_cycle(
-    cycle_id: UUID, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Depends(get_uow)
-) -> s.CycleRead:
+def archive_cycle(cycle_id: UUID, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Uow) -> s.CycleRead:
     service.archive_cycle(uow, ctx, cycle_id)
     uow.session.flush()
     return cycle_read(uow, ctx, cycle_id)
@@ -318,7 +320,7 @@ def archive_cycle(
     responses={202: {"model": s.CycleCreateResponse, "description": "Runs are created in the background"}},
 )
 def clone_cycle(
-    cycle_id: UUID, body: s.CloneRequest, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Depends(get_uow)
+    cycle_id: UUID, body: s.CloneRequest, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Uow
 ) -> Any:
     """US-084 (TCMS-060)."""
     result = service.clone_cycle(
@@ -333,9 +335,7 @@ def clone_cycle(
 
 
 @router.post("/cycles/{cycle_id}/sync-from-plan", response_model=s.AddRunsResponse)
-def sync_from_plan(
-    cycle_id: UUID, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Depends(get_uow)
-) -> s.AddRunsResponse:
+def sync_from_plan(cycle_id: UUID, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Uow) -> s.AddRunsResponse:
     """US-085 / BR-31 (AC-PLN-02, TCMS-053)."""
     result = service.sync_from_plan(uow, ctx, cycle_id)
     return s.AddRunsResponse(added=result.added, skipped=_skipped(result.skipped))
@@ -384,7 +384,7 @@ def list_runs(
     needs_retest: bool | None = None,
     include_superseded: bool = False,
     ctx: AccessContext = CycleCtx,
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> Page[s.RunListItem]:
     """US-083 / FR-EXE-013: filters and sorts of docs/06 §4.6."""
     ctx.require("project.view")
@@ -399,7 +399,7 @@ def list_runs(
 
 @router.post("/cycles/{cycle_id}/runs", response_model=s.AddRunsResponse)
 def add_runs(
-    cycle_id: UUID, body: s.AddCasesRequest, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Depends(get_uow)
+    cycle_id: UUID, body: s.AddCasesRequest, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Uow
 ) -> s.AddRunsResponse:
     """US-081 / FR-EXE-003."""
     result = service.add_cases(
@@ -410,7 +410,7 @@ def add_runs(
 
 @router.delete("/cycles/{cycle_id}/runs", response_model=s.CountResponse)
 def remove_runs(
-    cycle_id: UUID, body: s.RunIdsRequest, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Depends(get_uow)
+    cycle_id: UUID, body: s.RunIdsRequest, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Uow
 ) -> s.CountResponse:
     """US-081 (TCMS-057): only not-run runs without attempts (409 run_has_results)."""
     return s.CountResponse(count=service.remove_runs(uow, ctx, cycle_id, run_ids=body.run_ids))
@@ -418,7 +418,7 @@ def remove_runs(
 
 @router.post("/cycles/{cycle_id}/runs/assign", response_model=s.CountResponse)
 def assign_runs(
-    cycle_id: UUID, body: s.AssignRequest, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Depends(get_uow)
+    cycle_id: UUID, body: s.AssignRequest, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Uow
 ) -> s.CountResponse:
     """US-082 / FR-EXE-004 (TCMS-055): selected runs or every run matching `filter`."""
     n = service.assign_runs(
@@ -429,7 +429,7 @@ def assign_runs(
 
 @router.post("/cycles/{cycle_id}/runs/reorder", response_model=s.CountResponse)
 def reorder_runs(
-    cycle_id: UUID, body: s.ReorderRequest, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Depends(get_uow)
+    cycle_id: UUID, body: s.ReorderRequest, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Uow
 ) -> s.CountResponse:
     """US-087 / docs/02 §7.1."""
     n = service.reorder_runs(uow, ctx, cycle_id, run_ids_in_order=body.run_ids_in_order, sort_by=body.sort_by)
@@ -438,7 +438,7 @@ def reorder_runs(
 
 @router.post("/cycles/{cycle_id}/runs/update-versions", response_model=s.CountResponse)
 def update_not_run_versions(
-    cycle_id: UUID, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Depends(get_uow)
+    cycle_id: UUID, ctx: AccessContext = CycleCtx, uow: UnitOfWork = Uow
 ) -> s.CountResponse:
     """US-086 bulk: every not-run run moves to its eligible version (BR-04)."""
     return s.CountResponse(count=service.update_not_run_versions(uow, ctx, cycle_id))
@@ -587,7 +587,7 @@ def get_run(
         default=None, description="Runner queue (include=queue): mine_open (default), mine, open, all"
     ),
     ctx: AccessContext = RunCtx,
-    uow: UnitOfWork = Depends(get_read_uow),
+    uow: UnitOfWork = ReadUow,
 ) -> s.RunRead:
     """docs/06 §4.6 / §5.4: run, case summary, pinned version, newer version, draft, attempts, queue."""
     ctx.require("project.view")
@@ -597,7 +597,7 @@ def get_run(
 
 
 @router.post("/runs/{run_id}/claim", response_model=s.RunRead)
-def claim_run(run_id: UUID, ctx: AccessContext = RunCtx, uow: UnitOfWork = Depends(get_uow)) -> s.RunRead:
+def claim_run(run_id: UUID, ctx: AccessContext = RunCtx, uow: UnitOfWork = Uow) -> s.RunRead:
     """US-082 / FR-EXE-004 (TCMS-056)."""
     service.claim_run(uow, ctx, run_id)
     uow.session.flush()
@@ -605,9 +605,7 @@ def claim_run(run_id: UUID, ctx: AccessContext = RunCtx, uow: UnitOfWork = Depen
 
 
 @router.post("/runs/{run_id}/update-version", response_model=s.RunRead)
-def update_run_version(
-    run_id: UUID, ctx: AccessContext = RunCtx, uow: UnitOfWork = Depends(get_uow)
-) -> s.RunRead:
+def update_run_version(run_id: UUID, ctx: AccessContext = RunCtx, uow: UnitOfWork = Uow) -> s.RunRead:
     """US-086 / BR-04."""
     service.update_run_version(uow, ctx, run_id)
     uow.session.flush()
@@ -615,7 +613,7 @@ def update_run_version(
 
 
 @router.post("/runs/{run_id}/replace", response_model=s.RunRead, status_code=status.HTTP_201_CREATED)
-def replace_run(run_id: UUID, ctx: AccessContext = RunCtx, uow: UnitOfWork = Depends(get_uow)) -> s.RunRead:
+def replace_run(run_id: UUID, ctx: AccessContext = RunCtx, uow: UnitOfWork = Uow) -> s.RunRead:
     """US-086 / BR-05: returns the new run."""
     new = service.replace_run(uow, ctx, run_id)
     uow.session.flush()
