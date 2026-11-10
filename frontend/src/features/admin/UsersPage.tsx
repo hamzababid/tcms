@@ -184,9 +184,8 @@ export function UsersPage() {
       cell: (c) => {
         // Projects matching the column filter first, then active before archived, then by key.
         const all = c.row.original.project_roles ?? [];
-        const needle = String(c.column.getFilterValue() ?? "")
-          .trim()
-          .toLowerCase();
+        const raw = c.column.getFilterValue();
+        const needle = (typeof raw === "string" ? raw : "").trim().toLowerCase();
         const matches = (r: (typeof all)[number]) =>
           needle !== "" &&
           `${r.project_key} ${ROLE_LABELS[r.role_code] ?? r.role_name}`.toLowerCase().includes(needle);
