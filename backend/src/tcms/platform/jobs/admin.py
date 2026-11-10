@@ -93,8 +93,8 @@ def jobs(
     stmt = select(Job).where(_visible(org_id))
     if statuses:
         stmt = stmt.where(Job.status.in_(statuses))
-    if job_type:
-        stmt = stmt.where(Job.type == job_type)
+    if job_type and job_type.strip():
+        stmt = stmt.where(Job.type.icontains(job_type.strip(), autoescape=True))  # part of the type
     total = int(s.execute(select(func.count()).select_from(stmt.subquery())).scalar_one())
     rows = s.execute(
         stmt.order_by(func.coalesce(Job.finished_at, Job.run_at).desc(), Job.id.desc())

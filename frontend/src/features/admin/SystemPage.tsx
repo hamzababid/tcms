@@ -1,10 +1,10 @@
 import { useQueryClient } from "@tanstack/react-query";
-import type { ColumnDef, PaginationState } from "@tanstack/react-table";
+import type { ColumnDef, ColumnFiltersState } from "@tanstack/react-table";
 import { CheckCircle2, RotateCcw, XCircle } from "lucide-react";
 import { useState } from "react";
 
 import { Card, ErrorState, errorMessage, Page, Skeleton, useToast } from "@/components/common/feedback";
-import { DataTable } from "@/components/common/DataTable";
+import { DataTable, filterValue, usePaging } from "@/components/common/DataTable";
 import { Tag } from "@/components/common/Tag";
 import { Button } from "@/components/ui/button";
 import { formatBytes, formatCount, formatDateTime } from "@/lib/format";
@@ -39,8 +39,16 @@ export function SystemPage() {
   const status = useSystemStatus();
   const qc = useQueryClient();
   const toast = useToast();
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 25 });
-  const jobs = useJobs(PROBLEM, pagination.pageIndex + 1, pagination.pageSize);
+  const [filters, setFilters] = useState<ColumnFiltersState>([]);
+  const statusFilter = filterValue(filters, "status") as JobStatus | undefined;
+  const typeFilter = filterValue(filters, "type");
+  const [pagination, setPagination] = usePaging(JSON.stringify(filters));
+  const jobs = useJobs(
+    statusFilter ? [statusFilter] : PROBLEM,
+    pagination.pageIndex + 1,
+    pagination.pageSize,
+    typeFilter,
+  );
   const [retrying, setRetrying] = useState<string | null>(null);
 
   async function retry(job: Job) {
@@ -67,14 +75,23 @@ export function SystemPage() {
           {c.row.original.system ? <Tag tone="neutral">installation</Tag> : null}
         </span>
       ),
-      meta: { width: "w-56", fixed: true },
+      meta: { width: "w-56", fixed: true, filter: { kind: "text", placeholder: "Job type" } },
     },
     {
       id: "status",
       accessorKey: "status",
       header: "Status",
       cell: (c) => <span className="text-danger">{c.getValue() === "dead" ? "Gave up" : "Failed"}</span>,
-      meta: { width: "w-24" },
+      meta: {
+        width: "w-32",
+        filter: {
+          kind: "select",
+          options: [
+            { value: "failed", label: "Failed" },
+            { value: "dead", label: "Gave up" },
+          ],
+        },
+      },
     },
     {
       id: "attempts",
@@ -206,16 +223,14 @@ export function SystemPage() {
           error={jobs.error}
           onRetry={() => void jobs.refetch()}
           noun={["job", "jobs"]}
-          emptyText="No failed jobs."
+          emptyText={filters.length ? "No jobs match these filters." : "No failed jobs."}
           toolbar={<h2 className="text-[15px] font-semibold text-ink">Failed jobs</h2>}
           server={{
             total: jobs.data?.total ?? 0,
             pagination,
             onPaginationChange: setPagination,
-            sorting: [],
-            onSortingChange: () => undefined,
-            filters: [],
-            onFiltersChange: () => undefined,
+            filters,
+            onFiltersChange: setFilters,
           }}
         />
       </div>

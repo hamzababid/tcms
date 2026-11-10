@@ -138,4 +138,7 @@ class TraceRow(BaseModel):
 class TraceabilityRead(BaseModel):
     release_id: UUID | None
     summary: CoverageRead
+    page: int
+    page_size: int
+    total: int = Field(description="Rows matching the filters (the summary counts every reference)")
     rows: list[TraceRow]

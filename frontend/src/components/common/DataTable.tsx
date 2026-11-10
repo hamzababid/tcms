@@ -89,11 +89,38 @@ export interface ServerState {
   total: number;
   pagination: PaginationState;
   onPaginationChange: (p: PaginationState) => void;
-  sorting: SortingState;
-  onSortingChange: (s: SortingState) => void;
-  filters: ColumnFiltersState;
-  onFiltersChange: (f: ColumnFiltersState) => void;
+  /** Omit both when the API has no sort for this list: headers are then not sort buttons. */
+  sorting?: SortingState;
+  onSortingChange?: (s: SortingState) => void;
+  /** Omit both when the API takes no filters for this list. */
+  filters?: ColumnFiltersState;
+  onFiltersChange?: (f: ColumnFiltersState) => void;
 }
+
+/** Default rows per page of every list (docs/07 §4.1); tables inside a record's tabs use 10. */
+export const DEFAULT_PAGE_SIZE = 50;
+
+/**
+ * Page state for a server-mode table. The page goes back to 1 whenever `resetKey` changes (filters,
+ * toggles, folder, saved view), so a narrower query never lands on an empty page past its end.
+ */
+export function usePaging(
+  resetKey: string,
+  pageSize: number = DEFAULT_PAGE_SIZE,
+): [PaginationState, (p: PaginationState | ((p: PaginationState) => PaginationState)) => void] {
+  const [state, setState] = useState<{ key: string; p: PaginationState }>({
+    key: resetKey,
+    p: { pageIndex: 0, pageSize },
+  });
+  const pagination = state.key === resetKey ? state.p : { ...state.p, pageIndex: 0 };
+  const set = (u: PaginationState | ((p: PaginationState) => PaginationState)) => {
+    setState({ key: resetKey, p: typeof u === "function" ? u(pagination) : u });
+  };
+  return [pagination, set];
+}
+
+const NO_SORTING: SortingState = [];
+const NO_FILTERS: ColumnFiltersState = [];
 
 export interface DataTableProps<T> {
   /** Accessible name of the table. */
@@ -312,7 +339,7 @@ export function DataTable<T>({
   toolbar,
   banner,
   rowProps,
-  initialPageSize = 25,
+  initialPageSize = DEFAULT_PAGE_SIZE,
   initialSorting = [],
   fill = false,
   bare = false,
@@ -341,26 +368,36 @@ export function DataTable<T>({
   );
   const [clears, setClears] = useState(0);
 
+  const serverSorts = Boolean(server?.onSortingChange);
+  const serverFilters = Boolean(server?.onFiltersChange);
+  const currentSorting = server ? (server.sorting ?? NO_SORTING) : sorting;
+  const currentFilters = server ? (server.filters ?? NO_FILTERS) : filters;
+
   // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions by design
   const table = useReactTable<T>({
     data,
     columns: cols,
     ...(getRowId ? { getRowId: (r: T) => getRowId(r) } : {}),
+    // A server list the API cannot sort or filter shows no sort buttons or filter row.
+    ...(server && !serverSorts ? { enableSorting: false } : {}),
+    ...(server && !serverFilters ? { enableColumnFilters: false } : {}),
     state: {
-      sorting: server ? server.sorting : sorting,
-      columnFilters: server ? server.filters : filters,
+      sorting: currentSorting,
+      columnFilters: currentFilters,
       pagination: server ? server.pagination : pagination,
       columnVisibility: visibility,
     },
     onSortingChange: (u) => {
-      const next = typeof u === "function" ? u(server ? server.sorting : sorting) : u;
-      if (server) server.onSortingChange(next);
-      else setSorting(next);
+      const next = typeof u === "function" ? u(currentSorting) : u;
+      if (server) {
+        server.onSortingChange?.(next);
+        server.onPaginationChange({ ...server.pagination, pageIndex: 0 });
+      } else setSorting(next);
     },
     onColumnFiltersChange: (u) => {
-      const next = typeof u === "function" ? u(server ? server.filters : filters) : u;
+      const next = typeof u === "function" ? u(currentFilters) : u;
       if (server) {
-        server.onFiltersChange(next);
+        server.onFiltersChange?.(next);
         server.onPaginationChange({ ...server.pagination, pageIndex: 0 });
       } else {
         setFilters(next);
@@ -386,12 +423,12 @@ export function DataTable<T>({
   const state = table.getState();
   const total = server ? server.total : table.getFilteredRowModel().rows.length;
   const { pageIndex, pageSize } = state.pagination;
-  const pageCount = Math.max(1, Math.ceil(total / pageSize));
-  const from = total === 0 ? 0 : pageIndex * pageSize + 1;
-  const to = Math.min(total, (pageIndex + 1) * pageSize);
   const rows: Row<T>[] = table.getRowModel().rows;
   const hasFilters = state.columnFilters.length > 0;
-  const anyFilter = !hideFilters && table.getVisibleLeafColumns().some((c) => c.columnDef.meta?.filter);
+  const anyFilter =
+    !hideFilters &&
+    (!server || serverFilters) &&
+    table.getVisibleLeafColumns().some((c) => c.columnDef.meta?.filter);
   const hideable = table.getAllLeafColumns().filter((c) => !c.columnDef.meta?.fixed && c.getCanHide());
   const nothingAtAll = !loading && !hasFilters && total === 0 && empty;
   const colCount = table.getVisibleLeafColumns().length;
@@ -603,80 +640,128 @@ export function DataTable<T>({
           </table>
         </div>
       )}
-      <div
-        className={cn(
-          "tabular flex flex-wrap items-center justify-between gap-3 border-t border-border py-2 text-[12.5px] text-ink-secondary",
-          dense ? "px-3" : "px-4",
-          !bare && "rounded-b-card",
-        )}
-      >
-        <span className="whitespace-nowrap">
-          {total === 0
-            ? `No ${many}`
-            : `${dense ? "" : "Showing "}${from.toLocaleString()}–${to.toLocaleString()} of ${total.toLocaleString()}`}
-        </span>
-        <div className={cn("flex items-center", dense ? "gap-2" : "gap-4")}>
-          <label className="flex items-center gap-2">
-            <span className={dense ? "sr-only" : ""}>Rows per page</span>
-            <Select
-              aria-label="Rows per page"
-              className="h-7 w-[72px] pl-2 pr-6 text-[12.5px]"
-              value={String(pageSize)}
-              onChange={(e) => {
-                table.setPagination({ pageIndex: 0, pageSize: Number(e.target.value) });
-              }}
-            >
-              {PAGE_SIZES.map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </Select>
-          </label>
-          <nav aria-label={`${label} pages`} className="flex items-center gap-1">
-            <PageButton
-              label="First page"
-              disabled={pageIndex === 0}
-              onClick={() => {
-                table.setPageIndex(0);
-              }}
-            >
-              <ChevronsLeft className="size-3.5" />
-            </PageButton>
-            <PageButton
-              label="Previous page"
-              disabled={pageIndex === 0}
-              onClick={() => {
-                table.setPageIndex(pageIndex - 1);
-              }}
-            >
-              <ChevronLeft className="size-3.5" />
-            </PageButton>
-            <span className="whitespace-nowrap px-2">
-              {dense
-                ? `${Math.min(pageIndex + 1, pageCount)} / ${pageCount}`
-                : `Page ${Math.min(pageIndex + 1, pageCount)} of ${pageCount}`}
-            </span>
-            <PageButton
-              label="Next page"
-              disabled={pageIndex + 1 >= pageCount}
-              onClick={() => {
-                table.setPageIndex(pageIndex + 1);
-              }}
-            >
-              <ChevronRight className="size-3.5" />
-            </PageButton>
-            <PageButton
-              label="Last page"
-              disabled={pageIndex + 1 >= pageCount}
-              onClick={() => {
-                table.setPageIndex(pageCount - 1);
-              }}
-            >
-              <ChevronsRight className="size-3.5" />
-            </PageButton>
-          </nav>
-        </div>
+      <Pager
+        label={label}
+        total={total}
+        pagination={{ pageIndex, pageSize }}
+        onChange={(p) => {
+          table.setPagination(p);
+        }}
+        noun={noun}
+        dense={dense}
+        className={cn(!bare && "rounded-b-card")}
+      />
+    </div>
+  );
+}
+
+/**
+ * The footer of every paged list: "Showing a–b of n", rows per page and page buttons. DataTable uses it;
+ * lists that are not a DataTable (reports, traceability, release tabs) use it directly.
+ */
+export function Pager({
+  label,
+  total,
+  pagination,
+  onChange,
+  noun = ["row", "rows"],
+  dense = false,
+  className,
+}: {
+  label: string;
+  total: number;
+  pagination: PaginationState;
+  onChange: (p: PaginationState) => void;
+  noun?: [singular: string, plural: string];
+  dense?: boolean;
+  className?: string;
+}) {
+  const { pageIndex, pageSize } = pagination;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const from = total === 0 ? 0 : pageIndex * pageSize + 1;
+  const to = Math.min(total, (pageIndex + 1) * pageSize);
+  const page = Math.min(pageIndex + 1, pageCount);
+  const go = (i: number) => {
+    onChange({ pageIndex: i, pageSize });
+  };
+  // Past the last page (rows deleted, or a narrower result): go to the last page that exists.
+  const pastEnd = total > 0 && pageIndex >= pageCount;
+  useEffect(() => {
+    if (pastEnd) onChange({ pageIndex: pageCount - 1, pageSize });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- onChange is a new function every render
+  }, [pastEnd, pageCount, pageSize]);
+  return (
+    <div
+      className={cn(
+        "tabular flex flex-wrap items-center justify-between gap-3 border-t border-border py-2 text-[12.5px] text-ink-secondary",
+        dense ? "px-3" : "px-4",
+        className,
+      )}
+    >
+      <span className="whitespace-nowrap">
+        {total === 0
+          ? `No ${noun[1]}`
+          : `${dense ? "" : "Showing "}${from.toLocaleString()}–${to.toLocaleString()} of ${total.toLocaleString()}`}
+      </span>
+      <div className={cn("flex items-center", dense ? "gap-2" : "gap-4")}>
+        <label className="flex items-center gap-2">
+          <span className={dense ? "sr-only" : ""}>Rows per page</span>
+          <Select
+            aria-label="Rows per page"
+            className="h-7 w-[72px] pl-2 pr-6 text-[12.5px]"
+            value={String(pageSize)}
+            onChange={(e) => {
+              onChange({ pageIndex: 0, pageSize: Number(e.target.value) });
+            }}
+          >
+            {PAGE_SIZES.map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </Select>
+        </label>
+        <nav aria-label={`${label} pages`} className="flex items-center gap-1">
+          <PageButton
+            label="First page"
+            disabled={pageIndex === 0}
+            onClick={() => {
+              go(0);
+            }}
+          >
+            <ChevronsLeft className="size-3.5" />
+          </PageButton>
+          <PageButton
+            label="Previous page"
+            disabled={pageIndex === 0}
+            onClick={() => {
+              go(pageIndex - 1);
+            }}
+          >
+            <ChevronLeft className="size-3.5" />
+          </PageButton>
+          <span className="whitespace-nowrap px-2">
+            {dense ? `${page} / ${pageCount}` : `Page ${page} of ${pageCount}`}
+          </span>
+          <PageButton
+            label="Next page"
+            disabled={pageIndex + 1 >= pageCount}
+            onClick={() => {
+              go(pageIndex + 1);
+            }}
+          >
+            <ChevronRight className="size-3.5" />
+          </PageButton>
+          <PageButton
+            label="Last page"
+            disabled={pageIndex + 1 >= pageCount}
+            onClick={() => {
+              go(pageCount - 1);
+            }}
+          >
+            <ChevronsRight className="size-3.5" />
+          </PageButton>
+        </nav>
       </div>
     </div>
   );

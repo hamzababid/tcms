@@ -9,6 +9,7 @@ import { keys, useMe, useOrgMembers, type OrgMember } from "@/api/queries";
 import { DataTable } from "@/components/common/DataTable";
 import { ConfirmDialog, PromptDialog } from "@/components/common/dialogs";
 import { ErrorState, Page, useToast } from "@/components/common/feedback";
+import { MoreList } from "@/components/common/MoreList";
 import { Tag } from "@/components/common/Tag";
 import { Button } from "@/components/ui/button";
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
@@ -181,21 +182,34 @@ export function UsersPage() {
       header: "Projects",
       enableSorting: false,
       cell: (c) => {
-        const roles = c.row.original.project_roles ?? [];
+        // Projects matching the column filter first, then active before archived, then by key.
+        const all = c.row.original.project_roles ?? [];
+        const raw = c.column.getFilterValue();
+        const needle = (typeof raw === "string" ? raw : "").trim().toLowerCase();
+        const matches = (r: (typeof all)[number]) =>
+          needle !== "" &&
+          `${r.project_key} ${ROLE_LABELS[r.role_code] ?? r.role_name}`.toLowerCase().includes(needle);
+        const roles = [...all].sort(
+          (a, b) =>
+            Number(matches(b)) - Number(matches(a)) ||
+            Number(a.project_status === "archived") - Number(b.project_status === "archived") ||
+            a.project_key.localeCompare(b.project_key),
+        );
         if (!roles.length) return <span className="text-ink-muted">—</span>;
         return (
-          <span className="flex flex-wrap gap-1">
-            {roles.map((r) => (
-              <Tag
-                key={r.project_id}
-                tone="neutral"
-                className={r.project_status === "archived" ? "opacity-70" : ""}
-              >
-                <span className="font-mono text-[11.5px] font-medium">{r.project_key}</span>
-                {ROLE_LABELS[r.role_code] ?? r.role_name}
-              </Tag>
-            ))}
-          </span>
+          <MoreList
+            max={2}
+            label={`Projects of ${c.row.original.user.display_name}`}
+            items={roles.map((r) => ({
+              key: r.project_id,
+              node: (
+                <Tag tone="neutral" className={r.project_status === "archived" ? "opacity-70" : ""}>
+                  <span className="font-mono text-[11.5px] font-medium">{r.project_key}</span>
+                  {ROLE_LABELS[r.role_code] ?? r.role_name}
+                </Tag>
+              ),
+            }))}
+          />
         );
       },
       meta: { filter: { kind: "text", placeholder: "Project or role" } },

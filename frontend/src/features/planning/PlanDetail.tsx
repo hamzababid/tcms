@@ -1,10 +1,10 @@
 import { useNavigate } from "@tanstack/react-router";
-import type { ColumnDef, PaginationState } from "@tanstack/react-table";
+import type { ColumnDef, ColumnFiltersState } from "@tanstack/react-table";
 import { Archive, Copy, MoreHorizontal, Pencil, Plus } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import { useEnvironments, useMembers, useReleases, type Project } from "@/api/queries";
-import { DataTable } from "@/components/common/DataTable";
+import { DataTable, filterValue, usePaging } from "@/components/common/DataTable";
 import { ConfirmDialog, PromptDialog } from "@/components/common/dialogs";
 import {
   Card,
@@ -29,6 +29,7 @@ import { usePlanReadiness } from "@/features/reporting/api";
 import { ReadinessRules, ReadyBadge } from "@/features/reporting/readiness";
 import { PlanRequirements } from "@/features/requirements/components";
 import { AddCasesDialog } from "@/features/testdesign/CaseSelector";
+import { CASE_STATUS_LABELS, PRIORITY_LABELS } from "@/features/testdesign/labels";
 import { formatDate, formatPercent } from "@/lib/format";
 
 import {
@@ -41,6 +42,7 @@ import {
   useRemovePlanCases,
   type ExitRule,
   type PlanCaseItem,
+  type PlanCaseQuery,
   type PlanCycle,
   type PlanRead,
   type Risk,
@@ -226,7 +228,7 @@ export function PlanDetail({
           {
             value: "history",
             label: "History",
-            content: <RecordHistory entityType="test_plan" entityId={p.id} />,
+            content: <RecordHistory projectId={project.id} entityType="test_plan" entityId={p.id} />,
           },
         ]}
       />
@@ -424,10 +426,26 @@ function Overview({ project, plan }: { project: Project; plan: PlanRead }) {
   );
 }
 
+type CaseStatusValue = NonNullable<PlanCaseQuery["status"]>[number];
+type PriorityValue = NonNullable<PlanCaseQuery["priority"]>[number];
+
 function PlanCases({ project, plan, writable }: { project: Project; plan: PlanRead; writable: boolean }) {
   const toast = useToast();
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
-  const cases = usePlanCases(plan.id, { page: pagination.pageIndex + 1, page_size: pagination.pageSize });
+  const [filters, setFilters] = useState<ColumnFiltersState>([]);
+  const q = filterValue(filters, "title");
+  const caseStatus = filterValue(filters, "status");
+  const priority = filterValue(filters, "priority");
+  const where = {
+    ...(q ? { q } : {}),
+    ...(caseStatus ? { status: [caseStatus as CaseStatusValue] } : {}),
+    ...(priority ? { priority: [priority as PriorityValue] } : {}),
+  };
+  const [pagination, setPagination] = usePaging(JSON.stringify(where));
+  const cases = usePlanCases(plan.id, {
+    ...where,
+    page: pagination.pageIndex + 1,
+    page_size: pagination.pageSize,
+  });
   const addCases = useAddPlanCases(project.id, plan.id);
   const remove = useRemovePlanCases(project.id, plan.id);
   const [checked, setChecked] = useState<Set<string>>(new Set());
@@ -499,7 +517,11 @@ function PlanCases({ project, plan, writable }: { project: Project; plan: PlanRe
           {c.row.original.title}
         </span>
       ),
-      meta: { fixed: true, cellClassName: "max-w-0 min-w-[200px]" },
+      meta: {
+        fixed: true,
+        cellClassName: "max-w-0 min-w-[200px]",
+        filter: { kind: "text", placeholder: "Key or text" },
+      },
     },
     {
       id: "priority",
@@ -507,7 +529,13 @@ function PlanCases({ project, plan, writable }: { project: Project; plan: PlanRe
       accessorKey: "priority",
       enableSorting: false,
       cell: (c) => <PriorityIcon priority={c.row.original.priority} />,
-      meta: { width: "w-28" },
+      meta: {
+        width: "w-28",
+        filter: {
+          kind: "select",
+          options: Object.entries(PRIORITY_LABELS).map(([value, label]) => ({ value, label })),
+        },
+      },
     },
     {
       id: "status",
@@ -515,7 +543,13 @@ function PlanCases({ project, plan, writable }: { project: Project; plan: PlanRe
       accessorKey: "status",
       enableSorting: false,
       cell: (c) => <StatusBadge kind="case" status={c.row.original.status} />,
-      meta: { width: "w-36" },
+      meta: {
+        width: "w-36",
+        filter: {
+          kind: "select",
+          options: Object.entries(CASE_STATUS_LABELS).map(([value, label]) => ({ value, label })),
+        },
+      },
     },
     {
       id: "results",
@@ -550,8 +584,7 @@ function PlanCases({ project, plan, writable }: { project: Project; plan: PlanRe
         error={cases.error}
         onRetry={() => void cases.refetch()}
         noun={["case", "cases"]}
-        hideFilters
-        emptyText="No cases on this page."
+        emptyText="No cases match these filters."
         empty={
           <EmptyState
             text="No cases in this plan yet. Add them by folder, tag or search."
@@ -618,10 +651,8 @@ function PlanCases({ project, plan, writable }: { project: Project; plan: PlanRe
           total: cases.data?.total ?? 0,
           pagination,
           onPaginationChange: setPagination,
-          sorting: [],
-          onSortingChange: () => undefined,
-          filters: [],
-          onFiltersChange: () => undefined,
+          filters,
+          onFiltersChange: setFilters,
         }}
       />
       {adding ? (

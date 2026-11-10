@@ -102,6 +102,15 @@ flowchart TB
 └───────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
+Every list uses the shared table (`DataTable`) or, for lists that are not tables, its footer (`Pager`), so lists behave the same everywhere (M8c follow-up):
+
+- Footer: "Showing a–b of n", **Rows per page** (10, 25, 50, 100; default 50; tables inside a record's tabs start at 10) and first/previous/next/last page buttons with "Page x of y".
+- Filters sit in a row under the headers: text (searched after a 300 ms pause), select, or date range. "Clear filters" appears when any is set. The text filter of the main column is the list's search ("Key or name", "Key or text", "Reference or title").
+- Any change to a filter, toggle (Show archived, Needs retest…), sort, folder or saved view goes back to page 1; a page past the end (rows removed) moves to the last page.
+- Headers are sort buttons only where the API can sort that column; lists without an API sort show plain headers.
+- Cells that hold a list (a user's projects, a requirement's cases and bugs) show the first few items and "+N more", which opens the whole list, so a row stays one or two lines.
+- Pickers that load one page of records (the plan list in New cycle, the runner queue) say so when there are more than they show.
+
 - Click row → open side panel; `Ctrl/Cmd+click` or middle-click → open full page in new tab.
 - Column resize/reorder/visibility persisted per user per table.
 - Bulk action bar appears on selection; "select all matching" switches the action to filter-based.

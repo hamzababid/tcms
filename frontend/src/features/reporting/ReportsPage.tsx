@@ -3,6 +3,9 @@ import { Download, RefreshCw } from "lucide-react";
 import { useState } from "react";
 
 import { useReleases, type Project } from "@/api/queries";
+import type { PaginationState } from "@tanstack/react-table";
+
+import { Pager, usePaging } from "@/components/common/DataTable";
 import { Card, errorMessage, ErrorState, Page, Skeleton, useToast } from "@/components/common/feedback";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/field";
@@ -276,7 +279,6 @@ function ReportTab({ project, name, canExport }: { project: Project; name: strin
   const [status, setStatus] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const [page, setPage] = useState(1);
   const [transferId, setTransferId] = useState<string | null>(null);
   const toast = useToast();
   const filters: Record<string, string> = {
@@ -285,7 +287,13 @@ function ReportTab({ project, name, canExport }: { project: Project; name: strin
     ...(DATED.has(name) && from ? { date_from: from } : {}),
     ...(DATED.has(name) && to ? { date_to: to } : {}),
   };
-  const rep = useReport(project.id, name, { ...filters, page, page_size: 50 });
+  // A new release, status or date range starts on page 1.
+  const [pagination, setPagination] = usePaging(JSON.stringify(filters));
+  const rep = useReport(project.id, name, {
+    ...filters,
+    page: pagination.pageIndex + 1,
+    page_size: pagination.pageSize,
+  });
   const transfer = useTransfer(transferId);
   const doExport = async (format: "csv" | "xlsx") => {
     try {
@@ -307,7 +315,6 @@ function ReportTab({ project, name, canExport }: { project: Project; name: strin
           value={releaseId}
           onChange={(v) => {
             setReleaseId(v);
-            setPage(1);
           }}
         />
         {statusFilter ? (
@@ -319,7 +326,6 @@ function ReportTab({ project, name, canExport }: { project: Project; name: strin
               value={status}
               onChange={(e) => {
                 setStatus(e.target.value);
-                setPage(1);
               }}
             >
               <option value="">Any</option>
@@ -388,7 +394,7 @@ function ReportTab({ project, name, canExport }: { project: Project; name: strin
       ) : rep.isError ? (
         <ErrorState error={rep.error} onRetry={() => void rep.refetch()} />
       ) : (
-        <ReportTable data={rep.data} page={page} setPage={setPage} />
+        <ReportTable data={rep.data} pagination={pagination} onPage={setPagination} />
       )}
     </div>
   );
@@ -396,14 +402,13 @@ function ReportTab({ project, name, canExport }: { project: Project; name: strin
 
 function ReportTable({
   data,
-  page,
-  setPage,
+  pagination,
+  onPage,
 }: {
   data: ReportPage;
-  page: number;
-  setPage: (p: number) => void;
+  pagination: PaginationState;
+  onPage: (p: PaginationState) => void;
 }) {
-  const pages = Math.max(1, Math.ceil(data.total / data.page_size));
   return (
     <div className="rounded-card border border-border bg-surface">
       <div className="overflow-x-auto">
@@ -444,33 +449,7 @@ function ReportTable({
           </tbody>
         </table>
       </div>
-      <div className="flex items-center justify-between border-t border-border px-3 py-2 text-xs text-ink-secondary">
-        <span>
-          {formatCount(data.total)} rows · page {page} of {pages}
-        </span>
-        <span className="flex gap-2">
-          <Button
-            variant="secondary"
-            size="xs"
-            disabled={page <= 1}
-            onClick={() => {
-              setPage(page - 1);
-            }}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="secondary"
-            size="xs"
-            disabled={page >= pages}
-            onClick={() => {
-              setPage(page + 1);
-            }}
-          >
-            Next
-          </Button>
-        </span>
-      </div>
+      <Pager label={`${data.title} report`} total={data.total} pagination={pagination} onChange={onPage} />
     </div>
   );
 }

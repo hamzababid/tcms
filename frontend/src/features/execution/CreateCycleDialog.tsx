@@ -322,6 +322,12 @@ export function CreateCycleDialog({
                     </Select>
                   )}
                 </Field>
+                {plans.data && plans.data.total > plans.data.items.length ? (
+                  <p className="text-xs text-ink-secondary">
+                    The newest {plans.data.items.length} of {plans.data.total.toLocaleString()} plans are
+                    listed. For an older plan, create the cycle from the plan&apos;s page.
+                  </p>
+                ) : null}
                 <p className="text-xs text-ink-muted">Optionally narrow the plan&apos;s cases:</p>
                 <ChipPicker
                   legend="Priority"

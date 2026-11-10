@@ -90,7 +90,8 @@ export interface paths {
     };
     /**
      * Record History
-     * @description US-161: a record's history. Project records need `project.view`; org-level ones `org.audit.view`.
+     * @description US-161: a record's history, filters as the case history (docs/06 §4.12). Project records need
+     *     `project.view`; org-level ones `org.audit.view`.
      */
     get: operations["record_history_api_v1_audit_events_entity__entity_type___entity_id__get"];
     put?: never;
@@ -1246,7 +1247,8 @@ export interface paths {
     };
     /**
      * List Jobs
-     * @description TCMS-139: failed and dead jobs by default (`?status=` repeats), newest first.
+     * @description TCMS-139: failed and dead jobs by default (`?status=` repeats), newest first; `type` matches part of
+     *     the job type.
      */
     get: operations["list_jobs_api_v1_organization_jobs_get"];
     put?: never;
@@ -2160,7 +2162,7 @@ export interface paths {
     /**
      * Traceability
      * @description FR-REQ-004 / TCMS-112 (docs/02 §10.4): the summary covers every reference in scope; the rows follow
-     *     the filters.
+     *     the filters and are paged (`total` rows match). Cases and bugs are read for the page only.
      */
     get: operations["traceability_api_v1_projects__project_id__traceability_get"];
     put?: never;
@@ -3048,7 +3050,8 @@ export interface paths {
     };
     /**
      * List Plan Cases
-     * @description US-074 / docs/02 §6.2: each case with its status in every cycle created from the plan.
+     * @description US-074 / docs/02 §6.2: each case with its status in every cycle created from the plan; `q`, `status`
+     *     and `priority` narrow the list (repeat `status`/`priority` for several values).
      */
     get: operations["list_plan_cases_api_v1_test_plans__plan_id__cases_get"];
     put?: never;
@@ -7225,11 +7228,20 @@ export interface components {
     };
     /** TraceabilityRead */
     TraceabilityRead: {
+      /** Page */
+      page: number;
+      /** Page Size */
+      page_size: number;
       /** Release Id */
       release_id: string | null;
       /** Rows */
       rows: components["schemas"]["TraceRow"][];
       summary: components["schemas"]["CoverageRead"];
+      /**
+       * Total
+       * @description Rows matching the filters (the summary counts every reference)
+       */
+      total: number;
     };
     /** TransferRead */
     TransferRead: {
@@ -7675,6 +7687,11 @@ export interface operations {
       query?: {
         page?: number;
         page_size?: number;
+        actor_id?: string | null;
+        action?: string | null;
+        occurred_at__gte?: string | null;
+        occurred_at__lte?: string | null;
+        q?: string | null;
       };
       header?: never;
       path: {
@@ -13566,6 +13583,8 @@ export interface operations {
         status?: string | null;
         uncovered?: boolean;
         q?: string | null;
+        page?: number;
+        page_size?: number;
       };
       header?: never;
       path: {
@@ -16069,6 +16088,10 @@ export interface operations {
       query?: {
         page?: number;
         page_size?: number;
+        /** @description Part of the case key or title */
+        q?: string | null;
+        status?: components["schemas"]["CaseStatus"][];
+        priority?: components["schemas"]["PriorityLevel"][];
       };
       header?: never;
       path: {

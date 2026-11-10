@@ -39,6 +39,8 @@ test("US-162…165: an administrator manages users, reads the audit log, reviews
   const email = page.getByLabel("Filter Email");
   await email.fill("sana@acme.test");
   const sana = users.getByRole("row").filter({ hasText: "sana@acme.test" });
+  // Many projects: the cell shows a few and "+N more"; the Projects filter brings matches to the front.
+  await page.getByLabel("Filter Projects").fill("SPARK");
   await expect(sana).toContainText("SPARK");
   await expect(sana).toContainText("QA Engineer");
   await expectAccessible(page);

@@ -1,8 +1,15 @@
-import type { ColumnDef, ColumnFiltersState, PaginationState, SortingState } from "@tanstack/react-table";
+import type { ColumnDef, ColumnFiltersState } from "@tanstack/react-table";
 import { useState } from "react";
 
 import type { Activity, AuditQuery, ProjectMember } from "@/api/queries";
-import { DataTable, filterValue, rangeValue, type FilterOption } from "@/components/common/DataTable";
+import {
+  DataTable,
+  DEFAULT_PAGE_SIZE,
+  filterValue,
+  rangeValue,
+  usePaging,
+  type FilterOption,
+} from "@/components/common/DataTable";
 import { formatDateTime } from "@/lib/format";
 
 /** Record types that appear in the project feed (labels for the Type filter). */
@@ -24,24 +31,22 @@ export const ENTITY_TYPES: FilterOption[] = [
 const typeLabel = (v: string) => ENTITY_TYPES.find((t) => t.value === v)?.label ?? v;
 
 /** Server-side audit list state → API query (docs/06 §4.12 filters plus q). */
-export function useAuditState(defaultPageSize = 25) {
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: defaultPageSize });
+export function useAuditState(defaultPageSize = DEFAULT_PAGE_SIZE) {
   const [filters, setFilters] = useState<ColumnFiltersState>([]);
-  const [sorting, setSorting] = useState<SortingState>([]);
   const [from, to] = rangeValue(filters, "occurred_at");
   const actor = filterValue(filters, "actor");
   const type = filterValue(filters, "entity_type");
   const q = filterValue(filters, "summary");
-  const query: AuditQuery = {
-    page: pagination.pageIndex + 1,
-    page_size: pagination.pageSize,
+  const where = {
     ...(actor ? { actor_id: actor } : {}),
     ...(type ? { entity_type: type } : {}),
     ...(q ? { q } : {}),
     ...(from ? { occurred_at__gte: from } : {}),
     ...(to ? { occurred_at__lte: to } : {}),
   };
-  return { query, pagination, setPagination, filters, setFilters, sorting, setSorting };
+  const [pagination, setPagination] = usePaging(JSON.stringify(filters), defaultPageSize);
+  const query: AuditQuery = { ...where, page: pagination.pageIndex + 1, page_size: pagination.pageSize };
+  return { query, pagination, setPagination, filters, setFilters };
 }
 
 export function AuditTable({
@@ -148,8 +153,6 @@ export function AuditTable({
         total,
         pagination: state.pagination,
         onPaginationChange: state.setPagination,
-        sorting: state.sorting,
-        onSortingChange: state.setSorting,
         filters: state.filters,
         onFiltersChange: state.setFilters,
       }}

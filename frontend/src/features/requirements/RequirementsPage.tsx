@@ -1,10 +1,10 @@
-import type { ColumnDef, ColumnFiltersState, PaginationState, SortingState } from "@tanstack/react-table";
+import type { ColumnDef, ColumnFiltersState, SortingState } from "@tanstack/react-table";
 import { Link } from "@tanstack/react-router";
 import { Download, FileText, Plus, Upload } from "lucide-react";
 import { useState } from "react";
 
 import type { Project } from "@/api/queries";
-import { DataTable, filterValue } from "@/components/common/DataTable";
+import { DataTable, filterValue, usePaging } from "@/components/common/DataTable";
 import { EmptyState, errorMessage, Page, useToast } from "@/components/common/feedback";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,6 @@ export function RequirementsPage({
 }) {
   const [filters, setFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
   const [archived, setArchived] = useState(false);
   const [adding, setAdding] = useState(false);
   const toast = useToast();
@@ -42,12 +41,16 @@ export function RequirementsPage({
   const views = useSavedViews(project.id, "requirement", { filters, setFilters, sorting, setSorting });
   const q = filterValue(filters, "reference");
   const linked = filterValue(filters, "cases");
-  const query: RequirementQuery = {
-    page: pagination.pageIndex + 1,
-    page_size: pagination.pageSize,
+  const where = {
     ...(q ? { q } : {}),
     ...(linked ? { linked: linked === "true" } : {}),
     ...(archived ? { include_archived: true } : {}),
+  };
+  const [pagination, setPagination] = usePaging(JSON.stringify(where));
+  const query: RequirementQuery = {
+    ...where,
+    page: pagination.pageIndex + 1,
+    page_size: pagination.pageSize,
   };
   const refs = useRequirements(project.id, query);
 
@@ -176,13 +179,8 @@ export function RequirementsPage({
           total: refs.data?.total ?? 0,
           pagination,
           onPaginationChange: setPagination,
-          sorting,
-          onSortingChange: setSorting,
           filters,
-          onFiltersChange: (f) => {
-            setFilters(f);
-            setPagination((p) => ({ ...p, pageIndex: 0 }));
-          },
+          onFiltersChange: setFilters,
         }}
       />
       {adding ? (

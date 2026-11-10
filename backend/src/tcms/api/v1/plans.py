@@ -16,6 +16,7 @@ from tcms.api.deps import (
 )
 from tcms.api.idempotency import Idempotency, idempotency
 from tcms.core.context import AccessContext
+from tcms.core.enums import CaseStatus, PriorityLevel
 from tcms.core.errors import InvalidInclude, NotFound
 from tcms.core.pagination import Page, PageParams
 from tcms.core.uow import UnitOfWork
@@ -267,15 +268,31 @@ def list_plan_cases(
     plan_id: UUID,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=50, ge=1, le=200),
+    q: str | None = Query(default=None, max_length=200, description="Part of the case key or title"),
+    status_: list[CaseStatus] = Query(default=[], alias="status"),
+    priority: list[PriorityLevel] = Query(default=[]),
     ctx: AccessContext = PlanCtx,
     uow: UnitOfWork = ReadUow,
 ) -> Page[s.PlanCaseItem]:
-    """US-074 / docs/02 §6.2: each case with its status in every cycle created from the plan."""
+    """US-074 / docs/02 §6.2: each case with its status in every cycle created from the plan; `q`, `status`
+    and `priority` narrow the list (repeat `status`/`priority` for several values)."""
     ctx.require("project.view")
     se = uow.session
     all_ids = pq.plan_case_ids(se, ctx, plan_id)
     refs = testdesign_queries.case_refs(se, ctx, all_ids)
-    ordered = sorted((refs[c] for c in all_ids if c in refs), key=lambda r: r.key_num)
+    needle = (q or "").strip().casefold()
+    statuses = {str(x) for x in status_}
+    priorities = {str(x) for x in priority}
+    ordered = sorted(
+        (
+            r
+            for r in (refs[c] for c in all_ids if c in refs)
+            if (not needle or needle in r.key.casefold() or needle in r.title.casefold())
+            and (not statuses or str(r.status) in statuses)
+            and (not priorities or str(r.priority) in priorities)
+        ),
+        key=lambda r: r.key_num,
+    )
     start = (page - 1) * page_size
     page_refs = ordered[start : start + page_size]
     results = execution_queries.plan_case_results(se, ctx, plan_id, [r.id for r in page_refs])

@@ -67,7 +67,10 @@ def run(repeat: int = 5) -> Iterator[str]:
         ("Quality dashboard, 30 days", lambda u: api.quality_dashboard(None, None, None, ctx, u)),
         ("Release readiness", lambda u: api.release_readiness(rel, ctx, u)),
         ("Releases page (all releases)", lambda u: api.release_summaries(False, ctx, u)),
-        ("Traceability, active release", lambda u: req_api.traceability(rel, None, False, None, ctx, u)),
+        (
+            "Traceability, active release",
+            lambda u: req_api.traceability(rel, None, False, None, 1, 50, ctx, u),
+        ),
         ("Report: cycle execution (page 1)", report("cycle-execution", release_id=str(rel))),
         ("Report: results history (page 1)", report("results-history")),
         ("Report: case inventory (page 1)", report("case-inventory")),

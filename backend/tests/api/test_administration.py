@@ -189,6 +189,11 @@ def test_tcms_139_dead_job_listed_and_retried(world: World, app_engine: Engine, 
     assert "payload" not in row
     assert next(j for j in listed["items"] if j["id"] == str(system))["system"] is True
     assert admin.get("/api/v1/organization/jobs?status=succeeded").json()["total"] >= 1
+    # `type` matches part of the job type (the Failed jobs filter on Administration › System).
+    assert admin.get("/api/v1/organization/jobs?type=probe").json()["total"] >= 2
+    assert admin.get("/api/v1/organization/jobs?type=PROBE.NO").json()["total"] >= 2
+    assert admin.get("/api/v1/organization/jobs?type=nothing-like-it").json()["total"] == 0
+    assert admin.get("/api/v1/organization/jobs?status=dead&type=probe").json()["total"] == 1
 
     status = admin.get("/api/v1/organization/system-status").json()
     assert status["version"]
