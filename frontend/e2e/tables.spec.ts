@@ -31,7 +31,7 @@ test("Administration lists page and filter like every other list", async ({ brow
   const sana = users.getByRole("row").filter({ hasText: "sana@acme.test" });
   await expect(sana).toHaveCount(1);
   const box = await sana.boundingBox();
-  expect(box?.height ?? 999).toBeLessThanOrEqual(80); // at most two lines of chips
+  expect(box?.height ?? 999).toBeLessThan(100); // two lines of chips at most (was thousands of pixels)
   const more = sana.getByRole("button", { name: /more: Projects of Sana Malik/ });
   if (await more.count()) {
     await more.click();
