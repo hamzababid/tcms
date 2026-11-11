@@ -4,6 +4,8 @@
 {
 	{$CADDY_GLOBAL_OPTIONS}
 	admin off
+	# Clients that send no SNI (Java does not for "localhost", e.g. the ZAP scan) get the site's certificate.
+	default_sni {$TCMS_SITE_ADDRESS}
 	# No trusted_proxies: Caddy is the edge, so it replaces any X-Forwarded-For a client sends with the
 	# connection's address (the api trusts that header from Caddy only). If a load balancer sits in front,
 	# add `servers { trusted_proxies static <its address range> }` here (docs/ops/deploy.md).

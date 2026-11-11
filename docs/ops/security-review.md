@@ -14,9 +14,10 @@ Record of the security checks run before go-live. Add a section per review; keep
 | Images | Trivy 0.76.2, pinned by digest (`images` job) | High or critical with a fix | Clean; accepted items in `security/trivyignore` and `security/exceptions.md` |
 | Authorization | authz matrix (every route × role), cross-tenant tests | Any unexpected status | 168 pass (M8b) |
 
-Nightly: ZAP baseline (passive) against the web app and the API (`.github/workflows/nightly.yml`); a FAIL rule
-fails the run. Locally on 2026-11-08: 0 FAIL; rule 10049 (non-storable content) is ignored on purpose
-(`security/zap-rules.tsv`).
+Nightly: ZAP baseline (passive) against the production stack behind Caddy (`.github/workflows/nightly.yml`).
+Header rules are FAIL and fail the run; other warnings are reported only. Accepted warnings (`style-src
+'unsafe-inline'`, no COEP) are in `security/exceptions.md`. The first scheduled run (2026-11-11) failed
+because it scanned the development server and treated warnings as failures; fixed the same day.
 
 ### Authenticated API scan (OWASP ZAP, once)
 
