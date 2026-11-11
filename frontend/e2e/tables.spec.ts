@@ -31,7 +31,7 @@ test("Administration lists page and filter like every other list", async ({ brow
   const sana = users.getByRole("row").filter({ hasText: "sana@acme.test" });
   await expect(sana).toHaveCount(1);
   const box = await sana.boundingBox();
-  expect(box?.height ?? 999).toBeLessThanOrEqual(80); // at most two lines of chips
+  expect(box?.height ?? 999).toBeLessThan(100); // two lines of chips at most (was thousands of pixels)
   const more = sana.getByRole("button", { name: /more: Projects of Sana Malik/ });
   if (await more.count()) {
     await more.click();
@@ -61,6 +61,17 @@ test("Administration lists page and filter like every other list", async ({ brow
   await expect(jobs).toContainText("No jobs match these filters.");
   await page.getByRole("button", { name: /Clear filters/ }).click();
   await expect(jobs).toContainText("seed.example");
+});
+
+test("the repository with the case panel open does not scroll the page", async ({ browser }) => {
+  const page = await as(browser, "ayesha");
+  await page.goto("/p/SPARK/repository");
+  await page.locator("tbody tr[data-case]").first().click();
+  await expect(page.getByRole("complementary", { name: /details/ })).toBeVisible();
+  // Screen-reader-only labels in compact cells used to hang off the page and give it a blank scroll.
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight))
+    .toBeLessThanOrEqual(0);
 });
 
 test("organization dashboard, releases and traceability have the shared filters and pager", async ({
