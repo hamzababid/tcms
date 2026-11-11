@@ -23,8 +23,9 @@ expiry passes or the fix ships.
   sends none of the production headers), and `zap-baseline.py` exits 2 on warnings, which the job treated as a
   failure. The nightly now scans the production stack behind Caddy and runs with `-I`, so only FAIL rules fail
   it; the header rules (clickjacking, nosniff, HSTS, CSP, Permissions-Policy, cookie flags) are FAIL. Caddy got
-  `default_sni`, because ZAP's Java client sends no SNI for `localhost` and the handshake failed. Local result:
-  0 FAIL, 2 accepted warnings (above), 62 rules pass.
+  `default_sni`, because ZAP's Java client sends no SNI for `localhost` and the handshake failed. The first CI run of the new job also showed that `deploy/make-secrets.sh` made the
+  secret files 0600, which the non-root containers cannot read on Linux (Docker Desktop on macOS hides this);
+  the files are now 0644 inside a 0700 directory. Result: 0 FAIL, 2 accepted warnings (above), 62 rules pass.
 
 - 2026-11-08 (M8c): first scans. Trivy reported 12 high/critical findings in the backend image and 55 in the
   web image, all OS packages with fixes released after the base images were built; both Dockerfiles now
