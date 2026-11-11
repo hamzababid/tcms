@@ -1,5 +1,7 @@
-# Nightly security scan (docs/08 §8, M8 D14): OWASP ZAP baseline (passive) against the CI stack.
-# A FAIL rule fails the run; accepted findings are listed in security/zap-rules.tsv and security/exceptions.md.
+# Nightly security scan (docs/08 §8, M8 D14): OWASP ZAP baseline (passive) against the production stack
+# (deploy/docker-compose.prod.yml behind Caddy, local drill settings), so it checks the headers users get.
+# Only rules marked FAIL in security/zap-rules.tsv fail the run (`-I`: warnings are reported, not fatal);
+# accepted findings are listed there and in security/exceptions.md.
 name: nightly
 on:
   schedule:
@@ -10,18 +12,33 @@ permissions:
 jobs:
   zap-baseline:
     runs-on: ubuntu-24.04
+    env:
+      COMPOSE: docker compose -f deploy/docker-compose.prod.yml -f deploy/docker-compose.local.yml --env-file deploy/local.env
     steps:
       - uses: actions/checkout@v5
-      - name: start stack, migrate, seed
-        run: make up && make migrate && make seed
+      - name: start the production stack and seed the demo data
+        run: |
+          deploy/make-secrets.sh
+          $COMPOSE up -d --build
+          for i in $(seq 1 60); do
+            curl -sfk https://localhost/api/v1/health/ready && break
+            sleep 5
+          done
+          curl -sfk https://localhost/api/v1/health/ready
+          $COMPOSE run --rm api tcms seed --profile dev
       - name: ZAP baseline (web app and API)
         run: |
           mkdir -p zap && chmod 777 zap
-          for target in http://localhost:5173 http://localhost:8000/api/v1/health/ready; do
+          status=0
+          for target in https://localhost https://localhost/api/v1/health/ready; do
             docker run --rm --network host -v "$PWD/zap:/zap/wrk:rw" -v "$PWD/security:/zap/rules:ro" \
-              ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t "$target" -c /zap/rules/zap-rules.tsv \
-              -r "report-$(echo "$target" | tr -c 'a-z0-9' '-').html"
+              ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t "$target" -c /zap/rules/zap-rules.tsv -I \
+              -r "report-$(echo "$target" | tr -c 'a-z0-9' '-').html" || status=$?
           done
+          exit $status
+      - if: failure()
+        name: stack logs
+        run: $COMPOSE logs --tail 200
       - if: always()
         uses: actions/upload-artifact@v4
         with: { name: zap-reports, path: zap, if-no-files-found: ignore }
