@@ -4,7 +4,7 @@ COMPOSE := docker compose
 -include .env
 WEB_PORT ?= $(or $(TCMS_WEB_PORT),5173)
 
-.PHONY: help env up down logs ps migrate seed test test-backend test-frontend e2e lint lint-backend brand brand-check \
+.PHONY: help security-scan env up down logs ps migrate seed test test-backend test-frontend e2e lint lint-backend brand brand-check \
         lint-frontend format api-client api-client-check schema-check ci
 
 help: ## List commands
@@ -73,6 +73,11 @@ format: ## Apply formatters
 api-client: ## Export OpenAPI and regenerate frontend/src/api/schema.d.ts
 	cd backend && uv run tcms openapi --output openapi.json
 	cd frontend && pnpm api-client
+
+security-scan: ## Run the ZAP security scan in GitHub Actions (on demand; BRANCH=main by default) and watch it
+	gh workflow run security-scan.yml --ref $${BRANCH:-main}
+	sleep 10
+	gh run watch $$(gh run list --workflow security-scan.yml --limit 1 --json databaseId -q '.[0].databaseId') --exit-status
 
 api-client-check: api-client ## Fail if the committed client is out of date (US-005)
 	git diff --exit-code -- backend/openapi.json frontend/src/api/schema.d.ts \

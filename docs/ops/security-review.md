@@ -14,7 +14,9 @@ Record of the security checks run before go-live. Add a section per review; keep
 | Images | Trivy 0.76.2, pinned by digest (`images` job) | High or critical with a fix | Clean; accepted items in `security/trivyignore` and `security/exceptions.md` |
 | Authorization | authz matrix (every route × role), cross-tenant tests | Any unexpected status | 168 pass (M8b) |
 
-Nightly: ZAP baseline (passive) against the production stack behind Caddy (`.github/workflows/nightly.yml`).
+On demand (not scheduled): ZAP baseline (passive) against the production stack behind Caddy
+(`.github/workflows/security-scan.yml`; `make security-scan`, the Actions "Run workflow" button, or a
+`repository_dispatch` webhook with `event_type: security-scan`).
 Header rules are FAIL and fail the run; other warnings are reported only. Accepted warnings (`style-src
 'unsafe-inline'`, no COEP) are in `security/exceptions.md`. The first scheduled run (2026-11-11) failed
 because it scanned the development server and treated warnings as failures; fixed the same day.

@@ -7,7 +7,7 @@ The CI gates fail on known vulnerabilities (docs/08 §4, M8 D14):
 | `pip-audit` | Backend runtime dependencies (`uv.lock`, no dev group) | Any known vulnerability |
 | `pnpm audit` | Frontend production dependencies | High and critical |
 | Trivy | `assay-backend` and `assay-web` runtime images | High and critical with a fix available |
-| ZAP baseline | Nightly, against the production stack (`deploy/`, Caddy, local drill settings) | Any rule marked FAIL in `security/zap-rules.tsv`; warnings are reported in the artifact only |
+| ZAP baseline | On demand (`make security-scan`, `.github/workflows/security-scan.yml`), against the production stack (`deploy/`, Caddy, local drill settings) | Any rule marked FAIL in `security/zap-rules.tsv`; warnings are reported in the artifact only |
 
 A finding that cannot be fixed yet is accepted only with a row below and the matching ignore entry
 (`security/trivyignore`, `--ignore-vuln` for pip-audit, `security/zap-rules.tsv`). Remove the row when the
@@ -21,7 +21,7 @@ expiry passes or the fix ships.
 ## History
 - 2026-11-11: the first scheduled nightly failed. It scanned the development stack (the Vite dev server, which
   sends none of the production headers), and `zap-baseline.py` exits 2 on warnings, which the job treated as a
-  failure. The nightly now scans the production stack behind Caddy and runs with `-I`, so only FAIL rules fail
+  failure. The scan no longer runs on a schedule (product owner, 2026-11-11): it is started on demand. It now scans the production stack behind Caddy and runs with `-I`, so only FAIL rules fail
   it; the header rules (clickjacking, nosniff, HSTS, CSP, Permissions-Policy, cookie flags) are FAIL. Caddy got
   `default_sni`, because ZAP's Java client sends no SNI for `localhost` and the handshake failed. The first CI run of the new job also showed that `deploy/make-secrets.sh` made the
   secret files 0600, which the non-root containers cannot read on Linux (Docker Desktop on macOS hides this);

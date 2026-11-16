@@ -1,12 +1,14 @@
-# Nightly security scan (docs/08 §8, M8 D14): OWASP ZAP baseline (passive) against the production stack
+# Security scan, on demand only (docs/08 §8, M8 D14): OWASP ZAP baseline (passive) against the production stack
 # (deploy/docker-compose.prod.yml behind Caddy, local drill settings), so it checks the headers users get.
 # Only rules marked FAIL in security/zap-rules.tsv fail the run (`-I`: warnings are reported, not fatal);
 # accepted findings are listed there and in security/exceptions.md.
-name: nightly
+# Not scheduled. Start it with `make security-scan` (gh), the "Run workflow" button in GitHub Actions, or a
+# webhook: POST /repos/{owner}/{repo}/dispatches with {"event_type": "security-scan"}.
+name: security-scan
 on:
-  schedule:
-    - cron: "17 2 * * *"
   workflow_dispatch:
+  repository_dispatch:
+    types: [security-scan]
 permissions:
   contents: read
 jobs:

@@ -30,7 +30,7 @@ A test management tool that loses or misreports results is worse than none. This
 | End-to-end | Critical user journeys in a browser against compose stack | Playwright (Chromium, Firefox, WebKit nightly) | Every merge (Chromium); nightly (all) | QA |
 | Accessibility | Automated axe checks on every E2E page + manual keyboard/screen-reader passes per milestone | @axe-core/playwright, NVDA/VoiceOver | Every merge (axe); per milestone (manual) | QA |
 | Performance | Load and soak at 10× data | k6, seed-large | Nightly on staging; before each release | QA |
-| Security | SAST, dependency scan, DAST, authz matrix, manual review against ASVS L2 | ruff security rules (bandit set), pip-audit, npm audit, Trivy, OWASP ZAP baseline + authenticated scan | Every commit (SAST/deps); nightly (ZAP); pre-release (manual) | QA + developers |
+| Security | SAST, dependency scan, DAST, authz matrix, manual review against ASVS L2 | ruff security rules (bandit set), pip-audit, npm audit, Trivy, OWASP ZAP baseline + authenticated scan | Every commit (SAST/deps); on demand (ZAP, `make security-scan`); pre-release (manual) | QA + developers |
 | Migration | Upgrade from previous release DB; schema drift check | Alembic, pytest | Every merge | Developers |
 | Backup/restore | Restore drill | ops scripts | Quarterly + before MVP go-live | Ops |
 | UAT | SPARK pilot | TCMS itself (dogfooding) + survey | Milestone M9 | QA Manager |
@@ -53,7 +53,8 @@ Rules: tests never depend on wall-clock time (frozen clock fixture), on order, o
 ```
 lint+types ─► unit ─► integration+API ─► contract ─► build images ─► e2e (chromium) + axe ─► merge
                                                                      │
-nightly: e2e all browsers · ZAP · perf (staging) · dependency audit · restore smoke test
+nightly: e2e all browsers · perf (staging) · dependency audit · restore smoke test
+on demand: ZAP baseline against the production stack (`make security-scan`; not scheduled, 2026-11-11)
 ```
 
 | Gate | Threshold |
@@ -146,7 +147,7 @@ Same generator; compare `ExecutionSummary` from SQL with an oracle; assert `None
 | XML (P2) | XXE and billion-laughs payloads to JUnit import |
 | Headers/TLS | CSP, HSTS, frame-ancestors, nosniff present; TLS config via testssl.sh on staging |
 | Secrets | TOTP secrets and integration credentials encrypted at rest (DB inspection test) |
-| DAST | ZAP baseline nightly; authenticated full scan before each release |
+| DAST | ZAP baseline on demand (`make security-scan`) and before each release; authenticated full scan before each release |
 | Manual | ASVS L2 checklist review before MVP go-live; threat-model review per module PR touching auth or permissions |
 
 ## 9. Performance testing
