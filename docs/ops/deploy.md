@@ -19,7 +19,7 @@ at them and remove those services.
 Secrets are files mounted under `/run/secrets` and read through `NAME_FILE` variables (`TCMS_SECRET_KEY_FILE`,
 `DATABASE_URL_FILE`, …; the PostgreSQL image reads `POSTGRES_PASSWORD_FILE`, `ops/db/init-roles.sh` the role
 passwords). They never appear in `prod.env`, in the environment of a container, or in git
-(`deploy/secrets/`, `deploy/backups/` and `deploy/prod.env` are ignored).
+(`deploy/secrets/`, `deploy/backups/` and `deploy/prod.env` are ignored). `deploy/secrets/` is mode 0700 and its files 0644: the containers read the mounted files as their own non-root users, so a 0600 file would be refused on Linux. Keep the directory owned by the admin account.
 
 ## Install
 
