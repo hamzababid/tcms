@@ -5517,6 +5517,17 @@
           "organization": {
             "$ref": "#/components/schemas/OrganizationBrief"
           },
+          "theme": {
+            "default": "system",
+            "description": "Colour theme; `system` follows the device setting (docs/07 \u00a76)",
+            "enum": [
+              "light",
+              "dark",
+              "system"
+            ],
+            "title": "Theme",
+            "type": "string"
+          },
           "time_zone": {
             "title": "Time Zone",
             "type": "string"
@@ -7924,6 +7935,22 @@
               }
             ],
             "title": "Display Name"
+          },
+          "theme": {
+            "anyOf": [
+              {
+                "enum": [
+                  "light",
+                  "dark",
+                  "system"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Theme"
           },
           "time_zone": {
             "anyOf": [

@@ -380,7 +380,12 @@ def revoke_api_token(uow: UnitOfWork, ctx: AccessContext, token_id: UUID) -> Non
 
 
 def update_profile(
-    uow: UnitOfWork, ctx: AccessContext, *, display_name: str | None, time_zone: str | None
+    uow: UnitOfWork,
+    ctx: AccessContext,
+    *,
+    display_name: str | None,
+    time_zone: str | None,
+    theme: str | None = None,
 ) -> User:
     user = repo.user_by_id(uow.session, _uid(ctx), for_update=True)
     assert user is not None
@@ -391,6 +396,10 @@ def update_profile(
     if time_zone is not None and time_zone != user.time_zone:
         changes["time_zone"] = [user.time_zone, time_zone]
         user.time_zone = time_zone
+    current_theme = rules.theme_of(user.preferences)
+    if theme is not None and theme != current_theme:
+        changes["theme"] = [current_theme, theme]
+        user.preferences = {**dict(user.preferences or {}), "theme": theme}
     if changes:
         user.updated_at, user.updated_by, user.row_version = clock.now(), user.id, user.row_version + 1
         uow.audit(ctx, "user.updated", AuditTarget("user", user.id, user.email), changes=changes)

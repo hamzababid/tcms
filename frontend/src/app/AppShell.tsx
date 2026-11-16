@@ -4,6 +4,10 @@ import { Link, useNavigate, useParams, useRouterState } from "@tanstack/react-ro
 import {
   Activity,
   Bug,
+  Check,
+  Monitor,
+  Moon,
+  Sun,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
@@ -28,7 +32,9 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { api } from "@/api/client";
 import { useMe, useProjects, type Me, type Project } from "@/api/queries";
 import { MenuContent, MenuItem, MenuSeparator, MenuShortcut } from "@/components/ui/menu";
+import { errorMessage, useToast } from "@/components/common/feedback";
 import { can, projectPermissions } from "@/lib/permissions";
+import { isChoice, THEME_CHOICES, useTheme, useThemeFromProfile } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 import { adminTabsFor } from "@/features/admin/AdminTabs";
@@ -67,7 +73,7 @@ function NavLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
         "flex h-[34px] items-center gap-2.5 rounded-control px-2.5 text-[13.5px] font-medium text-sidebar-ink transition-colors hover:bg-sidebar-raised hover:text-sidebar-ink-strong",
         collapsed && "justify-center px-0",
       )}
-      activeProps={{ className: "!bg-sidebar-active !text-white" }}
+      activeProps={{ className: "!bg-sidebar-active !text-sidebar-ink-strong" }}
       activeOptions={{ exact: item.exact ?? false }}
       title={collapsed ? item.label : undefined}
     >
@@ -172,12 +178,12 @@ function ProjectSwitcher({
     <M.Root open={open} onOpenChange={setOpen}>
       <M.Trigger
         className={cn(
-          "flex h-9 w-full items-center gap-2 rounded-control border border-sidebar-line bg-sidebar-raised px-2.5 text-left text-[13px] font-semibold text-sidebar-ink-strong transition-colors hover:border-[#4b5563] data-[state=open]:border-[#4b5563]",
+          "flex h-9 w-full items-center gap-2 rounded-control border border-sidebar-line bg-sidebar-raised px-2.5 text-left text-[13px] font-semibold text-sidebar-ink-strong transition-colors hover:border-[var(--sidebar-hover-line)] data-[state=open]:border-[var(--sidebar-hover-line)]",
           collapsed && "justify-center px-0",
         )}
         title={collapsed ? (current?.name ?? "Select a project") : undefined}
       >
-        <span className="shrink-0 rounded bg-sidebar-line px-1.5 font-mono text-[11.5px] font-medium leading-[18px] text-[#e5e7eb]">
+        <span className="shrink-0 rounded bg-sidebar-line px-1.5 font-mono text-[11.5px] font-medium leading-[18px] text-[var(--sidebar-key)]">
           {current?.key ?? (collapsed ? "—" : "Project")}
         </span>
         {collapsed ? null : (
@@ -360,6 +366,8 @@ function initials(name: string): string {
 function UserMenu({ me }: { me: Me }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const toast = useToast();
+  const { choice, setChoice } = useTheme();
   return (
     <M.Root>
       <M.Trigger className="flex size-8 items-center justify-center rounded-full bg-avatar text-[12.5px] font-semibold text-accent-ink ring-offset-2 transition-shadow hover:ring-2 hover:ring-accent-border data-[state=open]:ring-2 data-[state=open]:ring-accent-border">
@@ -390,6 +398,39 @@ function UserMenu({ me }: { me: Me }) {
           </MenuItem>
         ))}
         <MenuSeparator />
+        <M.Label className="px-2.5 pb-1 pt-1.5 text-[11.5px] font-semibold uppercase tracking-[0.06em] text-ink-muted">
+          Theme
+        </M.Label>
+        <M.RadioGroup
+          value={choice}
+          onValueChange={(v) => {
+            if (!isChoice(v)) return;
+            setChoice(v).catch((err: unknown) => {
+              toast(`Theme not saved to your profile: ${errorMessage(err)}`, "error");
+            });
+          }}
+        >
+          {THEME_CHOICES.map((t) => (
+            <M.RadioItem
+              key={t.value}
+              value={t.value}
+              className="flex h-8 cursor-pointer select-none items-center gap-2 rounded-[5px] px-2.5 outline-none data-[highlighted]:bg-surface-muted"
+            >
+              {t.value === "light" ? (
+                <Sun aria-hidden="true" className="size-4 text-ink-muted" />
+              ) : t.value === "dark" ? (
+                <Moon aria-hidden="true" className="size-4 text-ink-muted" />
+              ) : (
+                <Monitor aria-hidden="true" className="size-4 text-ink-muted" />
+              )}
+              {t.label}
+              <M.ItemIndicator className="ml-auto">
+                <Check aria-hidden="true" className="size-4 text-accent-ink" />
+              </M.ItemIndicator>
+            </M.RadioItem>
+          ))}
+        </M.RadioGroup>
+        <MenuSeparator />
         <MenuItem
           onSelect={() =>
             void api.POST("/api/v1/auth/logout").finally(() => {
@@ -410,6 +451,7 @@ function UserMenu({ me }: { me: Me }) {
  * in the navigation; later milestones add their items here.
  */
 export function AppShell({ children }: { children: ReactNode }) {
+  useThemeFromProfile();
   const me = useMe().data;
   const projects = useProjects().data;
   const current = useCurrentProject(projects);
@@ -524,7 +566,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         aria-label="Primary"
         className={cn(
           // Scrolls on short windows instead of letting the last items overflow the dark background.
-          "flex shrink-0 flex-col gap-5 overflow-y-auto bg-sidebar px-3 py-4 text-sidebar-ink transition-[width] duration-150",
+          "flex shrink-0 flex-col gap-5 overflow-y-auto border-r border-[var(--sidebar-edge)] bg-sidebar px-3 py-4 text-sidebar-ink transition-[width] duration-150",
           collapsed ? "w-16" : "w-[var(--sidebar-width)]",
         )}
       >
@@ -601,7 +643,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           {me ? <NotificationBell /> : null}
           {me ? <UserMenu me={me} /> : null}
         </header>
-        <main id="main" className="relative min-h-0 flex-1 overflow-auto">
+        <main
+          id="main"
+          // Focusable so keyboard users can scroll it when a page has no links or buttons (axe
+          // scrollable-region-focusable), and so "Skip to content" moves focus here.
+          // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scroll region needs a tab stop
+          tabIndex={0}
+          className="relative min-h-0 flex-1 overflow-auto focus-visible:outline-offset-[-2px]"
+        >
           {children}
         </main>
       </div>

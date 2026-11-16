@@ -120,6 +120,21 @@ export function DataGrid<T>({ rows, columns, label }: { rows: T[]; columns: Colu
 }
 
 const axis = { fontSize: 11, fill: "var(--color-ink-secondary)" };
+/** Chart chrome from the theme tokens (Recharts defaults are light-only: white tooltip, grey grid). */
+const grid = { strokeDasharray: "3 3", stroke: "var(--border)" };
+const axisLine = "var(--border-control)";
+const tooltip = {
+  contentStyle: {
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
+    borderRadius: 6,
+    color: "var(--ink)",
+    fontSize: 12,
+  },
+  labelStyle: { color: "var(--ink)" },
+  itemStyle: { color: "var(--ink-body)" },
+  cursor: { fill: "var(--surface-muted)" },
+};
 
 /** Stacked status bars, one per row (cycles, releases). */
 export function StatusBars({
@@ -130,11 +145,11 @@ export function StatusBars({
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={data} layout="vertical" margin={{ left: 8, right: 16 }}>
-        <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-        <XAxis type="number" allowDecimals={false} tick={axis} />
-        <YAxis type="category" dataKey="name" width={110} tick={axis} />
-        <Tooltip formatter={(v) => formatCount(Number(v))} />
-        <Legend wrapperStyle={{ fontSize: 12 }} />
+        <CartesianGrid {...grid} horizontal={false} />
+        <XAxis stroke={axisLine} type="number" allowDecimals={false} tick={axis} />
+        <YAxis stroke={axisLine} type="category" dataKey="name" width={110} tick={axis} />
+        <Tooltip {...tooltip} formatter={(v) => formatCount(Number(v))} />
+        <Legend wrapperStyle={{ fontSize: 12, color: "var(--ink-body)" }} />
         {(["passed", "failed", "blocked", "skipped", "not_run"] as const).map((k) => (
           <Bar
             key={k}
@@ -167,10 +182,11 @@ export function ExecutionTrend({
   return (
     <ResponsiveContainer width="100%" height="100%">
       <ComposedChart data={data} margin={{ left: 0, right: 8 }}>
-        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-        <XAxis dataKey="day" tick={axis} />
-        <YAxis yAxisId="n" allowDecimals={false} tick={axis} />
+        <CartesianGrid {...grid} vertical={false} />
+        <XAxis stroke={axisLine} dataKey="day" tick={axis} />
+        <YAxis stroke={axisLine} yAxisId="n" allowDecimals={false} tick={axis} />
         <YAxis
+          stroke={axisLine}
           yAxisId="p"
           orientation="right"
           domain={[0, 1]}
@@ -178,6 +194,7 @@ export function ExecutionTrend({
           tick={axis}
         />
         <Tooltip
+          {...tooltip}
           formatter={(v, name, item) => {
             if (name === "Pass rate") {
               const row = item.payload as { executed: number; passed: number };
@@ -186,7 +203,7 @@ export function ExecutionTrend({
             return formatCount(Number(v));
           }}
         />
-        <Legend wrapperStyle={{ fontSize: 12 }} />
+        <Legend wrapperStyle={{ fontSize: 12, color: "var(--ink-body)" }} />
         <Bar
           yAxisId="n"
           dataKey="executed"
@@ -217,11 +234,11 @@ export function DailyStatus({
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={data} margin={{ left: 0, right: 8 }}>
-        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-        <XAxis dataKey="day" tick={axis} />
-        <YAxis allowDecimals={false} tick={axis} />
-        <Tooltip formatter={(v) => formatCount(Number(v))} />
-        <Legend wrapperStyle={{ fontSize: 12 }} />
+        <CartesianGrid {...grid} vertical={false} />
+        <XAxis stroke={axisLine} dataKey="day" tick={axis} />
+        <YAxis stroke={axisLine} allowDecimals={false} tick={axis} />
+        <Tooltip {...tooltip} formatter={(v) => formatCount(Number(v))} />
+        <Legend wrapperStyle={{ fontSize: 12, color: "var(--ink-body)" }} />
         <Bar
           dataKey="passed"
           name="Passed"
@@ -253,10 +270,10 @@ export function CountBars({ data, label }: { data: { name: string; value: number
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={data} margin={{ left: 0, right: 8 }}>
-        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-        <XAxis dataKey="name" tick={axis} />
-        <YAxis allowDecimals={false} tick={axis} />
-        <Tooltip formatter={(v) => formatCount(Number(v))} />
+        <CartesianGrid {...grid} vertical={false} />
+        <XAxis stroke={axisLine} dataKey="name" tick={axis} />
+        <YAxis stroke={axisLine} allowDecimals={false} tick={axis} />
+        <Tooltip {...tooltip} formatter={(v) => formatCount(Number(v))} />
         <Bar
           dataKey="value"
           name={label}

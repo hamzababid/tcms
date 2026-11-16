@@ -37,6 +37,7 @@ class Membership:
 class Me:
     user: UserRef
     time_zone: str
+    theme: str
     organization_id: UUID
     is_org_admin: bool
     mfa_enrolled: bool
@@ -111,6 +112,7 @@ def me(s: Session, auth: Authenticated) -> Me:
     return Me(
         user=UserRef(user.id, user.display_name, user.email, user.is_active),
         time_zone=user.time_zone,
+        theme=rules.theme_of(user.preferences),
         organization_id=auth.organization_id,
         is_org_admin=auth.is_org_admin,
         mfa_enrolled=auth.mfa_enrolled or repo.mfa_for(s, user.id) is not None,

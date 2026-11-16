@@ -137,8 +137,8 @@ Legend: **Perm** = required permission (project scope unless prefixed `org.`); `
 | POST | `/auth/login` | public | `{email, password}` → `200 {mfa_required, mfa_enrollment_required}`; sets the session cookie (a 5-minute pending session when MFA is enrolled) | AUTH-001 |
 | POST | `/auth/mfa/verify` | pending | `{code}` or `{recovery_code}` → `204`, new session cookie (rotated); 5 failures invalidate the pending sign-in | AUTH-002/003 |
 | POST | `/auth/logout` | auth | Revoke current session | AUTH-006 |
-| GET | `/auth/me` | auth | User, organization, org admin flag, memberships `[{project, role, permissions[]}]`, MFA status, preferences | |
-| PATCH | `/auth/me` | auth | display_name, time_zone, preferences | |
+| GET | `/auth/me` | auth | User, organization, org admin flag, memberships `[{project, role, permissions[]}]`, MFA status, `time_zone`, `theme` (`light`, `dark` or `system`; default `system`) | |
+| PATCH | `/auth/me` | auth | `display_name`, `time_zone`, `theme` (`light`, `dark`, `system`); audited `user.updated` | |
 | POST | `/auth/password/change` | auth | `{current_password, new_password}` | |
 | POST | `/auth/password/forgot` | public | `{email}` → always `202` | AUTH-004 |
 | POST | `/auth/password/reset` | public | `{token, new_password, revoke_api_tokens?: false}` | AUTH-004 |

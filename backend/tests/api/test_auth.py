@@ -475,3 +475,22 @@ def test_auth_rate_limit(m1_settings: Any) -> None:
     assert codes[3] == 429
     r = c.post("/api/v1/auth/password/forgot", json={"email": "x@y.test"})
     assert int(r.headers["Retry-After"]) >= 1
+
+
+def test_theme_preference_is_saved_per_user_and_audited(world: World) -> None:
+    """docs/07 §6: Light, Dark or System (the default), saved with the profile so it follows the user."""
+    org = world.org("Theme org")
+    user = world.user(org, "Themer")
+    client = world.login(user)
+    assert client.get("/api/v1/auth/me").json()["theme"] == "system"
+    assert client.patch("/api/v1/auth/me", json={"theme": "dark"}).status_code == 200
+    assert client.get("/api/v1/auth/me").json()["theme"] == "dark"
+    assert client.patch("/api/v1/auth/me", json={"theme": "sepia"}).status_code == 422
+    assert client.patch("/api/v1/auth/me", json={"display_name": "Themer Two"}).status_code == 200
+    assert client.get("/api/v1/auth/me").json()["theme"] == "dark", "other edits keep the theme"
+    other = world.login(world.user(org, "Other"))
+    assert other.get("/api/v1/auth/me").json()["theme"] == "system", "per user"
+    events = world.login(org.admin).get(
+        "/api/v1/organization/audit-events", params={"action": "user.updated", "q": "Themer"}
+    )
+    assert any("theme" in (e.get("changes") or {}) for e in events.json()["items"]), events.text

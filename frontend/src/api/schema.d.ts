@@ -5055,6 +5055,13 @@ export interface components {
       /** Org Permissions */
       org_permissions: string[];
       organization: components["schemas"]["OrganizationBrief"];
+      /**
+       * Theme
+       * @description Colour theme; `system` follows the device setting (docs/07 §6)
+       * @default system
+       * @enum {string}
+       */
+      theme: "light" | "dark" | "system";
       /** Time Zone */
       time_zone: string;
       user: components["schemas"]["UserRef"];
@@ -5848,6 +5855,8 @@ export interface components {
     ProfilePatch: {
       /** Display Name */
       display_name?: string | null;
+      /** Theme */
+      theme?: ("light" | "dark" | "system") | null;
       /** Time Zone */
       time_zone?: string | null;
     };

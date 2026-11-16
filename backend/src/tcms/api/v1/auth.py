@@ -107,6 +107,7 @@ def me(auth: identity.Authenticated = Auth, uow: UnitOfWork = ReadUow) -> s.MeRe
     return s.MeResponse(
         user=s.UserRef(**vars(data.user)),
         time_zone=data.time_zone,
+        theme=data.theme,
         organization=s.OrganizationBrief(id=org.id, name=org.name, slug=org.slug),
         is_org_admin=data.is_org_admin,
         mfa=s.MfaStatus(enrolled=data.mfa_enrolled, required=data.mfa_required),
@@ -127,7 +128,9 @@ def me(auth: identity.Authenticated = Auth, uow: UnitOfWork = ReadUow) -> s.MeRe
 def update_me(
     body: s.ProfilePatch, ctx: AccessContext = Depends(user_context), uow: UnitOfWork = Uow
 ) -> s.UserRef:
-    user = identity.update_profile(uow, ctx, display_name=body.display_name, time_zone=body.time_zone)
+    user = identity.update_profile(
+        uow, ctx, display_name=body.display_name, time_zone=body.time_zone, theme=body.theme
+    )
     return s.UserRef(id=user.id, display_name=user.display_name, email=user.email, is_active=user.is_active)
 
 

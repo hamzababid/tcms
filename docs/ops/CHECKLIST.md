@@ -323,6 +323,18 @@ shows two project chips and "+N more" (matches of the Projects filter first), so
 is on screen. Verified by `tests/api` (`test_traceability_rows_are_paged_…`, `test_us_074_plan_cases_search_…`,
 `test_us_161_record_history_…`, jobs `type` in TCMS-139), `DataTable.test.tsx` (default size, no-sort server
 mode, past-the-end, `usePaging`), E2E `tables.spec.ts`. Open: L62 (My Work not paged), L63 (200-item pickers).
+## Follow-up: dark theme (branch `feat/dark-theme`)
+Light, Dark or System (the default), chosen in the account menu or Profile › Appearance, applied at once,
+saved with the profile (`theme` on `GET/PATCH /auth/me`, audited) and applied before the first paint
+(`public/theme-init.js`). Dark tokens in `src/styles/tokens.css` for every colour, status chip and priority;
+the remaining raw colours in components (dialog overlay, step-grid editing row, sign-in card shadow, sidebar
+key and hover line) became tokens, charts take grid, axes and tooltip colours from the tokens, and
+`text-success` (used on Users and System) now has a token, so it shows green in both themes. Closes L5 (review
+K16). Also: `#main` is focusable, so a page with nothing to tab to can still be scrolled by keyboard (axe
+`scrollable-region-focusable`). Verified by `test_theme_preference_is_saved_per_user_and_audited`,
+`src/lib/theme.test.ts`, E2E `theme.spec.ts` (menu, reload, System following the device, Profile, axe in dark on
+My Work, Repository, cycle, Reports and Users); axe also clean on Overview, Traceability, Releases, Plan, Bugs
+and Profile in dark (manual run).
 ### M7–M9 — status
 
 | Milestone | Epics | Status | Notes |
