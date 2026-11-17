@@ -188,7 +188,7 @@ export function StepGrid({
               key={s.key}
               role="row"
               className={cn(
-                "grid border-t border-rule first-of-type:border-t-0 focus-within:bg-[#f8faff]",
+                "grid border-t border-rule first-of-type:border-t-0 focus-within:bg-[var(--row-editing)]",
                 cols,
                 dragKey === s.key && "opacity-50",
               )}

@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import gzip
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import StrEnum
 from functools import lru_cache
 from importlib import resources
+from typing import Any, Final
 from uuid import UUID
 
 from tcms.core.errors import FieldError
@@ -183,3 +185,12 @@ def token_expiry(created: datetime, days: int) -> datetime:
     if not 1 <= days <= TOKEN_MAX_DAYS:
         raise ValueError("expiry must be 1–365 days")
     return created + timedelta(days=days)
+
+
+THEMES: Final = ("light", "dark", "system")
+
+
+def theme_of(preferences: Mapping[str, Any] | None) -> str:
+    """The user's colour theme (docs/07 §6); anything missing or unknown reads as `system`."""
+    value = (preferences or {}).get("theme")
+    return value if isinstance(value, str) and value in THEMES else "system"

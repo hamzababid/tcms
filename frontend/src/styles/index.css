@@ -33,6 +33,7 @@
   --color-danger-ink: var(--danger-ink);
   --color-danger-surface: var(--danger-surface);
   --color-danger-border: var(--danger-border);
+  --color-success: var(--success);
   --color-sidebar: var(--sidebar-bg);
   --color-sidebar-raised: var(--sidebar-raised);
   --color-sidebar-line: var(--sidebar-line);
@@ -111,6 +112,12 @@
     height: 15px;
   }
 
+  /* Theme change (src/lib/theme.ts): no colour transitions while the theme swaps. */
+  [data-theme-switching] *,
+  [data-theme-switching] *::before,
+  [data-theme-switching] *::after {
+    transition: none !important;
+  }
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,

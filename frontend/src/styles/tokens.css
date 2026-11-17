@@ -1,8 +1,10 @@
 /*
  * Design tokens (docs/design/README.md, docs/07 §6). The only place raw colour values live.
- * Light theme only in the MVP; a dark theme redefines these variables (deferred, see review K16).
+ * Two themes: light (`:root`) and dark (`[data-theme="dark"]` on <html>, set by src/lib/theme.ts from the
+ * user's choice: Light, Dark or System). Components use these variables only, never raw colours.
  */
 :root {
+  color-scheme: light;
   --font-ui: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
 
@@ -39,6 +41,12 @@
   --danger-ink: #991b1b;
   --danger-surface: #fef2f2;
   --danger-border: #fecaca;
+  --success: #15803d;
+  /* Floating layers and the row focused while editing (step grid) */
+  --overlay: rgb(15 23 42 / 0.45);
+  --overlay-soft: rgb(15 23 42 / 0.35);
+  --row-editing: #f8faff;
+  --card-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
 
   /* Navigation (docs/design/Sidebar.dc.html) */
   --sidebar-bg: #111827;
@@ -48,6 +56,9 @@
   --sidebar-ink: #d1d5db;
   --sidebar-ink-strong: #f9fafb;
   --sidebar-label: #9ca3af;
+  --sidebar-hover-line: #4b5563;
+  --sidebar-key: #e5e7eb;
+  --sidebar-edge: transparent; /* dark sidebar on a light page needs no line */
 
   /* Elevation: flat UI, shadows only for floating layers */
   --shadow-popover: 0 8px 24px -6px rgb(15 23 42 / 0.16), 0 2px 6px rgb(15 23 42 / 0.06);
@@ -100,4 +111,94 @@
   --priority-high: #c2410c;
   --priority-medium: #475569;
   --priority-low: #64748b;
+}
+
+/*
+ * Dark theme (docs/07 §6.1). Slate neutrals, the same indigo for actions (white on #4f46e5 is 6.3:1),
+ * lighter accent text, status chips as light text on deep tints. Text pairs are at least 4.5:1 (axe,
+ * e2e/theme.spec.ts); icons and chevrons at least 3:1.
+ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #f1f5f9;
+  --ink-strong: #e2e8f0;
+  --ink-body: #cbd5e1;
+  --ink-secondary: #a8b4c6;
+  --ink-muted: #94a3b8;
+  --ink-faint: #6b7a90;
+  --border: #273246;
+  --border-control: #3a465b;
+  --rule: #1b2434;
+  --ground: #0b1120;
+  --surface: #111827;
+  --surface-muted: #1c2535;
+  --accent: #4f46e5;
+  --accent-hover: #5b54ea;
+  --accent-active: #4338ca;
+  --accent-tint: #1f1d4d;
+  --accent-ink: #c7d2fe;
+  --accent-border: #3d3a8c;
+  --accent-border-strong: #6366f1;
+  --accent-soft: #3f37c9;
+  --avatar-bg: #2e2a78;
+  --link: #a5b4fc;
+  --link-hover: #c7d2fe;
+  --focus-ring: #818cf8;
+  --danger: #f87171;
+  --danger-ink: #fca5a5;
+  --danger-surface: #2a1215;
+  --danger-border: #7f1d1d;
+  --success: #4ade80;
+  --overlay: rgb(2 6 23 / 0.7);
+  --overlay-soft: rgb(2 6 23 / 0.6);
+  --row-editing: #161f33;
+  --card-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+  --sidebar-bg: #070b16;
+  --sidebar-raised: #161e2e;
+  --sidebar-line: #2b3546;
+  --sidebar-active: #312e81;
+  --sidebar-ink: #cbd5e1;
+  --sidebar-ink-strong: #f8fafc;
+  --sidebar-label: #94a3b8;
+  --sidebar-hover-line: #4b5563;
+  --sidebar-key: #e5e7eb;
+  --sidebar-edge: #1b2434; /* separates the sidebar from the dark page */
+  --shadow-popover: 0 8px 24px -6px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.4);
+  --shadow-dialog: 0 24px 48px -12px rgb(0 0 0 / 0.7);
+  --status-pass-fg: #86efac;
+  --status-pass-bg: #0f2a1a;
+  --status-pass-border: #1f5130;
+  --status-pass-bar: #22c55e;
+  --status-fail-fg: #fca5a5;
+  --status-fail-bg: #331418;
+  --status-fail-border: #6b2228;
+  --status-fail-bar: #dc2626;
+  --status-blocked-fg: #fcd34d;
+  --status-blocked-bg: #2e2109;
+  --status-blocked-border: #6b4a12;
+  --status-blocked-bar: #d97706;
+  --status-skip-fg: #cbd5e1;
+  --status-skip-bg: #1c2535;
+  --status-skip-border: #334155;
+  --status-skip-bar: #64748b;
+  --status-progress-fg: #7dd3fc;
+  --status-progress-bg: #0b2536;
+  --status-progress-border: #164e6e;
+  --status-progress-bar: #0ea5e9;
+  --status-notrun-fg: #cbd5e1;
+  --status-notrun-bg: #111827;
+  --status-notrun-border: #3a465b;
+  --status-notrun-bar: #334155;
+  --status-na-fg: #a8b4c6;
+  --status-na-bg: #0f1626;
+  --status-na-border: #273246;
+  --status-na-bar: #475569;
+  --status-retest-fg: #c4b5fd;
+  --status-retest-bg: #221640;
+  --status-retest-border: #4c2f8a;
+  --status-retest-bar: #8b5cf6;
+  --priority-critical: #f87171;
+  --priority-high: #fb923c;
+  --priority-medium: #a8b4c6;
+  --priority-low: #94a3b8;
 }

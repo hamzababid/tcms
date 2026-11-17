@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Plus } from "lucide-react";
+import { Monitor, Moon, Plus, Sun } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 import { api } from "@/api/client";
@@ -21,6 +21,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Tabs } from "@/components/ui/tabs";
+import { THEME_CHOICES, useTheme } from "@/lib/theme";
+import { cn } from "@/lib/utils";
 import { NotificationPreferencesTab } from "@/features/notifications/PreferencesTab";
 import { FormError } from "@/features/auth/AuthCard";
 import { MfaEnrollment } from "@/features/auth/MfaEnrollment";
@@ -206,7 +208,69 @@ function ProfileTab() {
           />
         ) : null}
       </Card>
+      <AppearanceCard />
     </div>
+  );
+}
+
+const THEME_ICON = { light: Sun, dark: Moon, system: Monitor } as const;
+const THEME_HINT = {
+  light: "Light backgrounds",
+  dark: "Dark backgrounds",
+  system: "Follows this device",
+} as const;
+
+/** Light, Dark or System (docs/07 §6.1); applies at once and is saved with the profile. */
+function AppearanceCard() {
+  const { choice, setChoice } = useTheme();
+  const toast = useToast();
+  return (
+    <Card
+      title="Appearance"
+      description="Applies at once. Saved with your profile, so it follows you to other browsers."
+      className="xl:col-span-2"
+    >
+      <fieldset>
+        <legend className="mb-2 text-[13px] font-medium text-ink">Theme</legend>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {THEME_CHOICES.map((t) => {
+            const Icon = THEME_ICON[t.value];
+            const on = choice === t.value;
+            return (
+              <label
+                key={t.value}
+                className={cn(
+                  "flex cursor-pointer flex-col gap-1 rounded-control border p-3 text-[13px] transition-colors hover:bg-ground has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--focus-ring)]",
+                  on ? "border-accent bg-accent-tint text-accent-ink" : "border-border-control text-ink",
+                )}
+              >
+                <input
+                  type="radio"
+                  name="theme"
+                  value={t.value}
+                  checked={on}
+                  className="sr-only"
+                  onChange={() => {
+                    setChoice(t.value)
+                      .then(() => {
+                        toast(`Theme: ${t.label}`);
+                      })
+                      .catch((err: unknown) => {
+                        toast(`Theme not saved to your profile: ${errorMessage(err)}`, "error");
+                      });
+                  }}
+                />
+                <span className="flex items-center gap-2 font-medium">
+                  <Icon aria-hidden="true" className="size-4" />
+                  {t.label}
+                </span>
+                <span className={on ? "text-accent-ink" : "text-ink-secondary"}>{THEME_HINT[t.value]}</span>
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
+    </Card>
   );
 }
 

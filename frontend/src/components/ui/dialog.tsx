@@ -24,7 +24,7 @@ export function Dialog({
   return (
     <D.Root open={open} onOpenChange={onOpenChange}>
       <D.Portal>
-        <D.Overlay className="fixed inset-0 z-40 bg-[rgb(15_23_42/0.45)]" />
+        <D.Overlay className="fixed inset-0 z-40 bg-[var(--overlay)]" />
         <D.Content
           onOpenAutoFocus={(e) => {
             // Keyboard users land in the first field, not on the header's Close button (TCMS-143).

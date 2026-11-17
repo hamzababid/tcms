@@ -2,11 +2,12 @@
 
 Current as of M8c (2026-11-10). Remove entries when resolved.
 
+Resolved after M8c: L5 (dark theme: Light, Dark or System, saved per user).
+
 Resolved in M8c: L1 (MinIO and the other third-party production images pinned by digest; development and tests use the same MinIO digest), L8 (client IP from Caddy's `X-Forwarded-For`), L9 (general rate limit and `RateLimit-*` headers), L14 (tree with 2,000 folders: p95 93 ms), L20 (`?` shortcut help and the sidebar entry), L31 (k6 P2 with 50 testers), L36 (project-name race → 409), L43 (`xlarge` seed with 100,000 cases and 500,000 runs).
 
 | # | Limitation | Impact | Plan |
 | --- | --- | --- | --- |
-| L5 | Light theme only (review K16) | No dark mode toggle is rendered | When dark tokens are designed |
 | L6 | The "< 10 min" measurement excludes first-time base-image pulls | Depends on network | — |
 | L7 | FastAPI's TestClient warns that `httpx` support is deprecated in favour of `httpx2` | Warning only | Switch when the FastAPI test client supports it without warnings |
 | L13 | TCMS-002 timing test runs serially (`-m timing`); under heavy parallel load wall-clock comparisons are noisy | — | — |

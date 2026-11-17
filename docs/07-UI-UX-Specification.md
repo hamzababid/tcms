@@ -562,7 +562,9 @@ Neutral, calm, high-contrast enterprise UI. Inter (UI) and JetBrains Mono (keys,
 | Browser tab, bookmarks, home screen | `favicon.ico`, `favicon.svg`, `png/assay-app-icon-180.png` (Apple touch), `192`/`512` PNGs in the web manifest; theme colour Assay Indigo `#4F46E5` |
 | HTML emails | `png/assay-logo-64h.png` shown at 32 px (email clients often block SVG), loaded from `TCMS_BASE_URL/brand/` |
 
-Logos are loaded as images, never inlined (the SVGs reuse mask ids), with the product name as alt text. Respect the clear-space and minimum-size rules in docs/brand/README.md. Base font 14 px, tables 13 px, line-height 1.45. Light and dark themes via CSS variables. 4 px spacing grid. Radius 6 px (controls), 8 px (cards). Minimal shadows (panels only).
+Logos are loaded as images, never inlined (the SVGs reuse mask ids), with the product name as alt text. Respect the clear-space and minimum-size rules in docs/brand/README.md. Base font 14 px, tables 13 px, line-height 1.45. Light and dark themes via CSS variables (below).
+
+**Themes.** The user chooses **Light**, **Dark** or **System** (follows the device, the default) in the account menu (Theme) or Profile › Appearance. The choice applies at once, is saved with the profile (`PATCH /auth/me {theme}`), so it follows the user to other browsers, and is kept in the browser (`assay.theme`) so `public/theme-init.js` applies it before the first paint (no white flash; a file because the CSP allows no inline script). After sign-in the profile's choice wins. Both themes are the same set of tokens in `src/styles/tokens.css` (`:root` and `:root[data-theme="dark"]`); components use tokens only, which a lint rule enforces. Dark keeps the indigo for primary actions (white on `#4F46E5`, 6.3:1), uses lighter indigo for links and selected text, and shows status chips as light text on deep tints; text pairs are at least 4.5:1, checked by axe in `e2e/theme.spec.ts`. Charts take grid, axes and tooltip colours from the tokens. Sign-in pages use the on-dark logo in dark. 4 px spacing grid. Radius 6 px (controls), 8 px (cards). Minimal shadows (panels only).
 
 ### 6.2 Status tokens (single source: `StatusBadge`)
 
@@ -577,7 +579,7 @@ Logos are loaded as images, never inlined (the SVGs reuse mask ids), with the pr
 | not_run | ○ circle | Not run | `--status-notrun-*` #475569 · #FFFFFF · #CBD5E1 (outline) |
 | needs_retest | ⟳ rotate | Needs retest | `--status-retest-*` #5B21B6 · #EDE9FE · #DDD6FE · #7C3AED |
 
-Values come from `docs/design/README.md`; icons from this table (blocked uses the octagon, never the N/A slash-circle that some design mock-ups show). Light theme only in the MVP; the theme control is not rendered until dark tokens exist.
+Values come from `docs/design/README.md`; icons from this table (blocked uses the octagon, never the N/A slash-circle that some design mock-ups show). Each status token has a light and a dark value (`tokens.css`); the dark ones are light text on a deep tint of the same hue.
 
 Case status: draft (pencil, slate), in_review (hourglass, blue), approved (check, green), deprecated (archive-x, amber), archived (archive, slate). Defect statuses grouped by category colour: new (open, reopened – red), triage (triaged, assigned – amber), work (in_progress, fixed – blue), verify (ready_for_retest – violet), done (verified, closed – green), parked (deferred – slate), invalid (rejected, duplicate, cannot_reproduce – slate). Priority/severity: critical ⬆⬆ red, high ▲ orange, medium ■ slate, low ▼ blue-gray.
 

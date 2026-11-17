@@ -78,9 +78,15 @@ class MfaStatus(BaseModel):
     required: bool
 
 
+ThemeChoice = Literal["light", "dark", "system"]
+
+
 class MeResponse(BaseModel):
     user: UserRef
     time_zone: str
+    theme: ThemeChoice = Field(
+        default="system", description="Colour theme; `system` follows the device setting (docs/07 §6)"
+    )
     organization: OrganizationBrief
     is_org_admin: bool
     mfa: MfaStatus
@@ -91,6 +97,7 @@ class MeResponse(BaseModel):
 class ProfilePatch(_Model):
     display_name: str | None = Field(default=None, min_length=1, max_length=100)
     time_zone: str | None = None
+    theme: ThemeChoice | None = None
 
     _tz = field_validator("time_zone")(_valid_tz)
 

@@ -165,7 +165,7 @@ export function GlobalSearch({ project }: { project: Project | undefined }) {
         </button>
       </D.Trigger>
       <D.Portal>
-        <D.Overlay className="fixed inset-0 z-40 bg-[rgb(15_23_42/0.35)]" />
+        <D.Overlay className="fixed inset-0 z-40 bg-[var(--overlay-soft)]" />
         <D.Content
           aria-describedby={undefined}
           className="fixed left-1/2 top-[12vh] z-50 w-[min(640px,calc(100vw-32px))] -translate-x-1/2 rounded-[var(--radius-auth)] border border-border bg-surface shadow-[var(--shadow-dialog)] focus:outline-none"
