@@ -335,6 +335,15 @@ K16). Also: `#main` is focusable, so a page with nothing to tab to can still be 
 `src/lib/theme.test.ts`, E2E `theme.spec.ts` (menu, reload, System following the device, Profile, axe in dark on
 My Work, Repository, cycle, Reports and Users); axe also clean on Overview, Traceability, Releases, Plan, Bugs
 and Profile in dark (manual run).
+## Follow-up: searchable pickers (branch `fix/long-lists-pickers`)
+The sidebar project switcher was a plain menu with one item per project (664 for a QA Manager in the dev data),
+taller than the page. It is now a search list (search focused on open, current project first, archived last,
+keyboard choice, "All projects"), capped to the window. The same `Combobox` replaced the native selects fed by
+large lists: case editor folder, import target folder, cycle "Assign a folder" (folder, assignee), new-cycle plan
+and default assignee, plan owner, case reviewer, Overview tester filter, Settings "Add a person", bulk add to
+plan or cycle, invitation project and API token project. Every dropdown menu now has a max height and scrolls.
+Verified by E2E `pickers.spec.ts` (switcher search, Enter, `G P`, Esc, height within a 640 px window, axe; folder
+picker search by path) and the updated m1/m3 journeys.
 ### M7–M9 — status
 
 | Milestone | Epics | Status | Notes |

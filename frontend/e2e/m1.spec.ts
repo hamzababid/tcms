@@ -1,5 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type APIRequestContext, type BrowserContext, type Page } from "@playwright/test";
+
+import { pick } from "./pick";
 import * as OTPAuth from "otpauth";
 
 // Seed credentials (docs/ops/local-setup.md; local/CI stacks only).
@@ -146,7 +148,7 @@ test("TCMS-020: a QA Manager creates a project and becomes its QA Manager", asyn
   await expect(page.getByText("QA", { exact: true })).toBeVisible();
   await expect(page.getByText("Staging", { exact: true })).toBeVisible();
   await page.getByRole("tab", { name: "Members" }).click();
-  await page.getByLabel("Add a person").selectOption({ label: "Sana Malik · sana@acme.test" });
+  await pick(page, page.getByRole("button", { name: /^Add a person/ }), "sana@acme.test");
   await page.getByRole("button", { name: "Add", exact: true }).click();
   await expect(page.getByRole("combobox", { name: "Role of Sana Malik" })).toHaveValue("viewer"); // BR-29
   await page.getByRole("link", { name: "Activity" }).click();

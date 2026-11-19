@@ -1,4 +1,5 @@
 import * as M from "@radix-ui/react-dropdown-menu";
+import * as P from "@radix-ui/react-popover";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import {
@@ -31,6 +32,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 
 import { api } from "@/api/client";
 import { useMe, useProjects, type Me, type Project } from "@/api/queries";
+import { popoverHeight, popoverPanel, SearchList, type ComboOption } from "@/components/ui/combobox";
 import { MenuContent, MenuItem, MenuSeparator, MenuShortcut } from "@/components/ui/menu";
 import { errorMessage, useToast } from "@/components/common/feedback";
 import { can, projectPermissions } from "@/lib/permissions";
@@ -114,7 +116,16 @@ function useCurrentProject(projects: Project[] | undefined): Project | undefined
   return projects?.find((p) => p.key === params.projectKey);
 }
 
-/** Project switcher in the sidebar (docs/design/Sidebar.dc.html); `G` then `P` opens it. */
+/** The current project first, then active projects by key, archived ones last. */
+function switcherOptions(projects: Project[], current: Project | undefined): ComboOption[] {
+  const rank = (p: Project) => (p.id === current?.id ? 0 : p.status === "archived" ? 2 : 1);
+  return [...projects]
+    .sort((a, b) => rank(a) - rank(b) || a.key.localeCompare(b.key))
+    .map((p) => ({ value: p.id, label: `${p.key} ${p.name}`, keywords: p.status }));
+}
+
+/** Project switcher in the sidebar (docs/design/Sidebar.dc.html): searchable, scrolls within the window;
+ * `G` then `P` opens it with the cursor in the search box. */
 function ProjectSwitcher({
   projects,
   current,
@@ -126,6 +137,7 @@ function ProjectSwitcher({
 }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const byId = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects]);
   useEffect(() => {
     // `G` then `P` opens the switcher, `G R` the repository, `G C` the cycles, `G D` the bugs (docs/07 §10).
     let armed = false;
@@ -175,8 +187,8 @@ function ProjectSwitcher({
     };
   }, [current, navigate]);
   return (
-    <M.Root open={open} onOpenChange={setOpen}>
-      <M.Trigger
+    <P.Root open={open} onOpenChange={setOpen}>
+      <P.Trigger
         className={cn(
           "flex h-9 w-full items-center gap-2 rounded-control border border-sidebar-line bg-sidebar-raised px-2.5 text-left text-[13px] font-semibold text-sidebar-ink-strong transition-colors hover:border-[var(--sidebar-hover-line)] data-[state=open]:border-[var(--sidebar-hover-line)]",
           collapsed && "justify-center px-0",
@@ -193,37 +205,61 @@ function ProjectSwitcher({
           </>
         )}
         <span className="sr-only">Switch project</span>
-      </M.Trigger>
-      <MenuContent align="start" className="w-[264px]">
-        <p className="px-2.5 pb-1 pt-1.5 text-[11.5px] font-semibold uppercase tracking-[0.06em] text-ink-muted">
-          Projects
-        </p>
-        {projects.length === 0 ? (
-          <p className="px-2.5 py-2 text-ink-muted">No projects yet</p>
-        ) : (
-          projects.map((p) => (
-            <MenuItem
-              key={p.id}
-              onSelect={() => void navigate({ to: "/p/$projectKey", params: { projectKey: p.key } })}
-              className={cn(p.id === current?.id && "bg-accent-tint text-accent-ink")}
-            >
-              <span className="w-[72px] shrink-0 truncate font-mono text-xs font-medium text-ink-secondary">
-                {p.key}
-              </span>
-              <span className="truncate">{p.name}</span>
-              {p.status === "archived" ? (
-                <span className="ml-auto text-xs text-ink-muted">archived</span>
-              ) : null}
-            </MenuItem>
-          ))
-        )}
-        <MenuSeparator />
-        <MenuItem onSelect={() => void navigate({ to: "/projects" })} className="text-link">
-          All projects
-          <MenuShortcut>G P</MenuShortcut>
-        </MenuItem>
-      </MenuContent>
-    </M.Root>
+      </P.Trigger>
+      <P.Portal>
+        <P.Content
+          align="start"
+          side="bottom"
+          sideOffset={4}
+          collisionPadding={8}
+          aria-label="Switch project"
+          className={cn(popoverPanel, "w-[320px]")}
+          style={popoverHeight}
+        >
+          {projects.length === 0 ? (
+            <p className="px-3 py-3 text-ink-muted">No projects yet</p>
+          ) : (
+            <SearchList
+              label="Projects"
+              searchPlaceholder={`Search ${projects.length.toLocaleString()} projects`}
+              searchable={projects.length > 6}
+              value={current?.id ?? ""}
+              options={switcherOptions(projects, current)}
+              renderOption={(o) => {
+                const p = byId.get(o.value);
+                if (!p) return o.label;
+                return (
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="w-[76px] shrink-0 truncate font-mono text-xs font-medium text-ink-secondary">
+                      {p.key}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate">{p.name}</span>
+                    {p.status === "archived" ? (
+                      <span className="shrink-0 text-xs text-ink-muted">archived</span>
+                    ) : null}
+                  </span>
+                );
+              }}
+              onPick={(o) => {
+                const p = byId.get(o.value);
+                setOpen(false);
+                if (p) void navigate({ to: "/p/$projectKey", params: { projectKey: p.key } });
+              }}
+            />
+          )}
+          <Link
+            to="/projects"
+            onClick={() => {
+              setOpen(false);
+            }}
+            className="flex shrink-0 items-center border-t border-border px-3 py-2 font-medium text-link hover:bg-ground"
+          >
+            All projects
+            <MenuShortcut>G P</MenuShortcut>
+          </Link>
+        </P.Content>
+      </P.Portal>
+    </P.Root>
   );
 }
 

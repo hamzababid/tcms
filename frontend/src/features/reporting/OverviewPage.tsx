@@ -6,6 +6,8 @@ import { Link } from "@tanstack/react-router";
 import { AlertTriangle } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { Combobox } from "@/components/ui/combobox";
+import { peopleOptions } from "@/components/ui/pickerOptions";
 import { useEnvironments, useMembers, useReleases, type Project } from "@/api/queries";
 import { Card, ErrorState, Page, Skeleton } from "@/components/common/feedback";
 import { Metric } from "@/components/common/Metric";
@@ -91,24 +93,20 @@ export function OverviewPage({ project }: { project: Project }) {
             ))}
           </Select>
         </label>
-        <label className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <span className="text-ink-secondary">Tester</span>
-          <Select
+          <Combobox
             aria-label="Tester"
             className="w-44"
             value={f.tester_id ?? ""}
-            onChange={(e) => {
-              set("tester_id", e.target.value);
+            onChange={(v) => {
+              set("tester_id", v);
             }}
-          >
-            <option value="">Everyone</option>
-            {(members.data ?? []).map((m) => (
-              <option key={m.user.id} value={m.user.id}>
-                {m.user.display_name}
-              </option>
-            ))}
-          </Select>
-        </label>
+            emptyOption="Everyone"
+            searchPlaceholder="Search people"
+            options={peopleOptions((members.data ?? []).map((m) => m.user))}
+          />
+        </div>
       </div>
       {dash.isPending || filters === null ? (
         <Skeleton rows={8} />

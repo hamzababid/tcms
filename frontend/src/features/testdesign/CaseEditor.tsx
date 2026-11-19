@@ -12,6 +12,8 @@ import {
   type ClipboardEvent,
 } from "react";
 
+import { Combobox } from "@/components/ui/combobox";
+import { folderOptions } from "@/components/ui/pickerOptions";
 import { api, ApiError } from "@/api/client";
 import type { Me, Project, ProjectMember } from "@/api/queries";
 import { ConflictDialog } from "@/components/common/dialogs";
@@ -680,22 +682,16 @@ export function CaseEditor({
             <h2 className="text-[15px] font-semibold text-ink">Properties</h2>
             <Field label="Folder" required>
               {(p) => (
-                <Select
+                <Combobox
                   {...p}
                   value={draft.folder_id}
-                  onChange={(e) => {
-                    set("folder_id", e.target.value);
+                  onChange={(v) => {
+                    set("folder_id", v);
                   }}
-                >
-                  {folders
-                    .filter((f) => !f.archived || f.id === draft.folder_id)
-                    .map((f) => (
-                      <option key={f.id} value={f.id}>
-                        {"  ".repeat(f.depth - 1)}
-                        {f.name}
-                      </option>
-                    ))}
-                </Select>
+                  placeholder="Choose a folder…"
+                  searchPlaceholder="Search folders"
+                  options={folderOptions(folders, draft.folder_id)}
+                />
               )}
             </Field>
             <EnumField

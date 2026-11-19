@@ -1,6 +1,7 @@
 import { Plus, Trash2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
+import { Combobox } from "@/components/ui/combobox";
 import { ApiError } from "@/api/client";
 import { useEnvironments, useMembers, useReleases, type Project } from "@/api/queries";
 import { ConflictDialog } from "@/components/common/dialogs";
@@ -266,20 +267,16 @@ export function PlanForm({
           </Field>
           <Field label="Owner" error={errors.owner_id}>
             {(p) => (
-              <Select
+              <Combobox
                 {...p}
                 value={v.owner_id}
-                onChange={(e) => {
-                  set("owner_id", e.target.value);
+                onChange={(id) => {
+                  set("owner_id", id);
                 }}
-              >
-                <option value="">{plan ? "No owner" : "Me"}</option>
-                {memberOptions.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.label}
-                  </option>
-                ))}
-              </Select>
+                emptyOption={plan ? "No owner" : "Me"}
+                searchPlaceholder="Search people"
+                options={memberOptions.map((m) => ({ value: m.id, label: m.label }))}
+              />
             )}
           </Field>
         </div>

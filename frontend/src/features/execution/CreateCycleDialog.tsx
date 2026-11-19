@@ -1,5 +1,7 @@
 import { useState, type ReactNode } from "react";
 
+import { Combobox } from "@/components/ui/combobox";
+import { peopleOptions } from "@/components/ui/pickerOptions";
 import { ApiError } from "@/api/client";
 import { useEnvironments, useMembers, useReleases, type Project } from "@/api/queries";
 import { Button } from "@/components/ui/button";
@@ -306,20 +308,18 @@ export function CreateCycleDialog({
               <div className="ml-6 grid gap-3">
                 <Field label="Plan" required error={errors.plan_id}>
                   {(p) => (
-                    <Select
+                    <Combobox
                       {...p}
                       value={planId}
-                      onChange={(e) => {
-                        setPlanId(e.target.value);
-                      }}
-                    >
-                      <option value="">Choose a plan…</option>
-                      {planOptions.map((pl) => (
-                        <option key={pl.id} value={pl.id}>
-                          {pl.key} · {pl.name} ({pl.case_count} cases)
-                        </option>
-                      ))}
-                    </Select>
+                      onChange={setPlanId}
+                      placeholder="Choose a plan…"
+                      searchPlaceholder="Search plans"
+                      options={planOptions.map((pl) => ({
+                        value: pl.id,
+                        label: `${pl.key} · ${pl.name}`,
+                        hint: `${pl.case_count} cases`,
+                      }))}
+                    />
                   )}
                 </Field>
                 {plans.data && plans.data.total > plans.data.items.length ? (
@@ -390,20 +390,14 @@ export function CreateCycleDialog({
             hint="Every new run goes to this tester. Assign later in the cycle."
           >
             {(p) => (
-              <Select
+              <Combobox
                 {...p}
                 value={assignee}
-                onChange={(e) => {
-                  setAssignee(e.target.value);
-                }}
-              >
-                <option value="">— leave in pool —</option>
-                {executors.map((m) => (
-                  <option key={m.user.id} value={m.user.id}>
-                    {m.user.display_name}
-                  </option>
-                ))}
-              </Select>
+                onChange={setAssignee}
+                emptyOption="— leave in pool —"
+                searchPlaceholder="Search people"
+                options={peopleOptions(executors.map((m) => m.user))}
+              />
             )}
           </Field>
         </Step>

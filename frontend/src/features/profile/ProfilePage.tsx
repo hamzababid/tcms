@@ -17,6 +17,8 @@ import {
   Skeleton,
   useToast,
 } from "@/components/common/feedback";
+import { Combobox } from "@/components/ui/combobox";
+import { projectOptions } from "@/components/ui/pickerOptions";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Input, Select } from "@/components/ui/field";
@@ -575,20 +577,16 @@ function TokensTab() {
               </Field>
               <Field label="Project">
                 {(p) => (
-                  <Select
+                  <Combobox
                     {...p}
                     value={form.project}
-                    onChange={(e) => {
-                      setForm({ ...form, project: e.target.value });
+                    onChange={(v) => {
+                      setForm({ ...form, project: v });
                     }}
-                  >
-                    <option value="">All my projects</option>
-                    {(me?.memberships ?? []).map((m) => (
-                      <option key={m.project.id} value={m.project.id}>
-                        {m.project.key}
-                      </option>
-                    ))}
-                  </Select>
+                    emptyOption="All my projects"
+                    searchPlaceholder="Search projects"
+                    options={projectOptions((me?.memberships ?? []).map((m) => m.project))}
+                  />
                 )}
               </Field>
             </div>
