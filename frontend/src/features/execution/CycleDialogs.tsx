@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import { Combobox } from "@/components/ui/combobox";
+import { folderOptions, peopleOptions } from "@/components/ui/pickerOptions";
 import { ApiError } from "@/api/client";
 import { useEnvironments, useReleases, type Project, type ProjectMember } from "@/api/queries";
 import { ConflictDialog } from "@/components/common/dialogs";
@@ -517,39 +519,27 @@ export function AssignDialog({
         {byFolder ? (
           <Field label="Folder" required hint="Every run of this folder and its subfolders.">
             {(p) => (
-              <Select
+              <Combobox
                 {...p}
                 value={folder}
-                onChange={(e) => {
-                  setFolder(e.target.value);
-                }}
-              >
-                <option value="">Choose a folder…</option>
-                {folders.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {`${"\u00a0\u00a0".repeat(f.depth - 1)}${f.name}`}
-                  </option>
-                ))}
-              </Select>
+                onChange={setFolder}
+                placeholder="Choose a folder…"
+                searchPlaceholder="Search folders"
+                options={folderOptions(folders)}
+              />
             )}
           </Field>
         ) : null}
         <Field label="Assignee">
           {(p) => (
-            <Select
+            <Combobox
               {...p}
               value={assignee}
-              onChange={(e) => {
-                setAssignee(e.target.value);
-              }}
-            >
-              <option value="">— pool (unassigned) —</option>
-              {executors.map((m) => (
-                <option key={m.user.id} value={m.user.id}>
-                  {m.user.display_name}
-                </option>
-              ))}
-            </Select>
+              onChange={setAssignee}
+              emptyOption="— pool (unassigned) —"
+              searchPlaceholder="Search people"
+              options={peopleOptions(executors.map((m) => m.user))}
+            />
           )}
         </Field>
         {error ? (

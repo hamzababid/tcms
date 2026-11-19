@@ -4,6 +4,8 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Plus } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
+import { Combobox } from "@/components/ui/combobox";
+import { peopleOptions } from "@/components/ui/pickerOptions";
 import { api, ApiError } from "@/api/client";
 import {
   keys,
@@ -528,21 +530,15 @@ function Members({ project, manage }: { project: Project; manage: boolean }) {
                 });
               }}
             >
-              <Select
+              <Combobox
                 aria-label="Add a person"
                 className="h-8 w-72 text-[13px]"
                 value={userId}
-                onChange={(e) => {
-                  setUserId(e.target.value);
-                }}
-              >
-                <option value="">Add a person…</option>
-                {(candidates.data ?? []).map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.display_name} · {u.email}
-                  </option>
-                ))}
-              </Select>
+                onChange={setUserId}
+                placeholder="Add a person…"
+                searchPlaceholder="Search by name or email"
+                options={peopleOptions(candidates.data ?? [])}
+              />
               <Select
                 aria-label="Role"
                 className="h-8 w-40 text-[13px]"

@@ -10,15 +10,18 @@ export const MenuTrigger = M.Trigger;
 export const MenuContent = forwardRef<
   ElementRef<typeof M.Content>,
   ComponentPropsWithoutRef<typeof M.Content>
->(({ className, sideOffset = 4, ...props }, ref) => (
+>(({ className, sideOffset = 4, collisionPadding = 8, style, ...props }, ref) => (
   <M.Portal>
     <M.Content
       ref={ref}
       sideOffset={sideOffset}
+      collisionPadding={collisionPadding}
       className={cn(
-        "z-50 min-w-48 rounded-card border border-border bg-surface p-1 text-[13px] text-ink shadow-[var(--shadow-popover)]",
+        "z-50 min-w-48 overflow-y-auto rounded-card border border-border bg-surface p-1 text-[13px] text-ink shadow-[var(--shadow-popover)]",
         className,
       )}
+      // Never taller than the space on screen: long menus scroll instead of running off the page.
+      style={{ maxHeight: "min(480px, var(--radix-dropdown-menu-content-available-height))", ...style }}
       {...props}
     />
   </M.Portal>

@@ -7,6 +7,8 @@ import { Link } from "@tanstack/react-router";
 import { CheckCircle2, Upload } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import { Combobox } from "@/components/ui/combobox";
+import { folderOptions } from "@/components/ui/pickerOptions";
 import type { Project } from "@/api/queries";
 import { Card, ErrorState, errorMessage, Page, Skeleton, useToast } from "@/components/common/feedback";
 import { Button } from "@/components/ui/button";
@@ -380,25 +382,20 @@ function MapStep({
                   <option value="create_only">are errors (create only)</option>
                 </Select>
               </span>
-              <label className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <span className="text-ink-secondary">Rows without a folder go to</span>
-                <Select
+                <Combobox
                   aria-label="Target folder"
                   className="w-56"
                   value={state.options.target_folder_id ?? ""}
-                  onChange={(e) => {
-                    setOption({ target_folder_id: e.target.value || null });
+                  onChange={(v) => {
+                    setOption({ target_folder_id: v || null });
                   }}
-                >
-                  <option value="">— (Folder column required)</option>
-                  {(folders.data ?? []).map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {"· ".repeat(f.depth - 1)}
-                      {f.name}
-                    </option>
-                  ))}
-                </Select>
-              </label>
+                  emptyOption="— (Folder column required)"
+                  searchPlaceholder="Search folders"
+                  options={folderOptions(folders.data ?? [])}
+                />
+              </div>
             </>
           ) : null}
         </div>

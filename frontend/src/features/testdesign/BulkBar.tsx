@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { Combobox } from "@/components/ui/combobox";
 import { api } from "@/api/client";
 import type { ProjectMember } from "@/api/queries";
 import { useToast, errorMessage } from "@/components/common/feedback";
@@ -296,20 +297,14 @@ function AddToDialog({
         <>
           <Field label={target === "plan" ? "Plan" : "Cycle (not closed)"} required>
             {(p) => (
-              <Select
+              <Combobox
                 {...p}
                 value={id}
-                onChange={(e) => {
-                  setId(e.target.value);
-                }}
-              >
-                <option value="">Choose…</option>
-                {(options.data ?? []).map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.label}
-                  </option>
-                ))}
-              </Select>
+                onChange={setId}
+                placeholder="Choose…"
+                searchPlaceholder={target === "plan" ? "Search plans" : "Search cycles"}
+                options={(options.data ?? []).map((o) => ({ value: o.id, label: o.label }))}
+              />
             )}
           </Field>
           {add.error ? (

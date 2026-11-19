@@ -3,6 +3,8 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { UserPlus } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
+import { Combobox } from "@/components/ui/combobox";
+import { projectOptions } from "@/components/ui/pickerOptions";
 import { api, ApiError } from "@/api/client";
 import {
   keys,
@@ -234,22 +236,16 @@ export function InvitationsPage() {
             </Field>
             <Field label="Project (optional)" hint="Adds them to this project when they accept.">
               {(p) => (
-                <Select
+                <Combobox
                   {...p}
                   value={form.project}
-                  onChange={(e) => {
-                    setForm({ ...form, project: e.target.value });
+                  onChange={(v) => {
+                    setForm({ ...form, project: v });
                   }}
-                >
-                  <option value="">No project</option>
-                  {(projects.data ?? [])
-                    .filter((x) => x.status === "active")
-                    .map((x) => (
-                      <option key={x.id} value={x.id}>
-                        {x.key} · {x.name}
-                      </option>
-                    ))}
-                </Select>
+                  emptyOption="No project"
+                  searchPlaceholder="Search projects"
+                  options={projectOptions((projects.data ?? []).filter((x) => x.status === "active"))}
+                />
               )}
             </Field>
             {form.project ? (

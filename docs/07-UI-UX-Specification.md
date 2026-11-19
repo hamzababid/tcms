@@ -119,6 +119,13 @@ Every list uses the shared table (`DataTable`) or, for lists that are not tables
 - Inline edit (double-click cell) for priority, assignee, tags where permitted.
 - Keyboard: `J/K` move row focus, `X` select, `Enter` open panel, `Esc` close.
 
+### 4.1a Pickers and menus
+
+- Lists that can grow large use the searchable picker (`Combobox`), not a native select: projects, folders (path shown and searched, so "Login" under two areas can be told apart), people (name and email), plans and cycles. A search box appears above 8 options and has the focus when the list opens; ↑/↓, Home/End and Enter choose; Esc closes. At most 200 matches are drawn at once, with "200 of N shown. Type to narrow the list."
+- Short fixed lists (status, priority, type, release, environment, rows per page) stay native selects.
+- The **project switcher** in the sidebar is the same search list: current project first, then active projects by key, archived last, with "All projects" at the bottom. `G P` opens it with the cursor in the search box.
+- Every dropdown menu and picker is at most 420–480 px tall and never taller than the space on screen; longer content scrolls inside it.
+
 ### 4.2 Side panel
 
 Right drawer 560–720 px (resizable), deep-linked via query param (`?case=SPARK-TC-12`). Header: key, title, status badge, actions menu, "Open full page", close. Tabs depend on entity. Navigating rows with `J/K` while the panel is open updates it.

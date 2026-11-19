@@ -5,6 +5,8 @@ import { Link } from "@tanstack/react-router";
 import { ExternalLink, MoreHorizontal, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
+import { Combobox } from "@/components/ui/combobox";
+import { peopleOptions } from "@/components/ui/pickerOptions";
 import { api, ApiError } from "@/api/client";
 import type { Me, Project, ProjectMember } from "@/api/queries";
 import { DataTable } from "@/components/common/DataTable";
@@ -17,7 +19,7 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { Tag } from "@/components/common/Tag";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { Field, Input, Select } from "@/components/ui/field";
+import { Field, Input } from "@/components/ui/field";
 import { Tabs } from "@/components/ui/tabs";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { can } from "@/lib/permissions";
@@ -1088,20 +1090,14 @@ function CaseActions({
         <div className="flex flex-col gap-4">
           <Field label="Reviewer">
             {(p) => (
-              <Select
+              <Combobox
                 {...p}
                 value={reviewer}
-                onChange={(e) => {
-                  setReviewer(e.target.value);
-                }}
-              >
-                <option value="">Anyone who can approve</option>
-                {reviewers.map((m) => (
-                  <option key={m.user.id} value={m.user.id}>
-                    {m.user.display_name}
-                  </option>
-                ))}
-              </Select>
+                onChange={setReviewer}
+                emptyOption="Anyone who can approve"
+                searchPlaceholder="Search people"
+                options={peopleOptions(reviewers.map((m) => m.user))}
+              />
             )}
           </Field>
           <Field label="Note for the reviewer">

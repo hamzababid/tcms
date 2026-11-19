@@ -1,6 +1,8 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Browser, type Page } from "@playwright/test";
 
+import { pick } from "./pick";
+
 // M3 journeys: plans and cycles (docs/08 TCMS-050…060, AC-PLN-01/02). Seed users from e2e/auth.setup.ts.
 const run = Date.now().toString(36);
 let seq = 0;
@@ -188,7 +190,7 @@ test("TCMS-051 + AC-PLN-01: add cases to a plan, then create a cycle from it wit
   await page.getByRole("button", { name: "Create cycle" }).first().click();
   const create = page.getByRole("dialog", { name: "New cycle" });
   await expect(create.getByLabel("Name")).toHaveValue(`${p.name} – Cycle 1`);
-  await expect(create.getByRole("combobox", { name: "Plan", exact: true })).toHaveValue(p.id);
+  await expect(create.getByRole("button", { name: "Plan", exact: true })).toContainText(p.key);
   const env = await environment(page, pid);
   await create.getByLabel("Environment").selectOption(env.id);
   await expectAccessible(page);
@@ -211,7 +213,8 @@ test("TCMS-055 + TCMS-056: assign a folder to a tester, then a tester claims a p
 }) => {
   const bilal = await as(browser, "bilal");
   const pid = await spark(bilal);
-  const fa = await folder(bilal, pid, uniq("Assign A"));
+  const faName = uniq("Assign A");
+  const fa = await folder(bilal, pid, faName);
   const fb = await folder(bilal, pid, uniq("Assign B"));
   const a1 = await testCase(bilal, pid, fa, uniq("A one"));
   const a2 = await testCase(bilal, pid, fa, uniq("A two"));
@@ -224,9 +227,9 @@ test("TCMS-055 + TCMS-056: assign a folder to a tester, then a tester claims a p
   await bilal.getByRole("button", { name: "Assign" }).first().click();
   await bilal.getByRole("menuitem", { name: "Assign a folder…" }).click();
   const dialog = bilal.getByRole("dialog", { name: `Assign a folder in ${c.key}` });
-  await dialog.getByLabel("Folder").selectOption(fa);
-  await dialog.getByLabel("Assignee").selectOption({ label: "Sana Malik" });
-  await dialog.getByRole("button", { name: "Assign" }).click();
+  await pick(bilal, dialog.getByRole("button", { name: "Folder", exact: true }), faName);
+  await pick(bilal, dialog.getByRole("button", { name: "Assignee", exact: true }), "Sana Malik");
+  await dialog.getByRole("button", { name: "Assign", exact: true }).click();
   await expect(bilal.getByText("Assigned 2 runs to Sana Malik")).toBeVisible();
 
   const runs = bilal.getByRole("table", { name: "Runs" });
@@ -400,7 +403,7 @@ test("repository bulk actions: add selected cases to a plan and to a cycle", asy
 
   await bar.getByRole("button", { name: "Add to plan" }).click();
   let dialog = page.getByRole("dialog", { name: "Add 2 cases to a plan" });
-  await dialog.getByLabel("Plan").selectOption(p.id);
+  await pick(page, dialog.getByRole("button", { name: "Plan", exact: true }), p.key);
   await dialog.getByRole("button", { name: "Add", exact: true }).click();
   await expect(dialog.getByText("Added 2 cases")).toBeVisible();
   await expectAccessible(page);
@@ -412,7 +415,7 @@ test("repository bulk actions: add selected cases to a plan and to a cycle", asy
     .getByRole("button", { name: "Add to cycle" })
     .click();
   dialog = page.getByRole("dialog", { name: "Add 1 case to a cycle" });
-  await dialog.getByLabel("Cycle (not closed)").selectOption(c.id);
+  await pick(page, dialog.getByRole("button", { name: "Cycle (not closed)", exact: true }), c.key);
   await dialog.getByRole("button", { name: "Add", exact: true }).click();
   await expect(dialog.getByText("Added 1 run")).toBeVisible();
   await dialog.getByRole("button", { name: "Done" }).click();
